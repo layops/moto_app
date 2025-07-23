@@ -49,3 +49,9 @@ class UserLoginSerializer(serializers.Serializer):
 
         data['user'] = user # Doğrulanmış kullanıcı nesnesini veri setine ekle
         return data
+    
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email'] # Kullanıcının ID'si, kullanıcı adı ve e-postasını göster
+        read_only_fields = ['id', 'username', 'email'] # Bu alanlar sadece okunabilir olsun

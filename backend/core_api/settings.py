@@ -37,16 +37,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third-party apps
     'rest_framework',
-    'rest_framework.authtoken', # Kullanıcı doğrulama için token
-    'corsheaders', # CORS ayarları için
+    'rest_framework.authtoken',
+    'corsheaders',
+    'drf_yasg',
 
     # My apps
-    'users', 
+    'users',
     'bikes',
     'rides',
-    'drf_yasg',
+    'groups', 
 ]
 
 MIDDLEWARE = [

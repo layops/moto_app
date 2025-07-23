@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/', include('bikes.urls')), # Eğer bikes_router kullandıysan 'api/', include(bikes_router.urls) olurdu
     path('api/', include('rides.urls')), # Eğer rides_router kullandıysan 'api/', include(rides_router.urls) olurdu
+     path('api/groups/', include('groups.urls')),
 
     # API Dokümantasyon URL'leri
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
