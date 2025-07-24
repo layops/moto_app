@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'users',
     'bikes',
     'rides',
-    'groups', 
+    'groups',
+    'posts',  
 ]
 
 MIDDLEWARE = [
