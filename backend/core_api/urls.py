@@ -34,14 +34,15 @@ urlpatterns = [
 
     # Kendi uygulama URL'leriniz
     path('api/', include('users.urls')),
-    path('api/', include('bikes.urls')), # Eğer bikes_router kullandıysan 'api/', include(bikes_router.urls) olurdu
-    path('api/', include('rides.urls')), # Eğer rides_router kullandıysan 'api/', include(rides_router.urls) olurdu
+    path('api/', include('bikes.urls')),
+    path('api/', include('rides.urls')),
      path('api/groups/', include('groups.urls')),
 
-    # API Dokümantasyon URL'leri
+    # API Dokümantasyon URL'leri (eğer kullanıyorsanız)
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('api/', include('rest_framework.urls', namespace='rest_framework')),
+    # REST Framework'ün login/logout görünümleri için
+    path('api/', include('rest_framework.urls', namespace='rest_framework')), # Bu satırı mevcut haliyle bırakın
 ]
 
 # SADECE GELİŞTİRME ORTAMINDA (settings.DEBUG = True iken) medya/statik dosyaları sunarız.

@@ -43,13 +43,15 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
-
+        
     # My apps
     'users',
     'bikes',
     'rides',
     'groups',
     'posts',  
+    'events',
+    'media',
 ]
 
 MIDDLEWARE = [
@@ -199,3 +201,6 @@ SWAGGER_SETTINGS = {
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
+
+#MEDIA_URL = '/media/'
+#MEDIA_ROOT = BASE_DIR / 'mediafiles'
