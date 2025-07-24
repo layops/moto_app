@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
-    'channels',                 # Channels kütüphanesi buraya eklendi
+    'channels',
         
     # My apps
     'users',
@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'posts',  
     'events',
     'media',
-    'chat',                     # Chat uygulaması (boşluksuz)
+    'chat',
 ]
 
 MIDDLEWARE = [
