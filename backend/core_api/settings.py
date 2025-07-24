@@ -1,3 +1,5 @@
+# moto_app/backend/core_api/settings.py
+
 """
 Django settings for core_api project.
 
@@ -13,14 +15,13 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent # 'file' yerine '__file__' düzeltildi
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
+# See https://https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb'
+SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb' # Mevcut anahtarınızı korudum
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -29,7 +30,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
+    'channels',                 # Channels kütüphanesi buraya eklendi
         
     # My apps
     'users',
@@ -52,12 +53,13 @@ INSTALLED_APPS = [
     'posts',  
     'events',
     'media',
+    'chat',                     # Chat uygulaması (boşluksuz)
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # Buraya ekleyin
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # CORS middleware'i
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -70,8 +72,8 @@ ROOT_URLCONF = 'core_api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], # Burası boş kalabilir, veya proje seviyesi şablonların varsa buraya eklersin
-        'APP_DIRS': True, # <-- BU SATIRIN TRUE OLDUĞUNDAN EMİN OL
+        'DIRS': [], 
+        'APP_DIRS': True, 
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -85,6 +87,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core_api.wsgi.application'
 
+# ASGI uygulaması ayarı (Channels için ZORUNLU)
+ASGI_APPLICATION = 'core_api.asgi.application'
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -92,11 +97,11 @@ WSGI_APPLICATION = 'core_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'motoapp_db',  # Oluşturduğunuz veritabanı adı
-        'USER': 'motoapp_user', # Oluşturduğunuz veritabanı kullanıcı adı
-        'PASSWORD': '326598', # Buraya yeni şifreyi girdik
-        'HOST': 'localhost',  # PostgreSQL sunucusu yerel makinenizdeyse 'localhost'
-        'PORT': '5432',       # PostgreSQL varsayılan portu, değiştirmediyseniz
+        'NAME': 'motoapp_db',  
+        'USER': 'motoapp_user', 
+        'PASSWORD': '326598', 
+        'HOST': 'localhost',  
+        'PORT': '5432',       
     }
 }
 
@@ -152,10 +157,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Özel kullanıcı modelini belirtin
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# Medya dosyaları için ayarlar
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
 # Django REST Framework Ayarları
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -163,38 +164,37 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication', 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', # Varsayılan olarak tüm endpoint'ler kimlik doğrulaması gerektirsin
+        'rest_framework.permissions.IsAuthenticated', 
     ],
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer', # Sadece JSON yanıtları döndür
+        'rest_framework.renderers.JSONRenderer', 
     ],
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser', # Sadece JSON isteklerini işle
+        'rest_framework.parsers.JSONParser', 
     ],
 }
 
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].insert(
-    0, 'rest_framework.authentication.SessionAuthentication'
-)
-
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
-    'rest_framework.authentication.TokenAuthentication',
-
-]
+# Bu iki satır gereksiz ve çakışmaya neden olabilir, kaldırıldı.
+# REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].insert(
+#     0, 'rest_framework.authentication.SessionAuthentication'
+# )
+# REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+#     'rest_framework.authentication.TokenAuthentication',
+# ]
 
 CSRF_COOKIE_HTTPONLY = True
-CSRF_USE_SESSIONS = False # BURANIN KESİNLİKLE FALSE OLDUĞUNDAN EMİN OL
+CSRF_USE_SESSIONS = False 
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
-        'Token': {
+        'Token': { # 'Bearer' yerine 'Token' kullanılıyor, bu DRF TokenAuth ile uyumlu
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header'
         }
     },
-    'USE_SESSION_AUTH': False, # API'ler için oturum kimlik doğrulamasını kullanma
+    'USE_SESSION_AUTH': False, 
     'JSON_EDITOR': True,
 }
 
@@ -202,5 +202,11 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-#MEDIA_URL = '/media/'
-#MEDIA_ROOT = BASE_DIR / 'mediafiles'
+# Kanal Katmanları ayarı (Channels için ZORUNLU)
+# Geçici olarak InMemoryChannelLayer kullanıyoruz. Bu, Redis sunucusuna ihtiyaç duymaz.
+# Redis'i yükselttikten sonra channels_redis'e geri dönebilirsiniz.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
