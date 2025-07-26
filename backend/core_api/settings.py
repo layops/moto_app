@@ -15,22 +15,21 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent # 'file' yerine '__file__' düzeltildi
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-# See https://https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb' # Mevcut anahtarınızı korudum
+SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 INSTALLED_APPS = [
+    # Django default apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Django'nun PostgreSQL'e özgü veritabanı fonksiyonları için gerekli
+    # PostgreSQL specific features
     'django.contrib.postgres',
     
     # Third-party apps
@@ -47,8 +46,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_yasg',
     'channels',
-        
-    # My apps
+    
+    # Your apps
     'users',
     'bikes',
     'rides',
@@ -57,12 +56,13 @@ INSTALLED_APPS = [
     'events',
     'media',
     'chat',
+    'notifications',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # CORS middleware'i
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -75,12 +75,12 @@ ROOT_URLCONF = 'core_api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], 
-        'APP_DIRS': True, 
+        'DIRS': [],  # İstersen template klasörü ekleyebilirsin
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request',  # admin panel için önemli
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -90,13 +90,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core_api.wsgi.application'
 
-# ASGI uygulaması ayarı (Channels için ZORUNLU)
+# Channels için ASGI ayarı
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# Database ayarları (PostgreSQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -111,108 +108,90 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# Şifre doğrulama
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# Uluslararası ayarlar
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
+# Statik dosyalar
+STATIC_URL = '/static/'  # Önerilen: /static/ sonuna eğik çizgi
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # collectstatic sonrası dosyalar burada
+STATICFILES_DIRS = [
+    # os.path.join(BASE_DIR, 'static_assets'),  # Eğer genel statik dosya varsa
+]
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
-# media_root ve media_url Ayarları (Resim Yüklemeleri İçin)
+# Medya dosyaları (upload edilen dosyalar)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# Varsayılan ID tipi
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS Ayarları
+# CORS ayarları
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Özel kullanıcı modelini belirtin
+# Özel kullanıcı modeli
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# Django REST Framework Ayarları
+# Django REST Framework ayarları
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication', 
-        #'rest_framework.authentication.SessionAuthentication', 
+        'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',  # opsiyonel
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer', 
+        'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser', 
+        'rest_framework.parsers.JSONParser',
     ],
 }
 
-# Bu iki satır gereksiz ve çakışmaya neden olabilir, kaldırıldı.
-# REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].insert(
-#     0, 'rest_framework.authentication.SessionAuthentication'
-# )
-# REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
-#     'rest_framework.authentication.TokenAuthentication',
-# ]
-
+# CSRF güvenlik ayarları
 CSRF_COOKIE_HTTPONLY = True
-CSRF_USE_SESSIONS = False 
+CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+# Swagger ayarları (drf_yasg)
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
-        'Token': { # 'Bearer' yerine 'Token' kullanılıyor, bu DRF TokenAuth ile uyumlu
+        'Token': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header'
         }
     },
-    'USE_SESSION_AUTH': False, 
+    'USE_SESSION_AUTH': False,
     'JSON_EDITOR': True,
 }
 
+# Redoc ayarları
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-# Kanal Katmanları ayarı (Channels için ZORUNLU)
-# Geçici olarak InMemoryChannelLayer kullanıyoruz. Bu, Redis sunucusuna ihtiyaç duymaz.
-# Redis'i yükselttikten sonra channels_redis'e geri dönebilirsiniz.
+# Channels için Channel Layer ayarları
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        # Geliştirme aşamasında InMemory kullanılır
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        
+        # Prod ortamda Redis kullanımı için:
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
     }
 }
