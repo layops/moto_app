@@ -1,21 +1,49 @@
-Yolculuklara Katılım İsteği Gönderme:
+Django Channels ile WebSocket Yapılandırması:
 
-Herhangi bir kullanıcı, beğendiği bir yolculuğa katılmak için "katılım isteği" gönderebiliyor. Bu istekler başlangıçta "beklemede" (pending) durumunda oluyor.
+chat/routing.py dosyasını hazırladık, WebSocket URL desenlerini yazdık.
 
-Yolculuk Sahibi Tarafından İstek Yönetimi:
+Daphne ile ASGI sunucusunu başlattın.
 
-İstekleri Görüntüleme: Yolculuk sahipleri, kendi oluşturdukları yolculuklara gelen tüm katılım isteklerini (bekleyen, onaylanmış, reddedilmiş) listeleyebiliyor.
+Redis’in çalıştığını kontrol ettin (pong cevabı aldın).
 
-İstekleri Onaylama: Yolculuk sahibi, gelen bir katılım isteğini onayladığında, o kullanıcı otomatik olarak yolculuğun "katılımcıları" arasına ekleniyor.
+Bildirim Sistemi Üzerinde Çalıştık:
 
-İstekleri Reddetme: Yolculuk sahibi, istemediği bir katılım isteğini reddedebiliyor. Reddedilen istekler, istek sahibine "reddedildi" (rejected) olarak görünüyor.
+Test bildirimi göndermek için Django management command (send_test_notification) kullandın.
 
-Yolculuktan Ayrılma:
+Bildirimlerin doğru kullanıcıya gönderildiğini ve WebSocket bağlantısının kurulduğunu test ettik.
 
-Bir yolculuğa katılmış olan herhangi bir kullanıcı (ister onaylanmış bir istekle katılsın, isterse bekleyen bir isteği olsun), yolculuktan ayrılma isteği gönderebiliyor.
+Redis’in Windows Üzerindeki Komut Desteği Sorunu:
 
-Bu durumda, kullanıcının katılım isteğinin durumu "iptal edildi" (cancelled) olarak güncelleniyor. Bu, sahibin reddetmesinden farklı bir durum ve kullanıcının kendi isteğiyle ayrıldığını gösteriyor.
+Windows üzerinde Redis’in bazı komutları desteklemediğini ve BZPOPMIN hatası verdiğini gördük.
 
-Kullanıcıların Kendi İsteklerini Takip Etmesi:
+Bu yüzden WSL (Windows Subsystem for Linux) kurulumu yaptık.
 
-Her kullanıcı, gönderdiği tüm katılım isteklerinin (onaylanan, reddedilen, iptal edilen) anlık durumunu gösteren kendi kişisel listesini görüntüleyebiliyor. Böylece her zaman hangi yolculuklara katılma durumlarının ne olduğunu görebiliyorlar.
+WSL Üzerinde Geliştirme Ortamı Kurduk:
+
+Ubuntu dağıtımı üzerinden Redis’i ve PostgreSQL’i kurduk.
+
+WSL içinde Python virtual environment (venv) oluşturduk.
+
+Django projesini WSL içinde çalıştırdık.
+
+PostgreSQL Kurulumu ve Yapılandırması:
+
+PostgreSQL için kullanıcı ve veritabanı oluşturduk (motoapp_user ve motoapp_db).
+
+Django ayarlarında veritabanı bağlantı bilgilerini güncelledik.
+
+Migration işlemlerini başarıyla yaptık.
+
+Django superuser oluşturduk.
+
+Token Bazlı Bildirim Testi Yaptık:
+
+Yeni kullanıcı için token oluşturduk.
+
+Bu token ile gerçek zamanlı bildirim göndermeyi test ettik.
+
+Projeyi Stabil Çalışır Hale Getirdik:
+
+Tüm servisleri (Django, Redis, PostgreSQL) WSL üzerinde stabil şekilde çalıştırdık.
+
+Bildirim sisteminin çalıştığını teyit ettik.
