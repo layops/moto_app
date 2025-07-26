@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 # Create your models here.
 class Ride(models.Model):
@@ -21,3 +23,26 @@ class Ride(models.Model):
 
     def __str__(self):
         return self.title
+    
+    
+class RideRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Beklemede'),
+        ('approved', 'Onaylandı'),
+        ('rejected', 'Reddedildi'),
+        ('cancelled', 'İptal Edildi'),
+    ]
+
+    ride = models.ForeignKey(Ride, related_name='requests', on_delete=models.CASCADE)
+    requester = models.ForeignKey(User, related_name='ride_requests', on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Bir kullanıcının aynı yolculuğa birden fazla istek gönderememesini sağlar
+        unique_together = ('ride', 'requester')
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.requester.username} - {self.ride.title} ({self.status})"

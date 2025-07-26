@@ -1,35 +1,21 @@
-Bugün çok önemli ilerlemeler kaydettik ve özellikle chat uygulamasının temelini sağlam bir şekilde attık. Özetle tamamladıklarımız şunlar:
+Yolculuklara Katılım İsteği Gönderme:
 
-Chat Uygulaması Kurulumu: chat uygulamasını sıfırdan oluşturduk ve Django projenize entegre ettik.
+Herhangi bir kullanıcı, beğendiği bir yolculuğa katılmak için "katılım isteği" gönderebiliyor. Bu istekler başlangıçta "beklemede" (pending) durumunda oluyor.
 
-Django Channels Temel Yapılandırması:
+Yolculuk Sahibi Tarafından İstek Yönetimi:
 
-settings.py dosyasını channels uygulamasını içerecek şekilde güncelledik.
+İstekleri Görüntüleme: Yolculuk sahipleri, kendi oluşturdukları yolculuklara gelen tüm katılım isteklerini (bekleyen, onaylanmış, reddedilmiş) listeleyebiliyor.
 
-ASGI_APPLICATION ayarını doğru şekilde yapılandırdık.
+İstekleri Onaylama: Yolculuk sahibi, gelen bir katılım isteğini onayladığında, o kullanıcı otomatik olarak yolculuğun "katılımcıları" arasına ekleniyor.
 
-CHANNEL_LAYERS'ı geçici olarak InMemoryChannelLayer olarak ayarladık, bu sayede Redis kurulumuyla uğraşmadan ilerleyebildik.
+İstekleri Reddetme: Yolculuk sahibi, istemediği bir katılım isteğini reddedebiliyor. Reddedilen istekler, istek sahibine "reddedildi" (rejected) olarak görünüyor.
 
-Özel Kimlik Doğrulama Middleware'i (AuthTokenMiddleware):
+Yolculuktan Ayrılma:
 
-asgi.py dosyasında özel bir middleware oluşturduk. Bu middleware, WebSocket bağlantı URL'sindeki token'ı kullanarak kullanıcıları başarıyla doğruluyor.
+Bir yolculuğa katılmış olan herhangi bir kullanıcı (ister onaylanmış bir istekle katılsın, isterse bekleyen bir isteği olsun), yolculuktan ayrılma isteği gönderebiliyor.
 
-sync_to_async ile ilgili yaşadığımız karmaşık hataları (veritabanı işlemlerinin eşzamansız bağlamda çağrılması) çözdük. Bu, Token.objects.get() ve token_obj.user gibi senkron işlemleri güvenli bir şekilde eşzamansız ortamda çalıştırmamızı sağladı.
+Bu durumda, kullanıcının katılım isteğinin durumu "iptal edildi" (cancelled) olarak güncelleniyor. Bu, sahibin reddetmesinden farklı bir durum ve kullanıcının kendi isteğiyle ayrıldığını gösteriyor.
 
-Genel Sohbet Özelliği:
+Kullanıcıların Kendi İsteklerini Takip Etmesi:
 
-ChatConsumer sınıfını oluşturduk ve grup bazlı sohbet mesajlaşmasını başarıyla test ettik.
-
-Özel Mesajlaşma Özelliği:
-
-chat/models.py içinde PrivateMessage modelini oluşturarak özel mesajları veritabanında saklamak için gerekli yapıyı kurduk.
-
-Bu model için veritabanı migration'larını başarıyla uyguladık.
-
-chat/routing.py dosyasını güncelleyerek özel mesajlaşma için ws/private_chat/<user1_id>/<user2_id>/ URL desenini ekledik.
-
-PrivateChatConsumer sınıfını oluşturduk ve iki kullanıcı arasında birebir mesajlaşmayı (veritabanına kaydetme dahil) başarıyla test ettik.
-
-Hata Ayıklama ve Çözümleme: Karşılaştığımız SyntaxError, AttributeError ve ProgrammingError gibi çeşitli hataları adım adım tespit edip çözerek, uygulamanın kararlı bir şekilde çalışmasını sağladık.
-
-Kısacası, bugün projenizin en kritik gerçek zamanlı iletişim altyapısını, yani hem genel grup sohbetini hem de kullanıcılar arası özel mesajlaşmayı başarıyla hayata geçirdik. Bu, projeniz için çok büyük bir adım!
+Her kullanıcı, gönderdiği tüm katılım isteklerinin (onaylanan, reddedilen, iptal edilen) anlık durumunu gösteren kendi kişisel listesini görüntüleyebiliyor. Böylece her zaman hangi yolculuklara katılma durumlarının ne olduğunu görebiliyorlar.

@@ -1,36 +1,233 @@
 # moto_app/backend/rides/views.py
 
-from rest_framework import viewsets, permissions
-from .models import Ride
-from .serializers import RideSerializer
-from .permissions import IsOwnerOrReadOnly # Yeni izin sınıfımızı import et
-from django.db.models import Q # Arama ve filtreleme için ileride kullanılabilir
+from rest_framework import viewsets, status, permissions # permissions ekledik
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from .models import Ride, RideRequest # <-- RideRequest'i import edin
+from .serializers import RideSerializer, RideRequestSerializer # <-- RideRequestSerializer'ı import edin
+from .permissions import IsOwnerOrReadOnly
 
 class RideViewSet(viewsets.ModelViewSet):
     queryset = Ride.objects.all()
     serializer_class = RideSerializer
-    permission_classes = [IsOwnerOrReadOnly] # Yeni iznimizi kullan
+    permission_classes = [IsOwnerOrReadOnly]
 
-    def perform_create(self, serializer):
-        # Yeni bir yolculuk oluşturulurken, owner'ı isteği yapan kullanıcı olarak ayarla
-        serializer.save(owner=self.request.user)
-
-    # İleride buraya özel filtreleme, arama veya katılımcı ekleme/çıkarma mantığı eklenebilir.
     def get_queryset(self):
-        # Varsayılan queryset'i al
-        queryset = super().get_queryset() # Önce base ModelViewSet'in queryset'ini al
-
-        # URL'deki sorgu parametrelerinden 'start_location' değerini al
-        # Örneğin: /api/rides/?start_location=Istanbul
+        queryset = super().get_queryset()
         start_location = self.request.query_params.get('start_location')
-
-        # Eğer 'start_location' parametresi varsa, queryset'i filtrele
         if start_location:
-            # start_location alanına göre filtreleme yap
-            # __iexact: büyük/küçük harf duyarsız tam eşleşme (örn: 'istanbul' veya 'Istanbul' çalışır)
-            # Eğer konumlar veritabanında daha karmaşık bir yapıda ise (örn: GeoDjango), filtreleme mantığı değişebilir.
             queryset = queryset.filter(start_location__iexact=start_location)
-        
         return queryset
 
-    # İleride buraya özel filtreleme, arama veya katılımcı ekleme/çıkarma mantığı eklenebilir.
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def join(self, request, pk=None):
+        """
+        Kullanıcının belirli bir yolculuğa katılma isteği göndermesi için custom action.
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+        user = request.user
+
+        # Yolculuk sahibi katılamaz (isteğe bağlı kural)
+        if ride.owner == user:
+            return Response(
+                {"detail": "Yolculuğun sahibi katılım isteği gönderemez."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Kullanıcı zaten katılımcıysa veya bekleyen/onaylanmış isteği varsa kontrol et
+        if ride.participants.filter(id=user.id).exists():
+            return Response(
+                {"detail": "Bu yolculuğa zaten katıldınız."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Zaten bekleyen bir istek var mı kontrol et
+        if RideRequest.objects.filter(ride=ride, requester=user, status='pending').exists():
+            return Response(
+                {"detail": "Bu yolculuk için zaten bekleyen bir katılım isteğiniz var."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Yeni katılım isteği oluştur
+        # Not: Maksimum katılımcı kontrolü onay aşamasına bırakılabilir,
+        # ancak şimdilik bekleyen istekleri de engellemek için burada tutabiliriz.
+        # Eğer doluluk kontrolü burada olursa, onay verildiğinde tekrar kontrol etmek gerekebilir.
+        # En temiz çözüm, onay anında kontrol etmektir.
+        
+        # Eğer talep eden kullanıcı aynı zamanda katılımcı listesinde ise hata döndür
+        if user in ride.participants.all():
+            return Response(
+                {"detail": "Bu yolculuğa zaten kayıtlısınız."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Yeni bir katılım isteği oluştur ve durumu 'pending' olarak ayarla
+        ride_request = RideRequest.objects.create(
+            ride=ride,
+            requester=user,
+            status='pending'
+        )
+        serializer = RideRequestSerializer(ride_request) # İstek serileştiricisini kullan
+        return Response(
+            {"detail": "Katılım isteğiniz gönderildi ve onay bekliyor.", "request": serializer.data},
+            status=status.HTTP_202_ACCEPTED # Kabul edildi ama henüz işlenmedi
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def leave(self, request, pk=None):
+        """
+        Kullanıcının belirli bir yolculuktan ayrılması için custom action.
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+        user = request.user
+
+        # Yolculuk sahibi ayrılamaz (isteğe bağlı kural)
+        if ride.owner == user:
+            return Response(
+                {"detail": "Yolculuğun sahibi olarak yolculuktan ayrılamazsınız. Yolculuğu iptal etmeniz gerekir."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Kullanıcı katılımcılar arasında değilse
+        if not ride.participants.filter(id=user.id).exists():
+            # Eğer bekleyen bir isteği varsa, onu da iptal edebiliriz
+            pending_request = RideRequest.objects.filter(ride=ride, requester=user, status='pending').first()
+            if pending_request:
+                pending_request.status = 'cancelled' # İsteği reddet olarak işaretle
+                pending_request.save()
+                return Response(
+                    {"detail": "Yolculuğa katılım isteğiniz iptal edildi."},
+                    status=status.HTTP_200_OK
+                )
+            return Response(
+                {"detail": "Bu yolculuğa zaten katılmamışsınız."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ride.participants.remove(user)
+        # Eğer onaylanmış bir isteği varsa, onu da 'cancelled' veya 'left' olarak güncelleyebiliriz
+        approved_request = RideRequest.objects.filter(ride=ride, requester=user, status='approved').first()
+        if approved_request:
+            approved_request.status = 'cancelled' # Yolculuktan ayrılınca isteğini reddedilmiş gibi düşünebiliriz
+            approved_request.save()
+
+        serializer = self.get_serializer(ride)
+        return Response(
+            {"detail": "Yolculuktan başarıyla ayrıldınız.", "ride": serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def approve_request(self, request, pk=None):
+        """
+        Yolculuk sahibinin bir katılım isteğini onaylaması için custom action.
+        URL: /api/rides/<ride_id>/approve_request/
+        Body: {"request_id": <request_id>}
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+
+        # Sadece yolculuk sahibi onaylayabilir
+        if ride.owner != request.user:
+            return Response(
+                {"detail": "Bu yolculuk için onaylama yetkiniz yok."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        request_id = request.data.get('request_id')
+        if not request_id:
+            return Response(
+                {"detail": "Onaylanacak istek ID'si belirtilmelidir."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ride_request = get_object_or_404(RideRequest, id=request_id, ride=ride, status='pending')
+
+        # Maksimum katılımcı kontrolü (onay anında)
+        if ride.max_participants is not None and ride.participants.count() >= ride.max_participants:
+            return Response(
+                {"detail": "Üzgünüz, bu yolculuk için koltuklar dolmuştur. İstek reddedilecektir."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # İsteği onaylayın ve kullanıcıyı katılımcı olarak ekleyin
+        ride_request.status = 'approved'
+        ride_request.save()
+        ride.participants.add(ride_request.requester)
+
+        serializer = self.get_serializer(ride)
+        return Response(
+            {"detail": "Katılım isteği başarıyla onaylandı.", "ride": serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reject_request(self, request, pk=None):
+        """
+        Yolculuk sahibinin bir katılım isteğini reddetmesi için custom action.
+        URL: /api/rides/<ride_id>/reject_request/
+        Body: {"request_id": <request_id>}
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+
+        # Sadece yolculuk sahibi reddedebilir
+        if ride.owner != request.user:
+            return Response(
+                {"detail": "Bu yolculuk için reddetme yetkiniz yok."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        request_id = request.data.get('request_id')
+        if not request_id:
+            return Response(
+                {"detail": "Reddedilecek istek ID'si belirtilmelidir."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ride_request = get_object_or_404(RideRequest, id=request_id, ride=ride, status='pending')
+
+        # İsteği reddedin
+        ride_request.status = 'rejected'
+        ride_request.save()
+
+        serializer = self.get_serializer(ride)
+        return Response(
+            {"detail": "Katılım isteği başarıyla reddedildi.", "ride": serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+    # Yolculuk sahibinin kendi yolculuklarına gelen tüm istekleri listeleyebilmesi için (isteğe bağlı)
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def requests(self, request, pk=None):
+        """
+        Yolculuk sahibinin kendi yolculuğuna gelen tüm katılım isteklerini listeler.
+        Sadece yolculuk sahibi erişebilir.
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+
+        # Sadece yolculuk sahibi kendi isteklerini görebilir
+        if ride.owner != request.user:
+            return Response(
+                {"detail": "Bu yolculuğun isteklerini görüntüleme yetkiniz yok."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Bu yolculuğa ait tüm istekleri getir
+        all_requests = RideRequest.objects.filter(ride=ride).order_by('created_at')
+        serializer = RideRequestSerializer(all_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_requests(self, request):
+        """
+        Giriş yapmış kullanıcının gönderdiği tüm katılım isteklerini listeler.
+        URL: /api/rides/my_requests/
+        """
+        # Sadece isteği yapan kullanıcının gönderdiği istekleri filtrele
+        user_requests = RideRequest.objects.filter(requester=request.user).order_by('-created_at')
+        serializer = RideRequestSerializer(user_requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
