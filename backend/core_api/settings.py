@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Django'nun PostgreSQL'e özgü veritabanı fonksiyonları için gerekli
+    'django.contrib.postgres',
+    
     # Third-party apps
     'rest_framework',
     'rest_framework.authtoken',
@@ -97,11 +100,14 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'motoapp_db',  
-        'USER': 'motoapp_user', 
-        'PASSWORD': '326598', 
-        'HOST': 'localhost',  
-        'PORT': '5432',       
+        'NAME': 'motoapp_db',
+        'USER': 'motoapp_user',
+        'PASSWORD': '326598',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c client_encoding=UTF8',
+        },
     }
 }
 
