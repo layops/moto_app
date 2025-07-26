@@ -2,7 +2,7 @@
 
 from django.urls import path
 from .views import NotificationListView, NotificationMarkReadView, NotificationDeleteView
-
+from .views import SendTestNotificationView  # <-- Ek olarak bu satırı da yukarıya ekle
 urlpatterns = [
     # Kullanıcının bildirimlerini listeleme
     # GET /api/notifications/
@@ -16,4 +16,12 @@ urlpatterns = [
     # Belirli bir bildirimi silme
     # DELETE /api/notifications/<id>/
     path('<int:pk>/', NotificationDeleteView.as_view(), name='notification-delete'),
+]
+
+
+
+urlpatterns += [
+    # Test bildirimi göndermek için
+    # POST /api/notifications/send_test_notification/
+    path('send_test_notification/', SendTestNotificationView.as_view(), name='send-test-notification'),
 ]

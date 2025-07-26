@@ -1,13 +1,15 @@
+# moto_app/backend/core_api/asgi.py
+
 import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from urllib.parse import parse_qs
 
-# Django ortamını yükle
+# Django ortamını ayarla ve ASGI uygulamasını al
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core_api.settings')
 django_asgi_app = get_asgi_application()
 
-# Özel Kimlik Doğrulama Middleware'i
+# Özel WebSocket kimlik doğrulama middleware'i (token bazlı)
 class AuthTokenMiddleware:
     def __init__(self, app):
         self.app = app
@@ -18,42 +20,45 @@ class AuthTokenMiddleware:
             query_params = parse_qs(query_string)
             token_key_list = query_params.get('token')
 
+            # Gerekli importları burada yapıyoruz (asgiref, Django modeller vs)
+            from rest_framework.authtoken.models import Token
             from django.contrib.auth.models import AnonymousUser
             from asgiref.sync import sync_to_async
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
 
-            scope['user'] = AnonymousUser()
+            scope['user'] = AnonymousUser()  # Default anonymous user
 
             if token_key_list:
                 token_key = token_key_list[0]
-                print(f"DEBUG ASGI: Sorgu dizesinden token bulundu. Token başlangıcı: {token_key[:5]}...")
-
-                # Token'dan user döndüren senkron fonksiyon
-                @sync_to_async
-                def get_user_from_token(key):
-                    from rest_framework.authtoken.models import Token
-                    return Token.objects.get(key=key).user
+                print(f"DEBUG ASGI: Token bulundu, başlangıç: {token_key[:5]}...")
 
                 try:
-                    user = await get_user_from_token(token_key)
+                    # Token nesnesini eşzamansız al
+                    token_obj = await sync_to_async(Token.objects.get)(key=token_key)
+                    user = await sync_to_async(lambda: token_obj.user)()
+
                     if user.is_active:
                         scope['user'] = user
                         print(f"DEBUG ASGI: Kullanıcı doğrulandı: {user.username} (ID: {user.id})")
                     else:
-                        print(f"DEBUG ASGI: Token geçerli, ancak kullanıcı aktif değil: {user.username}")
+                        print(f"DEBUG ASGI: Token geçerli ama kullanıcı aktif değil: {user.username}")
+                except Token.DoesNotExist:
+                    print(f"DEBUG ASGI: Token veritabanında bulunamadı: {token_key[:5]}...")
                 except Exception as e:
-                    print(f"DEBUG ASGI: Token doğrulamada beklenmeyen hata: {e}")
+                    print(f"DEBUG ASGI: Token doğrulama hatası: {e}")
             else:
-                print("DEBUG ASGI: Sorgu dizesinde 'token' bulunamadı.")
+                print("DEBUG ASGI: Sorgu parametrelerinde 'token' bulunamadı.")
 
         return await self.app(scope, receive, send)
 
-# Ana ASGI uygulaması tanımı
-print("DEBUG: asgi.py dosyası yüklendi - Versiyon 20250724_2")
+
+# Ana ASGI uygulaması
+
+print("DEBUG: asgi.py yüklendi - Versiyon 20250724_1")
+
+# WebSocket URL desenlerini import et
 import chat.routing
 
-print(f"DEBUG ASGI: Yönlendiriciye verilen URL desenleri: {chat.routing.websocket_urlpatterns}")
+print(f"DEBUG ASGI: URLRouter'a verilecek websocket desenleri: {chat.routing.websocket_urlpatterns}")
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
