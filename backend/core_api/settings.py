@@ -82,7 +82,7 @@ DATABASES = {
         'USER': 'motoapp_user',
         'PASSWORD': '326598',
         # 2. seçenek: port yönlendirme sonrası localhost
-        'HOST': '172.19.32.1',  
+        'HOST': '172.17.48.1',  
         'PORT': '5432',
         'OPTIONS': {
             'options': '-c client_encoding=UTF8',

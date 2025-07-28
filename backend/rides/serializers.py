@@ -1,11 +1,11 @@
 # moto_app/backend/rides/serializers.py
 
 from rest_framework import serializers
-from .models import Ride, RideRequest # <-- RideRequest modelini buraya ekledik
-from django.conf import settings # Ayarlar (settings) için import ediyoruz
-from users.serializers import UserSerializer # <-- UserSerializer'ı buradan import ediyoruz (kendi users uygulamanızdan)
+from .models import Ride, RideRequest
+from django.conf import settings
+from users.serializers import UserSerializer
 
-# Yeni: RideRequestSerializer sınıfı
+# RideRequestSerializer sınıfı
 class RideRequestSerializer(serializers.ModelSerializer):
     # requester alanını, kullanıcının detaylı bilgisini (username, email) göstermek için UserSerializer kullanıyoruz
     requester = UserSerializer(read_only=True)
@@ -15,7 +15,7 @@ class RideRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'ride', 'requester', 'status', 'created_at']
         read_only_fields = ['id', 'ride', 'requester', 'status', 'created_at'] # Bu alanlar API üzerinden direk değiştirilemez
 
-# Mevcut RideSerializer sınıfı
+# RideSerializer sınıfı
 class RideSerializer(serializers.ModelSerializer):
     # Katılımcıların sadece kullanıcı adlarını göstermek için StringRelatedField kullanıyoruz
     # Bu alan, artık sadece onaylanmış katılımcıları içerecektir.
@@ -34,11 +34,13 @@ class RideSerializer(serializers.ModelSerializer):
             'id', 'owner', 'title', 'description', 'start_location',
             'end_location', 'start_time', 'end_time', 'participants',
             'max_participants', 'is_active', 'created_at', 'updated_at',
-            'pending_requests' # <-- Yeni alanı Meta.fields listesine ekleyin
+            'pending_requests',
+            'route_polyline',  # <-- Yeni eklenen alan
+            'waypoints'        # <-- Yeni eklenen alan
         ]
         # 'participants' alanı artık doğrudan API üzerinden değiştirilmez.
         # owner, created_at, updated_at gibi alanlar da sadece okunabilir.
-        read_only_fields = ('owner', 'created_at', 'updated_at', 'participants')
+        read_only_fields = ('owner', 'created_at', 'updated_at', 'participants', 'pending_requests')
 
     def get_pending_requests(self, obj):
         """
@@ -48,8 +50,8 @@ class RideSerializer(serializers.ModelSerializer):
         """
         # Serializer'a view'dan gelen 'request' objesini alıyoruz.
         # Bu context objesi views.py'deki 'get_serializer_context' metodundan gelir.
-        request_user = self.context.get('request', None)
-        
+        request_user = self.context.get('request') # request objesinin kendisi gelir
+
         # Eğer istek objesi yoksa veya kullanıcı kimliği doğrulanmamışsa veya sahibi değilse
         if request_user is None or not request_user.user.is_authenticated or request_user.user != obj.owner:
             return [] # Boş liste döndür
