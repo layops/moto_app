@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/', include('rides.urls')),
     path('api/groups/', include('groups.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/', include('gamification.urls')),
     
     # API Dokümantasyon URL'leri (eğer kullanıyorsanız)
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
