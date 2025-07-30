@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['172.19.34.247', '127.0.0.1', 'localhost']
 
 INSTALLED_APPS = [
     # Django default uygulamalar
