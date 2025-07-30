@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motoapp_frontend/services/api_service.dart'; // ApiService'i import ediyoruz
-import 'package:motoapp_frontend/views/auth/register_page.dart'; // RegisterPage'i import ediyoruz (ileride oluşturacağız)
-import 'package:motoapp_frontend/views/home/dashboard_page.dart'; // DashboardPage'i import ediyoruz (başarılı giriş sonrası yönlendirme)
+import 'package:motoapp_frontend/services/api_service.dart';
+import 'package:motoapp_frontend/views/auth/register_page.dart';
+import 'package:motoapp_frontend/views/home/dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,13 +16,12 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService(); // ApiService örneği
-  bool _isLoading = false; // Yüklenme durumu için
+  final ApiService _apiService = ApiService();
+  bool _isLoading = false;
 
-  // Giriş işlemini yöneten metod
   Future<void> _login() async {
     setState(() {
-      _isLoading = true; // Yükleniyor durumunu başlat
+      _isLoading = true;
     });
 
     try {
@@ -32,11 +31,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.statusCode == 200) {
-        // Başarılı giriş
         final token = response.data['token'];
-        await _apiService.saveAuthToken(token); // Token'ı kaydet
+        await _apiService.saveAuthToken(token);
 
-        // Başarılı giriş sonrası DashboardPage'e yönlendir
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -44,7 +41,6 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        // Hata durumunda kullanıcıya bilgi ver
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -54,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     } catch (e) {
-      // Ağ hatası veya diğer istisnalar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bir hata oluştu: ${e.toString()}')),
@@ -62,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } finally {
       setState(() {
-        _isLoading = false; // Yükleniyor durumunu bitir
+        _isLoading = false;
       });
     }
   }
@@ -76,7 +71,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Ekran boyutlandırması için ScreenUtil'i kullanın
     return Scaffold(
       appBar: AppBar(
         title: const Text('Giriş Yap'),
@@ -84,22 +78,24 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w), // Responsive padding
+          padding: EdgeInsets.all(24.w),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo veya uygulama adı
-              FlutterLogo(size: 100.w), // Geçici logo
+              // LOGO BURADA!
+              Image.asset(
+                'assets/images/spiride_logo.png', // Logo dosya yolunuz
+                width: 150.w, // Logonuzun genişliği
+                height: 150.h, // Logonuzun yüksekliği
+              ),
               SizedBox(height: 40.h),
 
-              // Kullanıcı adı girişi
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
                   labelText: 'Kullanıcı Adı',
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(12.r), // Responsive border radius
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                   prefixIcon: Icon(Icons.person, size: 20.w),
                 ),
@@ -107,7 +103,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 20.h),
 
-              // Şifre girişi
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -117,34 +112,29 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   prefixIcon: Icon(Icons.lock, size: 20.w),
                 ),
-                obscureText: true, // Şifreyi gizle
+                obscureText: true,
               ),
               SizedBox(height: 30.h),
 
-              // Giriş butonu
               _isLoading
-                  ? const CircularProgressIndicator() // Yüklenirken spinner göster
+                  ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity,
-                            50.h), // Buton genişliği ve yüksekliği
+                        minimumSize: Size(double.infinity, 50.h),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
                       child: Text(
                         'Giriş Yap',
-                        style:
-                            TextStyle(fontSize: 18.sp), // Responsive font size
+                        style: TextStyle(fontSize: 18.sp),
                       ),
                     ),
               SizedBox(height: 20.h),
 
-              // Kayıt ol butonu
               TextButton(
                 onPressed: () {
-                  // Kayıt sayfasına yönlendir
                   Navigator.push(
                     context,
                     MaterialPageRoute(
