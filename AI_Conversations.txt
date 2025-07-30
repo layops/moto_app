@@ -1,49 +1,44 @@
-Django Channels ile WebSocket Yapılandırması:
+Bugünkü Planlarımız ve İlerleme Durumu
+Bugün itibarıyla projemizdeki ilerlememiz ve sonraki adımlarımız aşağıdaki gibidir:
 
-chat/routing.py dosyasını hazırladık, WebSocket URL desenlerini yazdık.
+Tamamlananlar ve Onaylananlar:
+Backend Tamamlandı (Gamification Dahil):
 
-Daphne ile ASGI sunucusunu başlattın.
+gamification uygulaması (Score ve Group modelleri) başarıyla oluşturuldu ve test edildi.
 
-Redis’in çalıştığını kontrol ettin (pong cevabı aldın).
+Kullanıcı ve grup liderlik tabloları için gerekli API endpoint'leri (leaderboard/users/, leaderboard/groups/) backend'de hazırlandı.
 
-Bildirim Sistemi Üzerinde Çalıştık:
+gamification modelleri Django admin paneline eklendi ve yönetilebilir hale getirildi.
 
-Test bildirimi göndermek için Django management command (send_test_notification) kullandın.
+Postman ile kullanıcı kayıt ve token alma işlemleri başarıyla test edildi.
 
-Bildirimlerin doğru kullanıcıya gönderildiğini ve WebSocket bağlantısının kurulduğunu test ettik.
+Flutter Frontend'e Geçiş Onaylandı: Artık mobil uygulama arayüzünü geliştirmeye başlayacağız.
 
-Redis’in Windows Üzerindeki Komut Desteği Sorunu:
+Flutter Projesi Başlangıç Yapısı Oluşturuldu: frontend klasörü altında temel Flutter proje dizinleri (android, ios, lib, web vb.) mevcut.
 
-Windows üzerinde Redis’in bazı komutları desteklemediğini ve BZPOPMIN hatası verdiğini gördük.
+Detaylı lib Klasör Yapısı Oluşturuldu: frontend/lib altında core, services, models, views (alt klasörleriyle birlikte), widgets ve routes klasörleri oluşturuldu.
 
-Bu yüzden WSL (Windows Subsystem for Linux) kurulumu yaptık.
+Bugünkü Odaklanacağımız Adımlar (Flutter Frontend):
+Gerekli Flutter Kütüphanelerini Ekleme:
 
-WSL Üzerinde Geliştirme Ortamı Kurduk:
+frontend/pubspec.yaml dosyasını açıp, daha önce belirlediğimiz kütüphaneleri (dio, shared_preferences, web_socket_channel, flutter_screenutil, google_fonts, flutter_svg) dependencies altına ekleyeceğiz.
 
-Ubuntu dağıtımı üzerinden Redis’i ve PostgreSQL’i kurduk.
+Bu kütüphaneleri yüklemek için flutter pub get komutunu çalıştıracağız.
 
-WSL içinde Python virtual environment (venv) oluşturduk.
+Temel API Servisini Oluşturma (api_service.dart):
 
-Django projesini WSL içinde çalıştırdık.
+frontend/lib/services/api_service.dart dosyasını oluşturacağız.
 
-PostgreSQL Kurulumu ve Yapılandırması:
+Bu dosyada Dio kütüphanesini kullanarak backend API'lerimizle (özellikle kimlik doğrulama, yani login/register) iletişim kuracak temel bir yapı kuracağız. JWT token'ı istek başlıklarına ekleme mantığını da buraya entegre edeceğiz.
 
-PostgreSQL için kullanıcı ve veritabanı oluşturduk (motoapp_user ve motoapp_db).
+Kimlik Doğrulama Sayfalarına Başlama (LoginPage ve RegisterPage):
 
-Django ayarlarında veritabanı bağlantı bilgilerini güncelledik.
+frontend/lib/views/auth/login_page.dart ve frontend/lib/views/auth/register_page.dart dosyalarını oluşturacağız.
 
-Migration işlemlerini başarıyla yaptık.
+Bu sayfalarda kullanıcı adı/e-posta ve parola giriş alanları ile kayıt ve giriş butonlarını içeren temel UI'ı tasarlayacağız.
 
-Django superuser oluşturduk.
+Bu sayfaların, api_service.dart üzerinden backend API'leriyle nasıl etkileşim kuracağını belirleyeceğiz.
 
-Token Bazlı Bildirim Testi Yaptık:
+Bu adımları tamamladığımızda, kullanıcıların uygulamaya giriş yapabildiği ve kayıt olabildiği çalışan bir frontend'e sahip olacağız.
 
-Yeni kullanıcı için token oluşturduk.
-
-Bu token ile gerçek zamanlı bildirim göndermeyi test ettik.
-
-Projeyi Stabil Çalışır Hale Getirdik:
-
-Tüm servisleri (Django, Redis, PostgreSQL) WSL üzerinde stabil şekilde çalıştırdık.
-
-Bildirim sisteminin çalıştığını teyit ettik.
+Hazırsanız, ilk olarak pubspec.yaml dosyamızı güncelleyerek başlayabiliriz!
