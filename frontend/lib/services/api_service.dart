@@ -2,11 +2,12 @@
 
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:motoapp_frontend/config.dart'; // config.dart dosyasını import ediyoruz
 
 class ApiService {
   late Dio _dio; // Dio istemcisini tutacak değişken
-  final String _baseUrl =
-      'http://172.19.34.247:8000/api/'; // Backend API'nizin temel URL'si
+  // Backend API'nizin temel URL'si artık config.dart'tan alınıyor.
+  final String _baseUrl = kBaseUrl; // <-- BURAYI GÜNCELLEDİK!
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -62,8 +63,6 @@ class ApiService {
 
   // Kullanıcı giriş (login) işlemi
   Future<Response> login(String username, String password) async {
-    // 'users/' kısmını kaldırdık, çünkü _baseUrl zaten '/api/' ile bitiyor
-    // ve users.urls'de login endpoint'i doğrudan 'login/' olarak tanımlı.
     return await post('login/', {
       'username': username,
       'password': password,
@@ -73,7 +72,6 @@ class ApiService {
   // Kullanıcı kayıt (register) işlemi
   Future<Response> register(
       String username, String email, String password) async {
-    // Aynı şekilde 'users/' kısmını kaldırdık.
     return await post('register/', {
       'username': username,
       'email': email,
