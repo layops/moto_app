@@ -6,8 +6,8 @@ import 'package:motoapp_frontend/config.dart'; // config.dart dosyasını import
 
 class ApiService {
   late Dio _dio; // Dio istemcisini tutacak değişken
-  // Backend API'nizin temel URL'si artık config.dart'tan alınıyor.
-  final String _baseUrl = kBaseUrl; // <-- BURAYI GÜNCELLEDİK!
+  final String _baseUrl =
+      kBaseUrl; // Backend API'nizin temel URL'si config.dart'tan alınıyor.
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -63,10 +63,17 @@ class ApiService {
 
   // Kullanıcı giriş (login) işlemi
   Future<Response> login(String username, String password) async {
-    return await post('login/', {
+    final response = await post('login/', {
       'username': username,
       'password': password,
     });
+    // Başarılı giriş sonrası kullanıcı adını da kaydet
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        response.data.containsKey('username')) {
+      await saveUsername(response.data['username']); // Kullanıcı adını kaydet
+    }
+    return response;
   }
 
   // Kullanıcı kayıt (register) işlemi
@@ -86,16 +93,63 @@ class ApiService {
     print('Auth token kaydedildi: $token');
   }
 
+  // Kullanıcı adını yerel depolamaya kaydet
+  Future<void> saveUsername(String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username);
+    print('Kullanıcı adı kaydedildi: $username');
+  }
+
   // Token'ı yerel depolamadan sil
   Future<void> deleteAuthToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authToken');
-    print('Auth token silindi.');
+    await prefs.remove('username'); // Kullanıcı adını da sil
+    print('Auth token ve kullanıcı adı silindi.');
   }
 
   // Token'ı yerel depolamadan oku
   Future<String?> getAuthToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('authToken');
+  }
+
+  // Kullanıcı adını yerel depolamadan oku
+  Future<String?> getUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username');
+  }
+
+  // "Beni Hatırla" durumunu kaydet
+  Future<void> saveRememberMe(bool rememberMe) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rememberMe', rememberMe);
+    print('Beni Hatırla durumu kaydedildi: $rememberMe');
+  }
+
+  // "Beni Hatırla" durumunu oku
+  Future<bool> getRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('rememberMe') ?? false; // Varsayılan olarak false
+  }
+
+  // Kaydedilmiş kullanıcı adını (beni hatırla açıksa) kaydet
+  Future<void> saveRememberedUsername(String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('rememberedUsername', username);
+    print('Hatırlanan kullanıcı adı kaydedildi: $username');
+  }
+
+  // Kaydedilmiş kullanıcı adını oku
+  Future<String?> getRememberedUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('rememberedUsername');
+  }
+
+  // Kaydedilmiş kullanıcı adını sil
+  Future<void> clearRememberedUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('rememberedUsername');
+    print('Hatırlanan kullanıcı adı silindi.');
   }
 }

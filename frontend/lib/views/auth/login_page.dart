@@ -1,5 +1,3 @@
-// frontend/lib/views/auth/login_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/services/api_service.dart';
@@ -17,12 +15,29 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final ApiService _apiService = ApiService();
+
   bool _isLoading = false;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedUser();
+  }
+
+  Future<void> _loadRememberedUser() async {
+    _rememberMe = await _apiService.getRememberMe();
+    if (_rememberMe) {
+      final rememberedUsername = await _apiService.getRememberedUsername();
+      if (rememberedUsername != null) {
+        _usernameController.text = rememberedUsername;
+      }
+    }
+    setState(() {});
+  }
 
   Future<void> _login() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final response = await _apiService.login(
@@ -34,6 +49,13 @@ class _LoginPageState extends State<LoginPage> {
         final token = response.data['token'];
         await _apiService.saveAuthToken(token);
 
+        await _apiService.saveRememberMe(_rememberMe);
+        if (_rememberMe) {
+          await _apiService.saveRememberedUsername(_usernameController.text);
+        } else {
+          await _apiService.clearRememberedUsername();
+        }
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -41,24 +63,21 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'Giriş başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}')),
-          );
-        }
+        _showError(
+            'Giriş başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bir hata oluştu: ${e.toString()}')),
-        );
-      }
+      _showError('Bir hata oluştu: ${e.toString()}');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 
@@ -74,7 +93,15 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Giriş Yap'),
-        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+            tooltip: 'Ayarlar',
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -82,69 +109,76 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // LOGO BURADA!
               Image.asset(
-                'assets/images/spiride_logo.png', // Logo dosya yolunuz
-                width: 150.w, // Logonuzun genişliği
-                height: 150.h, // Logonuzun yüksekliği
+                'assets/images/spiride_logo.png',
+                width: 150.w,
+                height: 150.h,
               ),
               SizedBox(height: 40.h),
 
+              // Kullanıcı Adı
               TextField(
                 controller: _usernameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Kullanıcı Adı',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  prefixIcon: Icon(Icons.person, size: 20.w),
+                  prefixIcon: Icon(Icons.person),
                 ),
                 keyboardType: TextInputType.text,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               SizedBox(height: 20.h),
 
+              // Şifre
               TextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Şifre',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  prefixIcon: Icon(Icons.lock, size: 20.w),
+                  prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
-              SizedBox(height: 30.h),
+              SizedBox(height: 10.h),
 
+              // Beni Hatırla
+              Row(
+                children: [
+                  Checkbox(
+                    value: _rememberMe,
+                    onChanged: (val) =>
+                        setState(() => _rememberMe = val ?? false),
+                    activeColor: Theme.of(context).colorScheme.primary,
+                    checkColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _rememberMe = !_rememberMe),
+                    child: Text(
+                      'Beni Hatırla',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+
+              // Giriş Yap Butonu
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _login,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
-                        'Giriş Yap',
-                        style: TextStyle(fontSize: 18.sp),
-                      ),
+                      child: const Text('Giriş Yap'),
                     ),
               SizedBox(height: 20.h),
 
+              // Kayıt Ol Butonu
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const RegisterPage()),
+                    MaterialPageRoute(builder: (_) => const RegisterPage()),
                   );
                 },
-                child: Text(
-                  'Hesabın yok mu? Kayıt Ol',
-                  style: TextStyle(fontSize: 16.sp),
-                ),
+                child: const Text('Hesabın yok mu? Kayıt Ol'),
               ),
             ],
           ),

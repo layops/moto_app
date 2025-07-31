@@ -8,10 +8,10 @@ SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb
 DEBUG = True
 
 
-# ALLOWED_HOSTS = ['172.19.34.247', '127.0.0.1', 'localhost'] # EMRE
+ALLOWED_HOSTS = ['172.19.34.247', '127.0.0.1', 'localhost'] # EMRE
 
 
-ALLOWED_HOSTS = ['172.17.62.146', '127.0.0.1', 'localhost'] # OZAN
+#ALLOWED_HOSTS = ['172.17.62.146', '127.0.0.1', 'localhost'] # OZAN
 
 INSTALLED_APPS = [
     # Django default uygulamalar
@@ -87,8 +87,8 @@ DATABASES = {
         'USER': 'motoapp_user',
         'PASSWORD': '326598',
         # 2. seçenek: port yönlendirme sonrası localhost
-        'HOST': '172.17.48.1',  # OZAN
-        # 'HOST': '172.19.32.1', # EMRE
+        #'HOST': '172.17.48.1',  # OZAN
+         'HOST': '172.19.32.1', # EMRE
         'PORT': '5432',
         'OPTIONS': {
             'options': '-c client_encoding=UTF8',

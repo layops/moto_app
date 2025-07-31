@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motoapp_frontend/services/api_service.dart'; // ApiService'i import ediyoruz
+import 'package:motoapp_frontend/services/api_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,13 +15,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService(); // ApiService örneği
-  bool _isLoading = false; // Yüklenme durumu için
+  final ApiService _apiService = ApiService();
+  bool _isLoading = false;
 
-  // Kayıt işlemini yöneten metod
   Future<void> _register() async {
     setState(() {
-      _isLoading = true; // Yükleniyor durumunu başlat
+      _isLoading = true;
     });
 
     try {
@@ -32,17 +31,14 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (response.statusCode == 201) {
-        // 201 Created genellikle başarılı kayıt durumudur
-        // Başarılı kayıt sonrası kullanıcıya bilgi ver ve giriş sayfasına yönlendir
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text('Kayıt başarılı! Şimdi giriş yapabilirsiniz.')),
           );
-          Navigator.pop(context); // Giriş sayfasına geri dön
+          Navigator.pop(context);
         }
       } else {
-        // Hata durumunda kullanıcıya bilgi ver
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -52,7 +48,6 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       }
     } catch (e) {
-      // Ağ hatası veya diğer istisnalar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Bir hata oluştu: ${e.toString()}')),
@@ -60,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } finally {
       setState(() {
-        _isLoading = false; // Yükleniyor durumunu bitir
+        _isLoading = false;
       });
     }
   }
@@ -76,9 +71,10 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Scaffold'ın arka plan rengi temadan gelecek
       appBar: AppBar(
         title: const Text('Kayıt Ol'),
-        centerTitle: true,
+        // AppBar renkleri temadan gelecek
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -86,72 +82,68 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FlutterLogo(size: 100.w), // Geçici logo
+              Image.asset(
+                'assets/images/spiride_logo.png',
+                width: 150.w,
+                height: 150.h,
+              ),
               SizedBox(height: 40.h),
-
               TextField(
                 controller: _usernameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
+                  // Tema Input Decoration kullanacak
                   labelText: 'Kullanıcı Adı',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  prefixIcon: Icon(Icons.person, size: 20.w),
+                  prefixIcon: Icon(Icons.person), // İkon rengi temadan gelecek
                 ),
                 keyboardType: TextInputType.text,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge, // Metin rengini temadan al
               ),
               SizedBox(height: 20.h),
-
               TextField(
                 controller: _emailController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
+                  // Tema Input Decoration kullanacak
                   labelText: 'E-posta',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  prefixIcon: Icon(Icons.email, size: 20.w),
+                  prefixIcon: Icon(Icons.email), // İkon rengi temadan gelecek
                 ),
                 keyboardType: TextInputType.emailAddress,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge, // Metin rengini temadan al
               ),
               SizedBox(height: 20.h),
-
               TextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
+                  // Tema Input Decoration kullanacak
                   labelText: 'Şifre',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  prefixIcon: Icon(Icons.lock, size: 20.w),
+                  prefixIcon: Icon(Icons.lock), // İkon rengi temadan gelecek
                 ),
                 obscureText: true,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge, // Metin rengini temadan al
               ),
               SizedBox(height: 30.h),
-
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _register,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text(
+                      // Stil temadan gelecek
+                      child: const Text(
                         'Kayıt Ol',
-                        style: TextStyle(fontSize: 18.sp),
                       ),
                     ),
               SizedBox(height: 20.h),
-
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // Giriş sayfasına geri dön
+                  Navigator.pop(context);
                 },
-                child: Text(
+                // Stil temadan gelecek
+                child: const Text(
                   'Zaten hesabın var mı? Giriş Yap',
-                  style: TextStyle(fontSize: 16.sp),
                 ),
               ),
             ],
