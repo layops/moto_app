@@ -2,25 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
-import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/theme/app_theme.dart';
 import 'views/auth/login_page.dart';
-import 'views/settings/settings_page.dart'; // <-- Burada import ettik
+import 'views/home/dashboard_page.dart';
+import 'views/profile/profile_page.dart';
+import 'views/settings/settings_page.dart';
 
 void main() {
-  runApp(const AppInitializer());
-}
-
-class AppInitializer extends StatelessWidget {
-  const AppInitializer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+  runApp(
+    ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
       child: const MyApp(),
-    );
-  }
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -31,24 +26,26 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return ScreenUtilInit(
-      designSize: const Size(360, 690),
+      designSize: const Size(375, 812),
       minTextAdapt: true,
-      splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
-          title: 'Spiride',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          title: 'Moto App',
+          theme: AppTheme.lightTheme(context),
+          darkTheme: AppTheme.darkTheme(context),
           themeMode:
               themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           home: const LoginPage(),
           routes: {
-            '/settings': (context) =>
-                const SettingsPage(), // Burada route ekledik
+            '/login': (context) => const LoginPage(),
+            '/dashboard': (context) => const DashboardPage(username: 'emre'),
+            '/profile': (context) => const ProfilePage(),
+            '/settings': (context) => const SettingsPage(),
           },
         );
       },
+      child: null,
     );
   }
 }

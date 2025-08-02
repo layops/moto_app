@@ -7,6 +7,7 @@ class AppRoutes {
   static Map<String, WidgetBuilder> get routes => {
         '/': (context) => const LoginPage(),
         '/settings': (context) => const SettingsPage(),
-        '/dashboard': (context) => const DashboardPage(),
+        '/dashboard': (context) =>
+            const DashboardPage(username: 'KullaniciAdi'),
       };
 }

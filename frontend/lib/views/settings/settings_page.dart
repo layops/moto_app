@@ -23,23 +23,42 @@ class SettingsPage extends StatelessWidget {
           children: [
             Text(
               'Tema Ayarları',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
-            SizedBox(height: 20.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Koyu Tema',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                Switch(
-                  value: themeProvider.isDarkMode,
-                  onChanged: (value) {
-                    themeProvider.toggleTheme(value);
-                  },
-                ),
-              ],
+            SizedBox(height: 30.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(15.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.dark_mode,
+                      color: Theme.of(context).colorScheme.primary),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Text(
+                      'Koyu Tema',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  Switch(
+                    value: themeProvider.isDarkMode,
+                    onChanged: (value) {
+                      themeProvider.toggleTheme(value);
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -12,9 +12,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  late ApiService _apiService;
+  bool _isApiServiceReady = false;
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
   bool _rememberMe = false;
@@ -22,10 +24,18 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _loadRememberedUser();
+    _initApiService();
+  }
+
+  Future<void> _initApiService() async {
+    _apiService = await ApiService.create();
+    _isApiServiceReady = true;
+    await _loadRememberedUser();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadRememberedUser() async {
+    if (!_isApiServiceReady) return;
     _rememberMe = await _apiService.getRememberMe();
     if (_rememberMe) {
       final rememberedUsername = await _apiService.getRememberedUsername();
@@ -33,10 +43,10 @@ class _LoginPageState extends State<LoginPage> {
         _usernameController.text = rememberedUsername;
       }
     }
-    setState(() {});
   }
 
   Future<void> _login() async {
+    if (!_isApiServiceReady) return;
     setState(() => _isLoading = true);
 
     try {
@@ -49,6 +59,9 @@ class _LoginPageState extends State<LoginPage> {
         final token = response.data['token'];
         await _apiService.saveAuthToken(token);
 
+        // JWT decode kaldırıldı çünkü backend'den JWT değil normal token dönüyor
+        debugPrint("Token alındı: $token");
+
         await _apiService.saveRememberMe(_rememberMe);
         if (_rememberMe) {
           await _apiService.saveRememberedUsername(_usernameController.text);
@@ -59,17 +72,20 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
+            MaterialPageRoute(
+              builder: (_) => DashboardPage(username: _usernameController.text),
+            ),
           );
         }
       } else {
         _showError(
-            'Giriş başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}');
+          'Giriş başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}',
+        );
       }
     } catch (e) {
       _showError('Bir hata oluştu: ${e.toString()}');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -90,18 +106,19 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isApiServiceReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final inputDecorationTheme = Theme.of(context).inputDecorationTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Giriş Yap'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-            tooltip: 'Ayarlar',
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -115,62 +132,97 @@ class _LoginPageState extends State<LoginPage> {
                 height: 150.h,
               ),
               SizedBox(height: 40.h),
-
-              // Kullanıcı Adı
               TextField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Kullanıcı Adı',
-                  prefixIcon: Icon(Icons.person),
+                  prefixIcon: Icon(
+                    Icons.person,
+                    color: inputDecorationTheme.prefixIconColor ??
+                        colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  labelStyle: inputDecorationTheme.labelStyle ??
+                      textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7)),
+                  hintStyle: inputDecorationTheme.hintStyle ??
+                      textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.4)),
+                  filled: inputDecorationTheme.filled,
+                  fillColor: inputDecorationTheme.fillColor,
+                  border: inputDecorationTheme.border,
+                  focusedBorder: inputDecorationTheme.focusedBorder,
+                  enabledBorder: inputDecorationTheme.enabledBorder,
                 ),
                 keyboardType: TextInputType.text,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style:
+                    textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
               ),
               SizedBox(height: 20.h),
-
-              // Şifre
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Şifre',
-                  prefixIcon: Icon(Icons.lock),
+                  prefixIcon: Icon(
+                    Icons.lock,
+                    color: inputDecorationTheme.prefixIconColor ??
+                        colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  labelStyle: inputDecorationTheme.labelStyle ??
+                      textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7)),
+                  hintStyle: inputDecorationTheme.hintStyle ??
+                      textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.4)),
+                  filled: inputDecorationTheme.filled,
+                  fillColor: inputDecorationTheme.fillColor,
+                  border: inputDecorationTheme.border,
+                  focusedBorder: inputDecorationTheme.focusedBorder,
+                  enabledBorder: inputDecorationTheme.enabledBorder,
                 ),
                 obscureText: true,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style:
+                    textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
               ),
               SizedBox(height: 10.h),
-
-              // Beni Hatırla
               Row(
                 children: [
                   Checkbox(
                     value: _rememberMe,
                     onChanged: (val) =>
                         setState(() => _rememberMe = val ?? false),
-                    activeColor: Theme.of(context).colorScheme.primary,
-                    checkColor: Theme.of(context).colorScheme.onPrimary,
+                    activeColor: colorScheme.primary,
+                    checkColor: colorScheme.onPrimary,
                   ),
                   GestureDetector(
                     onTap: () => setState(() => _rememberMe = !_rememberMe),
                     child: Text(
                       'Beni Hatırla',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.9)),
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 20.h),
-
-              // Giriş Yap Butonu
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _login,
-                      child: const Text('Giriş Yap'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 48.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Giriş Yap',
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
               SizedBox(height: 20.h),
-
-              // Kayıt Ol Butonu
               TextButton(
                 onPressed: () {
                   Navigator.push(
@@ -178,7 +230,13 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (_) => const RegisterPage()),
                   );
                 },
-                child: const Text('Hesabın yok mu? Kayıt Ol'),
+                child: Text(
+                  'Hesabın yok mu? Kayıt Ol',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),

@@ -6,12 +6,13 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from django.db.models.functions import Lower
 from django.db.models import Q
 
-from unidecode import unidecode  # <-- unidecode import ettik
-from core_api.unaccent import Unaccent  # Senin Unaccent fonksiyonun
+from unidecode import unidecode
+from core_api.unaccent import Unaccent
 
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer
 from django.contrib.auth import get_user_model
@@ -50,11 +51,6 @@ class UserLoginView(APIView):
 
 
 class UserSearchView(generics.ListAPIView):
-    """
-    Kullanıcıları kullanıcı adına göre arar.
-    Sadece kimliği doğrulanmış kullanıcılar arama yapabilir.
-    Türkçe karakter uyumluluğu için unidecode ve Unaccent kullanılır.
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -62,28 +58,14 @@ class UserSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-
         if query:
-            # Arama terimini küçük harfe çevirip, Türkçe karakterlerden arındırıyoruz
             normalized_query = unidecode(query.lower())
-
-            # Veritabanında username alanını da benzer şekilde normalize ediyoruz
-            annotated = queryset.annotate(
-                norm_username=Unaccent(Lower('username'))
-            )
-
-            filtered = annotated.filter(norm_username__icontains=normalized_query)
-            return filtered
-
+            annotated = queryset.annotate(norm_username=Unaccent(Lower('username')))
+            return annotated.filter(norm_username__icontains=normalized_query)
         return queryset
 
 
 class GroupSearchView(generics.ListAPIView):
-    """
-    Grupları adına veya açıklamasına göre arar.
-    Sadece kimliği doğrulanmış kullanıcılar arama yapabilir.
-    Türkçe karakter uyumluluğu için unidecode ve Unaccent kullanılır.
-    """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated]
@@ -91,18 +73,31 @@ class GroupSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-
         if query:
             normalized_query = unidecode(query.lower())
             annotated = queryset.annotate(
                 norm_name=Unaccent(Lower('name')),
                 norm_desc=Unaccent(Lower('description'))
             )
-
-            filtered = annotated.filter(
+            return annotated.filter(
                 Q(norm_name__icontains=normalized_query) |
                 Q(norm_desc__icontains=normalized_query)
             )
-            return filtered
-
         return queryset
+
+
+class ProfileImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        file_obj = request.data.get('profile_picture')
+
+        if not file_obj:
+            return Response({"error": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.profile_picture = file_obj
+        user.save()
+
+        return Response({"message": "Profile image updated successfully."}, status=status.HTTP_200_OK)

@@ -1,5 +1,3 @@
-// frontend/lib/views/auth/register_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/services/api_service.dart';
@@ -12,13 +10,31 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  late ApiService _apiService;
+  bool _isApiServiceReady = false;
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService();
+
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _initApiService();
+  }
+
+  Future<void> _initApiService() async {
+    _apiService = await ApiService.create();
+    setState(() {
+      _isApiServiceReady = true;
+    });
+  }
+
   Future<void> _register() async {
+    if (!_isApiServiceReady) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -54,9 +70,11 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -70,11 +88,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isApiServiceReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      // Scaffold'ın arka plan rengi temadan gelecek
       appBar: AppBar(
         title: const Text('Kayıt Ol'),
-        // AppBar renkleri temadan gelecek
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -91,60 +113,45 @@ class _RegisterPageState extends State<RegisterPage> {
               TextField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
-                  // Tema Input Decoration kullanacak
                   labelText: 'Kullanıcı Adı',
-                  prefixIcon: Icon(Icons.person), // İkon rengi temadan gelecek
+                  prefixIcon: Icon(Icons.person),
                 ),
                 keyboardType: TextInputType.text,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge, // Metin rengini temadan al
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               SizedBox(height: 20.h),
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(
-                  // Tema Input Decoration kullanacak
                   labelText: 'E-posta',
-                  prefixIcon: Icon(Icons.email), // İkon rengi temadan gelecek
+                  prefixIcon: Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge, // Metin rengini temadan al
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               SizedBox(height: 20.h),
               TextField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
-                  // Tema Input Decoration kullanacak
                   labelText: 'Şifre',
-                  prefixIcon: Icon(Icons.lock), // İkon rengi temadan gelecek
+                  prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge, // Metin rengini temadan al
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               SizedBox(height: 30.h),
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _register,
-                      // Stil temadan gelecek
-                      child: const Text(
-                        'Kayıt Ol',
-                      ),
+                      child: const Text('Kayıt Ol'),
                     ),
               SizedBox(height: 20.h),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                // Stil temadan gelecek
-                child: const Text(
-                  'Zaten hesabın var mı? Giriş Yap',
-                ),
+                child: const Text('Zaten hesabın var mı? Giriş Yap'),
               ),
             ],
           ),

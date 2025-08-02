@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings # settings.DEBUG için gerekli
-from django.conf.urls.static import static # static dosyaları sunmak için gerekli
-from django.views.generic import RedirectView # Yeni import: RedirectView
+from django.conf import settings  # settings.DEBUG için
+from django.conf.urls.static import static  # statik ve medya dosyaları için
+from django.views.generic import RedirectView  # Anasayfa yönlendirmesi için
 
-# drf-yasg import'ları
+# drf-yasg (Swagger/OpenAPI) importları
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-# schema_view tanımı, urlpatterns'den ve DEBUG kontrolünden önce olmalı
+# API dokümantasyonu için schema_view oluşturuyoruz
 schema_view = get_schema_view(
     openapi.Info(
         title="Motosiklet Bilgi Platformu API",
@@ -24,30 +24,29 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Kök URL'ye erişildiğinde /api/ adresine yönlendir
-    path('', RedirectView.as_view(url='/api/', permanent=True)), # <-- BU SATIRI EKLEYİN
+    # Kök URL'yi otomatik /api/ dizinine yönlendiriyoruz
+    path('', RedirectView.as_view(url='/api/', permanent=True)),
 
+    # Admin paneli
     path('admin/', admin.site.urls),
-    
-    # Kendi uygulama URL'leriniz
+
+    # Uygulama URL'leri, hepsi /api/ altından erişilecek
     path('api/', include('users.urls')),
     path('api/', include('bikes.urls')),
     path('api/', include('rides.urls')),
-    path('api/groups/', include('groups.urls')),
-    path('api/notifications/', include('notifications.urls')),
+    path('api/groups/', include('groups.urls')),  # groups için ayrı prefix
+    path('api/notifications/', include('notifications.urls')),  # notifications için ayrı prefix
     path('api/', include('gamification.urls')),
-    
-    # API Dokümantasyon URL'leri (eğer kullanıyorsanız)
+
+    # API dokümantasyonları
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    
-    # REST Framework'ün login/logout görünümleri için
-    path('api/', include('rest_framework.urls', namespace='rest_framework')), 
+
+    # Django REST Framework login/logout sayfaları (isteğe bağlı)
+    path('api/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
-# SADECE GELİŞTİRME ORTAMINDA (settings.DEBUG = True iken) medya/statik dosyaları sunarız.
-# Bu blok, dokümantasyon URL'lerinin altına eklenmeli.
+# DEBUG modunda medya ve statik dosyaları servis et
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
-
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
