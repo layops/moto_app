@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import '../../widgets/custom_app_bar.dart';
+import '../../widgets/custom_drawer.dart';
+
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String username;
+
+  const ProfilePage({super.key, required this.username});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -14,19 +19,44 @@ class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _imageFile = File(pickedFile.path));
-      // TODO: Burada backend API'ye yükleme fonksiyonunu çağır
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() => _imageFile = File(pickedFile.path));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fotoğraf seçilirken hata oluştu: $e')),
+      );
+    }
+  }
+
+  void _handleTabSelected(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, '/home');
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, '/profile');
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, '/settings');
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: CustomAppBar(title: 'Profil'),
+      drawer: CustomDrawer(
+        username: widget.username,
+        selectedIndex: 1, // Profil sayfası olduğu için 1
+        onTabSelected: _handleTabSelected,
+      ),
       body: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 30),
             CircleAvatar(

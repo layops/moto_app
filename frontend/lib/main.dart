@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'views/auth/login_page.dart';
-import 'views/home/dashboard_page.dart';
+import 'views/home/home_page.dart';
 import 'views/profile/profile_page.dart';
 import 'views/settings/settings_page.dart';
 
@@ -36,16 +36,16 @@ class MyApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme(context),
           themeMode:
               themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          home: const LoginPage(),
+          initialRoute: '/login',
           routes: {
             '/login': (context) => const LoginPage(),
-            '/dashboard': (context) => const DashboardPage(username: 'emre'),
-            '/profile': (context) => const ProfilePage(),
+            '/home': (context) =>
+                HomePage(username: 'emre'), // Burada username geç
+            '/profile': (context) => ProfilePage(username: 'emre'),
             '/settings': (context) => const SettingsPage(),
           },
         );
       },
-      child: null,
     );
   }
 }

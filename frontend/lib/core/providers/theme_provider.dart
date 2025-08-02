@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeProvider extends ChangeNotifier {
-  bool _isDarkMode = false; // Başlangıçta açık tema olsun
+class ThemeProvider with ChangeNotifier {
+  bool _isDarkMode = false;
+  static const String _prefKey = 'isDarkMode';
 
   bool get isDarkMode => _isDarkMode;
 
@@ -10,17 +11,16 @@ class ThemeProvider extends ChangeNotifier {
     _loadTheme();
   }
 
-  void toggleTheme(bool isDark) async {
-    _isDarkMode = isDark;
-    notifyListeners();
-
+  Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', _isDarkMode);
+    _isDarkMode = prefs.getBool(_prefKey) ?? false;
+    notifyListeners();
   }
 
-  void _loadTheme() async {
+  Future<void> toggleTheme() async {
+    _isDarkMode = !_isDarkMode;
     final prefs = await SharedPreferences.getInstance();
-    _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    await prefs.setBool(_prefKey, _isDarkMode);
     notifyListeners();
   }
 }

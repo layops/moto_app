@@ -18,6 +18,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  String _selectedLanguage = 'TR';
 
   @override
   void initState() {
@@ -50,7 +51,8 @@ class _RegisterPageState extends State<RegisterPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Kayıt başarılı! Şimdi giriş yapabilirsiniz.')),
+              content: Text('Kayıt başarılı! Şimdi giriş yapabilirsiniz.'),
+            ),
           );
           Navigator.pop(context);
         }
@@ -58,8 +60,10 @@ class _RegisterPageState extends State<RegisterPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                    'Kayıt başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}')),
+              content: Text(
+                'Kayıt başarısız: ${response.data['detail'] ?? 'Bilinmeyen hata'}',
+              ),
+            ),
           );
         }
       }
@@ -94,67 +98,131 @@ class _RegisterPageState extends State<RegisterPage> {
       );
     }
 
+    final inputDecorationTheme = Theme.of(context).inputDecorationTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kayıt Ol'),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/spiride_logo.png',
-                width: 150.w,
-                height: 150.h,
-              ),
-              SizedBox(height: 40.h),
-              TextField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Kullanıcı Adı',
-                  prefixIcon: Icon(Icons.person),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 24.w, top: 8.h, bottom: 8.h),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: DropdownButton<String>(
+                  value: _selectedLanguage,
+                  underline: const SizedBox(),
+                  icon: Icon(Icons.language, color: colorScheme.primary),
+                  items: ['TR', 'EN', 'DE'].map((lang) {
+                    return DropdownMenuItem(
+                      value: lang,
+                      child: Text(lang),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedLanguage = val;
+                      });
+                    }
+                  },
                 ),
-                keyboardType: TextInputType.text,
-                style: Theme.of(context).textTheme.bodyLarge,
               ),
-              SizedBox(height: 20.h),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'E-posta',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 20.h),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Şifre',
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 30.h),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _register,
-                      child: const Text('Kayıt Ol'),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset(
+                      'assets/images/spiride_logo_main_page.png',
+                      width: 220.w,
+                      height: 220.h,
                     ),
-              SizedBox(height: 20.h),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Zaten hesabın var mı? Giriş Yap'),
+                    SizedBox(height: 32.h),
+                    TextField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Kullanıcı Adı',
+                        prefixIcon: Icon(
+                          Icons.person,
+                          color: inputDecorationTheme.prefixIconColor ??
+                              colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      keyboardType: TextInputType.text,
+                      style: textTheme.bodyLarge
+                          ?.copyWith(color: colorScheme.onSurface),
+                    ),
+                    SizedBox(height: 20.h),
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'E-posta',
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: inputDecorationTheme.prefixIconColor ??
+                              colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      style: textTheme.bodyLarge
+                          ?.copyWith(color: colorScheme.onSurface),
+                    ),
+                    SizedBox(height: 20.h),
+                    TextField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Şifre',
+                        prefixIcon: Icon(
+                          Icons.lock,
+                          color: inputDecorationTheme.prefixIconColor ??
+                              colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      obscureText: true,
+                      style: textTheme.bodyLarge
+                          ?.copyWith(color: colorScheme.onSurface),
+                    ),
+                    SizedBox(height: 30.h),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: _register,
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(double.infinity, 48.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                            ),
+                            child: Text(
+                              'Kayıt Ol',
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                    SizedBox(height: 20.h),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        'Zaten hesabın var mı? Giriş Yap',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

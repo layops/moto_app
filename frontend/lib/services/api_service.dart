@@ -44,7 +44,6 @@ class ApiService {
         return handler.next(options);
       },
       onError: (DioException e, handler) {
-        print('API Hatası: ${e.response?.statusCode} - ${e.message}');
         return handler.next(e);
       },
     ));
@@ -75,10 +74,6 @@ class ApiService {
       'username': username,
       'password': password,
     });
-
-    print('Login response status: ${response.statusCode}');
-    print('Login response data: ${response.data}');
-
     if (response.statusCode == 200 && response.data != null) {
       String? token = response.data['token'] ?? response.data['access'];
 
@@ -108,19 +103,16 @@ class ApiService {
   Future<void> saveAuthToken(String token) async {
     await _prefs.setString('authToken', token);
     _cachedToken = token;
-    print('Auth token kaydedildi: $token');
   }
 
   Future<void> saveUsername(String username) async {
     await _prefs.setString('username', username);
-    print('Kullanıcı adı kaydedildi: $username');
   }
 
   Future<void> deleteAuthToken() async {
     await _prefs.remove('authToken');
     await _prefs.remove('username');
     _cachedToken = null;
-    print('Auth token ve kullanıcı adı silindi.');
   }
 
   Future<String?> getAuthToken() async {
@@ -133,7 +125,6 @@ class ApiService {
 
   Future<void> saveRememberMe(bool rememberMe) async {
     await _prefs.setBool('rememberMe', rememberMe);
-    print('Beni Hatırla durumu kaydedildi: $rememberMe');
   }
 
   Future<bool> getRememberMe() async {
@@ -142,7 +133,6 @@ class ApiService {
 
   Future<void> saveRememberedUsername(String username) async {
     await _prefs.setString('rememberedUsername', username);
-    print('Hatırlanan kullanıcı adı kaydedildi: $username');
   }
 
   Future<String?> getRememberedUsername() async {
@@ -151,6 +141,5 @@ class ApiService {
 
   Future<void> clearRememberedUsername() async {
     await _prefs.remove('rememberedUsername');
-    print('Hatırlanan kullanıcı adı silindi.');
   }
 }

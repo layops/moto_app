@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:motoapp_frontend/views/auth/login_page.dart';
-import 'package:motoapp_frontend/views/settings/settings_page.dart';
-import 'package:motoapp_frontend/views/home/dashboard_page.dart';
 
-class AppRoutes {
-  static Map<String, WidgetBuilder> get routes => {
-        '/': (context) => const LoginPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/dashboard': (context) =>
-            const DashboardPage(username: 'KullaniciAdi'),
-      };
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ayarlar')),
+      body: const Center(child: Text('Ayarlar Sayfası')),
+    );
+  }
 }

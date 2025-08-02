@@ -1,67 +1,105 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-
-import '../../core/providers/theme_provider.dart';
+import 'package:motoapp_frontend/core/providers/theme_provider.dart'; // Proje yapınıza göre düzenleyin
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ayarlar'),
-        centerTitle: true,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tema Ayarları',
-              style: Theme.of(context).textTheme.headlineLarge,
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-            SizedBox(height: 30.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(15.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('Karanlık Mod'),
+                  subtitle: const Text('Uygulama temasını değiştirir'),
+                  value: themeProvider.isDarkMode,
+                  onChanged: (value) {
+                    themeProvider.toggleTheme();
+                  },
+                  secondary: Icon(
+                    themeProvider.isDarkMode
+                        ? Icons.nightlight_round
+                        : Icons.wb_sunny,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.dark_mode,
-                      color: Theme.of(context).colorScheme.primary),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Text(
-                      'Koyu Tema',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: Icon(
+                    Icons.info,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
-                  Switch(
-                    value: themeProvider.isDarkMode,
-                    onChanged: (value) {
-                      themeProvider.toggleTheme(value);
-                    },
-                    activeColor: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
+                  title: const Text('Uygulama Hakkında'),
+                  subtitle: const Text('Versiyon 1.0.0'),
+                  onTap: () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'Moto App',
+                      applicationVersion: '1.0.0',
+                      applicationIcon: const FlutterLogo(),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: const Text('Çıkış Yap'),
+              textColor: Theme.of(context).colorScheme.error,
+              onTap: () {
+                _showLogoutDialog(context);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Uygulamadan çıkmak istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
       ),
     );
   }

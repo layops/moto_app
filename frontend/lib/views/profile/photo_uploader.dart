@@ -44,31 +44,41 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       final response = await apiService.post('profile/upload-photo/', formData);
 
       if (response.statusCode == 200) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Fotoğraf başarıyla yüklendi')),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Yükleme hatası: ${response.statusCode}')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata: $e')),
       );
     } finally {
-      setState(() {
-        _isUploading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (_image != null)
-          Image.file(_image!, width: 150, height: 150, fit: BoxFit.cover)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(75),
+            child:
+                Image.file(_image!, width: 150, height: 150, fit: BoxFit.cover),
+          )
         else
           const Icon(Icons.account_circle, size: 150),
         const SizedBox(height: 16),
@@ -80,7 +90,12 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
         ElevatedButton(
           onPressed: _isUploading ? null : _uploadImage,
           child: _isUploading
-              ? const CircularProgressIndicator(color: Colors.white)
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                )
               : const Text('Fotoğrafı Yükle'),
         ),
       ],

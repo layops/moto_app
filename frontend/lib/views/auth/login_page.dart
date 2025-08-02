@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/services/api_service.dart';
 import 'package:motoapp_frontend/views/auth/register_page.dart';
-import 'package:motoapp_frontend/views/home/dashboard_page.dart';
+import 'package:motoapp_frontend/views/home/home_page.dart'; // 👈 HomePage eklendi
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,6 +20,8 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isLoading = false;
   bool _rememberMe = false;
+
+  String _selectedLanguage = 'TR';
 
   @override
   void initState() {
@@ -59,9 +61,6 @@ class _LoginPageState extends State<LoginPage> {
         final token = response.data['token'];
         await _apiService.saveAuthToken(token);
 
-        // JWT decode kaldırıldı çünkü backend'den JWT değil normal token dönüyor
-        debugPrint("Token alındı: $token");
-
         await _apiService.saveRememberMe(_rememberMe);
         if (_rememberMe) {
           await _apiService.saveRememberedUsername(_usernameController.text);
@@ -73,7 +72,8 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => DashboardPage(username: _usernameController.text),
+              builder: (_) => HomePage(
+                  username: _usernameController.text), // ✅ Burası değiştirildi
             ),
           );
         }
@@ -117,129 +117,155 @@ class _LoginPageState extends State<LoginPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Giriş Yap'),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/images/spiride_logo.png',
-                width: 150.w,
-                height: 150.h,
-              ),
-              SizedBox(height: 40.h),
-              TextField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Kullanıcı Adı',
-                  prefixIcon: Icon(
-                    Icons.person,
-                    color: inputDecorationTheme.prefixIconColor ??
-                        colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  labelStyle: inputDecorationTheme.labelStyle ??
-                      textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.7)),
-                  hintStyle: inputDecorationTheme.hintStyle ??
-                      textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.4)),
-                  filled: inputDecorationTheme.filled,
-                  fillColor: inputDecorationTheme.fillColor,
-                  border: inputDecorationTheme.border,
-                  focusedBorder: inputDecorationTheme.focusedBorder,
-                  enabledBorder: inputDecorationTheme.enabledBorder,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 24.w, top: 8.h, bottom: 8.h),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: DropdownButton<String>(
+                  value: _selectedLanguage,
+                  underline: const SizedBox(),
+                  icon: Icon(Icons.language, color: colorScheme.primary),
+                  items: ['TR', 'EN', 'DE'].map((lang) {
+                    return DropdownMenuItem(
+                      value: lang,
+                      child: Text(lang),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedLanguage = val;
+                      });
+                    }
+                  },
                 ),
-                keyboardType: TextInputType.text,
-                style:
-                    textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
               ),
-              SizedBox(height: 20.h),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Şifre',
-                  prefixIcon: Icon(
-                    Icons.lock,
-                    color: inputDecorationTheme.prefixIconColor ??
-                        colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  labelStyle: inputDecorationTheme.labelStyle ??
-                      textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.7)),
-                  hintStyle: inputDecorationTheme.hintStyle ??
-                      textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.4)),
-                  filled: inputDecorationTheme.filled,
-                  fillColor: inputDecorationTheme.fillColor,
-                  border: inputDecorationTheme.border,
-                  focusedBorder: inputDecorationTheme.focusedBorder,
-                  enabledBorder: inputDecorationTheme.enabledBorder,
-                ),
-                obscureText: true,
-                style:
-                    textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
-              ),
-              SizedBox(height: 10.h),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _rememberMe,
-                    onChanged: (val) =>
-                        setState(() => _rememberMe = val ?? false),
-                    activeColor: colorScheme.primary,
-                    checkColor: colorScheme.onPrimary,
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() => _rememberMe = !_rememberMe),
-                    child: Text(
-                      'Beni Hatırla',
-                      style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.9)),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset(
+                      'assets/images/spiride_logo_main_page.png',
+                      width: 220.w,
+                      height: 220.h,
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _login,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 48.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r),
+                    SizedBox(height: 32.h),
+                    TextField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Kullanıcı Adı',
+                        prefixIcon: Icon(
+                          Icons.person,
+                          color: inputDecorationTheme.prefixIconColor ??
+                              colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
+                      keyboardType: TextInputType.text,
+                      style: textTheme.bodyLarge
+                          ?.copyWith(color: colorScheme.onSurface),
+                    ),
+                    SizedBox(height: 20.h),
+                    TextField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Şifre',
+                        prefixIcon: Icon(
+                          Icons.lock,
+                          color: inputDecorationTheme.prefixIconColor ??
+                              colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      obscureText: true,
+                      style: textTheme.bodyLarge
+                          ?.copyWith(color: colorScheme.onSurface),
+                    ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (val) =>
+                                  setState(() => _rememberMe = val ?? false),
+                              activeColor: colorScheme.primary,
+                              checkColor: colorScheme.onPrimary,
+                            ),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _rememberMe = !_rememberMe),
+                              child: Text(
+                                'Beni Hatırla',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurface.withOpacity(0.9),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            _showError(
+                                "Şifre sıfırlama özelliği yakında eklenecek.");
+                          },
+                          child: Text(
+                            'Şifremi Unuttum',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: _login,
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: Size(double.infinity, 48.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                            ),
+                            child: Text(
+                              'Giriş Yap',
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                    SizedBox(height: 20.h),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterPage()),
+                        );
+                      },
                       child: Text(
-                        'Giriş Yap',
-                        style: textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
+                        'Hesabın yok mu? Kayıt Ol',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-              SizedBox(height: 20.h),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterPage()),
-                  );
-                },
-                child: Text(
-                  'Hesabın yok mu? Kayıt Ol',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
