@@ -149,6 +149,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: Icon(
                           Icons.person,
                           color: inputDecorationTheme.prefixIconColor ??
+                              // ignore: deprecated_member_use
                               colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
@@ -164,6 +165,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: Icon(
                           Icons.email,
                           color: inputDecorationTheme.prefixIconColor ??
+                              // ignore: deprecated_member_use
                               colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
@@ -179,6 +181,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         prefixIcon: Icon(
                           Icons.lock,
                           color: inputDecorationTheme.prefixIconColor ??
+                              // ignore: deprecated_member_use
                               colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),

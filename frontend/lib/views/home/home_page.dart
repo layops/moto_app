@@ -3,6 +3,7 @@ import '../home/dashboard_page.dart';
 import '../groups/group_page.dart';
 import '../leaderboard/leaderboard_page.dart';
 import '../../widgets/custom_bottom_navbar.dart';
+import '../../widgets/maps_widgets/map_page.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
@@ -15,86 +16,51 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-
   late final List<Widget> _pages;
+  final List<String> _appBarTitles = const [
+    'Dashboard',
+    'Sıralama', // Leaderboard için
+    'Harita', // MapPage için
+    'Gruplar', // GroupPage için
+  ];
 
   @override
   void initState() {
     super.initState();
     _pages = [
       DashboardPage(username: widget.username),
-      const GroupPage(),
-      const LeaderboardPage(),
+      const LeaderboardPage(), // Index 1 (BottomNavBar'da "Sıralama")
+      const MapPage(), // Index 2 (FAB ile erişilen)
+      const GroupPage(), // Index 3 (BottomNavBar'da yok)
     ];
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _goTo(String route) {
-    Navigator.pop(context);
-    Navigator.pushNamed(context, route);
+    if (index >= 0 && index < _pages.length) {
+      setState(() => _selectedIndex = index);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          ['Dashboard', 'Group', 'Leaderboard'][_selectedIndex],
-        ),
+        title: Text(_appBarTitles[_selectedIndex]),
         centerTitle: true,
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(widget.username),
-              accountEmail: Text('${widget.username}@example.com'),
-              currentAccountPicture: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.black),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Anasayfa'),
-              onTap: () {
-                setState(() => _selectedIndex = 0);
-                Navigator.pop(context); // drawer'ı kapat
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profil'),
-              onTap: () => _goTo('/profile'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Ayarlar'),
-              onTap: () => _goTo('/settings'),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Çıkış Yap'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ),
-          ],
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
-      body: _pages[_selectedIndex],
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _onItemTapped(2), // Harita sayfasına geçiş
+        child: const Icon(Icons.map),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

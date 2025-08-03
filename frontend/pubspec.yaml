@@ -1,26 +1,38 @@
 name: motoapp_frontend
-description: A new Flutter project.
+description: MotoApp Flutter Frontend
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.16.0"
 
 dependencies:
-
   flutter:
     sdk: flutter
 
-  image_picker: ^0.8.7+5
-  provider: ^6.1.5
+  # Temel Paketler
   cupertino_icons: ^1.0.2
+  provider: ^6.1.5
   dio: ^5.3.3
   shared_preferences: ^2.2.2
   web_socket_channel: ^2.4.0
-  flutter_screenutil: ^5.9.0
   google_fonts: ^6.1.0
+  flutter_screenutil: ^5.9.0
+
+  # Görsel ve Medya
+  image_picker: ^0.8.7+5
   flutter_svg: ^2.0.9
+
+  # Harita ve Konum
+  flutter_map: ^5.0.0
+  latlong2: ^0.9.0
+  geolocator: ^11.0.0 # Güncellendi (10.0.0 yerine)
+  
+  # İsteğe Bağlı Ek Paketler
+  url_launcher: ^6.1.11 # Haritaları açmak için
+  permission_handler: ^11.0.1 # İzin yönetimi için
 
 dev_dependencies:
   flutter_test:
@@ -32,18 +44,19 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/spiride_logo.png
-
-flutter:
-  uses-material-design: true
-
-  assets:
-    - assets/images/
+  image_path: "assets/images/spiride_logo.png"
 
 flutter_native_splash:
-  color: "#ffffff"   # Beyaz arka plan
-  image: assets/images/spiride_logo.png  # Native splash logo (istersen kaldırabilirsin)
+  color: "#ffffff"
+  image: "assets/images/spiride_logo.png"
   android: true
   ios: true
   android_gravity: center
   ios_content_mode: scaleAspectFill
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/map_icons/ # Harita markerları için (isteğe bağlı)

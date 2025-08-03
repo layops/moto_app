@@ -163,6 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                         prefixIcon: Icon(
                           Icons.person,
                           color: inputDecorationTheme.prefixIconColor ??
+                              // ignore: deprecated_member_use
                               colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
@@ -178,6 +179,7 @@ class _LoginPageState extends State<LoginPage> {
                         prefixIcon: Icon(
                           Icons.lock,
                           color: inputDecorationTheme.prefixIconColor ??
+                              // ignore: deprecated_member_use
                               colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
@@ -204,6 +206,7 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'Beni Hatırla',
                                 style: textTheme.bodyMedium?.copyWith(
+                                  // ignore: deprecated_member_use
                                   color: colorScheme.onSurface.withOpacity(0.9),
                                 ),
                               ),

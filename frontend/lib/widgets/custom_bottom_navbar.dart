@@ -12,28 +12,31 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8.0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // Ana Sayfa
+          IconButton(
+            icon: Icon(Icons.home),
+            color: currentIndex == 0
+                ? Theme.of(context).primaryColor
+                : Colors.grey,
+            onPressed: () => onTap(0),
+          ),
 
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: onTap,
-      backgroundColor: theme.colorScheme.surface,
-      selectedItemColor: theme.colorScheme.primary,
-      unselectedItemColor: theme.unselectedWidgetColor ?? Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard),
-          label: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group),
-          label: 'Group',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.leaderboard),
-          label: 'Leaderboard',
-        ),
-      ],
+          // Sıralama
+          IconButton(
+            icon: Icon(Icons.leaderboard),
+            color: currentIndex == 1
+                ? Theme.of(context).primaryColor
+                : Colors.grey,
+            onPressed: () => onTap(1),
+          ),
+        ],
+      ),
     );
   }
 }
