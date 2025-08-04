@@ -1,8 +1,8 @@
-name: motoapp_frontend
-description: MotoApp Flutter Frontend
-publish_to: 'none'
+name: motoapp_frontend  # Uygulama adı (zorunlu)
+description: MotoApp Flutter Frontend  # Uygulama açıklaması
+publish_to: 'none'  # Pub.dev'e yayınlamayı kapat
 
-version: 1.0.0+1
+version: 1.0.0+1  # Versiyon numarası
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -11,52 +11,51 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
-  # Temel Paketler
-  cupertino_icons: ^1.0.2
-  provider: ^6.1.5
-  dio: ^5.3.3
-  shared_preferences: ^2.2.2
-  web_socket_channel: ^2.4.0
+  # UI & Tema
+  cupertino_icons: ^1.0.6
   google_fonts: ^6.1.0
   flutter_screenutil: ^5.9.0
-
-  # Görsel ve Medya
-  image_picker: ^0.8.7+5
   flutter_svg: ^2.0.9
 
+  # State Management
+  provider: ^6.1.5
+  flutter_riverpod: ^2.4.9
+
+  # Network & API
+  dio: ^5.3.3
+  web_socket_channel: ^3.0.3
+  retrofit: ^4.0.1
+
+  # Storage
+  shared_preferences: ^2.2.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
   # Harita ve Konum
-  flutter_map: ^5.0.0
+  flutter_map: ^8.2.1
   latlong2: ^0.9.0
-  geolocator: ^11.0.0 # Güncellendi (10.0.0 yerine)
-  
-  # İsteğe Bağlı Ek Paketler
-  url_launcher: ^6.1.11 # Haritaları açmak için
-  permission_handler: ^11.0.1 # İzin yönetimi için
+  geolocator: ^14.0.2
+  permission_handler: ^12.0.1
+
+  # Medya
+  file_picker: ^10.2.1
+  image_picker: ^1.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  flutter_launcher_icons: ^0.13.1
-  flutter_native_splash: ^2.2.13
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/images/spiride_logo.png"
-
-flutter_native_splash:
-  color: "#ffffff"
-  image: "assets/images/spiride_logo.png"
-  android: true
-  ios: true
-  android_gravity: center
-  ios_content_mode: scaleAspectFill
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.6
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.3.2
 
 flutter:
   uses-material-design: true
+  generate: true
   
   assets:
     - assets/images/
-    - assets/map_icons/ # Harita markerları için (isteğe bağlı)

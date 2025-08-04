@@ -17,8 +17,10 @@ class MapView extends StatelessWidget {
     return FlutterMap(
       mapController: controller,
       options: MapOptions(
-        center: initialPosition, // 'initialCenter' yerine 'center' kullanılıyor
-        zoom: 13, // 'initialZoom' yerine sadece 'zoom'
+        initialCenter:
+            initialPosition, // Changed from 'center' to 'initialCenter'
+        initialZoom:
+            13.0, // Changed from 'zoom' to 'initialZoom' and made it a double
       ),
       children: [
         TileLayer(

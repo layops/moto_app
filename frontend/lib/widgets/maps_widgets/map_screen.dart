@@ -60,8 +60,12 @@ class _MapScreenState extends State<MapScreen> {
           : FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                center: _currentPosition ?? const LatLng(41.0082, 28.9784),
-                zoom: 13,
+                initialCenter:
+                    _currentPosition ?? const LatLng(41.0082, 28.9784),
+                initialZoom: 13.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
+                ),
               ),
               children: [
                 TileLayer(
@@ -73,10 +77,8 @@ class _MapScreenState extends State<MapScreen> {
                   MarkerLayer(
                     markers: [
                       Marker(
-                        width: 40.0,
-                        height: 40.0,
                         point: _currentPosition!,
-                        builder: (ctx) => const Icon(Icons.motorcycle,
+                        child: const Icon(Icons.motorcycle,
                             color: Color(0xFFD10000), size: 30),
                       ),
                     ],

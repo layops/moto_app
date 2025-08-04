@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:dio/dio.dart';
-import 'package:motoapp_frontend/services/api_service.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class ProfilePhotoUploader extends StatefulWidget {
   const ProfilePhotoUploader({super.key});
@@ -17,9 +16,14 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   bool _isUploading = false;
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null && mounted) {
       setState(() {
         _image = File(pickedFile.path);
       });
@@ -27,78 +31,115 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   }
 
   Future<void> _uploadImage() async {
-    if (_image == null) return;
+    if (_image == null) {
+      if (!mounted) return;
+      _showMessage('Lütfen önce bir fotoğraf seçin');
+      return;
+    }
 
-    setState(() {
-      _isUploading = true;
-    });
+    setState(() => _isUploading = true);
 
     try {
-      final apiService = await ApiService.create();
+      final currentUser = await ServiceLocator.user.getCurrentUsername();
+      if (currentUser == null) throw Exception('Kullanıcı bilgisi bulunamadı');
 
-      FormData formData = FormData.fromMap({
-        "profile_image": await MultipartFile.fromFile(_image!.path,
-            filename: _image!.path.split('/').last),
-      });
+      final response = await ServiceLocator.profile.uploadProfileImage(
+        _image!,
+        currentUser,
+      );
 
-      final response = await apiService.post('profile/upload-photo/', formData);
+      if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fotoğraf başarıyla yüklendi')),
-        );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
       } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Yükleme hatası: ${response.statusCode}')),
+        _showMessage(
+          'Yükleme hatası: ${response.data?.toString() ?? 'Bilinmeyen hata'}',
         );
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hata: $e')),
-      );
+      if (mounted) {
+        _showMessage('Hata oluştu: ${e.toString()}');
+      }
     } finally {
       if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
+        setState(() => _isUploading = false);
       }
     }
   }
 
+  void _showMessage(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (_image != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(75),
-            child:
-                Image.file(_image!, width: 150, height: 150, fit: BoxFit.cover),
-          )
-        else
-          const Icon(Icons.account_circle, size: 150),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: _pickImage,
-          child: const Text('Fotoğraf Seç'),
+        Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: theme.primaryColor, width: 2),
+          ),
+          child: ClipOval(
+            child: _image != null
+                ? Image.file(_image!, fit: BoxFit.cover)
+                : Icon(Icons.account_circle,
+                    size: 150, color: Colors.grey[400]),
+          ),
         ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: _isUploading ? null : _uploadImage,
-          child: _isUploading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2),
-                )
-              : const Text('Fotoğrafı Yükle'),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildGalleryButton(theme),
+            const SizedBox(width: 16),
+            _buildUploadButton(theme),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _buildGalleryButton(ThemeData theme) {
+    return ElevatedButton.icon(
+      icon: const Icon(Icons.photo_library),
+      label: const Text('Galeri'),
+      onPressed: _pickImage,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildUploadButton(ThemeData theme) {
+    return ElevatedButton.icon(
+      icon: _isUploading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.cloud_upload),
+      label: Text(_isUploading ? 'Yükleniyor' : 'Yükle'),
+      onPressed: _isUploading ? null : _uploadImage,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        backgroundColor: _isUploading ? Colors.grey : theme.primaryColor,
+      ),
     );
   }
 }

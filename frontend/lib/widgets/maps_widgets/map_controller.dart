@@ -1,29 +1,47 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class CustomMapController {
   final MapController _mapController = MapController();
 
-  MapController get mapController => _mapController;
+  // Merkez koordinatı almak
+  LatLng get center => _mapController.camera.center;
 
-  // Konuma animasyonla gitme
-  Future<void> animatedMove(LatLng targetLocation, double zoomLevel) async {
-    _mapController.move(targetLocation, zoomLevel);
-    // Alternatif: Eğer animasyon eklemek isterseniz:
-    // _mapController.animate(targetLocation, zoomLevel, duration: Duration(milliseconds: 500));
+  // Zoom seviyesini almak
+  double get zoom => _mapController.camera.zoom;
+
+  // Basit hareket (animasyonsuz)
+  void move(LatLng newLocation, double zoomLevel) {
+    _mapController.move(newLocation, zoomLevel);
   }
 
-  // Mevcut konumu getir
-  LatLng? getCurrentCenter() {
-    return _mapController.center;
+  // Animasyonlu hareket (Güncel API)
+  Future<void> animatedMove({
+    required LatLng dest,
+    required double zoom,
+    Duration duration = const Duration(milliseconds: 500),
+  }) async {
+    // FlutterMap v8.x'te doğrudan move kullanımı
+    _mapController.move(dest, zoom);
+
+    // Alternatif olarak eğer animasyon süresi önemliyse:
+    await Future.delayed(duration); // Animasyon efekti için
   }
 
-  // Yakınlaştırma seviyesini değiştir
-  void setZoom(double zoom) {
-    _mapController.move(_mapController.center, zoom);
+  // Harita sınırlarını ayarlama
+  Future<void> fitBounds(LatLngBounds bounds) async {
+    await _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(50),
+      ),
+    );
   }
 
-  // Haritayı temizle (gerekiyorsa)
+  // Controller'a erişim
+  MapController get controller => _mapController;
+
   void dispose() {
     _mapController.dispose();
   }
