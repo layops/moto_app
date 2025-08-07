@@ -69,7 +69,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final email = context.findAncestorWidgetOfExactType<MainWrapper>()?.email ??
+    final email = context.findAncestorWidgetOfExactType<MainWrapper>()?.title ??
         'Misafir';
 
     return Scaffold(

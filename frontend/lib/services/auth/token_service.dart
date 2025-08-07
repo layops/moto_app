@@ -22,7 +22,7 @@ class TokenService {
   }
 
   Future<String?> getToken() async {
-    return await _storage.getString('auth_token');
+    return _storage.getString('auth_token');
   }
 
   Future<Map<String, dynamic>?> getTokenData() async {

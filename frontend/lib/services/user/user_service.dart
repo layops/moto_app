@@ -25,7 +25,7 @@ class UserService {
   }
 
   Future<String?> getCurrentUsername() async {
-    return await _storage.getCurrentUsername();
+    return _storage.getCurrentUsername();
   }
 
   // Kullanıcı bilgilerini güncelleme örneği

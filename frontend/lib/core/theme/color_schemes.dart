@@ -8,7 +8,6 @@ class AppColorSchemes {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: Colors.white,
-        background: Color(0xFFf5f5f5),
         error: Color(0xFFb00020),
       );
 
@@ -16,7 +15,6 @@ class AppColorSchemes {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: Color(0xFF121212),
-        background: Color(0xFF1E1E1E),
         error: Color(0xFFcf6679),
       );
 }

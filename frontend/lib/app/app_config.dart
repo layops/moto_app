@@ -36,7 +36,7 @@ class AppConfig extends StatelessWidget {
                 routes: {
                   '/login': (context) => const LoginPage(),
                   '/home': (context) => MainWrapper(
-                        email: 'user@example.com',
+                        title: 'user@example.com',
                         pages: const [
                           HomePage(),
                           GroupsPage(),

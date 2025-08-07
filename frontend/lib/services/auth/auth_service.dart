@@ -49,8 +49,8 @@ class AuthService {
     }
 
     // Sonra storage'dan kontrol et
-    return await _storage.getString('current_username') ??
-        await _storage.getString('rememberedUsername');
+    return _storage.getString('current_username') ??
+        _storage.getString('rememberedUsername');
   }
 
   // Remember me fonksiyonları
@@ -59,7 +59,7 @@ class AuthService {
   }
 
   Future<bool> getRememberMe() async {
-    return (await _storage.getBool('rememberMe')) ?? false;
+    return (_storage.getBool('rememberMe')) ?? false;
   }
 
   Future<void> saveRememberedUsername(String username) async {
@@ -67,7 +67,7 @@ class AuthService {
   }
 
   Future<String?> getRememberedUsername() async {
-    return await _storage.getString('rememberedUsername');
+    return _storage.getString('rememberedUsername');
   }
 
   Future<void> clearRememberedUsername() async {

@@ -11,7 +11,7 @@ class ApiInterceptors extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await _storage.getAuthToken();
+    final token = _storage.getAuthToken();
     if (token != null) {
       options.headers['Authorization'] = 'Token $token';
     }

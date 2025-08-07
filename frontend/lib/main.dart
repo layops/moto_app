@@ -3,60 +3,71 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/core/providers/theme_provider.dart';
-import 'package:motoapp_frontend/core/theme/app_theme.dart';
+import 'package:motoapp_frontend/core/theme/light_theme.dart';
+import 'package:motoapp_frontend/core/theme/dark_theme.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
+import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
+import 'package:motoapp_frontend/views/home/home_page.dart';
+import 'package:motoapp_frontend/views/search/search_page.dart';
+import 'package:motoapp_frontend/views/map/map_page.dart';
+import 'package:motoapp_frontend/views/messages/messages_page.dart';
+import 'package:motoapp_frontend/views/profile/profile_page.dart';
 
 void main() async {
-  // Flutter engine hazır olana kadar bekler
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Servis locator'ı başlat
     await ServiceLocator.init();
-
-    // Uygulamayı başlat
     runApp(
-      ChangeNotifierProvider(
-        create: (context) => ThemeProvider(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
         child: const MotoApp(),
       ),
     );
   } catch (e, stackTrace) {
-    // Hata durumunda fallback UI göster
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
+    _runFallbackApp(e, stackTrace);
+  }
+}
+
+void _runFallbackApp(Object error, StackTrace stackTrace) {
+  runApp(
+    MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
+                Icon(Icons.error_outline, size: 48.w, color: Colors.red),
+                SizedBox(height: 16.h),
                 Text(
                   'Uygulama başlatılamadı',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style:
+                      TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
-                  'Hata: $e',
+                  'Hata: ${error.toString()}',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14.sp),
+                ),
+                SizedBox(height: 24.h),
+                ElevatedButton(
+                  onPressed: () => main(),
+                  child: Text('Tekrar Dene', style: TextStyle(fontSize: 16.sp)),
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
-
-    // Hata detaylarını logla
-    debugPrint('Uygulama başlatma hatası: $e');
-    debugPrint('Stack trace: $stackTrace');
-  }
+    ),
+  );
 }
 
 class MotoApp extends StatelessWidget {
@@ -65,54 +76,71 @@ class MotoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(360, 690), // Tasarım ölçüleri
-      minTextAdapt: true, // Metinlerin responsive olması
-      splitScreenMode: true, // Tablet/desktop uyumluluğu
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
       builder: (context, child) {
         return Consumer<ThemeProvider>(
           builder: (context, themeProvider, _) {
             return MaterialApp(
-              title: 'MotoApp',
+              title: 'Moto App',
               debugShowCheckedModeBanner: false,
-
-              // Tema Ayarları
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
+              theme: LightTheme.theme,
+              darkTheme: DarkTheme.theme,
               themeMode: themeProvider.themeMode,
-
-              // Localization Ayarları
               locale: const Locale('tr', 'TR'),
-              supportedLocales: const [
-                Locale('tr', 'TR'), // Türkçe
-                Locale('en', 'US'), // İngilizce (fallback)
-              ],
+              supportedLocales: const [Locale('tr', 'TR')],
               localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
               ],
-
-              // Navigasyon Ayarları
               home: const LoginPage(),
               navigatorKey: ServiceLocator.navigatorKey,
               scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
-
-              // Performans Ayarları
               builder: (context, child) {
                 return MediaQuery(
-                  data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(1.0)),
                   child: child!,
                 );
               },
-
-              // Diğer Global Ayarlar
-              scrollBehavior: const MaterialScrollBehavior().copyWith(
-                physics: const BouncingScrollPhysics(),
-              ),
             );
           },
         );
       },
+    );
+  }
+}
+
+// LoginPage'den başarılı giriş sonrası örnek kullanım:
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainWrapper(
+                  pages: [
+                    const HomePage(),
+                    const SearchPage(),
+                    const MapPage(),
+                    const MessagesPage(),
+                    const ProfilePage(),
+                  ],
+                  navItems: NavigationItems.items,
+                ),
+              ),
+            );
+          },
+          child: const Text('Giriş Yap'),
+        ),
+      ),
     );
   }
 }

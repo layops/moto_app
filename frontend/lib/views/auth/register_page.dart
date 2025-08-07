@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 
@@ -61,6 +62,11 @@ class _RegisterPageState extends State<RegisterPage> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+        ),
       ),
     );
   }
@@ -70,6 +76,11 @@ class _RegisterPageState extends State<RegisterPage> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+        ),
       ),
     );
   }
@@ -89,23 +100,46 @@ class _RegisterPageState extends State<RegisterPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kayıt Ol'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: ThemeConstants.paddingMedium,
           child: Form(
             key: _formKey,
             child: Column(
               children: [
+                SizedBox(height: 50.h),
+                // Logo - login_page ile aynı
+                Image.asset(
+                  'assets/images/spiride_logo_main_page.png',
+                  height: 190.h,
+                  width: 190.w,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: 40.h),
+
                 // Kullanıcı Adı
                 TextFormField(
                   controller: _usernameController,
+                  style: theme.textTheme.bodyLarge,
+                  cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Kullanıcı Adı',
+                    labelStyle: theme.textTheme.bodyLarge
+                        // ignore: deprecated_member_use
+                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                     prefixIcon: Icon(Icons.person, color: colors.primary),
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.primary, width: 2),
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -120,10 +154,26 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  style: theme.textTheme.bodyLarge,
+                  cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Email',
+                    labelStyle: theme.textTheme.bodyLarge
+                        // ignore: deprecated_member_use
+                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                     prefixIcon: Icon(Icons.email, color: colors.primary),
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: colors.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.primary, width: 2),
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -141,8 +191,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  style: theme.textTheme.bodyLarge,
+                  cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Şifre',
+                    labelStyle: theme.textTheme.bodyLarge
+                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                     prefixIcon: Icon(Icons.lock, color: colors.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -154,7 +208,18 @@ class _RegisterPageState extends State<RegisterPage> {
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: colors.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.primary, width: 2),
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -172,8 +237,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  style: theme.textTheme.bodyLarge,
+                  cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Şifre Tekrar',
+                    labelStyle: theme.textTheme.bodyLarge
+                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                     prefixIcon: Icon(Icons.lock, color: colors.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -185,33 +254,67 @@ class _RegisterPageState extends State<RegisterPage> {
                       onPressed: () => setState(() =>
                           _obscureConfirmPassword = !_obscureConfirmPassword),
                     ),
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: colors.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: colors.primary, width: 2),
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
+                    ),
                   ),
                 ),
                 SizedBox(height: 32.h),
 
                 // Kayıt Ol Butonu
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 50.h),
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          ThemeConstants.borderRadiusMedium),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('KAYIT OL'),
+                    padding: ThemeConstants.paddingMedium,
                   ),
+                  child: _isLoading
+                      ? SizedBox(
+                          height: 24.h,
+                          width: 24.h,
+                          child: CircularProgressIndicator(
+                            color: colors.onPrimary,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Text(
+                          'KAYIT OL',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colors.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
                 SizedBox(height: 16.h),
 
-                // Giriş Sayfası Linki
+                // Giriş Yap Butonu
                 TextButton(
                   onPressed: () => Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => const LoginPage()),
                   ),
-                  child: const Text('Zaten hesabın var mı? Giriş Yap'),
+                  child: Text(
+                    'Zaten hesabın var mı? Giriş Yap',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colors.secondary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ],
             ),
