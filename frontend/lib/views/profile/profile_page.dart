@@ -73,11 +73,6 @@ class _ProfilePageState extends State<ProfilePage> {
         'Misafir';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil'),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

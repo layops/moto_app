@@ -6,18 +6,6 @@ class MessagesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Messages'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // Yeni mesaj oluştur
-            },
-          ),
-        ],
-      ),
       body: ListView.builder(
         itemCount: 15,
         itemBuilder: (context, index) {
