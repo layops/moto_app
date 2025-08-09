@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-import '../settings/settings_page.dart'; // Ayarlar sayfası için import ekle
+import '../settings/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String email;
@@ -20,90 +20,30 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
-  bool _isLoading = false;
-
-  Future<void> _pickImage() async {
-    try {
-      final pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (pickedFile != null) {
-        setState(() => _imageFile = File(pickedFile.path));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Fotoğraf seçilirken hata oluştu: ${e.toString()}'),
-        ),
-      );
-    }
-  }
-
-  Future<void> _uploadImage() async {
-    if (_imageFile == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      widget.onImageUploaded?.call(_imageFile!);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil fotoğrafı güncellendi')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Yükleme hatası: ${e.toString()}')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
+  int _selectedTab = 0;
 
   void _signOut(BuildContext context) {
-    // TODO: Oturum temizleme işlemi ekle (örneğin token temizleme)
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final email = widget.email;
-
     return Scaffold(
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color(0xFFd32f2f),
-              ),
+              decoration: BoxDecoration(color: Color(0xFFd32f2f)),
               child: Text(
                 'Profil Menüsü',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('Profil Düzenle'),
-              onTap: () {
-                Navigator.pop(context);
-                // Profil düzenleme sayfası yönlendirmesi ekleyebilirsin
-              },
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
               leading: const Icon(Icons.settings),
@@ -120,72 +60,185 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Çıkış Yap'),
-              onTap: () {
-                Navigator.pop(context);
-                _signOut(context);
-              },
+              onTap: () => _signOut(context),
             ),
           ],
         ),
       ),
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 30),
-            Stack(
-              alignment: Alignment.bottomRight,
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
                 CircleAvatar(
-                  radius: 60,
-                  backgroundColor:
-                      Theme.of(context).primaryColor.withOpacity(0.1),
-                  backgroundImage:
-                      _imageFile != null ? FileImage(_imageFile!) : null,
+                  radius: 50,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
                   child: _imageFile == null
-                      ? Icon(
-                          Icons.account_circle,
-                          size: 120,
-                          color: Colors.grey[400],
-                        )
+                      ? Icon(Icons.account_circle, size: 100, color: Colors.grey[400])
                       : null,
                 ),
-                FloatingActionButton.small(
-                  onPressed: _pickImage,
-                  child: const Icon(Icons.camera_alt),
+                const SizedBox(height: 16),
+                Text(
+                  widget.email,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text('Takip Et'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text('Mesaj'),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              email,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+          ),
+          Container(
+            height: 55,
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
-            const SizedBox(height: 40),
-            if (_imageFile != null)
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _uploadImage,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.cloud_upload),
-                label: Text(_isLoading ? 'Yükleniyor...' : 'Fotoğrafı Kaydet'),
-              ),
-          ],
-        ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTab = 0),
+                    child: Container(
+                      color: _selectedTab == 0 ? Colors.grey[200] : null,
+                      height: 45,
+                      child: Icon(
+                        Icons.post_add,
+                        color: _selectedTab == 0 
+                            ? Theme.of(context).primaryColor 
+                            : Colors.grey,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTab = 1),
+                    child: Container(
+                      color: _selectedTab == 1 ? Colors.grey[200] : null,
+                      height: 45,
+                      child: Icon(
+                        Icons.photo_library,
+                        color: _selectedTab == 1 
+                            ? Theme.of(context).primaryColor 
+                            : Colors.grey,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTab = 2),
+                    child: Container(
+                      color: _selectedTab == 2 ? Colors.grey[200] : null,
+                      height: 45,
+                      child: Icon(
+                        Icons.info,
+                        color: _selectedTab == 2 
+                            ? Theme.of(context).primaryColor 
+                            : Colors.grey,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _selectedTab == 0
+                ? _buildPostsContent()
+                : _selectedTab == 1
+                    ? _buildMediaContent()
+                    : _buildProfileInfoContent(),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildPostsContent() {
+    return const Center(
+      child: Text('Postlar Burada Gösterilecek', style: TextStyle(fontSize: 18)),
+    );
+  }
+
+  Widget _buildMediaContent() {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
+      ),
+      itemCount: 12,
+      itemBuilder: (context, index) {
+        return Container(
+          color: Colors.grey[200],
+          child: Center(
+            child: Icon(
+              index % 3 == 0 ? Icons.videocam : Icons.photo,
+              size: 40,
+              color: Colors.grey[600],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileInfoContent() {
+    return ListView(
+      children: const [
+        ListTile(
+          leading: Icon(Icons.email),
+          title: Text('Email'),
+          subtitle: Text('user@example.com'),
+        ),
+        ListTile(
+          leading: Icon(Icons.calendar_today),
+          title: Text('Üyelik Tarihi'),
+          subtitle: Text('1 Ocak 2023'),
+        ),
+        ListTile(
+          leading: Icon(Icons.location_on),
+          title: Text('Konum'),
+          subtitle: Text('İstanbul, Türkiye'),
+        ),
+        ListTile(
+          leading: Icon(Icons.motorcycle),
+          title: Text('Motor Modeli'),
+          subtitle: Text('Yamaha MT-07'),
+        ),
+      ],
     );
   }
 }
