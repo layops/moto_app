@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'dart:io';
 
+import '../settings/settings_page.dart'; // Ayarlar sayfası için import ekle
+
 class ProfilePage extends StatefulWidget {
+  final String email;
   final void Function(File)? onImageUploaded;
 
   const ProfilePage({
     super.key,
+    required this.email,
     this.onImageUploaded,
   });
 
@@ -36,7 +39,8 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Fotoğraf seçilirken hata oluştu: ${e.toString()}')),
+          content: Text('Fotoğraf seçilirken hata oluştu: ${e.toString()}'),
+        ),
       );
     }
   }
@@ -67,12 +71,67 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _signOut(BuildContext context) {
+    // TODO: Oturum temizleme işlemi ekle (örneğin token temizleme)
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final email = context.findAncestorWidgetOfExactType<MainWrapper>()?.title ??
-        'Misafir';
+    final email = widget.email;
 
     return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Color(0xFFd32f2f),
+              ),
+              child: Text(
+                'Profil Menüsü',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Profil Düzenle'),
+              onTap: () {
+                Navigator.pop(context);
+                // Profil düzenleme sayfası yönlendirmesi ekleyebilirsin
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Ayarlar'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Çıkış Yap'),
+              onTap: () {
+                Navigator.pop(context);
+                _signOut(context);
+              },
+            ),
+          ],
+        ),
+      ),
+      appBar: AppBar(
+        title: const Text('Profil'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

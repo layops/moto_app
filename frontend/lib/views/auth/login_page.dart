@@ -49,12 +49,13 @@ class _LoginPageState extends State<LoginPage> {
           context,
           MaterialPageRoute(
             builder: (_) => MainWrapper(
-              title: _usernameController.text,
-              pages: const [
-                HomePage(),
-                GroupsPage(),
-                ProfilePage(),
-                SettingsPage(),
+              pages: [
+                const HomePage(),
+                const GroupsPage(),
+                ProfilePage(
+                    email:
+                        _usernameController.text), // Email parametresi verildi
+                const SettingsPage(),
               ],
               navItems: const [
                 BottomNavItem(icon: Icons.home, label: 'Ana Sayfa', index: 0),
@@ -102,10 +103,11 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   labelText: 'Kullanıcı Adı',
                   labelStyle: theme.textTheme.bodyLarge
+                      // ignore: deprecated_member_use
                       ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                   prefixIcon: Icon(Icons.person, color: colors.primary),
                   filled: true,
-                  fillColor: colors.surfaceVariant,
+                  fillColor: colors.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                         ThemeConstants.borderRadiusMedium),
@@ -130,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   labelText: 'Şifre',
                   labelStyle: theme.textTheme.bodyLarge
+                      // ignore: deprecated_member_use
                       ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                   prefixIcon: Icon(Icons.lock, color: colors.primary),
                   suffixIcon: IconButton(
@@ -146,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   filled: true,
-                  fillColor: colors.surfaceVariant,
+                  fillColor: colors.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(
                         ThemeConstants.borderRadiusMedium),

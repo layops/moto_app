@@ -126,12 +126,13 @@ class LoginPage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => MainWrapper(
-                  pages: [
-                    const HomePage(),
-                    const SearchPage(),
-                    const MapPage(),
-                    const MessagesPage(),
-                    const ProfilePage(),
+                  pages: const [
+                    HomePage(),
+                    SearchPage(),
+                    MapPage(),
+                    MessagesPage(),
+                    ProfilePage(
+                        email: 'user@example.com'), // email parametre eklendi
                   ],
                   navItems: NavigationItems.items,
                 ),

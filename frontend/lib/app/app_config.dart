@@ -36,11 +36,11 @@ class AppConfig extends StatelessWidget {
                 routes: {
                   '/login': (context) => const LoginPage(),
                   '/home': (context) => MainWrapper(
-                        title: 'user@example.com',
                         pages: const [
                           HomePage(),
                           GroupsPage(),
-                          ProfilePage(),
+                          ProfilePage(
+                              email: ''), // Burada zorunlu email verildi
                           SettingsPage(),
                         ],
                         navItems: const [
@@ -59,7 +59,8 @@ class AppConfig extends StatelessWidget {
                 builder: (context, child) {
                   final mediaQuery = MediaQuery.of(context);
                   return MediaQuery(
-                    data: mediaQuery.copyWith(textScaleFactor: 1.0),
+                    data:
+                        mediaQuery.copyWith(textScaler: TextScaler.linear(1.0)),
                     child: child!,
                   );
                 },

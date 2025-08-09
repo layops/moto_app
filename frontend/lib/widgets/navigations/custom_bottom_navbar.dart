@@ -40,6 +40,7 @@ class CustomBottomNavBar extends StatelessWidget {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isSelected
+                            // ignore: deprecated_member_use
                             ? theme.colorScheme.primary.withOpacity(0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
@@ -49,6 +50,7 @@ class CustomBottomNavBar extends StatelessWidget {
                         size: 24,
                         color: isSelected
                             ? theme.colorScheme.primary
+                            // ignore: deprecated_member_use
                             : theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
@@ -62,6 +64,7 @@ class CustomBottomNavBar extends StatelessWidget {
                             isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected
                             ? theme.colorScheme.primary
+                            // ignore: deprecated_member_use
                             : theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),

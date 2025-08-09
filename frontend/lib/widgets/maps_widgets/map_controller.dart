@@ -31,7 +31,7 @@ class CustomMapController {
 
   // Harita sınırlarını ayarlama
   Future<void> fitBounds(LatLngBounds bounds) async {
-    await _mapController.fitCamera(
+    _mapController.fitCamera(
       CameraFit.bounds(
         bounds: bounds,
         padding: const EdgeInsets.all(50),

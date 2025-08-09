@@ -5,11 +5,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLeadingPressed;
   final List<Widget>? actions;
   final bool showLeadingIcon;
-  final IconData? leadingIcon;
+  final IconData leadingIcon;
   final Color? backgroundColor;
   final double? elevation;
   final TextStyle? titleStyle;
-  final Widget? floatingActionButton;
+  final Widget? bottomWidget; // Daha açıklayıcı isim
 
   const CustomAppBar({
     super.key,
@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.elevation = 0,
     this.titleStyle,
-    this.floatingActionButton,
+    this.bottomWidget,
   });
 
   @override
@@ -29,7 +29,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
-      backgroundColor: backgroundColor ?? theme.colorScheme.surface,
+      backgroundColor: backgroundColor ??
+          theme.appBarTheme.backgroundColor ??
+          theme.colorScheme.surface,
       elevation: elevation,
       centerTitle: true,
       title: Text(
@@ -42,16 +44,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: showLeadingIcon
           ? IconButton(
               icon: Icon(leadingIcon),
-              onPressed: onLeadingPressed ?? () => Navigator.maybePop(context),
+              onPressed: onLeadingPressed ??
+                  () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  },
             )
           : null,
       actions: actions,
-      flexibleSpace: floatingActionButton != null
+      flexibleSpace: bottomWidget != null
           ? Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
-                child: floatingActionButton,
+                child: bottomWidget,
               ),
             )
           : null,
@@ -59,5 +66,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 20);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottomWidget != null ? 20 : 0));
 }
