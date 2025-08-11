@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
@@ -7,8 +8,18 @@ class AuthService {
   final ApiClient _apiClient;
   final TokenService _tokenService;
   final LocalStorage _storage;
+  final StreamController<bool> _authStateController =
+      StreamController<bool>.broadcast();
 
   AuthService(this._apiClient, this._tokenService, this._storage);
+
+  Stream<bool> get authStateChanges => _authStateController.stream;
+
+  // Uygulama başlangıcında kimlik durumunu kontrol et
+  Future<void> initializeAuthState() async {
+    final isLoggedIn = await this.isLoggedIn();
+    _authStateController.add(isLoggedIn);
+  }
 
   Future<Response> login(String username, String password) async {
     try {
@@ -20,8 +31,8 @@ class AuthService {
       final token = _extractToken(response);
       if (token.isNotEmpty) {
         await _tokenService.saveAuthData(token, username);
-        await _storage.setString(
-            'current_username', username); // Güncel kullanıcı adını kaydet
+        await _storage.setString('current_username', username);
+        _authStateController.add(true); // Giriş başarılı
       }
       return response;
     } on DioException catch (e) {
@@ -30,30 +41,46 @@ class AuthService {
     }
   }
 
+  Future<Response> register({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        'register/',
+        {
+          'username': username,
+          'email': email,
+          'password': password,
+        },
+      );
+      return response;
+    } on DioException catch (e) {
+      throw Exception(
+          'Kayıt hatası: ${e.response?.data?['detail'] ?? e.message}');
+    }
+  }
+
   Future<void> logout() async {
     await _tokenService.deleteAuthData();
-    await _storage
-        .remove('current_username'); // Çıkış yapınca kullanıcı adını sil
+    await _storage.remove('current_username');
+    _authStateController.add(false); // Çıkış yapıldı
   }
 
   Future<bool> isLoggedIn() async {
     return await _tokenService.hasToken();
   }
 
-  // Kullanıcı adı yönetimi
   Future<String?> getCurrentUsername() async {
-    // Önce token'dan kontrol et
     final tokenData = await _tokenService.getTokenData();
     if (tokenData?['username'] != null) {
       return tokenData!['username'] as String;
     }
-
-    // Sonra storage'dan kontrol et
     return _storage.getString('current_username') ??
         _storage.getString('rememberedUsername');
   }
 
-  // Remember me fonksiyonları
   Future<void> saveRememberMe(bool rememberMe) async {
     await _storage.setBool('rememberMe', rememberMe);
   }
@@ -74,7 +101,6 @@ class AuthService {
     await _storage.remove('rememberedUsername');
   }
 
-  // Token çıkarma işlemi
   String _extractToken(Response response) {
     try {
       return response.data['token'] ??
@@ -86,11 +112,15 @@ class AuthService {
     }
   }
 
-  // Kullanıcı verilerini temizleme (tam logout için)
   Future<void> clearAllUserData() async {
     await _tokenService.deleteAuthData();
     await _storage.remove('current_username');
     await _storage.remove('rememberedUsername');
     await _storage.remove('rememberMe');
+    _authStateController.add(false);
+  }
+
+  void dispose() {
+    _authStateController.close();
   }
 }

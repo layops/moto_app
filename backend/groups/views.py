@@ -42,8 +42,12 @@ class GroupListCreateView(generics.ListCreateAPIView):
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    # Yeni eklenen filtreleme metodu
+    def get_queryset(self):
+        # Kullanıcının üyesi olduğu grupları getir
+        return self.request.user.member_of_groups.all()
+    
     def perform_create(self, serializer):
-        # Grubu oluşturan kullanıcıyı otomatik olarak owner olarak ayarla
         serializer.save(owner=self.request.user)
 
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/core/providers/theme_provider.dart';
 import 'package:motoapp_frontend/core/theme/light_theme.dart';
@@ -9,6 +10,8 @@ import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
+
+// TÜM SAYFALARI DOĞRUDAN VE TEK TEK IMPORT EDİN
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/search/search_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
@@ -20,6 +23,7 @@ void main() async {
 
   try {
     await ServiceLocator.init();
+    await ServiceLocator.auth.initializeAuthState();
     runApp(
       MultiProvider(
         providers: [
@@ -75,73 +79,70 @@ class MotoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthService authService = ServiceLocator.auth;
+
+    // SAYFALARI TANIMLAYIN (5 ÖĞELİ)
+    final List<Widget> pages = [
+      const HomePage(), // 0. index - Anasayfa
+      const SearchPage(), // 1. index - Arama
+      const MapPage(), // 2. index - Harita
+      const MessagesPage(), // 3. index - Mesajlar
+      const ProfilePage(), // 4. index - Profil
+    ];
+
+    // DEBUG: Sayfaların tiplerini konsola yazdır
+    debugPrint("Uygulama başlatılıyor. Tanımlanan sayfalar:");
+    for (int i = 0; i < pages.length; i++) {
+      debugPrint("Index $i: ${pages[i].runtimeType}");
+    }
+
     return ScreenUtilInit(
       designSize: const Size(360, 690),
       minTextAdapt: true,
       builder: (context, child) {
         return Consumer<ThemeProvider>(
           builder: (context, themeProvider, _) {
-            return MaterialApp(
-              title: 'Moto App',
-              debugShowCheckedModeBanner: false,
-              theme: LightTheme.theme,
-              darkTheme: DarkTheme.theme,
-              themeMode: themeProvider.themeMode,
-              locale: const Locale('tr', 'TR'),
-              supportedLocales: const [Locale('tr', 'TR')],
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-              ],
-              home: const LoginPage(),
-              navigatorKey: ServiceLocator.navigatorKey,
-              scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
-              builder: (context, child) {
-                return MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(1.0)),
-                  child: child!,
+            return StreamBuilder<dynamic>(
+              stream: authService.authStateChanges,
+              builder: (context, snapshot) {
+                final isAuthenticated = snapshot.hasData;
+
+                final homeScreen = isAuthenticated
+                    ? MainWrapper(
+                        pages: pages,
+                        navItems: NavigationItems.items,
+                      )
+                    : LoginPage(authService: authService);
+
+                return MaterialApp(
+                  title: 'Moto App',
+                  debugShowCheckedModeBanner: false,
+                  theme: LightTheme.theme,
+                  darkTheme: DarkTheme.theme,
+                  themeMode: themeProvider.themeMode,
+                  locale: const Locale('tr', 'TR'),
+                  supportedLocales: const [Locale('tr', 'TR')],
+                  localizationsDelegates: const [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                  ],
+                  home: homeScreen,
+                  navigatorKey: ServiceLocator.navigatorKey,
+                  scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
+                  builder: (context, child) {
+                    return MediaQuery(
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: const TextScaler.linear(1.0)),
+                      child: child!,
+                    );
+                  },
                 );
               },
             );
           },
         );
       },
-    );
-  }
-}
-
-// LoginPage'den başarılı giriş sonrası örnek kullanım:
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MainWrapper(
-                  pages: const [
-                    HomePage(),
-                    SearchPage(),
-                    MapPage(),
-                    MessagesPage(),
-                    ProfilePage(
-                        email: 'user@example.com'), // email parametre eklendi
-                  ],
-                  navItems: NavigationItems.items,
-                ),
-              ),
-            );
-          },
-          child: const Text('Giriş Yap'),
-        ),
-      ),
     );
   }
 }

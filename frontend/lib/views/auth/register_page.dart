@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
-import 'package:motoapp_frontend/services/service_locator.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  final AuthService authService;
+
+  const RegisterPage({super.key, required this.authService});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -33,25 +36,24 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ServiceLocator.user.register(
+      // AuthService.register metodunu kullan
+      await widget.authService.register(
         username: _usernameController.text,
         email: _emailController.text,
         password: _passwordController.text,
       );
 
-      if (response.statusCode == 201) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-          );
-          _showSuccess('Kayıt başarılı! Giriş yapabilirsiniz');
-        }
-      } else {
-        _showError(response.data['detail'] ?? 'Kayıt başarısız');
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(authService: widget.authService),
+          ),
+        );
+        _showSuccess('Kayıt başarılı! Giriş yapabilirsiniz');
       }
     } catch (e) {
-      _showError('Hata: ${e.toString()}');
+      _showError('Hata: ${e.toString().replaceFirst('Exception: ', '')}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -61,7 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColorSchemes.light.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius:
@@ -108,7 +110,6 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               children: [
                 SizedBox(height: 50.h),
-                // Logo - login_page ile aynı
                 Image.asset(
                   'assets/images/spiride_logo_main_page.png',
                   height: 190.h,
@@ -120,13 +121,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 // Kullanıcı Adı
                 TextFormField(
                   controller: _usernameController,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(color: colors.onSurface),
                   cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Kullanıcı Adı',
                     labelStyle: theme.textTheme.bodyLarge
-                        // ignore: deprecated_member_use
-                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+                        ?.copyWith(color: colors.onSurfaceVariant),
                     prefixIcon: Icon(Icons.person, color: colors.primary),
                     filled: true,
                     fillColor: colors.surfaceContainerHighest,
@@ -140,6 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(
                           ThemeConstants.borderRadiusMedium),
                     ),
+                    contentPadding: ThemeConstants.paddingMedium,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -154,13 +156,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(color: colors.onSurface),
                   cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     labelStyle: theme.textTheme.bodyLarge
-                        // ignore: deprecated_member_use
-                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+                        ?.copyWith(color: colors.onSurfaceVariant),
                     prefixIcon: Icon(Icons.email, color: colors.primary),
                     filled: true,
                     fillColor: colors.surfaceContainerHighest,
@@ -174,6 +176,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(
                           ThemeConstants.borderRadiusMedium),
                     ),
+                    contentPadding: ThemeConstants.paddingMedium,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -191,13 +194,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(color: colors.onSurface),
                   cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Şifre',
                     labelStyle: theme.textTheme.bodyLarge
-                        // ignore: deprecated_member_use
-                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+                        ?.copyWith(color: colors.onSurfaceVariant),
                     prefixIcon: Icon(Icons.lock, color: colors.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -221,6 +224,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(
                           ThemeConstants.borderRadiusMedium),
                     ),
+                    contentPadding: ThemeConstants.paddingMedium,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -238,13 +242,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(color: colors.onSurface),
                   cursorColor: colors.primary,
                   decoration: InputDecoration(
                     labelText: 'Şifre Tekrar',
                     labelStyle: theme.textTheme.bodyLarge
-                        // ignore: deprecated_member_use
-                        ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+                        ?.copyWith(color: colors.onSurfaceVariant),
                     prefixIcon: Icon(Icons.lock, color: colors.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -268,55 +272,74 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(
                           ThemeConstants.borderRadiusMedium),
                     ),
+                    contentPadding: ThemeConstants.paddingMedium,
                   ),
                 ),
                 SizedBox(height: 32.h),
 
                 // Kayıt Ol Butonu
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50.h),
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          ThemeConstants.borderRadiusMedium),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _register,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 50.h),
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            ThemeConstants.borderRadiusMedium),
+                      ),
+                      padding: ThemeConstants.paddingMedium,
+                      elevation: 2,
                     ),
-                    padding: ThemeConstants.paddingMedium,
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 24.h,
+                            width: 24.h,
+                            child: CircularProgressIndicator(
+                              color: colors.onPrimary,
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : Text(
+                            'KAYIT OL',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colors.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  child: _isLoading
-                      ? SizedBox(
-                          height: 24.h,
-                          width: 24.h,
-                          child: CircularProgressIndicator(
-                            color: colors.onPrimary,
-                            strokeWidth: 3,
-                          ),
-                        )
-                      : Text(
-                          'KAYIT OL',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colors.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                 ),
                 SizedBox(height: 16.h),
 
                 // Giriş Yap Butonu
-                TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  ),
-                  child: Text(
-                    'Zaten hesabın var mı? Giriş Yap',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colors.secondary,
-                      decoration: TextDecoration.underline,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Zaten hesabın var mı? ',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurface,
+                      ),
                     ),
-                  ),
+                    TextButton(
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              LoginPage(authService: widget.authService),
+                        ),
+                      ),
+                      child: Text(
+                        'Giriş Yap',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colors.secondary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

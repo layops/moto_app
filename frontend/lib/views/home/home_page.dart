@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_bars/base_app_bar.dart';
+import '../groups/group_page.dart'; // GroupsPage'i import et
 
 class HomePage extends StatelessWidget {
   final String? username; // Opsiyonel kullanıcı adı
@@ -13,10 +14,9 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        // Menü butonu için Drawer
         child: ListView(
-          children: const [
-            DrawerHeader(
+          children: [
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: Color(0xFFd32f2f),
               ),
@@ -29,12 +29,33 @@ class HomePage extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Ana Sayfa'),
+              leading: const Icon(Icons.home),
+              title: const Text('Ana Sayfa'),
+              onTap: () {
+                Navigator.pop(context); // Drawer'ı kapat
+                // İstersen ana sayfa zaten açıksa sadece kapatabilirsin
+              },
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Ayarlar'),
+              leading: const Icon(Icons.group),
+              title: const Text('Gruplar'),
+              onTap: () {
+                Navigator.pop(context); // Drawer'ı kapat
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GroupsPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Ayarlar'),
+              onTap: () {
+                Navigator.pop(context); // Drawer'ı kapat
+                // Ayarlar sayfasına geçiş kodunu buraya ekleyebilirsin
+              },
             ),
           ],
         ),
