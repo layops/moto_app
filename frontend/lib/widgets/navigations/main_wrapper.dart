@@ -61,7 +61,6 @@ class _MainWrapperState extends State<MainWrapper> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: safeIndex,
         items: widget.navItems.asMap().entries.map((entry) {
-          final index = entry.key;
           final item = entry.value;
           return BottomNavigationBarItem(
             icon: Icon(item.icon),

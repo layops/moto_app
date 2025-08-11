@@ -13,15 +13,21 @@ class AuthService {
 
   AuthService(this._apiClient, this._tokenService, this._storage);
 
+  // Burada apiClient getter’ı
+  ApiClient get apiClient => _apiClient;
+
   Stream<bool> get authStateChanges => _authStateController.stream;
 
-  // Uygulama başlangıcında kimlik durumunu kontrol et
   Future<void> initializeAuthState() async {
-    final isLoggedIn = await this.isLoggedIn();
-    _authStateController.add(isLoggedIn);
+    final loggedIn = await isLoggedIn();
+    _authStateController.add(loggedIn);
   }
 
-  Future<Response> login(String username, String password) async {
+  Future<Response> login(
+    String username,
+    String password, {
+    bool rememberMe = false,
+  }) async {
     try {
       final response = await _apiClient.post(
         'login/',
@@ -32,7 +38,15 @@ class AuthService {
       if (token.isNotEmpty) {
         await _tokenService.saveAuthData(token, username);
         await _storage.setString('current_username', username);
-        _authStateController.add(true); // Giriş başarılı
+
+        await saveRememberMe(rememberMe);
+        if (rememberMe) {
+          await saveRememberedUsername(username);
+        } else {
+          await clearRememberedUsername();
+        }
+
+        _authStateController.add(true);
       }
       return response;
     } on DioException catch (e) {
@@ -63,13 +77,15 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _tokenService.deleteAuthData();
-    await _storage.remove('current_username');
-    _authStateController.add(false); // Çıkış yapıldı
+    await clearAllUserData();
   }
 
   Future<bool> isLoggedIn() async {
     return await _tokenService.hasToken();
+  }
+
+  Future<String?> getToken() async {
+    return await _tokenService.getToken();
   }
 
   Future<String?> getCurrentUsername() async {

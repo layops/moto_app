@@ -31,6 +31,9 @@ class ApiClient {
     _dio.interceptors.add(ApiInterceptors(_storage));
   }
 
+  // Dio instance'ını dışarıya açan getter
+  Dio get dio => _dio;
+
   Future<Response> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {

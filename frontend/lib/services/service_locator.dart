@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'storage/local_storage.dart';
 import 'http/api_client.dart';
 import 'auth/auth_service.dart';
@@ -47,13 +48,13 @@ class ServiceLocator {
       _instance._localStorage = LocalStorage();
       await _instance._localStorage.init();
 
-      // 2. Initialize API client
+      // 2. Initialize API client with Dio
       _instance._apiClient = ApiClient(_instance._localStorage);
 
       // 3. Initialize token service
       _instance._tokenService = TokenService(_instance._localStorage);
 
-      // 4. Initialize auth service
+      // 4. Initialize auth service WITHOUT Dio param (3 args only)
       _instance._authService = AuthService(
         _instance._apiClient,
         _instance._tokenService,
@@ -74,7 +75,7 @@ class ServiceLocator {
 
       _isInitialized = true;
     } catch (e, stackTrace) {
-      await reset(); // _reset yerine reset kullanıyoruz
+      await reset();
       throw ServiceLocatorError(
           'ServiceLocator initialization failed', e, stackTrace);
     }

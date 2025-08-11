@@ -1,12 +1,10 @@
-# groups/models.py
 from django.db import models
 from django.conf import settings
 
 class Group(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Grup Adı")
     description = models.TextField(blank=True, verbose_name="Açıklama")
-    # Eklediğiniz veya olması gereken is_public alanı
-    is_public = models.BooleanField(default=True, verbose_name="Herkese Açık Mı?") # <-- BU SATIRI EKLEYİN/DÜZENLEYİN
+    is_public = models.BooleanField(default=True, verbose_name="Herkese Açık Mı?")
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

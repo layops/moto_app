@@ -11,7 +11,6 @@ import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 
-// TÜM SAYFALARI DOĞRUDAN VE TEK TEK IMPORT EDİN
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/search/search_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
@@ -28,6 +27,9 @@ void main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          Provider<AuthService>.value(
+              value: ServiceLocator
+                  .auth), // <-- Burada AuthService provider eklendi
         ],
         child: const MotoApp(),
       ),
@@ -81,16 +83,14 @@ class MotoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final AuthService authService = ServiceLocator.auth;
 
-    // SAYFALARI TANIMLAYIN (5 ÖĞELİ)
     final List<Widget> pages = [
-      const HomePage(), // 0. index - Anasayfa
-      const SearchPage(), // 1. index - Arama
-      const MapPage(), // 2. index - Harita
-      const MessagesPage(), // 3. index - Mesajlar
-      const ProfilePage(), // 4. index - Profil
+      const HomePage(),
+      const SearchPage(),
+      const MapPage(),
+      const MessagesPage(),
+      const ProfilePage(),
     ];
 
-    // DEBUG: Sayfaların tiplerini konsola yazdır
     debugPrint("Uygulama başlatılıyor. Tanımlanan sayfalar:");
     for (int i = 0; i < pages.length; i++) {
       debugPrint("Index $i: ${pages[i].runtimeType}");
@@ -132,8 +132,8 @@ class MotoApp extends StatelessWidget {
                   scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
                   builder: (context, child) {
                     return MediaQuery(
-                      data: MediaQuery.of(context)
-                          .copyWith(textScaler: const TextScaler.linear(1.0)),
+                      data: MediaQuery.of(context).copyWith(
+                          textScaler: TextScaler.linear(1.0)), // düzeltildi
                       child: child!,
                     );
                   },
