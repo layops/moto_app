@@ -40,6 +40,7 @@ class _AddEventPageState extends State<AddEventPage> {
     if (date == null) return;
 
     final time = await showTimePicker(
+      // ignore: use_build_context_synchronously
       context: context,
       initialTime: const TimeOfDay(hour: 12, minute: 0),
     );
@@ -48,10 +49,11 @@ class _AddEventPageState extends State<AddEventPage> {
     final dt =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
-      if (isStart)
+      if (isStart) {
         _start = dt;
-      else
+      } else {
         _end = dt;
+      }
     });
   }
 
@@ -84,6 +86,7 @@ class _AddEventPageState extends State<AddEventPage> {
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata: ${e.toString()}')),
       );
