@@ -11,7 +11,8 @@ urlpatterns = [
     path('<int:pk>/join-leave/', GroupJoinLeaveView.as_view(), name='group-join-leave'),
     path('<int:group_pk>/members/<int:user_pk>/', GroupMemberDetailView.as_view(), name='group-member-detail'),
 
-    path('<int:group_pk>/posts/', include('posts.urls')),
-    path('<int:group_pk>/events/', include('events.urls')),
-    path('<int:group_pk>/media/', include('media.urls')),
+    # Grup alt kaynakları
+    path('<int:group_pk>/posts/', include('posts.urls')),   # grup gönderileri
+    path('<int:group_pk>/events/', include('events.urls')), # grup etkinlikleri
+    path('<int:group_pk>/media/', include('media.urls')),   # grup medya dosyaları
 ]

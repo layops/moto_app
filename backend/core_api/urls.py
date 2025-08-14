@@ -1,15 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings  # settings.DEBUG için
-from django.conf.urls.static import static  # statik ve medya dosyaları için
-from django.views.generic import RedirectView  # Anasayfa yönlendirmesi için
-
-# drf-yasg (Swagger/OpenAPI) importları
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-# API dokümantasyonu için schema_view oluşturuyoruz
 schema_view = get_schema_view(
     openapi.Info(
         title="Motosiklet Bilgi Platformu API",
@@ -24,29 +21,31 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Kök URL'yi otomatik /api/ dizinine yönlendiriyoruz
     path('', RedirectView.as_view(url='/api/', permanent=True)),
-
-    # Admin paneli
     path('admin/', admin.site.urls),
 
-    # Uygulama URL'leri, hepsi /api/ altından erişilecek
+    # API endpointleri
     path('api/', include('users.urls')),
     path('api/', include('bikes.urls')),
     path('api/', include('rides.urls')),
-    path('api/groups/', include('groups.urls')),  # groups için ayrı prefix
-    path('api/notifications/', include('notifications.urls')),  # notifications için ayrı prefix
+
+    # Groups app
+    path('api/groups/', include('groups.urls')),  
+
+    # Events app (gruplara bağlı)
+    path('api/', include('events.urls')),  # events, kendi URL yapısında /groups/<group_pk>/events/ olacak
+
+    path('api/', include('notifications.urls')),
     path('api/', include('gamification.urls')),
 
-    # API dokümantasyonları
+    # Swagger / Redoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
-    # Django REST Framework login/logout sayfaları (isteğe bağlı)
+    # DRF login/logout
     path('api/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
-# DEBUG modunda medya ve statik dosyaları servis et
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,38 +1,36 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:motoapp_frontend/config.dart';
+import '../auth/auth_service.dart';
 
 class EventService {
   final Dio _dio;
+  final AuthService _authService;
 
-  EventService({Dio? dio})
+  EventService({Dio? dio, required AuthService authService})
       : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: kBaseUrl,
-                connectTimeout: const Duration(seconds: 15),
-                receiveTimeout: const Duration(seconds: 15),
-                contentType: 'application/json',
-              ),
-            );
-
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token') ?? prefs.getString('token');
-  }
+            Dio(BaseOptions(
+              baseUrl: kBaseUrl,
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 15),
+              contentType: 'application/json',
+            )),
+        _authService = authService;
 
   Options _authOptions(String? token) {
     if (token == null) return Options();
-    return Options(headers: {'Authorization': 'Bearer $token'});
+    return Options(headers: {'Authorization': 'Token $token'});
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('Token bulunamadı. Lütfen giriş yapın.');
+
     try {
-      final token = await _getToken();
-      final res = await _dio.get('/api/groups/$groupId/events/',
+      final res = await _dio.get('groups/$groupId/events/',
           options: _authOptions(token));
+
       if (res.statusCode == 200) {
-        return (res.data as List<dynamic>);
+        return res.data as List<dynamic>;
       } else {
         throw Exception('Etkinlikler alınamadı: ${res.statusCode}');
       }
@@ -50,31 +48,32 @@ class EventService {
     DateTime? endTime,
     List<int>? participants,
   }) async {
-    try {
-      final token = await _getToken();
-      final payload = <String, dynamic>{
-        'title': title,
-        'description': description ?? '',
-        'location': location ?? '',
-        'start_time': startTime.toUtc().toIso8601String(),
-        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-        if (participants != null) 'participants': participants,
-      };
+    final token = await _authService.getToken();
+    if (token == null) throw Exception('Token bulunamadı. Lütfen giriş yapın.');
 
+    final payload = <String, dynamic>{
+      'title': title,
+      'description': description ?? '',
+      'location': location ?? '',
+      'start_time': startTime.toUtc().toIso8601String(),
+      if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
+      if (participants != null) 'participants': participants,
+    };
+
+    try {
       final res = await _dio.post(
-        '/api/groups/$groupId/events/',
+        'groups/$groupId/events/',
         data: payload,
         options: _authOptions(token),
       );
 
       if (res.statusCode == 201 || res.statusCode == 200) {
-        return (res.data as Map<String, dynamic>);
+        return res.data as Map<String, dynamic>;
       } else {
         throw Exception('Etkinlik oluşturulamadı: ${res.statusCode}');
       }
     } on DioException catch (e) {
-      final err = e.response?.data ?? e.message;
-      throw Exception(err);
+      throw Exception(e.response?.data ?? e.message);
     }
   }
 }

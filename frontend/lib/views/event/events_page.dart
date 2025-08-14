@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'add_event_page.dart';
 
 class EventsPage extends StatefulWidget {
@@ -13,14 +15,16 @@ class EventsPage extends StatefulWidget {
 }
 
 class _EventsPageState extends State<EventsPage> {
-  final EventService _service = EventService();
+  late final EventService _service;
   bool _loading = true;
   List<dynamic> _events = [];
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _service = EventService(authService: authService);
     _loadEvents();
   }
 
@@ -29,19 +33,14 @@ class _EventsPageState extends State<EventsPage> {
       _loading = true;
       _error = null;
     });
+
     try {
       final data = await _service.fetchGroupEvents(widget.groupId);
-      setState(() {
-        _events = data;
-      });
+      setState(() => _events = data);
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
+      setState(() => _error = e.toString());
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      setState(() => _loading = false);
     }
   }
 
@@ -49,7 +48,8 @@ class _EventsPageState extends State<EventsPage> {
     if (iso == null) return '-';
     try {
       final dt = DateTime.parse(iso).toLocal();
-      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return iso;
     }
@@ -58,9 +58,7 @@ class _EventsPageState extends State<EventsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.groupName ?? 'Etkinlikler'),
-      ),
+      appBar: AppBar(title: Text(widget.groupName ?? 'Etkinlikler')),
       body: RefreshIndicator(
         onRefresh: _loadEvents,
         child: _loading
@@ -70,7 +68,7 @@ class _EventsPageState extends State<EventsPage> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(height: 120),
-                      Center(child: Text('Hata: $_error')),
+                      Center(child: Text('Hata: $_error'))
                     ],
                   )
                 : _events.isEmpty
@@ -90,9 +88,7 @@ class _EventsPageState extends State<EventsPage> {
                           return ListTile(
                             title: Text(e['title'] ?? 'Başlıksız'),
                             subtitle: Text(_formatDate(e['start_time'])),
-                            onTap: () {
-                              // İstersen detay sayfası ekle
-                            },
+                            onTap: () {},
                           );
                         },
                       ),
@@ -106,9 +102,7 @@ class _EventsPageState extends State<EventsPage> {
               builder: (_) => AddEventPage(groupId: widget.groupId),
             ),
           );
-          if (created == true) {
-            await _loadEvents();
-          }
+          if (created == true) _loadEvents();
         },
       ),
     );

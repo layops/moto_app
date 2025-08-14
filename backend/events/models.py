@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from groups.models import Group # Group modelini import etmeyi unutmayın
+from groups.models import Group
 
 class Event(models.Model):
     group = models.ForeignKey(
@@ -32,7 +32,7 @@ class Event(models.Model):
     class Meta:
         verbose_name = "Etkinlik"
         verbose_name_plural = "Etkinlikler"
-        ordering = ['start_time'] # Etkinlikleri başlangıç zamanına göre sırala
+        ordering = ['start_time']
 
     def __str__(self):
         return f"Event: {self.title} in {self.group.name} by {self.organizer.username}"
