@@ -37,14 +37,25 @@ class AppConfig extends StatelessWidget {
                 themeMode: themeProvider.themeMode,
                 initialRoute: '/login',
                 routes: {
-                  '/login': (context) => LoginPage(
-                      authService:
-                          ServiceLocator.auth), // Burada authService eklendi
+                  '/login': (context) =>
+                      LoginPage(authService: ServiceLocator.auth),
                   '/home': (context) => MainWrapper(
                         pages: [
                           const HomePage(),
                           const GroupsPage(),
-                          const ProfilePage(),
+                          // ProfilePage artık username parametresi alacak
+                          FutureBuilder<String?>(
+                            future: ServiceLocator.auth.getCurrentUsername(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              final username = snapshot.data ?? 'Kullanıcı';
+                              return ProfilePage(username: username);
+                            },
+                          ),
                           const SettingsPage(),
                         ],
                         navItems: NavigationItems.items,

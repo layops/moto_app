@@ -48,7 +48,7 @@ class _EventsPageState extends State<EventsPage> {
     if (iso == null) return '-';
     try {
       final dt = DateTime.parse(iso).toLocal();
-      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return iso;
@@ -82,13 +82,60 @@ class _EventsPageState extends State<EventsPage> {
                         ],
                       )
                     : ListView.builder(
+                        padding: const EdgeInsets.all(8),
                         itemCount: _events.length,
                         itemBuilder: (context, index) {
                           final e = _events[index] as Map<String, dynamic>;
-                          return ListTile(
-                            title: Text(e['title'] ?? 'Başlıksız'),
-                            subtitle: Text(_formatDate(e['start_time'])),
-                            onTap: () {},
+                          return Card(
+                            elevation: 3,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 4),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            child: InkWell(
+                              onTap: () {},
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      e['title'] ?? 'Başlıksız Etkinlik',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if ((e['description'] ?? '').isNotEmpty)
+                                      Text(
+                                        e['description'],
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today,
+                                            size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(_formatDate(e['start_time'])),
+                                        const SizedBox(width: 16),
+                                        if ((e['location'] ?? '').isNotEmpty)
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.location_on,
+                                                  size: 16),
+                                              const SizedBox(width: 4),
+                                              Text(e['location']),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),

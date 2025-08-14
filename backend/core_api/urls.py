@@ -21,7 +21,10 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Kök URL'yi /api/ dizinine yönlendirme
     path('', RedirectView.as_view(url='/api/', permanent=True)),
+
+    # Admin paneli
     path('admin/', admin.site.urls),
 
     # API endpointleri
@@ -32,9 +35,13 @@ urlpatterns = [
     # Groups app
     path('api/groups/', include('groups.urls')),  
 
-    # Events app (gruplara bağlı)
-    path('api/', include('events.urls')),  # events, kendi URL yapısında /groups/<group_pk>/events/ olacak
+    # Group-related Events app
+    path('api/', include('events.urls')),  # /groups/<group_pk>/events/ şeklinde URL yapısı
 
+    # Group posts app
+    path('api/', include('group_posts.urls')),  # yeni eklenen post endpointleri
+
+    # Notifications & Gamification
     path('api/', include('notifications.urls')),
     path('api/', include('gamification.urls')),
 
@@ -46,6 +53,7 @@ urlpatterns = [
     path('api/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
+# DEBUG modunda medya ve statik dosyaları servis et
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

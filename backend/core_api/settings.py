@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'chat',
     'notifications',
     'gamification',
+    'group_posts',
 ]
 
 MIDDLEWARE = [

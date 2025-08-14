@@ -6,7 +6,9 @@ import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import '../settings/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String username; // Kullanıcı adı eklendi
+
+  const ProfilePage({super.key, required this.username});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -75,7 +77,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: Text(widget.username), // Artık kullanıcı adı gösteriliyor
         backgroundColor: Theme.of(context).primaryColor,
       ),
       body: Column(
@@ -96,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  _email ?? 'Kullanıcı',
+                  widget.username, // Kullanıcı adı gösteriliyor
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

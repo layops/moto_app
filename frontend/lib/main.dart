@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
+import 'package:motoapp_frontend/services/post/post_service.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/core/providers/theme_provider.dart';
 import 'package:motoapp_frontend/core/theme/light_theme.dart';
@@ -23,13 +24,14 @@ void main() async {
   try {
     await ServiceLocator.init();
     await ServiceLocator.auth.initializeAuthState();
+
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
-          Provider<AuthService>.value(
-              value: ServiceLocator
-                  .auth), // <-- Burada AuthService provider eklendi
+          Provider<AuthService>.value(value: ServiceLocator.auth),
+          Provider<PostService>(
+              create: (_) => PostService()), // <-- PostService provider eklendi
         ],
         child: const MotoApp(),
       ),
@@ -88,7 +90,17 @@ class MotoApp extends StatelessWidget {
       const SearchPage(),
       const MapPage(),
       const MessagesPage(),
-      const ProfilePage(),
+      // ProfilePage için username alınacak
+      FutureBuilder<String?>(
+        future: ServiceLocator.auth.getCurrentUsername(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final username = snapshot.data ?? 'Kullanıcı';
+          return ProfilePage(username: username);
+        },
+      ),
     ];
 
     debugPrint("Uygulama başlatılıyor. Tanımlanan sayfalar:");
@@ -132,8 +144,8 @@ class MotoApp extends StatelessWidget {
                   scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
                   builder: (context, child) {
                     return MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                          textScaler: TextScaler.linear(1.0)), // düzeltildi
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: TextScaler.linear(1.0)),
                       child: child!,
                     );
                   },
