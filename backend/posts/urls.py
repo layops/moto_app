@@ -1,12 +1,10 @@
+# moto_app/backend/posts/urls.py
+
 from django.urls import path
-from .views import PostListCreateView, PostDetailView
+from .views import GeneralPostListCreateView, GroupPostListCreateView, PostDetailView
 
 urlpatterns = [
-    # Bir gruba ait tüm gönderileri listele ve yeni gönderi oluştur
-    # URL yapısı: /api/groups/<group_pk>/posts/
-    # Bu URL'ler groups.urls'den dahil edilecek
-    path('', PostListCreateView.as_view(), name='post-list-create'),
-    # Tek bir gönderinin detayını gör, güncelle veya sil
-    # URL yapısı: /api/groups/<group_pk>/posts/<pk>/
-    path('<int:pk>/', PostDetailView.as_view(), name='post-detail'),
+    path('posts/', GeneralPostListCreateView.as_view(), name='general-post-list-create'),
+    path('groups/<int:group_pk>/posts/', GroupPostListCreateView.as_view(), name='group-post-list-create'),
+    path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
 ]

@@ -1,3 +1,5 @@
+// post_service.dart
+
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,22 +14,38 @@ class PostService {
     return prefs.getString('auth_token');
   }
 
-  Future<void> createPost({required String content, File? file}) async {
+  // createPost metodunu güncelleyin
+  Future<void> createPost({
+    required String content,
+    File? file,
+    int? groupPk, // groupPk'yi null olabilecek şekilde değiştirin
+  }) async {
     final token = await _getToken();
-    if (token == null || token.isEmpty) throw Exception('Lütfen giriş yapın.');
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
 
     FormData formData = FormData.fromMap({'content': content});
-
     if (file != null) {
       formData.files.add(MapEntry(
         'image',
-        await MultipartFile.fromFile(file.path,
-            filename: file.path.split('/').last),
+        await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
       ));
     }
 
+    // URL'yi groupPk'nin değerine göre dinamik olarak belirleyin
+    String apiUrl = 'http://172.17.62.146:8000/api/';
+    if (groupPk != null) {
+      apiUrl += 'groups/$groupPk/posts/';
+    } else {
+      apiUrl += 'posts/';
+    }
+
     final response = await _dio.post(
-      'http://172.19.34.247:8000/api/posts/',
+      apiUrl,
       data: formData,
       options: Options(
         headers: {
@@ -42,9 +60,18 @@ class PostService {
     }
   }
 
-  Future<List<dynamic>> fetchPosts(String token) async {
+  // fetchPosts metodunu güncelleyin
+  Future<List<dynamic>> fetchPosts(String token, {int? groupPk}) async {
+    // URL'yi groupPk'nin değerine göre dinamik olarak belirleyin
+    String apiUrl = 'http://172.17.62.146:8000/api/';
+    if (groupPk != null) {
+      apiUrl += 'groups/$groupPk/posts/';
+    } else {
+      apiUrl += 'posts/';
+    }
+
     final response = await _dio.get(
-      'http://172.19.34.247:8000/api/posts/',
+      apiUrl,
       options: Options(
         headers: {
           'Authorization': 'Token $token',

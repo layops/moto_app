@@ -1,3 +1,5 @@
+// create_post_page.dart
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,8 +8,9 @@ import 'post_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   final VoidCallback? onPostCreated;
+  final int? groupPk; // groupPk'yi null olabilecek şekilde ekleyin
 
-  const CreatePostPage({super.key, this.onPostCreated});
+  const CreatePostPage({super.key, this.onPostCreated, this.groupPk}); // Constructor'a ekleyin
 
   @override
   State<CreatePostPage> createState() => _CreatePostPageState();
@@ -47,6 +50,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
       await postService.createPost(
         content: _contentController.text,
         file: _selectedFile,
+        groupPk: widget.groupPk, // Widget'tan gelen groupPk'yı iletin
       );
 
       if (widget.onPostCreated != null) widget.onPostCreated!();

@@ -46,7 +46,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       }
 
       final response = await dio.post(
-        'http://172.19.34.247:8000/api/groups/',
+        //'http://172.19.34.247:8000/api/groups/',  // EMRE
+        'http://172.17.62.146:8000/api/groups/',    // OZAN
         data: {
           'name': _name,
           'description': _description,

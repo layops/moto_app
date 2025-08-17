@@ -38,8 +38,8 @@ urlpatterns = [
     # Group-related Events app
     path('api/', include('events.urls')),  # /groups/<group_pk>/events/ şeklinde URL yapısı
 
-    # Group posts app
-    path('api/', include('group_posts.urls')),  # yeni eklenen post endpointleri
+    # posts app
+    path('api/', include('posts.urls')),
 
     # Notifications & Gamification
     path('api/', include('notifications.urls')),

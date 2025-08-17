@@ -9,7 +9,9 @@ class Post(models.Model):
         Group,
         on_delete=models.CASCADE,
         related_name='posts',
-        verbose_name="Grup"
+        verbose_name="Grup",
+        null=True, # BU SATIRI EKLEYİN
+        blank=True # BU SATIRI EKLEYİN
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -18,6 +20,7 @@ class Post(models.Model):
         verbose_name="Yazar"
     )
     content = models.TextField(verbose_name="Gönderi İçeriği")
+    image = models.ImageField(upload_to='posts/', null=True, blank=True, verbose_name="Görsel")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
 

@@ -1,55 +1,49 @@
 # moto_app/backend/posts/views.py
 
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response # Response import edildiğinden emin olun
+from rest_framework import generics, permissions
+from rest_framework.response import Response
 from .models import Post
 from .serializers import PostSerializer
 from groups.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import MultiPartParser, FormParser
 
-# Group'a ait gönderileri listelemek ve yeni gönderi oluşturmak için
-class PostListCreateView(generics.ListCreateAPIView):
+# Genel postları yönetir (grup dışı)
+class GeneralPostListCreateView(generics.ListCreateAPIView):
+    queryset = Post.objects.filter(group__isnull=True).order_by('-created_at')
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, group=None)
+
+# Grup postlarını yönetir
+class GroupPostListCreateView(generics.ListCreateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         group_pk = self.kwargs.get('group_pk')
         group = get_object_or_404(Group, pk=group_pk)
+
         if self.request.user in group.members.all() or self.request.user == group.owner:
             return Post.objects.filter(group=group).order_by('-created_at')
-        else:
-            raise PermissionDenied("Bu grubun gönderilerini görüntüleme izniniz yok.")
+        raise PermissionDenied("Bu grubun gönderilerini görüntüleme izniniz yok.")
 
     def perform_create(self, serializer):
         group_pk = self.kwargs.get('group_pk')
         group = get_object_or_404(Group, pk=group_pk)
+
         if self.request.user in group.members.all() or self.request.user == group.owner:
             serializer.save(author=self.request.user, group=group)
         else:
             raise PermissionDenied("Bu gruba gönderi oluşturma izniniz yok.")
 
-    # BURAYI EKLEYİN: get_serializer_context ve list metotlarını override etme
-    def get_serializer_context(self):
-        # Varsayılan bağlamı al
-        context = super().get_serializer_context()
-        # Eğer URL'de ?only_content=true varsa, bağlama ekle
-        if self.request.query_params.get('only_content') == 'true':
-            context['only_content'] = True
-        return context
-    
-    # Listeleme yanıtını değiştirmek istersen:
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #     serializer = self.get_serializer(queryset, many=True)
-        
-    #     if self.request.query_params.get('only_content') == 'true':
-    #         # Eğer sadece content isteniyorsa, her bir objeden sadece content'i al
-    #         content_list = [item.get('content') for item in serializer.data]
-    #         return Response(content_list)
-    #     return Response(serializer.data)
-
-
+# Tekil postlar için görünüm
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -57,14 +51,11 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         obj = super().get_object()
-        group_pk = self.kwargs.get('group_pk')
-        if obj.group.pk != int(group_pk):
-            raise PermissionDenied("Bu gruba ait olmayan bir gönderiye erişmeye çalışıyorsunuz.")
 
-        group = obj.group
-        if self.request.user not in group.members.all() and self.request.user != group.owner:
-            raise PermissionDenied("Bu grubun gönderisini görüntüleme izniniz yok.")
-            
+        if obj.group:
+            if self.request.user not in obj.group.members.all() and self.request.user != obj.group.owner:
+                raise PermissionDenied("Bu gönderiyi görüntüleme izniniz yok.")
+
         return obj
 
     def perform_update(self, serializer):
@@ -73,6 +64,6 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.author != self.request.user and instance.group.owner != self.request.user:
+        if instance.author != self.request.user and (not instance.group or instance.group.owner != self.request.user):
             raise PermissionDenied("Bu gönderiyi silme izniniz yok.")
         instance.delete()
