@@ -7,8 +7,10 @@ class PostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = post['author_username']?.toString() ?? 'Bilinmeyen';
-    final avatarUrl = post['author_avatar']?.toString();
+    // API'den gelen veriye doğru şekilde erişim
+    final authorData = post['author'] as Map<String, dynamic>?;
+    final username = authorData?['username']?.toString() ?? 'Bilinmeyen';
+    final avatarUrl = authorData?['avatar']?.toString();
     final imageUrl = post['image']?.toString();
 
     return Card(
