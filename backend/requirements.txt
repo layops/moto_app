@@ -39,3 +39,4 @@ Unidecode==1.4.0
 uritemplate==4.2.0
 whitenoise==6.9.0
 zope.interface==7.2
+gunicorn==21.2.0
