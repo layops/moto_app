@@ -9,7 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-
 # ------------------------------
 # Allowed Hosts
 # ------------------------------
@@ -101,9 +100,7 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 # Veritabanı
 # ------------------------------
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')
-    )
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600)
 }
 
 # ------------------------------
