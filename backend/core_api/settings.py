@@ -1,18 +1,23 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-296_ga!40ymq^r%j-ttb=+juf4pgfhh%kd#-xp*lx0k-eqjykb'
+# ------------------------------
+# Güvenlik ve Debug
+# ------------------------------
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-DEBUG = True
+# ------------------------------
+# Allowed Hosts
+# ------------------------------
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
-
-#ALLOWED_HOSTS = ['172.19.34.247', '127.0.0.1', 'localhost'] # EMRE
-
-
-ALLOWED_HOSTS = ['172.17.62.146', '127.0.0.1', 'localhost'] # OZAN
-
+# ------------------------------
+# Uygulamalar
+# ------------------------------
 INSTALLED_APPS = [
     # Django default uygulamalar
     'django.contrib.admin',
@@ -21,8 +26,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # PostgreSQL'e özgü özellikler
     'django.contrib.postgres',
 
     # Üçüncü taraf paketler
@@ -46,10 +49,14 @@ INSTALLED_APPS = [
     'group_posts',
 ]
 
+# ------------------------------
+# Middleware
+# ------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Statik dosya servisi
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS için
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -57,17 +64,20 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# ------------------------------
+# URL ve Templates
+# ------------------------------
 ROOT_URLCONF = 'core_api.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # Template klasörleri buraya eklenebilir
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',  # Admin panel için gerekli
+                'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -75,28 +85,22 @@ TEMPLATES = [
     },
 ]
 
+# ------------------------------
+# WSGI / ASGI
+# ------------------------------
 WSGI_APPLICATION = 'core_api.wsgi.application'
-
-# Channels için ASGI uygulaması
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-# Veritabanı ayarları (PostgreSQL)
+# ------------------------------
+# Veritabanı
+# ------------------------------
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'motoapp_db',
-        'USER': 'motoapp_user',
-        'PASSWORD': '326598',
-        # 2. seçenek: port yönlendirme sonrası localhost
-        'HOST': '172.17.48.1',  # OZAN
-       # 'HOST': '172.19.32.1', # EMRE
-        'PORT': '5432',
-        'OPTIONS': {
-            'options': '-c client_encoding=UTF8',
-        },
-    }
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 
+# ------------------------------
+# Parola doğrulama
+# ------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
@@ -104,28 +108,37 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
+# ------------------------------
+# Uluslararası ayarlar
+# ------------------------------
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Statik dosya ayarları
+# ------------------------------
+# Statik ve Medya Dosyaları
+# ------------------------------
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Medya dosyaları
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# ------------------------------
+# CORS
+# ------------------------------
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost').split(',')
 
-# CORS ayarları
-CORS_ALLOW_ALL_ORIGINS = True
-
+# ------------------------------
 # Özel kullanıcı modeli
+# ------------------------------
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# Django REST Framework ayarları
+# ------------------------------
+# Django REST Framework
+# ------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -141,12 +154,16 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CSRF ayarları
+# ------------------------------
+# CSRF
+# ------------------------------
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# Swagger ayarları
+# ------------------------------
+# Swagger / Redoc
+# ------------------------------
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Token': {
@@ -163,20 +180,14 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-# Channels Layer ayarları - Redis kullanımı için
+# ------------------------------
+# Channels Layer (Redis)
+# ------------------------------
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [os.environ.get('REDIS_URL', '127.0.0.1:6379')],
         },
     },
 }
-
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
-    "http://172.19.34.247",  # Flutter uygulamasının çalıştığı IP
-    "http://172.19.32.1",    # Yeni eklenen IP
-]
