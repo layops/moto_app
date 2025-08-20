@@ -8,12 +8,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Güvenlik ve Debug
 # ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # ------------------------------
 # Allowed Hosts
 # ------------------------------
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "10.0.2.2",
+    "172.19.34.247",
+    "spiride.onrender.com",  # Render domain’i
+]
 
 # ------------------------------
 # Uygulamalar
@@ -95,7 +101,9 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 # Veritabanı
 # ------------------------------
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')
+    )
 }
 
 # ------------------------------
@@ -129,8 +137,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ------------------------------
 # CORS
 # ------------------------------
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost').split(',')
-
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    'CORS_ALLOWED_ORIGINS', 
+    'http://localhost,http://10.0.2.2,https://spiride.onrender.com'
+).split(',')
 # ------------------------------
 # Özel kullanıcı modeli
 # ------------------------------
@@ -187,7 +197,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get('REDIS_URL', '127.0.0.1:6379')],
+            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
         },
     },
 }

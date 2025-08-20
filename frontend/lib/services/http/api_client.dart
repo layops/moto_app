@@ -14,8 +14,8 @@ class ApiClient {
     debugPrint('API BASE URL: $kBaseUrl');
 
     _dio.options.baseUrl = kBaseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 10);
-    _dio.options.receiveTimeout = const Duration(seconds: 10);
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
 
     // Detaylı loglama ekle
     _dio.interceptors.add(LogInterceptor(

@@ -1,24 +1,22 @@
-// post_service.dart
-
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config.dart'; // kBaseUrl için import
 
 class PostService {
   final Dio _dio;
 
-  PostService({Dio? dio}) : _dio = dio ?? Dio();
+  PostService({Dio? dio}) : _dio = dio ?? Dio(BaseOptions(baseUrl: kBaseUrl));
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
   }
 
-  // createPost metodunu güncelleyin
   Future<void> createPost({
     required String content,
     File? file,
-    int? groupPk, // groupPk'yi null olabilecek şekilde değiştirin
+    int? groupPk,
   }) async {
     final token = await _getToken();
     if (token == null || token.isEmpty) {
@@ -36,16 +34,11 @@ class PostService {
       ));
     }
 
-    // URL'yi groupPk'nin değerine göre dinamik olarak belirleyin
-    String apiUrl = 'http://172.17.62.146:8000/api/';
-    if (groupPk != null) {
-      apiUrl += 'groups/$groupPk/posts/';
-    } else {
-      apiUrl += 'posts/';
-    }
+    // groupPk varsa dinamik endpoint
+    final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';
 
     final response = await _dio.post(
-      apiUrl,
+      endpoint,
       data: formData,
       options: Options(
         headers: {
@@ -60,18 +53,11 @@ class PostService {
     }
   }
 
-  // fetchPosts metodunu güncelleyin
   Future<List<dynamic>> fetchPosts(String token, {int? groupPk}) async {
-    // URL'yi groupPk'nin değerine göre dinamik olarak belirleyin
-    String apiUrl = 'http://172.17.62.146:8000/api/';
-    if (groupPk != null) {
-      apiUrl += 'groups/$groupPk/posts/';
-    } else {
-      apiUrl += 'posts/';
-    }
+    final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';
 
     final response = await _dio.get(
-      apiUrl,
+      endpoint,
       options: Options(
         headers: {
           'Authorization': 'Token $token',
