@@ -9,22 +9,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
 # ------------------------------
 # Allowed Hosts
 # ------------------------------
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    "10.0.2.2",
-    "172.19.34.247",
-    "spiride.onrender.com",  # Render domain’i
-]
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', 'spiride.onrender.com'
+).split(',')
 
 # ------------------------------
 # Uygulamalar
 # ------------------------------
 INSTALLED_APPS = [
-    # Django default uygulamalar
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -33,7 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
-    # Üçüncü taraf paketler
+    # 3rd party
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -59,7 +55,7 @@ INSTALLED_APPS = [
 # ------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Statik dosya servisi
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -100,7 +96,11 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 # Veritabanı
 # ------------------------------
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600)
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 # ------------------------------
@@ -136,8 +136,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ------------------------------
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS', 
-    'http://localhost,http://10.0.2.2,https://spiride.onrender.com'
+    'https://spiride.onrender.com'
 ).split(',')
+
 # ------------------------------
 # Özel kullanıcı modeli
 # ------------------------------
