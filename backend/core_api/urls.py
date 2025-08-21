@@ -2,11 +2,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.http import HttpResponse
 
+# ------------------------------
+# Swagger / Redoc için
+# ------------------------------
 schema_view = get_schema_view(
     openapi.Info(
         title="Motosiklet Bilgi Platformu API",
@@ -20,15 +24,26 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
-# core_api/urls.py
+# ------------------------------
+# Basit index view
+# ------------------------------
+def index(request):
+    return HttpResponse("Site çalışıyor! /api/ altında API endpointlerini kullanabilirsiniz.")
+
+# ------------------------------
+# URL Patterns
+# ------------------------------
 urlpatterns = [
-    path('', RedirectView.as_view(url='/api/', permanent=True)),
+    # Ana sayfa
+    path('', index, name='index'),
+
+    # Admin paneli
     path('admin/', admin.site.urls),
 
-    # users app
-    path('api/users/', include('users.urls')),  # <-- Burada /api/users/ prefix'i
+    # Users app
+    path('api/users/', include('users.urls')),
 
-    # diğer app’ler
+    # Diğer uygulamalar
     path('api/bikes/', include('bikes.urls')),
     path('api/rides/', include('rides.urls')),
     path('api/groups/', include('groups.urls')),
@@ -44,7 +59,6 @@ urlpatterns = [
     # DRF login/logout
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
-
 
 # DEBUG modunda medya ve statik dosyaları servis et
 if settings.DEBUG:
