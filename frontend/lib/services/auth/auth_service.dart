@@ -13,7 +13,6 @@ class AuthService {
 
   AuthService(this._apiClient, this._tokenService, this._storage);
 
-  // Burada apiClient getter’ı
   ApiClient get apiClient => _apiClient;
 
   Stream<bool> get authStateChanges => _authStateController.stream;
@@ -23,11 +22,8 @@ class AuthService {
     _authStateController.add(loggedIn);
   }
 
-  Future<Response> login(
-    String username,
-    String password, {
-    bool rememberMe = false,
-  }) async {
+  Future<Response> login(String username, String password,
+      {bool rememberMe = false}) async {
     try {
       final response = await _apiClient.post(
         'login/',
@@ -37,7 +33,7 @@ class AuthService {
       final token = _extractToken(response);
       if (token.isNotEmpty) {
         await _tokenService.saveAuthData(token, username);
-        await _storage.setString('current_username', username);
+        await _storage.setCurrentUsername(username);
 
         await saveRememberMe(rememberMe);
         if (rememberMe) {
@@ -93,28 +89,27 @@ class AuthService {
     if (tokenData?['username'] != null) {
       return tokenData!['username'] as String;
     }
-    return _storage.getString('current_username') ??
-        _storage.getString('rememberedUsername');
+    return _storage.getCurrentUsername() ?? _storage.getRememberedUsername();
   }
 
   Future<void> saveRememberMe(bool rememberMe) async {
-    await _storage.setBool('rememberMe', rememberMe);
+    await _storage.setRememberMe(rememberMe);
   }
 
   Future<bool> getRememberMe() async {
-    return (_storage.getBool('rememberMe')) ?? false;
+    return (_storage.getRememberMe()) ?? false;
   }
 
   Future<void> saveRememberedUsername(String username) async {
-    await _storage.setString('rememberedUsername', username);
+    await _storage.setRememberedUsername(username);
   }
 
   Future<String?> getRememberedUsername() async {
-    return _storage.getString('rememberedUsername');
+    return _storage.getRememberedUsername();
   }
 
   Future<void> clearRememberedUsername() async {
-    await _storage.remove('rememberedUsername');
+    await _storage.clearRememberedUsername();
   }
 
   String _extractToken(Response response) {
@@ -130,9 +125,9 @@ class AuthService {
 
   Future<void> clearAllUserData() async {
     await _tokenService.deleteAuthData();
-    await _storage.remove('current_username');
-    await _storage.remove('rememberedUsername');
-    await _storage.remove('rememberMe');
+    await _storage.removeCurrentUsername();
+    await _storage.clearRememberedUsername();
+    await _storage.setRememberMe(false);
     _authStateController.add(false);
   }
 

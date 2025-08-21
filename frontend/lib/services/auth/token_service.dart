@@ -1,4 +1,4 @@
-import 'dart:convert'; // utf8 ve base64Url için gerekli import
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../storage/local_storage.dart';
 
@@ -8,13 +8,13 @@ class TokenService {
   TokenService(this._storage);
 
   Future<void> saveAuthData(String token, String username) async {
-    await _storage.setString('auth_token', token);
-    await _storage.setString('username', username);
+    await _storage.setAuthToken(token);
+    await _storage.setCurrentUsername(username);
   }
 
   Future<void> deleteAuthData() async {
-    await _storage.remove('auth_token');
-    await _storage.remove('username');
+    await _storage.removeAuthToken();
+    await _storage.removeCurrentUsername();
   }
 
   Future<bool> hasToken() async {
@@ -22,7 +22,7 @@ class TokenService {
   }
 
   Future<String?> getToken() async {
-    return _storage.getString('auth_token');
+    return _storage.getAuthToken();
   }
 
   Future<Map<String, dynamic>?> getTokenData() async {
@@ -30,7 +30,6 @@ class TokenService {
     if (token == null) return null;
 
     try {
-      // JWT token decode işlemi
       final parts = token.split('.');
       if (parts.length != 3) return null;
 

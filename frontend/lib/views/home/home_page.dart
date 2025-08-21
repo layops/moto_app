@@ -1,4 +1,3 @@
-
 // home_page.dart
 
 import 'package:flutter/material.dart';
@@ -6,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../widgets/app_bars/base_app_bar.dart';
 import '../../services/auth/auth_service.dart';
 import '../../services/post/post_service.dart';
-import '../../services/post/create_post_page.dart';
+import '../post/create_post_page.dart';
 import 'home_drawer.dart';
 import 'home_posts_list.dart';
 
@@ -38,9 +37,9 @@ class _HomePageState extends State<HomePage> {
     try {
       final token = await _authService.getToken();
       if (token == null) throw Exception('Oturum bulunamadı');
-      
+
       // Genel postları çekmek için groupPk parametresini kullanmayın (veya null olarak geçin)
-      _posts = await _postService.fetchPosts(token); 
+      _posts = await _postService.fetchPosts(token);
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -54,7 +53,8 @@ class _HomePageState extends State<HomePage> {
         MaterialPageRoute(
           builder: (_) => CreatePostPage(
             onPostCreated: _loadPosts,
-            groupPk: null, // Anasayfadan atılan postlar için groupPk'yı null olarak iletin
+            groupPk:
+                null, // Anasayfadan atılan postlar için groupPk'yı null olarak iletin
           ),
         ),
       );

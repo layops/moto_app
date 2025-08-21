@@ -1,60 +1,62 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model, authenticate
-from rest_framework.exceptions import ValidationError
-from .models import CustomUser
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2']
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
-
-    def validate(self, data):
-        if data['password'] != data['password2']:
-            raise ValidationError({"password": "Şifre alanları eşleşmiyor."})
-        return data
+        fields = ['id', 'username', 'email', 'password']
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email'),
+            password=validated_data['password']
+        )
         return user
 
 
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
-    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        username = data.get('username')
-        password = data.get('password')
-
-        if not username or not password:
-            raise ValidationError('Kullanıcı adı ve şifre zorunludur.')
-
-        user = authenticate(username=username, password=password)
-        if not user:
-            raise ValidationError('Sağlanan kimlik bilgileriyle giriş yapılamıyor.')
-
-        data['user'] = user
-        return data
+        from django.contrib.auth import authenticate
+        user = authenticate(username=data['username'], password=data['password'])
+        if user and user.is_active:
+            data['user'] = user
+            return data
+        raise serializers.ValidationError("Geçersiz kullanıcı adı veya şifre")
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile_image_url = serializers.SerializerMethodField()
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = CustomUser
-        fields = ['id', 'username', 'email', 'profile_image_url']
-        read_only_fields=['username']
+        model = User
+        fields = ['id', 'username', 'email', 'profile_picture', 'followers_count', 'following_count']
 
-    def get_profile_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
-            return request.build_absolute_uri(obj.profile_picture.url)
-        return None
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'followers_count', 'following_count']
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()

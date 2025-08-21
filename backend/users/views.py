@@ -10,16 +10,15 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from django.db.models.functions import Lower
 from django.db.models import Q
-
 from unidecode import unidecode
 from core_api.unaccent import Unaccent
 
-from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer
 from django.contrib.auth import get_user_model
-User = get_user_model()
-
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, FollowSerializer
 from groups.models import Group
 from groups.serializers import GroupSerializer
+
+User = get_user_model()
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -101,3 +100,52 @@ class ProfileImageUploadView(APIView):
         user.save()
 
         return Response({"message": "Profile image updated successfully."}, status=status.HTTP_200_OK)
+
+
+# ---------------- Follow / Followers / Following ----------------
+class FollowToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, username):
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+        if target_user in user.following.all():
+            user.following.remove(target_user)
+            action = 'unfollowed'
+        else:
+            user.following.add(target_user)
+            action = 'followed'
+
+        return Response({'status': action}, status=status.HTTP_200_OK)
+
+
+class FollowersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        followers = target_user.followers.all()
+        serializer = FollowSerializer(followers, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class FollowingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        following = target_user.following.all()
+        serializer = FollowSerializer(following, many=True, context={'request': request})
+        return Response(serializer.data)

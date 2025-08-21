@@ -4,13 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'post_service.dart';
+import '../../services/post/post_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   final VoidCallback? onPostCreated;
   final int? groupPk; // groupPk'yi null olabilecek şekilde ekleyin
 
-  const CreatePostPage({super.key, this.onPostCreated, this.groupPk}); // Constructor'a ekleyin
+  const CreatePostPage(
+      {super.key, this.onPostCreated, this.groupPk}); // Constructor'a ekleyin
 
   @override
   State<CreatePostPage> createState() => _CreatePostPageState();

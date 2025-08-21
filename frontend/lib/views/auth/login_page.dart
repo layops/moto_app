@@ -24,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
   bool _rememberMe = false;
 
   Future<void> _login() async {
@@ -39,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
         rememberMe: _rememberMe,
       );
     } catch (e) {
+      // ignore: use_build_context_synchronously
       AuthCommon.showErrorSnackbar(context, 'Giriş başarısız: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);

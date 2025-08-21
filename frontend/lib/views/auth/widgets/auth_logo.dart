@@ -13,7 +13,6 @@ class AuthLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Image.asset(
       'assets/images/spiride_logo_main_page.png',
       height: size.h,

@@ -6,6 +6,7 @@ import 'auth/auth_service.dart';
 import 'auth/token_service.dart';
 import 'user/user_service.dart';
 import 'user/profile_service.dart';
+import 'follow/follow_service.dart'; // Yeni servis import
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -23,6 +24,7 @@ class ServiceLocator {
   late final AuthService _authService;
   late final UserService _userService;
   late final ProfileService _profileService;
+  late final FollowService _followService; // Yeni servis
 
   // Private constructor
   ServiceLocator._internal();
@@ -54,7 +56,7 @@ class ServiceLocator {
       // 3. Initialize token service
       _instance._tokenService = TokenService(_instance._localStorage);
 
-      // 4. Initialize auth service WITHOUT Dio param (3 args only)
+      // 4. Initialize auth service
       _instance._authService = AuthService(
         _instance._apiClient,
         _instance._tokenService,
@@ -69,6 +71,12 @@ class ServiceLocator {
 
       // 6. Initialize profile service
       _instance._profileService = ProfileService(
+        _instance._apiClient,
+        _instance._tokenService,
+      );
+
+      // 7. Initialize follow service
+      _instance._followService = FollowService(
         _instance._apiClient,
         _instance._tokenService,
       );
@@ -97,6 +105,7 @@ class ServiceLocator {
   static TokenService get token => _instance._tokenService;
   static UserService get user => _instance._userService;
   static ProfileService get profile => _instance._profileService;
+  static FollowService get follow => _instance._followService; // Yeni servis
   static LocalStorage get storage => _instance._localStorage;
 
   // Navigation helpers

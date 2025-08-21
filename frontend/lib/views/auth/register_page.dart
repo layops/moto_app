@@ -55,7 +55,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       AuthCommon.showErrorSnackbar(
-          context, 'Hata: ${e.toString().replaceFirst('Exception: ', '')}');
+          // ignore: use_build_context_synchronously
+          context,
+          'Hata: ${e.toString().replaceFirst('Exception: ', '')}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
