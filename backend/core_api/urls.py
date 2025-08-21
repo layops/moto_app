@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView, TemplateView
+from django.views.generic import RedirectView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -39,6 +39,9 @@ urlpatterns = [
 
     # Admin paneli
     path('admin/', admin.site.urls),
+
+    # API Root → otomatik Swagger yönlendirmesi
+    path('api/', RedirectView.as_view(url='/swagger/', permanent=False)),
 
     # Users app
     path('api/users/', include('users.urls')),
