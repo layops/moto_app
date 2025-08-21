@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
+import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class ProfilePhotoUploader extends StatefulWidget {
   const ProfilePhotoUploader({super.key});
@@ -69,10 +70,12 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   }
 
   void _showMessage(String message, {bool isError = true}) {
+    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor:
+            isError ? theme.colorScheme.error : theme.colorScheme.primary,
       ),
     );
   }
@@ -89,21 +92,27 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
           height: 150,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: theme.primaryColor, width: 2),
+            border: Border.all(
+              color: theme.colorScheme.primary,
+              width: 2,
+            ),
           ),
           child: ClipOval(
             child: _image != null
                 ? Image.file(_image!, fit: BoxFit.cover)
-                : Icon(Icons.account_circle,
-                    size: 150, color: Colors.grey[400]),
+                : Icon(
+                    Icons.account_circle,
+                    size: 150,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildGalleryButton(theme),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             _buildUploadButton(theme),
           ],
         ),
@@ -117,7 +126,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       label: const Text('Galeri'),
       onPressed: _pickImage,
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: ThemeConstants.paddingMedium,
       ),
     );
   }
@@ -125,20 +134,23 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   Widget _buildUploadButton(ThemeData theme) {
     return ElevatedButton.icon(
       icon: _isUploading
-          ? const SizedBox(
+          ? SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.white,
+                color: theme.colorScheme.onPrimary,
               ),
             )
           : const Icon(Icons.cloud_upload),
       label: Text(_isUploading ? 'Yükleniyor' : 'Yükle'),
       onPressed: _isUploading ? null : _uploadImage,
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        backgroundColor: _isUploading ? Colors.grey : theme.primaryColor,
+        padding: ThemeConstants.paddingMedium,
+        backgroundColor: _isUploading
+            ? theme.colorScheme.surface.withOpacity(0.5)
+            : theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ),
     );
   }

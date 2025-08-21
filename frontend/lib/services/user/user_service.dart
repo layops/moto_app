@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart'; // Response sınıfı için
+import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
 
@@ -14,9 +14,8 @@ class UserService {
     required String password,
   }) async {
     return await _apiClient.post(
-      'register/', // URL path
+      'register/',
       {
-        // Request body (data) parametresi eklendi
         'username': username,
         'email': email,
         'password': password,
@@ -28,11 +27,46 @@ class UserService {
     return _storage.getCurrentUsername();
   }
 
-  // Kullanıcı bilgilerini güncelleme örneği
   Future<Response> updateProfile(Map<String, dynamic> profileData) async {
     return await _apiClient.post(
       'profile/update/',
       profileData,
     );
+  }
+
+  Future<Map<String, dynamic>?> getProfile(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/profile/');
+      return response.data as Map<String, dynamic>?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<dynamic>> getPosts(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/posts/');
+      return response.data as List<dynamic>;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getMedia(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/media/');
+      return response.data as List<dynamic>;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getEvents(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/events/');
+      return response.data as List<dynamic>;
+    } catch (e) {
+      return [];
+    }
   }
 }

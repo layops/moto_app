@@ -1,12 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
-import 'package:motoapp_frontend/services/auth/auth_service.dart';
-import '../settings/settings_page.dart';
+import 'profile_drawer.dart';
+import 'profile_header.dart';
+import 'profile_tab_bar.dart';
+import 'profile_tabs/posts_tab.dart';
+import 'profile_tabs/media_tab.dart';
+import 'profile_tabs/events_tab.dart';
+import 'profile_tabs/info_tab.dart';
 
 class ProfilePage extends StatefulWidget {
-  final String username; // Kullanıcı adı eklendi
+  final String username;
 
   const ProfilePage({super.key, required this.username});
 
@@ -16,21 +20,34 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? _imageFile;
-  int _selectedTab = 0;
-  String? _email;
+  Map<String, dynamic>? _profileData;
+  List<dynamic>? _posts;
+  List<dynamic>? _media;
+  List<dynamic>? _events;
 
   @override
   void initState() {
     super.initState();
-    _loadEmail();
+    _loadProfile();
   }
 
-  Future<void> _loadEmail() async {
-    final authService = ServiceLocator.auth;
-    final email = await authService.getCurrentUsername();
-    setState(() {
-      _email = email;
-    });
+  Future<void> _loadProfile() async {
+    try {
+      final data = await ServiceLocator.user.getProfile(widget.username);
+      final posts = await ServiceLocator.user.getPosts(widget.username);
+      final media = await ServiceLocator.user.getMedia(widget.username);
+      final events = await ServiceLocator.user.getEvents(widget.username);
+
+      if (!mounted) return;
+      setState(() {
+        _profileData = data;
+        _posts = posts;
+        _media = media;
+        _events = events;
+      });
+    } catch (e) {
+      if (mounted) setState(() {});
+    }
   }
 
   void _signOut(BuildContext context) {
@@ -39,222 +56,64 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFFd32f2f)),
-              child: Text(
-                'Profil Menüsü',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Profil Düzenle'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Ayarlar'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
-                );
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Çıkış Yap'),
-              onTap: () => _signOut(context),
-            ),
-          ],
-        ),
-      ),
       appBar: AppBar(
-        title: Text(widget.username), // Artık kullanıcı adı gösteriliyor
-        backgroundColor: Theme.of(context).primaryColor,
+        title: Text(widget.username),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.transparent,
-                  backgroundImage:
-                      _imageFile != null ? FileImage(_imageFile!) : null,
-                  child: _imageFile == null
-                      ? Icon(Icons.account_circle,
-                          size: 100, color: Colors.grey[400])
-                      : null,
+      drawer: ProfileDrawer(
+        onSignOut: () => _signOut(context),
+        colorScheme: colorScheme,
+        theme: theme,
+      ),
+      body: DefaultTabController(
+        length: 4,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: ProfileHeader(
+                  username: widget.username,
+                  profileData: _profileData,
+                  imageFile: _imageFile,
+                  colorScheme: colorScheme,
+                  theme: theme,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.username, // Kullanıcı adı gösteriliyor
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Takip Et'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Mesaj'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: 55,
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedTab = 0),
-                    child: Container(
-                      color: _selectedTab == 0 ? Colors.grey[200] : null,
-                      height: 45,
-                      child: Icon(
-                        Icons.post_add,
-                        color: _selectedTab == 0
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey,
-                        size: 30,
-                      ),
-                    ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: ProfileTabBarDelegate(
+                  TabBar(
+                    indicatorColor: colorScheme.primary,
+                    labelColor: colorScheme.primary,
+                    unselectedLabelColor:
+                        colorScheme.onSurface.withOpacity(0.5),
+                    tabs: const [
+                      Tab(text: 'Gönderiler'),
+                      Tab(text: 'Medya'),
+                      Tab(text: 'Etkinlikler'),
+                      Tab(text: 'Bilgi'),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedTab = 1),
-                    child: Container(
-                      color: _selectedTab == 1 ? Colors.grey[200] : null,
-                      height: 45,
-                      child: Icon(
-                        Icons.photo_library,
-                        color: _selectedTab == 1
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedTab = 2),
-                    child: Container(
-                      color: _selectedTab == 2 ? Colors.grey[200] : null,
-                      height: 45,
-                      child: Icon(
-                        Icons.info,
-                        color: _selectedTab == 2
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ];
+          },
+          body: TabBarView(
+            children: [
+              PostsTab(posts: _posts, theme: theme),
+              MediaTab(media: _media, theme: theme),
+              EventsTab(events: _events, theme: theme),
+              InfoTab(profileData: _profileData),
+            ],
           ),
-          Expanded(
-            child: _selectedTab == 0
-                ? _buildPostsContent()
-                : _selectedTab == 1
-                    ? _buildMediaContent()
-                    : _buildProfileInfoContent(),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildPostsContent() {
-    return const Center(
-      child:
-          Text('Postlar Burada Gösterilecek', style: TextStyle(fontSize: 18)),
-    );
-  }
-
-  Widget _buildMediaContent() {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-      ),
-      itemCount: 12,
-      itemBuilder: (context, index) {
-        return Container(
-          color: Colors.grey[200],
-          child: Center(
-            child: Icon(
-              index % 3 == 0 ? Icons.videocam : Icons.photo,
-              size: 40,
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildProfileInfoContent() {
-    return ListView(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.email),
-          title: const Text('Email'),
-          subtitle: Text(_email ?? 'Bilgi yok'),
-        ),
-        const ListTile(
-          leading: Icon(Icons.calendar_today),
-          title: Text('Üyelik Tarihi'),
-          subtitle: Text('1 Ocak 2023'),
-        ),
-        const ListTile(
-          leading: Icon(Icons.location_on),
-          title: Text('Konum'),
-          subtitle: Text('İstanbul, Türkiye'),
-        ),
-        const ListTile(
-          leading: Icon(Icons.motorcycle),
-          title: Text('Motor Modeli'),
-          subtitle: Text('Yamaha MT-07'),
-        ),
-      ],
     );
   }
 }
