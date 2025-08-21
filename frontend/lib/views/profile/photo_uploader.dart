@@ -103,6 +103,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
                 : Icon(
                     Icons.account_circle,
                     size: 150,
+                    // ignore: deprecated_member_use
                     color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
           ),
@@ -148,6 +149,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       style: ElevatedButton.styleFrom(
         padding: ThemeConstants.paddingMedium,
         backgroundColor: _isUploading
+            // ignore: deprecated_member_use
             ? theme.colorScheme.surface.withOpacity(0.5)
             : theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,

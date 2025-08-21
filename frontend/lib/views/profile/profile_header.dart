@@ -25,9 +25,12 @@ class ProfileHeader extends StatelessWidget {
         Container(
           height: 150,
           width: double.infinity,
+          // ignore: deprecated_member_use
           color: colorScheme.primary.withOpacity(0.2),
           child: Icon(Icons.photo_camera,
-              color: colorScheme.onSurface.withOpacity(0.5), size: 40),
+              // ignore: deprecated_member_use
+              color: colorScheme.onSurface.withOpacity(0.5),
+              size: 40),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -48,6 +51,7 @@ class ProfileHeader extends StatelessWidget {
                         ? Icon(
                             Icons.account_circle,
                             size: 84,
+                            // ignore: deprecated_member_use
                             color: colorScheme.onSurface.withOpacity(0.5),
                           )
                         : null,
@@ -64,6 +68,7 @@ class ProfileHeader extends StatelessWidget {
               Text(
                 profileData?['email'] ?? 'Email girilmemiş',
                 style: theme.textTheme.bodyMedium?.copyWith(
+                  // ignore: deprecated_member_use
                   color: colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
+import 'edit_profile_page.dart';
 import 'profile_drawer.dart';
 import 'profile_header.dart';
 import 'profile_tab_bar.dart';
@@ -70,6 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
         onSignOut: () => _signOut(context),
         colorScheme: colorScheme,
         theme: theme,
+        profileData: _profileData ?? {}, // Burada profil verisini gönderiyoruz
       ),
       body: DefaultTabController(
         length: 4,
@@ -92,6 +94,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     indicatorColor: colorScheme.primary,
                     labelColor: colorScheme.primary,
                     unselectedLabelColor:
+                        // ignore: deprecated_member_use
                         colorScheme.onSurface.withOpacity(0.5),
                     tabs: const [
                       Tab(text: 'Gönderiler'),

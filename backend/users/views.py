@@ -14,13 +14,28 @@ from unidecode import unidecode
 from core_api.unaccent import Unaccent
 
 from django.contrib.auth import get_user_model
-from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer, FollowSerializer
+from .serializers import (
+    UserRegisterSerializer,
+    UserLoginSerializer,
+    UserSerializer,
+    FollowSerializer,
+    PostSerializer,
+    MediaSerializer,
+    EventSerializer
+)
+
 from groups.models import Group
 from groups.serializers import GroupSerializer
+from posts.models import Post
+from media.models import MediaFile
+from events.models import Event
 
 User = get_user_model()
 
 
+# -------------------------------
+# REGISTER & LOGIN
+# -------------------------------
 @method_decorator(csrf_exempt, name='dispatch')
 class UserRegisterView(APIView):
     permission_classes = (AllowAny,)
@@ -49,6 +64,9 @@ class UserLoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# -------------------------------
+# USER SEARCH
+# -------------------------------
 class UserSearchView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -64,6 +82,9 @@ class UserSearchView(generics.ListAPIView):
         return queryset
 
 
+# -------------------------------
+# GROUP SEARCH
+# -------------------------------
 class GroupSearchView(generics.ListAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
@@ -85,6 +106,9 @@ class GroupSearchView(generics.ListAPIView):
         return queryset
 
 
+# -------------------------------
+# PROFILE IMAGE UPLOAD
+# -------------------------------
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
@@ -102,7 +126,9 @@ class ProfileImageUploadView(APIView):
         return Response({"message": "Profile image updated successfully."}, status=status.HTTP_200_OK)
 
 
-# ---------------- Follow / Followers / Following ----------------
+# -------------------------------
+# FOLLOW / FOLLOWERS / FOLLOWING
+# -------------------------------
 class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -148,4 +174,71 @@ class FollowingListView(APIView):
 
         following = target_user.following.all()
         serializer = FollowSerializer(following, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+# -------------------------------
+# USER PROFILE
+# -------------------------------
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(user, context={'request': request})
+        return Response(serializer.data)
+
+
+# -------------------------------
+# USER POSTS
+# -------------------------------
+class UserPostsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        posts = Post.objects.filter(author=user)
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+# -------------------------------
+# USER MEDIA
+# -------------------------------
+class UserMediaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        media_files = MediaFile.objects.filter(user=user)
+        serializer = MediaSerializer(media_files, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+# -------------------------------
+# USER EVENTS
+# -------------------------------
+class UserEventsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        events = Event.objects.filter(user=user)
+        serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)
