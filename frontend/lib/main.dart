@@ -30,8 +30,7 @@ void main() async {
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
           Provider<AuthService>.value(value: ServiceLocator.auth),
-          Provider<PostService>(
-              create: (_) => PostService()), // <-- PostService provider eklendi
+          Provider<PostService>(create: (_) => PostService()),
         ],
         child: const MotoApp(),
       ),
@@ -92,7 +91,7 @@ class MotoApp extends StatelessWidget {
       const MessagesPage(),
       // ProfilePage için username alınacak
       FutureBuilder<String?>(
-        future: ServiceLocator.auth.getCurrentUsername(),
+        future: ServiceLocator.token.getUsernameFromToken(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

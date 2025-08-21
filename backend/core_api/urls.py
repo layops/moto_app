@@ -1,3 +1,5 @@
+# moto_app/backend/core_api/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -66,7 +68,6 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
-# DEBUG modunda medya ve statik dosyaları servis et
+# Geliştirme ortamında medya dosyalarını sunmak için
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

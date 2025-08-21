@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'api_exceptions.dart';
-import '../storage/local_storage.dart';
 import '../../config.dart';
+import '../storage/local_storage.dart';
+import 'api_exceptions.dart';
 
 class ApiClient {
   final Dio _dio;
@@ -13,11 +13,12 @@ class ApiClient {
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
 
-    // Interceptor: Token ekleme
+    // Token interceptor
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = _storage.getAuthToken(); // Düzeltilmiş metod
-        if (token != null) {
+        final token = _storage.getAuthToken();
+        if (token != null && !options.path.contains('login')) {
+          // Login isteğinde token gönderme
           options.headers['Authorization'] = 'Token $token';
         }
         return handler.next(options);
@@ -38,6 +39,9 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  // ----------------------
+  // GET
+  // ----------------------
   Future<Response> get(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) async {
     try {
@@ -52,6 +56,9 @@ class ApiClient {
     }
   }
 
+  // ----------------------
+  // POST
+  // ----------------------
   Future<Response> post(String path, dynamic data, {Options? options}) async {
     try {
       debugPrint('POST Request: $path');
@@ -66,6 +73,9 @@ class ApiClient {
     }
   }
 
+  // ----------------------
+  // PUT
+  // ----------------------
   Future<Response> put(String path, dynamic data, {Options? options}) async {
     try {
       debugPrint('PUT Request: $path');
@@ -78,6 +88,9 @@ class ApiClient {
     }
   }
 
+  // ----------------------
+  // DELETE
+  // ----------------------
   Future<Response> delete(String path, {Options? options}) async {
     try {
       debugPrint('DELETE Request: $path');
@@ -88,5 +101,42 @@ class ApiClient {
       debugPrint('DELETE Error: ${e.message}');
       throw ApiExceptions.fromDioError(e);
     }
+  }
+
+  // ----------------------
+  // LOGIN
+  // ----------------------
+  Future<void> login(String username, String password) async {
+    try {
+      final response = await post(
+        'users/login/', // ✅ doğru endpoint
+        {
+          'username': username,
+          'password': password,
+        },
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+
+      final token = response.data['token'];
+      if (token != null) {
+        await _storage.setAuthToken(token);
+        await _storage.setCurrentUsername(username);
+      }
+
+      debugPrint('Login başarılı!');
+    } on DioException catch (e) {
+      throw ApiExceptions.fromDioError(e);
+    }
+  }
+
+  // ----------------------
+  // LOGOUT
+  // ----------------------
+  Future<void> logout() async {
+    await _storage.removeAuthToken();
+    await _storage.removeCurrentUsername();
+    debugPrint('Logout başarılı!');
   }
 }

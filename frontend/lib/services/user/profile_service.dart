@@ -5,6 +5,7 @@ import '../auth/token_service.dart';
 
 class ProfileService {
   final ApiClient _apiClient;
+  // ignore: unused_field
   final TokenService _tokenService;
 
   ProfileService(this._apiClient, this._tokenService);
@@ -18,36 +19,31 @@ class ProfileService {
     });
 
     return await _apiClient.post(
-      'profile/upload-photo/',
+      'users/$username/profile/upload-photo/',
       formData,
     );
   }
 
-  Future<Response> updateProfile(Map<String, dynamic> profileData) async {
-    final token = await _tokenService.getToken();
-    if (token == null) throw Exception('Kullanıcı girişi gerekli');
-
+  Future<Response> updateProfile(
+      String username, Map<String, dynamic> profileData) async {
     return await _apiClient.put(
-      'profile/update/',
+      'users/$username/profile/',
       profileData,
     );
   }
 
-  // Profil bilgilerini çekme
-  Future<Map<String, dynamic>> getProfile() async {
-    final response = await _apiClient.get('profile/');
+  Future<Map<String, dynamic>> getProfile(String username) async {
+    final response = await _apiClient.get('users/$username/profile/');
     return response.data as Map<String, dynamic>;
   }
 
-  // Kullanıcının gönderilerini çekme
-  Future<List<Map<String, dynamic>>> getPosts() async {
-    final response = await _apiClient.get('profile/posts/');
+  Future<List<Map<String, dynamic>>> getPosts(String username) async {
+    final response = await _apiClient.get('users/$username/posts/');
     return List<Map<String, dynamic>>.from(response.data);
   }
 
-  // Kullanıcının medya içeriklerini çekme
-  Future<List<Map<String, dynamic>>> getMedia() async {
-    final response = await _apiClient.get('profile/media/');
+  Future<List<Map<String, dynamic>>> getMedia(String username) async {
+    final response = await _apiClient.get('users/$username/media/');
     return List<Map<String, dynamic>>.from(response.data);
   }
 }

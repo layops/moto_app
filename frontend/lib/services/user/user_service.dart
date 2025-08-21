@@ -14,7 +14,7 @@ class UserService {
     required String password,
   }) async {
     return await _apiClient.post(
-      'register/',
+      'users/register/',
       {
         'username': username,
         'email': email,
@@ -27,9 +27,10 @@ class UserService {
     return _storage.getCurrentUsername();
   }
 
-  Future<Response> updateProfile(Map<String, dynamic> profileData) async {
-    return await _apiClient.post(
-      'profile/update/',
+  Future<Response> updateProfile(
+      String username, Map<String, dynamic> profileData) async {
+    return await _apiClient.put(
+      'users/$username/profile/',
       profileData,
     );
   }

@@ -13,15 +13,18 @@ class AuthService {
 
   AuthService(this._apiClient, this._tokenService, this._storage);
 
-  ApiClient get apiClient => _apiClient;
-
+  // Auth state değişikliklerini dinlemek için
   Stream<bool> get authStateChanges => _authStateController.stream;
 
+  ApiClient get apiClient => _apiClient;
+
+  /// Uygulama açıldığında auth durumunu başlat
   Future<void> initializeAuthState() async {
     final loggedIn = await isLoggedIn();
     _authStateController.add(loggedIn);
   }
 
+  /// Login işlemi
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
@@ -51,6 +54,7 @@ class AuthService {
     }
   }
 
+  /// Register işlemi
   Future<Response> register({
     required String username,
     required String email,
@@ -72,18 +76,22 @@ class AuthService {
     }
   }
 
+  /// Logout işlemi
   Future<void> logout() async {
     await clearAllUserData();
   }
 
+  /// Kullanıcı giriş yapmış mı?
   Future<bool> isLoggedIn() async {
     return await _tokenService.hasToken();
   }
 
+  /// Token al
   Future<String?> getToken() async {
     return await _tokenService.getToken();
   }
 
+  /// Şu anki kullanıcı adını al
   Future<String?> getCurrentUsername() async {
     final tokenData = await _tokenService.getTokenData();
     if (tokenData?['username'] != null) {
@@ -92,6 +100,7 @@ class AuthService {
     return _storage.getCurrentUsername() ?? _storage.getRememberedUsername();
   }
 
+  /// Remember me durumu
   Future<void> saveRememberMe(bool rememberMe) async {
     await _storage.setRememberMe(rememberMe);
   }
@@ -100,6 +109,7 @@ class AuthService {
     return (_storage.getRememberMe()) ?? false;
   }
 
+  /// Remembered username
   Future<void> saveRememberedUsername(String username) async {
     await _storage.setRememberedUsername(username);
   }
@@ -112,6 +122,7 @@ class AuthService {
     await _storage.clearRememberedUsername();
   }
 
+  /// Token’ı response’dan çıkar
   String _extractToken(Response response) {
     try {
       return response.data['token'] ??
@@ -123,6 +134,7 @@ class AuthService {
     }
   }
 
+  /// Tüm kullanıcı verilerini temizle
   Future<void> clearAllUserData() async {
     await _tokenService.deleteAuthData();
     await _storage.removeCurrentUsername();

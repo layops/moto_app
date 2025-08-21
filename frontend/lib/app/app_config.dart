@@ -43,9 +43,9 @@ class AppConfig extends StatelessWidget {
                         pages: [
                           const HomePage(),
                           const GroupsPage(),
-                          // ProfilePage artık username parametresi alacak
+                          // ProfilePage artık TokenService üzerinden username alacak
                           FutureBuilder<String?>(
-                            future: ServiceLocator.auth.getCurrentUsername(),
+                            future: ServiceLocator.token.getUsernameFromToken(),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {

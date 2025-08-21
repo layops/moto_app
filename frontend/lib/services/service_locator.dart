@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'storage/local_storage.dart';
 import 'http/api_client.dart';
 import 'auth/auth_service.dart';
 import 'auth/token_service.dart';
 import 'user/user_service.dart';
 import 'user/profile_service.dart';
-import 'follow/follow_service.dart'; // Yeni servis import
+import 'follow/follow_service.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -24,7 +23,7 @@ class ServiceLocator {
   late final AuthService _authService;
   late final UserService _userService;
   late final ProfileService _profileService;
-  late final FollowService _followService; // Yeni servis
+  late final FollowService _followService;
 
   // Private constructor
   ServiceLocator._internal();
@@ -105,7 +104,7 @@ class ServiceLocator {
   static TokenService get token => _instance._tokenService;
   static UserService get user => _instance._userService;
   static ProfileService get profile => _instance._profileService;
-  static FollowService get follow => _instance._followService; // Yeni servis
+  static FollowService get follow => _instance._followService;
   static LocalStorage get storage => _instance._localStorage;
 
   // Navigation helpers
@@ -114,7 +113,7 @@ class ServiceLocator {
       scaffoldMessengerKey.currentState!;
 }
 
-/// Custom error class for ServiceLocator
+// Custom error class
 class ServiceLocatorError implements Exception {
   final String message;
   final Object? error;
