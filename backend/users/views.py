@@ -27,7 +27,7 @@ from .serializers import (
 from groups.models import Group
 from groups.serializers import GroupSerializer
 from posts.models import Post
-from media.models import MediaFile
+from media.models import Media
 from events.models import Event
 
 User = get_user_model()
