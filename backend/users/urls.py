@@ -15,21 +15,25 @@ from .views import (
 )
 
 urlpatterns = [
-    # Auth ve arama
+    # Register & Login
     path('register/', UserRegisterView.as_view(), name='register'),
     path('login/', UserLoginView.as_view(), name='login'),
+
+    # Search
     path('search/users/', UserSearchView.as_view(), name='user-search'),
     path('search/groups/', GroupSearchView.as_view(), name='group-search'),
+
+    # Profile
+    path('<str:username>/profile/', UserProfileView.as_view(), name='user-profile'),
     path('profile/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
 
-    # Follow endpoints
-    path('users/<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle'),
-    path('users/<str:username>/followers/', FollowersListView.as_view(), name='followers-list'),
-    path('users/<str:username>/following/', FollowingListView.as_view(), name='following-list'),
+    # Follow system
+    path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle'),
+    path('<str:username>/followers/', FollowersListView.as_view(), name='followers-list'),
+    path('<str:username>/following/', FollowingListView.as_view(), name='following-list'),
 
-    # Kullanıcı profili ve içerikleri (Flutter uyumlu)
-    path('users/<str:username>/profile/', UserProfileView.as_view(), name='user-profile'),
-    path('users/<str:username>/posts/', UserPostsView.as_view(), name='user-posts'),
-    path('users/<str:username>/media/', UserMediaView.as_view(), name='user-media'),
-    path('users/<str:username>/events/', UserEventsView.as_view(), name='user-events'),
+    # User content
+    path('<str:username>/posts/', UserPostsView.as_view(), name='user-posts'),
+    path('<str:username>/media/', UserMediaView.as_view(), name='user-media'),
+    path('<str:username>/events/', UserEventsView.as_view(), name='user-events'),
 ]

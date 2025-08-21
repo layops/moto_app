@@ -6,7 +6,6 @@ import '../../config.dart';
 
 class ApiClient {
   final Dio _dio;
-  // ignore: unused_field
   final LocalStorage _storage;
 
   ApiClient(this._storage) : _dio = Dio() {
@@ -14,6 +13,18 @@ class ApiClient {
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
 
+    // Interceptor: Token ekleme
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = _storage.getAuthToken(); // Düzeltilmiş metod
+        if (token != null) {
+          options.headers['Authorization'] = 'Token $token';
+        }
+        return handler.next(options);
+      },
+    ));
+
+    // Log interceptor
     _dio.interceptors.add(LogInterceptor(
       request: true,
       requestHeader: true,
