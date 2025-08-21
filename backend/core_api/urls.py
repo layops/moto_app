@@ -20,38 +20,31 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+# core_api/urls.py
 urlpatterns = [
-    # Kök URL'yi /api/ dizinine yönlendirme
     path('', RedirectView.as_view(url='/api/', permanent=True)),
-
-    # Admin paneli
     path('admin/', admin.site.urls),
 
-    # API endpointleri
-    path('api/', include('users.urls')),
-    path('api/', include('bikes.urls')),
-    path('api/', include('rides.urls')),
+    # users app
+    path('api/users/', include('users.urls')),  # <-- Burada /api/users/ prefix'i
 
-    # Groups app
-    path('api/groups/', include('groups.urls')),  
-
-    # Group-related Events app
-    path('api/', include('events.urls')),  # /groups/<group_pk>/events/ şeklinde URL yapısı
-
-    # posts app
-    path('api/', include('posts.urls')),
-
-    # Notifications & Gamification
-    path('api/', include('notifications.urls')),
-    path('api/', include('gamification.urls')),
+    # diğer app’ler
+    path('api/bikes/', include('bikes.urls')),
+    path('api/rides/', include('rides.urls')),
+    path('api/groups/', include('groups.urls')),
+    path('api/events/', include('events.urls')),
+    path('api/posts/', include('posts.urls')),
+    path('api/notifications/', include('notifications.urls')),
+    path('api/gamification/', include('gamification.urls')),
 
     # Swagger / Redoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
     # DRF login/logout
-    path('api/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
+
 
 # DEBUG modunda medya ve statik dosyaları servis et
 if settings.DEBUG:

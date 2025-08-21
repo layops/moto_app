@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from posts.models import Post
 from events.models import Event
-from media.models import Media  # <-- Burada MediaFile yerine Media kullanıyoruz
+from media.models import Media  
 
 User = get_user_model()
 
@@ -91,7 +91,7 @@ class MediaSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = Media  # MediaFile değil Media
+        model = Media 
         fields = ['id', 'file_url', 'description', 'uploaded_by', 'uploaded_at', 'group']
 
     def get_file_url(self, obj):
