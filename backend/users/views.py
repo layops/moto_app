@@ -3,15 +3,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authtoken.models import Token
 from rest_framework.parsers import MultiPartParser, FormParser
-
-from django.db.models.functions import Lower
-from django.db.models import Q
-from unidecode import unidecode
-from core_api.unaccent import Unaccent
+from rest_framework.authtoken.models import Token
 
 from django.contrib.auth import get_user_model
 from .serializers import (
@@ -23,15 +18,11 @@ from .serializers import (
     MediaSerializer,
     EventSerializer
 )
-
-from groups.models import Group
-from groups.serializers import GroupSerializer
 from posts.models import Post
 from media.models import Media
 from events.models import Event
 
 User = get_user_model()
-
 
 # -------------------------------
 # REGISTER & LOGIN
@@ -62,48 +53,6 @@ class UserLoginView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             return Response({'token': token.key, 'username': user.username}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# -------------------------------
-# USER SEARCH
-# -------------------------------
-class UserSearchView(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        query = self.request.query_params.get('q', None)
-        if query:
-            normalized_query = unidecode(query.lower())
-            annotated = queryset.annotate(norm_username=Unaccent(Lower('username')))
-            return annotated.filter(norm_username__icontains=normalized_query)
-        return queryset
-
-
-# -------------------------------
-# GROUP SEARCH
-# -------------------------------
-class GroupSearchView(generics.ListAPIView):
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        query = self.request.query_params.get('q', None)
-        if query:
-            normalized_query = unidecode(query.lower())
-            annotated = queryset.annotate(
-                norm_name=Unaccent(Lower('name')),
-                norm_desc=Unaccent(Lower('description'))
-            )
-            return annotated.filter(
-                Q(norm_name__icontains=normalized_query) |
-                Q(norm_desc__icontains=normalized_query)
-            )
-        return queryset
 
 
 # -------------------------------
@@ -222,7 +171,7 @@ class UserMediaView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        media_files = MediaFile.objects.filter(user=user)
+        media_files = Media.objects.filter(user=user)
         serializer = MediaSerializer(media_files, many=True, context={'request': request})
         return Response(serializer.data)
 

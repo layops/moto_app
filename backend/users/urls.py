@@ -2,8 +2,6 @@ from django.urls import path
 from .views import (
     UserRegisterView,
     UserLoginView,
-    UserSearchView,
-    GroupSearchView,
     ProfileImageUploadView,
     FollowToggleView,
     FollowersListView,
@@ -18,10 +16,6 @@ urlpatterns = [
     # Register & Login
     path('register/', UserRegisterView.as_view(), name='register'),
     path('login/', UserLoginView.as_view(), name='login'),
-
-    # Search
-    path('search/users/', UserSearchView.as_view(), name='user-search'),
-    path('search/groups/', GroupSearchView.as_view(), name='group-search'),
 
     # Profile
     path('<str:username>/profile/', UserProfileView.as_view(), name='user-profile'),
