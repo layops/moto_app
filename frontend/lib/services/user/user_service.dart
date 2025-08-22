@@ -48,10 +48,38 @@ class UserService {
 
   Future<List<dynamic>> getPosts(String username) async {
     try {
+      // Önce user-specific endpoint'i dene
       final response = await _apiClient.get('users/$username/posts/');
       return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      // 500 hatası alınırsa, fallback yap
+      if (e.response?.statusCode == 500) {
+        print('User posts endpoint 500 hatası, fallback yapılıyor');
+        return await _getPostsFallback(username);
+      }
+      print('Gönderiler getirme hatası (DioException): ${e.message}');
+      return [];
     } catch (e) {
-      print('Gönderiler getirme hatası: $e');
+      print('Gönderiler getirme hatası (genel): $e');
+      return await _getPostsFallback(username);
+    }
+  }
+
+  // Fallback method: Tüm postları al ve kullanıcıya göre filtrele
+  Future<List<dynamic>> _getPostsFallback(String username) async {
+    try {
+      final response = await _apiClient.get('posts/');
+      final allPosts = response.data as List<dynamic>;
+
+      // Kullanıcının postlarını filtrele
+      final userPosts = allPosts
+          .where((post) =>
+              post['author'] != null && post['author']['username'] == username)
+          .toList();
+
+      return userPosts;
+    } catch (e) {
+      print('Fallback gönderi getirme hatası: $e');
       return [];
     }
   }

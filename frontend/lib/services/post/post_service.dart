@@ -12,6 +12,8 @@ class PostService {
               baseUrl: kBaseUrl,
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
+              followRedirects: true,
+              maxRedirects: 5,
             ));
 
   Future<String?> _getToken() async {
@@ -40,8 +42,7 @@ class PostService {
       ));
     }
 
-    // DÜZELTME: Sonunda slash olmadan endpoint oluştur
-    final endpoint = groupPk != null ? 'groups/$groupPk/posts' : 'posts';
+    final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';
 
     try {
       final response = await _dio.post(
@@ -74,8 +75,47 @@ class PostService {
   }
 
   Future<List<dynamic>> fetchPosts(String token, {int? groupPk}) async {
-    // DÜZELTME: Sonunda slash olmadan endpoint oluştur
-    final endpoint = groupPk != null ? 'groups/$groupPk/posts' : 'posts';
+    final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';
+
+    try {
+      final response = await _dio.get(
+        endpoint,
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception('Postlar alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('API endpointi bulunamadı: $kBaseUrl/$endpoint');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception(
+            'Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else if (e.type == DioExceptionType.connectionError) {
+        throw Exception(
+            'Sunucuya bağlanılamıyor. Lütfen sunucunun çalıştığından emin olun.');
+      } else {
+        throw Exception('Postlar alınırken hata oluştu: ${e.message}');
+      }
+    }
+  }
+
+  /// Profil postlarını çekmek için
+  Future<List<dynamic>> fetchUserPosts(String username) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
+
+    final endpoint = 'posts/?username=$username'; // backend query param
 
     try {
       final response = await _dio.get(

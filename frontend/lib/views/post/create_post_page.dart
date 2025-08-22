@@ -8,10 +8,15 @@ import '../../services/post/post_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   final VoidCallback? onPostCreated;
-  final int? groupPk; // groupPk'yi null olabilecek şekilde ekleyin
+  final int? groupPk;
+  final VoidCallback? onProfileRefresh; // Yeni eklenen callback
 
-  const CreatePostPage(
-      {super.key, this.onPostCreated, this.groupPk}); // Constructor'a ekleyin
+  const CreatePostPage({
+    super.key,
+    this.onPostCreated,
+    this.groupPk,
+    this.onProfileRefresh, // Constructor'a ekle
+  });
 
   @override
   State<CreatePostPage> createState() => _CreatePostPageState();
@@ -51,10 +56,13 @@ class _CreatePostPageState extends State<CreatePostPage> {
       await postService.createPost(
         content: _contentController.text,
         file: _selectedFile,
-        groupPk: widget.groupPk, // Widget'tan gelen groupPk'yı iletin
+        groupPk: widget.groupPk,
       );
 
       if (widget.onPostCreated != null) widget.onPostCreated!();
+      if (widget.onProfileRefresh != null)
+        widget.onProfileRefresh!(); // Profili yenile
+
       // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } catch (e) {

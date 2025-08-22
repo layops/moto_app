@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'post_item.dart';
+import '../../widgets/post/post_item.dart';
 import 'home_empty_state.dart';
 
 class HomePostsList extends StatelessWidget {

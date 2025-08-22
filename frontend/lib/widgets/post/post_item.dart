@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../profile/profile_page.dart';
+import '../../views/profile/profile_page.dart';
 
 class PostItem extends StatelessWidget {
   final dynamic post;

@@ -28,6 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _currentUsername;
   bool _isLoading = true;
   String? _errorMessage;
+  String? _postsError; // Gönderiler için özel hata mesajı
 
   @override
   void initState() {
@@ -69,20 +70,40 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
+        _postsError = null;
       });
 
-      // Her bir isteği bağımsız olarak çalıştır
-      // Böylece birinde hata olsa bile diğerleri çalışır
-      final profileFuture = ServiceLocator.user.getProfile(_currentUsername!);
-      final postsFuture = ServiceLocator.user.getPosts(_currentUsername!);
-      final mediaFuture = ServiceLocator.user.getMedia(_currentUsername!);
-      final eventsFuture = ServiceLocator.user.getEvents(_currentUsername!);
+      // Profil bilgilerini al
+      try {
+        _profileData = await ServiceLocator.user.getProfile(_currentUsername!);
+      } catch (e) {
+        print('Profil bilgisi getirme hatası: $e');
+      }
 
-      // Tüm istekleri await ile bekle
-      _profileData = await profileFuture;
-      _posts = await postsFuture;
-      _media = await mediaFuture;
-      _events = await eventsFuture;
+      // Gönderileri al (hata yönetimi ile)
+      try {
+        _posts = await ServiceLocator.user.getPosts(_currentUsername!);
+      } catch (e) {
+        print('Gönderiler getirme hatası: $e');
+        _postsError = 'Gönderiler yüklenirken hata oluştu';
+        _posts = [];
+      }
+
+      // Medyayı al
+      try {
+        _media = await ServiceLocator.user.getMedia(_currentUsername!);
+      } catch (e) {
+        print('Medya getirme hatası: $e');
+        _media = [];
+      }
+
+      // Etkinlikleri al
+      try {
+        _events = await ServiceLocator.user.getEvents(_currentUsername!);
+      } catch (e) {
+        print('Etkinlikler getirme hatası: $e');
+        _events = [];
+      }
 
       if (!mounted) return;
 
@@ -93,7 +114,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Profil yüklenirken hata oluştu: $e';
+          _errorMessage = 'Profil yüklenirken genel hata oluştu: $e';
         });
       }
     }
@@ -109,7 +130,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final colorScheme = theme.colorScheme;
 
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -123,10 +144,10 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(_errorMessage!),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _loadProfile,
-                child: Text('Tekrar Dene'),
+                child: const Text('Tekrar Dene'),
               ),
             ],
           ),
@@ -135,7 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (_currentUsername == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: Text('Kullanıcı bulunamadı'),
         ),
@@ -150,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _loadProfile,
           ),
         ],
@@ -196,10 +217,16 @@ class _ProfilePageState extends State<ProfilePage> {
           },
           body: TabBarView(
             children: [
-              PostsTab(posts: _posts, theme: theme),
-              MediaTab(media: _media, theme: theme),
-              EventsTab(events: _events, theme: theme),
-              InfoTab(profileData: _profileData),
+              PostsTab(
+                posts: _posts ?? [],
+                theme: theme,
+                username: _currentUsername!,
+                avatarUrl: _profileData?['avatar']?.toString(),
+                error: _postsError,
+              ),
+              MediaTab(media: _media ?? [], theme: theme),
+              EventsTab(events: _events ?? [], theme: theme),
+              InfoTab(profileData: _profileData ?? {}),
             ],
           ),
         ),

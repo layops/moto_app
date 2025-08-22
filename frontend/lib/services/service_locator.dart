@@ -6,6 +6,7 @@ import 'auth/token_service.dart';
 import 'user/user_service.dart';
 import 'user/profile_service.dart';
 import 'follow/follow_service.dart';
+import 'post/post_service.dart'; // 🔹 PostService import
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -24,6 +25,7 @@ class ServiceLocator {
   late final UserService _userService;
   late final ProfileService _profileService;
   late final FollowService _followService;
+  late final PostService _postService; // 🔹 PostService ekledik
 
   // Private constructor
   ServiceLocator._internal();
@@ -80,9 +82,12 @@ class ServiceLocator {
         _instance._tokenService,
       );
 
+      // 8. Initialize post service
+      _instance._postService = PostService();
+
       _isInitialized = true;
     } catch (e, stackTrace) {
-      await reset();
+      _isInitialized = false;
       throw ServiceLocatorError(
           'ServiceLocator initialization failed', e, stackTrace);
     }
@@ -105,6 +110,7 @@ class ServiceLocator {
   static UserService get user => _instance._userService;
   static ProfileService get profile => _instance._profileService;
   static FollowService get follow => _instance._followService;
+  static PostService get post => _instance._postService; // 🔹 getter
   static LocalStorage get storage => _instance._localStorage;
 
   // Navigation helpers

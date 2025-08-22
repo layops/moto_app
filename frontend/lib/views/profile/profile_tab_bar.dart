@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ProfileTabBarDelegate extends SliverPersistentHeaderDelegate {
-  ProfileTabBarDelegate(this.tabBar);
-
   final TabBar tabBar;
+
+  ProfileTabBarDelegate(this.tabBar);
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final theme = Theme.of(context);
     return Container(
-      color: theme.colorScheme.surface,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: tabBar,
     );
   }
@@ -22,7 +21,7 @@ class ProfileTabBarDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => tabBar.preferredSize.height;
 
   @override
-  bool shouldRebuild(ProfileTabBarDelegate oldDelegate) {
+  bool shouldRebuild(covariant ProfileTabBarDelegate oldDelegate) {
     return tabBar != oldDelegate.tabBar;
   }
 }
