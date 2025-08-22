@@ -12,7 +12,7 @@ import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/views/settings/settings_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
-
+// ozan
 class AppConfig extends StatelessWidget {
   const AppConfig({super.key});
 
