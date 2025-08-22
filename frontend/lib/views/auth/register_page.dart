@@ -54,10 +54,15 @@ class _RegisterPageState extends State<RegisterPage> {
             context, 'Kayıt başarılı! Giriş yapabilirsiniz');
       }
     } catch (e) {
-      AuthCommon.showErrorSnackbar(
-          // ignore: use_build_context_synchronously
-          context,
-          'Hata: ${e.toString().replaceFirst('Exception: ', '')}');
+      // Hata mesajını daha kullanıcı dostu hale getir
+      String errorMessage = 'Kayıt başarısız';
+
+      if (e.toString().contains('Kayıt hatası:')) {
+        errorMessage =
+            e.toString().replaceFirst('Exception: Kayıt hatası: ', '');
+      }
+
+      AuthCommon.showErrorSnackbar(context, errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

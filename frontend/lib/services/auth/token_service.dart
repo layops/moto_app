@@ -47,4 +47,16 @@ class TokenService {
     final tokenData = await getTokenData();
     return tokenData?['username']?.toString();
   }
+
+  // Token süresi dolmuş mu kontrol et
+  Future<bool> isTokenExpired() async {
+    final tokenData = await getTokenData();
+    if (tokenData == null) return true;
+
+    final exp = tokenData['exp'];
+    if (exp == null) return true;
+
+    final expiryTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    return DateTime.now().isAfter(expiryTime);
+  }
 }

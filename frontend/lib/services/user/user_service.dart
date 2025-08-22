@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
+import '../http/api_exceptions.dart'; // Doğru import yolu
 
 class UserService {
   final ApiClient _apiClient;
@@ -24,7 +25,7 @@ class UserService {
   }
 
   Future<String?> getCurrentUsername() async {
-    return _storage.getCurrentUsername();
+    return await _storage.getCurrentUsername();
   }
 
   Future<Response> updateProfile(
@@ -40,6 +41,7 @@ class UserService {
       final response = await _apiClient.get('users/$username/profile/');
       return response.data as Map<String, dynamic>?;
     } catch (e) {
+      print('Profil getirme hatası: $e');
       return null;
     }
   }
@@ -49,6 +51,7 @@ class UserService {
       final response = await _apiClient.get('users/$username/posts/');
       return response.data as List<dynamic>;
     } catch (e) {
+      print('Gönderiler getirme hatası: $e');
       return [];
     }
   }
@@ -57,7 +60,17 @@ class UserService {
     try {
       final response = await _apiClient.get('users/$username/media/');
       return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      // Sadece DioException'ı yakala
+      if (e.response?.statusCode == 500) {
+        print('Medya endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Medya getirme hatası (DioException): ${e.message}');
+      return [];
     } catch (e) {
+      // Diğer tüm hataları yakala
+      print('Medya getirme hatası (genel): $e');
       return [];
     }
   }
@@ -66,7 +79,18 @@ class UserService {
     try {
       final response = await _apiClient.get('users/$username/events/');
       return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      // Sadece DioException'ı yakala
+      if (e.response?.statusCode == 500) {
+        print(
+            'Etkinlikler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Etkinlikler getirme hatası (DioException): ${e.message}');
+      return [];
     } catch (e) {
+      // Diğer tüm hataları yakala
+      print('Etkinlikler getirme hatası (genel): $e');
       return [];
     }
   }

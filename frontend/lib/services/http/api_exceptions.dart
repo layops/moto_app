@@ -23,6 +23,20 @@ class ApiExceptions implements Exception {
   static String _handleError(Response? response) {
     if (response == null) return 'Bilinmeyen hata';
 
+    // Backend'den gelen hata mesajını kontrol et
+    final dynamic data = response.data;
+    if (data is Map<String, dynamic>) {
+      final errorMessage = data['message'] ?? data['detail'] ?? data['error'];
+      if (errorMessage != null) {
+        return errorMessage.toString();
+      }
+    }
+
+    // HTML hata sayfası durumunda özel mesaj
+    if (data is String && data.contains('<!doctype html>')) {
+      return 'Sunucu geçici olarak hizmet veremiyor. Lütfen daha sonra tekrar deneyin.';
+    }
+
     switch (response.statusCode) {
       case 400:
         return 'Geçersiz istek';
@@ -33,7 +47,7 @@ class ApiExceptions implements Exception {
       case 404:
         return 'Kaynak bulunamadı';
       case 500:
-        return 'Sunucu hatası';
+        return 'Sunucu hatası - Lütfen daha sonra tekrar deneyin';
       default:
         return 'Beklenmeyen hata (${response.statusCode})';
     }

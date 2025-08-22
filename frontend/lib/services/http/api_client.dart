@@ -13,12 +13,13 @@ class ApiClient {
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
 
-    // Token interceptor
+    // Token interceptor - users/login ve users/register hariç token ekle
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = _storage.getAuthToken();
-        if (token != null && !options.path.contains('login')) {
-          // Login isteğinde token gönderme
+        final token = await _storage.getAuthToken();
+        if (token != null &&
+            !options.path.contains('users/login') &&
+            !options.path.contains('users/register')) {
           options.headers['Authorization'] = 'Token $token';
         }
         return handler.next(options);
@@ -101,42 +102,5 @@ class ApiClient {
       debugPrint('DELETE Error: ${e.message}');
       throw ApiExceptions.fromDioError(e);
     }
-  }
-
-  // ----------------------
-  // LOGIN
-  // ----------------------
-  Future<void> login(String username, String password) async {
-    try {
-      final response = await post(
-        'users/login/', // ✅ doğru endpoint
-        {
-          'username': username,
-          'password': password,
-        },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
-      );
-
-      final token = response.data['token'];
-      if (token != null) {
-        await _storage.setAuthToken(token);
-        await _storage.setCurrentUsername(username);
-      }
-
-      debugPrint('Login başarılı!');
-    } on DioException catch (e) {
-      throw ApiExceptions.fromDioError(e);
-    }
-  }
-
-  // ----------------------
-  // LOGOUT
-  // ----------------------
-  Future<void> logout() async {
-    await _storage.removeAuthToken();
-    await _storage.removeCurrentUsername();
-    debugPrint('Logout başarılı!');
   }
 }

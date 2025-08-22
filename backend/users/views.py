@@ -171,7 +171,8 @@ class UserMediaView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        media_files = Media.objects.filter(user=user)
+        # Kullanıcının yüklediği tüm medyaları getir
+        media_files = Media.objects.filter(uploaded_by=user)
         serializer = MediaSerializer(media_files, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -188,6 +189,14 @@ class UserEventsView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        events = Event.objects.filter(user=user)
+        # Kullanıcının organize ettiği etkinlikler
+        organized_events = Event.objects.filter(organizer=user)
+        # Kullanıcının katıldığı etkinlikler
+        participated_events = Event.objects.filter(participants=user)
+        # İki queryset'i birleştir
+        events = organized_events | participated_events
+        # Tekrar eden kayıtları kaldır ve sırala
+        events = events.distinct().order_by('start_time')
+
         serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)

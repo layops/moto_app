@@ -37,9 +37,19 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
         rememberMe: _rememberMe,
       );
+
+      // Başarılı giriş sonrası ana sayfaya yönlendirme
+      // Navigator.pushReplacement(...);
     } catch (e) {
-      // ignore: use_build_context_synchronously
-      AuthCommon.showErrorSnackbar(context, 'Giriş başarısız: ${e.toString()}');
+      // Hata mesajını daha kullanıcı dostu hale getir
+      String errorMessage = 'Giriş başarısız';
+
+      if (e.toString().contains('Giriş hatası:')) {
+        errorMessage =
+            e.toString().replaceFirst('Exception: Giriş hatası: ', '');
+      }
+
+      AuthCommon.showErrorSnackbar(context, errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

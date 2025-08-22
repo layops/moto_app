@@ -5,7 +5,6 @@ import '../auth/token_service.dart';
 
 class ProfileService {
   final ApiClient _apiClient;
-  // ignore: unused_field
   final TokenService _tokenService;
 
   ProfileService(this._apiClient, this._tokenService);

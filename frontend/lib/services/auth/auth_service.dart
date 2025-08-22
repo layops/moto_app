@@ -13,24 +13,24 @@ class AuthService {
 
   AuthService(this._apiClient, this._tokenService, this._storage);
 
-  // Auth state değişikliklerini dinlemek için
   Stream<bool> get authStateChanges => _authStateController.stream;
-
   ApiClient get apiClient => _apiClient;
 
-  /// Uygulama açıldığında auth durumunu başlat
   Future<void> initializeAuthState() async {
     final loggedIn = await isLoggedIn();
     _authStateController.add(loggedIn);
   }
 
-  /// Login işlemi
+  /// Login işlemi - endpoint düzeltildi
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
       final response = await _apiClient.post(
-        'login/',
-        {'username': username, 'password': password},
+        'users/login/', // ✅ Doğru endpoint
+        {
+          'username': username,
+          'password': password,
+        },
       );
 
       final token = _extractToken(response);
@@ -49,12 +49,17 @@ class AuthService {
       }
       return response;
     } on DioException catch (e) {
-      throw Exception(
-          'Giriş hatası: ${e.response?.data?['detail'] ?? e.message}');
+      final errorMessage = e.response?.data?['message'] ??
+          e.response?.data?['detail'] ??
+          e.response?.data?['error'] ??
+          e.message ??
+          'Giriş işlemi sırasında bir hata oluştu';
+
+      throw Exception('Giriş hatası: $errorMessage');
     }
   }
 
-  /// Register işlemi
+  /// Register işlemi - endpoint düzeltildi
   Future<Response> register({
     required String username,
     required String email,
@@ -62,7 +67,7 @@ class AuthService {
   }) async {
     try {
       final response = await _apiClient.post(
-        'register/',
+        'users/register/', // ✅ Doğru endpoint
         {
           'username': username,
           'email': email,
@@ -71,14 +76,25 @@ class AuthService {
       );
       return response;
     } on DioException catch (e) {
-      throw Exception(
-          'Kayıt hatası: ${e.response?.data?['detail'] ?? e.message}');
+      final errorMessage = e.response?.data?['message'] ??
+          e.response?.data?['detail'] ??
+          e.response?.data?['error'] ??
+          e.message ??
+          'Kayıt işlemi sırasında bir hata oluştu';
+
+      throw Exception('Kayıt hatası: $errorMessage');
     }
   }
 
   /// Logout işlemi
   Future<void> logout() async {
-    await clearAllUserData();
+    try {
+      await _apiClient.post('users/logout/', {});
+    } catch (e) {
+      // Logout hatası kritik değil, devam et
+    } finally {
+      await clearAllUserData();
+    }
   }
 
   /// Kullanıcı giriş yapmış mı?
@@ -122,13 +138,16 @@ class AuthService {
     await _storage.clearRememberedUsername();
   }
 
-  /// Token’ı response’dan çıkar
+  /// Token'ı response'dan çıkar - Backend yapısına uygun
   String _extractToken(Response response) {
     try {
-      return response.data['token'] ??
-          response.data['access_token'] ??
-          response.data['access'] ??
-          '';
+      final data = response.data;
+
+      if (data is Map<String, dynamic>) {
+        return data['token'] ?? ''; // ✅ Backend 'token' döndürüyor
+      }
+
+      return '';
     } catch (e) {
       throw Exception('Token alınırken hata: $e');
     }
