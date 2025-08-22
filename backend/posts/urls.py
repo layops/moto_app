@@ -1,5 +1,3 @@
-# moto_app/backend/posts/urls.py
-
 from django.urls import path
 from .views import GeneralPostListCreateView, GroupPostListCreateView, PostDetailView
 
