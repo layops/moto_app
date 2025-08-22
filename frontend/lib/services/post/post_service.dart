@@ -40,7 +40,7 @@ class PostService {
       ));
     }
 
-    // Slash sorununu düzeltmek için endpoint oluşturma
+    // DÜZELTME: Sonunda slash olmadan endpoint oluştur
     final endpoint = groupPk != null ? 'groups/$groupPk/posts' : 'posts';
 
     try {
@@ -74,7 +74,7 @@ class PostService {
   }
 
   Future<List<dynamic>> fetchPosts(String token, {int? groupPk}) async {
-    // Slash sorununu düzeltmek için endpoint oluşturma
+    // DÜZELTME: Sonunda slash olmadan endpoint oluştur
     final endpoint = groupPk != null ? 'groups/$groupPk/posts' : 'posts';
 
     try {

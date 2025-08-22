@@ -1,2 +1,2 @@
-// config.dart
-const String kBaseUrl = 'https://spiride.onrender.com/api/';
+// SONUNDA SLASH OLMAMALI
+const String kBaseUrl = 'https://spiride.onrender.com/api';

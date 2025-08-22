@@ -36,13 +36,20 @@ class _HomePageState extends State<HomePage> {
     setState(() => _loading = true);
     try {
       final token = await _authService.getToken();
+      print('Token: $token'); // Debug için
+
       if (token == null) throw Exception('Oturum bulunamadı');
 
-      // Genel postları çekmek için groupPk parametresini kullanmayın (veya null olarak geçin)
+      // Debug için URL'yi kontrol et
+      print('API URL: https://spiride.onrender.com/api/posts');
+
+      // Genel postları çekmek için groupPk parametresini kullanmayın
       _posts = await _postService.fetchPosts(token);
+      print('Postlar başarıyla alındı: ${_posts.length} adet');
       _error = null;
     } catch (e) {
       _error = e.toString();
+      print('Hata detayı: $e');
     } finally {
       setState(() => _loading = false);
     }
@@ -53,8 +60,7 @@ class _HomePageState extends State<HomePage> {
         MaterialPageRoute(
           builder: (_) => CreatePostPage(
             onPostCreated: _loadPosts,
-            groupPk:
-                null, // Anasayfadan atılan postlar için groupPk'yı null olarak iletin
+            groupPk: null,
           ),
         ),
       );
