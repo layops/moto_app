@@ -1,20 +1,45 @@
 import 'package:flutter/material.dart';
 
 class AppColorSchemes {
-  static const primaryColor = Color(0xFFd32f2f);
-  static const secondaryColor = Color(0xFF757575);
+  // Ana renk: Enerjik turuncu motosiklet teması için
+  static const primaryColor = Color(0xFFFF8C00);
+  // İkincil renk: Koyu mavi güven ve profesyonellik için
+  static const secondaryColor = Color(0xFF1A4B8C);
+  // Nötr renkler
+  static const lightBackground = Color(0xFFF8F9FA);
+  static const surfaceColor = Color(0xFFFFFFFF);
+  static const textPrimary = Color(0xFF333333);
+  static const textSecondary = Color(0xFF666666);
+  static const borderColor = Color(0xFFE0E0E0);
+  static const linkColor = Color(0xFF007BFF);
 
   static ColorScheme get light => ColorScheme.light(
         primary: primaryColor,
+        primaryContainer: Color(0xFFFF6A00),
         secondary: secondaryColor,
-        surface: Colors.white,
-        error: Color(0xFFb00020),
+        surface: surfaceColor,
+        background: lightBackground,
+        error: Color(0xFFB00020),
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: textPrimary,
+        onBackground: textPrimary,
+        onError: Colors.white,
+        brightness: Brightness.light,
       );
 
   static ColorScheme get dark => ColorScheme.dark(
         primary: primaryColor,
+        primaryContainer: Color(0xFFFF6A00),
         secondary: secondaryColor,
         surface: Color(0xFF121212),
-        error: Color(0xFFcf6679),
+        background: Color(0xFF1E1E1E),
+        error: Color(0xFFCF6679),
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: Colors.white,
+        onBackground: Colors.white,
+        onError: Colors.black,
+        brightness: Brightness.dark,
       );
 }

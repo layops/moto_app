@@ -9,7 +9,22 @@ class DarkTheme {
         colorScheme: AppColorSchemes.dark,
         textTheme: AppTextTheme.dark,
         buttonTheme: AppButtonThemes.dark,
+        elevatedButtonTheme: AppButtonThemes.elevatedDark,
+        outlinedButtonTheme: AppButtonThemes.outlinedDark,
         inputDecorationTheme: AppInputThemes.dark,
         useMaterial3: true,
+        scaffoldBackgroundColor: AppColorSchemes.dark.background,
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColorSchemes.dark.surface,
+          foregroundColor: AppColorSchemes.dark.onSurface,
+          elevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: AppColorSchemes.dark.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
 }

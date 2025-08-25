@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
+import 'light_theme.dart';
+import 'dark_theme.dart';
 
 class AppTheme {
-  static ThemeData get light => ThemeData(
-        // Light tema ayarlarınız
-        primarySwatch: Colors.blue,
-        brightness: Brightness.light,
-        // Diğer light tema özellikleri
-      );
+  static ThemeData get light => LightTheme.theme;
 
-  static ThemeData get dark => ThemeData(
-        // Dark tema ayarlarınız
-        primarySwatch: Colors.blueGrey,
-        brightness: Brightness.dark,
-        // Diğer dark tema özellikleri
-      );
+  static ThemeData get dark => DarkTheme.theme;
 }
