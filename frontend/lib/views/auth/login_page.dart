@@ -8,6 +8,7 @@ import 'package:motoapp_frontend/views/auth/widgets/auth_button.dart';
 import 'package:motoapp_frontend/views/auth/widgets/auth_logo.dart';
 import 'package:motoapp_frontend/views/auth/widgets/auth_text_field.dart';
 import 'package:motoapp_frontend/views/auth/widgets/password_field.dart';
+import 'package:motoapp_frontend/views/auth/widgets/social_button.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthService authService;
@@ -37,11 +38,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
         rememberMe: _rememberMe,
       );
-
-      // Başarılı giriş sonrası ana sayfaya yönlendirme
-      // Navigator.pushReplacement(...);
     } catch (e) {
-      // Hata mesajını daha kullanıcı dostu hale getir
       String errorMessage = 'Giriş başarısız';
 
       if (e.toString().contains('Giriş hatası:')) {
@@ -53,6 +50,12 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // Kullanıcı adı mı yoksa e-posta mı olduğunu kontrol eden fonksiyon
+  bool _isEmail(String input) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    return emailRegex.hasMatch(input);
   }
 
   @override
@@ -68,23 +71,41 @@ class _LoginPageState extends State<LoginPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colors.background,
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
-                SizedBox(height: 50.h),
-                AuthLogo(),
+                SizedBox(height: 80.h),
+                AuthLogo(size: 100),
+                SizedBox(height: 40.h),
+                Text(
+                  'Welcome to Spiride',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: colors.onBackground,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'Connect with fellow motorcycle riders and track your adventures',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onBackground.withOpacity(0.6),
+                  ),
+                ),
                 SizedBox(height: 40.h),
                 AuthTextField(
                   controller: _userOrEmailController,
-                  labelText: 'Kullanıcı Adı veya E-posta',
+                  labelText: 'Username or Email',
                   prefixIcon: Icons.person,
+                  keyboardType: TextInputType.text,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen kullanıcı adı veya e-posta girin';
+                      return 'Please enter your username or email';
                     }
                     return null;
                   },
@@ -94,43 +115,115 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _passwordController,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen şifre girin';
+                      return 'Please enter your password';
                     }
                     return null;
                   },
                 ),
-                SizedBox(height: 12.h),
+                SizedBox(height: 16.h),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Checkbox(
-                      value: _rememberMe,
-                      onChanged: (bool? newValue) {
-                        setState(() {
-                          _rememberMe = newValue ?? false;
-                        });
-                      },
-                      activeColor: colors.primary,
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (bool? newValue) {
+                            setState(() {
+                              _rememberMe = newValue ?? false;
+                            });
+                          },
+                          activeColor: colors.primary,
+                        ),
+                        Text(
+                          'Remember me',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onBackground.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
                     ),
-                    const Text('Beni Hatırla'),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ForgotPasswordPage(
+                              authService: widget.authService),
+                        ),
+                      ),
+                      child: Text(
+                        'Forgot password?',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
                 AuthButton(
-                  text: 'GİRİŞ YAP',
+                  text: 'Sign In',
                   onPressed: _login,
                   isLoading: _isLoading,
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 30.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: colors.onBackground.withOpacity(0.3),
+                        thickness: 1,
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Text(
+                        'OR CONTINUE WITH',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onBackground.withOpacity(0.6),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: colors.onBackground.withOpacity(0.3),
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SocialButton(
+                        icon: Icons.g_mobiledata,
+                        text: 'Google',
+                        onPressed: () {},
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: SocialButton(
+                        icon: Icons.apple,
+                        text: 'Apple',
+                        onPressed: () {},
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Hesabın yok mu? ',
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(color: colors.onSurface),
+                      'Don\'t have an account? ',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onBackground.withOpacity(0.7),
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pushReplacement(
+                    GestureDetector(
+                      onTap: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
@@ -138,31 +231,16 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: Text(
-                        'Kayıt Ol',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colors.secondary,
-                          decoration: TextDecoration.underline,
+                        'Sign up',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ],
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ForgotPasswordPage(authService: widget.authService),
-                    ),
-                  ),
-                  child: Text(
-                    'Şifremi Unuttum',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colors.secondary,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
+                SizedBox(height: 40.h),
               ],
             ),
           ),

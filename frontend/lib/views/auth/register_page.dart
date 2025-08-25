@@ -30,7 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmPasswordController.text) {
-      AuthCommon.showErrorSnackbar(context, 'Şifreler eşleşmiyor');
+      AuthCommon.showErrorSnackbar(context, 'Passwords do not match');
       return;
     }
 
@@ -51,15 +51,14 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
         AuthCommon.showSuccessSnackbar(
-            context, 'Kayıt başarılı! Giriş yapabilirsiniz');
+            context, 'Registration successful! You can login now');
       }
     } catch (e) {
-      // Hata mesajını daha kullanıcı dostu hale getir
-      String errorMessage = 'Kayıt başarısız';
+      String errorMessage = 'Registration failed';
 
-      if (e.toString().contains('Kayıt hatası:')) {
+      if (e.toString().contains('Registration error:')) {
         errorMessage =
-            e.toString().replaceFirst('Exception: Kayıt hatası: ', '');
+            e.toString().replaceFirst('Exception: Registration error: ', '');
       }
 
       AuthCommon.showErrorSnackbar(context, errorMessage);
@@ -83,23 +82,47 @@ class _RegisterPageState extends State<RegisterPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        backgroundColor: colors.background,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: colors.onBackground),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
-                SizedBox(height: 50.h),
-                AuthLogo(),
+                SizedBox(height: 40.h),
+                AuthLogo(size: 100),
+                SizedBox(height: 40.h),
+                Text(
+                  'Create Account',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: colors.onBackground,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'Join the motorcycle community',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onBackground.withOpacity(0.6),
+                  ),
+                ),
                 SizedBox(height: 40.h),
                 AuthTextField(
                   controller: _usernameController,
-                  labelText: 'Kullanıcı Adı',
+                  labelText: 'Username',
                   prefixIcon: Icons.person,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen kullanıcı adı girin';
+                      return 'Please enter username';
                     }
                     return null;
                   },
@@ -112,10 +135,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen email girin';
+                      return 'Please enter email';
                     }
                     if (!value.contains('@')) {
-                      return 'Geçerli bir email adresi girin';
+                      return 'Please enter a valid email';
                     }
                     return null;
                   },
@@ -125,10 +148,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _passwordController,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen şifre girin';
+                      return 'Please enter password';
                     }
                     if (value.length < 6) {
-                      return 'Şifre en az 6 karakter olmalı';
+                      return 'Password must be at least 6 characters';
                     }
                     return null;
                   },
@@ -136,25 +159,26 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 20.h),
                 PasswordField(
                   controller: _confirmPasswordController,
-                  labelText: 'Şifre Tekrar',
+                  labelText: 'Confirm Password',
                 ),
                 SizedBox(height: 32.h),
                 AuthButton(
-                  text: 'KAYIT OL',
+                  text: 'SIGN UP',
                   onPressed: _register,
                   isLoading: _isLoading,
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 24.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Zaten hesabın var mı? ',
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(color: colors.onSurface),
+                      'Already have an account? ',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onBackground.withOpacity(0.7),
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pushReplacement(
+                    GestureDetector(
+                      onTap: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
@@ -162,15 +186,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       child: Text(
-                        'Giriş Yap',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colors.secondary,
-                          decoration: TextDecoration.underline,
+                        'Sign In',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ],
                 ),
+                SizedBox(height: 40.h),
               ],
             ),
           ),

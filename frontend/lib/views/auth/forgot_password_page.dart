@@ -27,13 +27,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Simüle edilmiş işlem (gerçek uygulamada authService kullanılır)
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
         AuthCommon.showSuccessSnackbar(
           context,
-          'Şifre sıfırlama bağlantısı ${_emailController.text} adresine gönderildi',
+          'Password reset link sent to ${_emailController.text}',
         );
 
         Navigator.pushReplacement(
@@ -45,7 +44,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       }
     } catch (e) {
       if (mounted) {
-        AuthCommon.showErrorSnackbar(context, 'Hata: ${e.toString()}');
+        AuthCommon.showErrorSnackbar(context, 'Error: ${e.toString()}');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -64,63 +63,66 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: colors.background,
       appBar: AppBar(
+        backgroundColor: colors.background,
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colors.onSurface),
+          icon: Icon(Icons.arrow_back, color: colors.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 30.h),
+                SizedBox(height: 40.h),
+                Center(child: AuthLogo(size: 100)),
+                SizedBox(height: 40.h),
                 Text(
-                  'Şifremi Unuttum',
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: colors.primary,
+                  'Forgot Password',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: colors.onBackground,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10.h),
+                SizedBox(height: 12.h),
                 Text(
-                  'E-posta adresinizi girin, şifre sıfırlama bağlantısı gönderelim.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colors.onSurfaceVariant,
+                  'Enter your email and we will send you a reset link',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onBackground.withOpacity(0.6),
                   ),
                 ),
                 SizedBox(height: 40.h),
-                Center(child: AuthLogo(size: 150)),
-                SizedBox(height: 40.h),
                 AuthTextField(
                   controller: _emailController,
-                  labelText: 'E-posta Adresi',
+                  labelText: 'Email Address',
                   prefixIcon: Icons.email,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Lütfen e-posta adresinizi girin';
+                      return 'Please enter your email';
                     }
                     if (!value.contains('@')) {
-                      return 'Geçerli bir e-posta adresi girin';
+                      return 'Please enter a valid email';
                     }
                     return null;
                   },
                 ),
                 SizedBox(height: 30.h),
                 AuthButton(
-                  text: 'Gönder',
+                  text: 'Send Reset Link',
                   onPressed: _sendResetLink,
                   isLoading: _isLoading,
                 ),
                 SizedBox(height: 20.h),
                 Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.pushReplacement(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
@@ -128,14 +130,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                     ),
                     child: Text(
-                      'Giriş Sayfasına Dön',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colors.secondary,
-                        decoration: TextDecoration.underline,
+                      'Back to Login',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
+                SizedBox(height: 40.h),
               ],
             ),
           ),

@@ -7,7 +7,7 @@ class AuthLogo extends StatelessWidget {
 
   const AuthLogo({
     super.key,
-    this.size = 190,
+    this.size = 200,
     this.color,
   });
 

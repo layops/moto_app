@@ -10,7 +10,7 @@ class AuthTextField extends StatelessWidget {
   final bool obscureText;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
-  final Widget? suffixIcon; // Yeni parametre eklendi
+  final Widget? suffixIcon;
 
   const AuthTextField({
     super.key,
@@ -21,7 +21,7 @@ class AuthTextField extends StatelessWidget {
     this.obscureText = false,
     this.validator,
     this.onChanged,
-    this.suffixIcon, // Yeni parametre
+    this.suffixIcon,
   });
 
   @override
@@ -37,23 +37,23 @@ class AuthTextField extends StatelessWidget {
       cursorColor: colors.primary,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle:
-            theme.textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
-        prefixIcon: Icon(prefixIcon, color: colors.primary),
-        suffixIcon: suffixIcon, // Yeni alan eklendi
+        labelStyle: theme.textTheme.bodyMedium
+            ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+        prefixIcon: Icon(prefixIcon, color: colors.onSurface.withOpacity(0.6)),
+        suffixIcon: suffixIcon,
         filled: true,
-        fillColor: colors.surfaceContainerHighest,
+        fillColor: colors.surface,
         border: OutlineInputBorder(
           borderRadius:
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: colors.onSurface.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: colors.primary, width: 2),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
           borderRadius:
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
         ),
-        contentPadding: ThemeConstants.paddingMedium,
+        contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
       ),
       validator: validator,
       onChanged: onChanged,
