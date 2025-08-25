@@ -1,7 +1,10 @@
+// home_page.dart
 import 'package:flutter/material.dart';
 import 'home_posts_list.dart';
 import '../../services/service_locator.dart';
-import '../post/create_post_page.dart'; // Örnek olarak ekledim
+import '../post/create_post_page.dart';
+import '../../widgets/navigations/main_wrapper.dart';
+import '../../widgets/navigations/navigation_items.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,7 +33,6 @@ class _HomePageState extends State<HomePage> {
     try {
       final token = await ServiceLocator.token.getToken();
       if (token != null) {
-        // Genel post akışını çekmek için PostService'i kullanıyoruz.
         final fetchedPosts = await ServiceLocator.post.fetchPosts(token);
         setState(() {
           posts = fetchedPosts;
@@ -48,13 +50,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onPostButtonPressed() async {
-    // Post oluşturma sayfasına navigasyon
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreatePostPage()),
     );
 
-    // Eğer post oluşturulduysa, ana sayfayı yenile
     if (result == true) {
       _fetchPosts();
     }
@@ -64,24 +64,45 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(child: Text('Menü')),
-            ListTile(
-              title: const Text('Profil'),
-              onTap: () {
-                Navigator.pushNamed(context, '/profile');
-              },
-            ),
-            ListTile(
-              title: const Text('Ayarlar'),
-              onTap: () {},
-            ),
-          ],
+        title: Image.asset(
+          'assets/images/spiride_logo.png', // Uygulama logosu ekleyin
+          height: 50,
         ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_none),
+                Positioned(
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(1),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                    child: const Text(
+                      '3',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              ],
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/notifications');
+            },
+          ),
+        ],
       ),
       body: HomePostsList(
         loading: loading,

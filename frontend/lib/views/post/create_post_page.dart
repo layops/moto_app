@@ -98,8 +98,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               children: [
                 ElevatedButton.icon(
                   onPressed: _pickImage,
-                  icon: const Icon(Icons.image),
-                  label: const Text('Medya Seç'),
+                  label: const Icon(Icons.image),
                 ),
               ],
             ),

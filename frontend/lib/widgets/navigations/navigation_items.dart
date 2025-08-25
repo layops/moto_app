@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-
-import 'bottom_nav_item.dart'; // BottomNavItem sınıfını import edin
+import 'bottom_nav_item.dart';
 
 class NavigationItems {
-  // Butonların sıralaması pages listesiyle tam uyumlu olmalı
+  // Görseldeki bottom navigation yapısına göre güncelleme
   static const List<BottomNavItem> items = [
-    BottomNavItem(icon: Icons.home, label: 'Anasayfa'),
-    BottomNavItem(icon: Icons.search, label: 'Ara'),
-    BottomNavItem(icon: Icons.map, label: 'Harita'),
-    BottomNavItem(icon: Icons.message, label: 'Mesajlar'),
-    BottomNavItem(icon: Icons.person, label: 'Profil'),
+    BottomNavItem(icon: Icons.home, label: 'Home'),
+    BottomNavItem(icon: Icons.map, label: 'Map'),
+    BottomNavItem(icon: Icons.group, label: 'Groups'),
+    BottomNavItem(icon: Icons.event, label: 'Events'),
+    BottomNavItem(icon: Icons.person, label: 'Profile'),
   ];
 }

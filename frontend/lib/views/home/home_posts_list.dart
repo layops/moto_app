@@ -1,3 +1,4 @@
+// home_posts_list.dart
 import 'package:flutter/material.dart';
 import '../../widgets/post/post_item.dart';
 import 'home_empty_state.dart';
@@ -25,6 +26,7 @@ class HomePostsList extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: posts.length,
         itemBuilder: (context, index) => PostItem(post: posts[index]),
       ),
@@ -39,8 +41,12 @@ class HomePostsList extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(error!, style: const TextStyle(color: Colors.red)),
+              const Icon(Icons.error_outline, size: 50, color: Colors.red),
               const SizedBox(height: 10),
+              Text(error!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => onRefresh(),
                 child: const Text('Tekrar Dene'),

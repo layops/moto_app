@@ -1,3 +1,4 @@
+// events_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
@@ -5,10 +6,16 @@ import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'add_event_page.dart';
 
 class EventsPage extends StatefulWidget {
-  final int groupId;
-  final String? groupName;
+  // Ana bottom navigation için kullanılacak constructor
+  const EventsPage({super.key})
+      : groupId = null,
+        groupName = null;
 
-  const EventsPage({super.key, required this.groupId, this.groupName});
+  // Grup sayfasından kullanılacak constructor
+  const EventsPage.forGroup({super.key, required this.groupId, this.groupName});
+
+  final int? groupId;
+  final String? groupName;
 
   @override
   State<EventsPage> createState() => _EventsPageState();
@@ -19,6 +26,13 @@ class _EventsPageState extends State<EventsPage> {
   bool _loading = true;
   List<dynamic> _events = [];
   String? _error;
+  bool _isGeneralPage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _isGeneralPage = widget.groupId == null;
+  }
 
   @override
   void didChangeDependencies() {
@@ -35,8 +49,13 @@ class _EventsPageState extends State<EventsPage> {
     });
 
     try {
-      final data = await _service.fetchGroupEvents(widget.groupId);
-      setState(() => _events = data);
+      if (_isGeneralPage) {
+        // Tüm etkinlikleri getir - backend'de bu endpoint yoksa boş liste dönecek
+        _events = await _service.fetchAllEvents();
+      } else {
+        // Grup etkinliklerini getir
+        _events = await _service.fetchGroupEvents(widget.groupId!);
+      }
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -58,28 +77,65 @@ class _EventsPageState extends State<EventsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.groupName ?? 'Etkinlikler')),
+      appBar: AppBar(
+        title: Text(_isGeneralPage
+            ? 'Tüm Etkinlikler'
+            : widget.groupName ?? 'Grup Etkinlikleri'),
+      ),
       body: RefreshIndicator(
         onRefresh: _loadEvents,
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(height: 120),
-                      Center(child: Text('Hata: $_error'))
-                    ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline,
+                            size: 48, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadEvents,
+                          child: const Text('Tekrar Dene'),
+                        ),
+                      ],
+                    ),
                   )
                 : _events.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 120),
-                          Center(
-                              child: Text(
-                                  'Henüz etkinlik yok. + butonuna basarak ekleyin.')),
-                        ],
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.event,
+                                size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              _isGeneralPage
+                                  ? 'Henüz hiç etkinlik yok'
+                                  : 'Bu grupta henüz etkinlik yok',
+                              style: const TextStyle(
+                                  fontSize: 18, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 8),
+                            if (_isGeneralPage)
+                              const Text(
+                                'Gruplara katılarak etkinlikleri görebilirsiniz',
+                                style: TextStyle(color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              )
+                            else
+                              const Text(
+                                'İlk etkinliği sen oluştur!',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                          ],
+                        ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(8),
@@ -93,13 +149,30 @@ class _EventsPageState extends State<EventsPage> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                             child: InkWell(
-                              onTap: () {},
+                              onTap: () {
+                                // Etkinlik detay sayfasına yönlendirme
+                              },
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // Grup adı (sadece genel etkinlikler sayfasında)
+                                    if (_isGeneralPage && e['group'] != null)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: Text(
+                                          e['group']['name'] ?? 'Grup',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+
                                     Text(
                                       e['title'] ?? 'Başlıksız Etkinlik',
                                       style: const TextStyle(
@@ -117,21 +190,30 @@ class _EventsPageState extends State<EventsPage> {
                                     Row(
                                       children: [
                                         const Icon(Icons.calendar_today,
-                                            size: 16),
+                                            size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text(_formatDate(e['start_time'])),
-                                        const SizedBox(width: 16),
-                                        if ((e['location'] ?? '').isNotEmpty)
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.location_on,
-                                                  size: 16),
-                                              const SizedBox(width: 4),
-                                              Text(e['location']),
-                                            ],
-                                          ),
+                                        Text(
+                                          _formatDate(e['start_time']),
+                                          style: const TextStyle(
+                                              fontSize: 14, color: Colors.grey),
+                                        ),
                                       ],
                                     ),
+                                    const SizedBox(height: 8),
+                                    if ((e['location'] ?? '').isNotEmpty)
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            e['location'],
+                                            style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
                                   ],
                                 ),
                               ),
@@ -140,18 +222,20 @@ class _EventsPageState extends State<EventsPage> {
                         },
                       ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          final created = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddEventPage(groupId: widget.groupId),
+      floatingActionButton: _isGeneralPage
+          ? null // Ana etkinlikler sayfasında FAB gösterme
+          : FloatingActionButton(
+              child: const Icon(Icons.add),
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddEventPage(groupId: widget.groupId!),
+                  ),
+                );
+                if (created == true) _loadEvents();
+              },
             ),
-          );
-          if (created == true) _loadEvents();
-        },
-      ),
     );
   }
 }

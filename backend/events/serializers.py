@@ -1,6 +1,8 @@
+# events/serializers.py
 from rest_framework import serializers
 from .models import Event
 from groups.models import Group
+from groups.serializers import GroupSerializer  # GroupSerializer'ı import edin
 from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 
@@ -13,15 +15,18 @@ class EventSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    group = serializers.PrimaryKeyRelatedField(
+    group = GroupSerializer(read_only=True)  # Group'u serialize et
+    group_id = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(),
+        source='group',
+        write_only=True,
         required=False
     )
 
     class Meta:
         model = Event
         fields = [
-            'id', 'group', 'organizer', 'title', 'description', 
+            'id', 'group', 'group_id', 'organizer', 'title', 'description', 
             'location', 'start_time', 'end_time', 'participants', 
             'created_at', 'updated_at'
         ]

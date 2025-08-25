@@ -1,3 +1,4 @@
+# events/views.py
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -44,3 +45,14 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance.organizer != self.request.user and instance.group.owner != self.request.user:
             raise PermissionDenied("Bu etkinliği silme yetkiniz yok.")
         instance.delete()
+
+# YENİ: Tüm event'leri getiren view
+class AllEventListView(generics.ListAPIView):
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Kullanıcının üye olduğu gruplardaki event'leri getir
+        user = self.request.user
+        user_groups = Group.objects.filter(members=user)
+        return Event.objects.filter(group__in=user_groups).order_by('start_time')

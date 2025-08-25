@@ -53,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // Kullanıcı adı mı yoksa e-posta mı olduğunu kontrol eden fonksiyon
+  // ignore: unused_element
   bool _isEmail(String input) {
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     return emailRegex.hasMatch(input);

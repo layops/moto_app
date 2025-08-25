@@ -1,3 +1,4 @@
+// main_wrapper.dart
 import 'package:flutter/material.dart';
 import 'bottom_nav_item.dart';
 
@@ -58,22 +59,26 @@ class _MainWrapperState extends State<MainWrapper> {
         index: safeIndex,
         children: widget.pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: safeIndex,
-        items: widget.navItems.asMap().entries.map((entry) {
-          final item = entry.value;
-          return BottomNavigationBarItem(
-            icon: Icon(item.icon),
-            label: item.label,
-            tooltip: '${item.label} sayfasına git',
-          );
-        }).toList(),
-        onTap: _onTabSelected,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        showUnselectedLabels: true,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.grey.shade300)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: safeIndex,
+          items: widget.navItems.asMap().entries.map((entry) {
+            final item = entry.value;
+            return BottomNavigationBarItem(
+              icon: Icon(item.icon),
+              label: item.label,
+            );
+          }).toList(),
+          onTap: _onTabSelected,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Colors.grey,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          showUnselectedLabels: true,
+        ),
       ),
     );
   }

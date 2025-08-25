@@ -191,7 +191,7 @@ class _GroupsPageState extends State<GroupsPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EventsPage(
+                    builder: (_) => EventsPage.forGroup(
                       groupId: (group['id'] is int)
                           ? group['id'] as int
                           : int.tryParse(group['id'].toString()) ?? 0,

@@ -13,10 +13,11 @@ import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 
 import 'package:motoapp_frontend/views/home/home_page.dart';
-import 'package:motoapp_frontend/views/search/search_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
-import 'package:motoapp_frontend/views/messages/messages_page.dart';
+import 'package:motoapp_frontend/views/groups/group_page.dart';
+import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
+import 'package:motoapp_frontend/views/notifications/notifications_page.dart'; // Yeni ekledik
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,9 +87,9 @@ class MotoApp extends StatelessWidget {
 
     final List<Widget> pages = [
       const HomePage(),
-      const SearchPage(),
       const MapPage(),
-      const MessagesPage(),
+      const GroupsPage(),
+      const EventsPage(),
       // ProfilePage için username alınacak
       FutureBuilder<String?>(
         future: ServiceLocator.token.getUsernameFromToken(),
@@ -139,6 +140,9 @@ class MotoApp extends StatelessWidget {
                     GlobalWidgetsLocalizations.delegate,
                   ],
                   home: homeScreen,
+                  routes: {
+                    '/notifications': (context) => const NotificationsPage(),
+                  },
                   navigatorKey: ServiceLocator.navigatorKey,
                   scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
                   builder: (context, child) {
