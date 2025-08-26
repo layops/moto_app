@@ -38,7 +38,9 @@ class AuthTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: theme.textTheme.bodyMedium
+            // ignore: deprecated_member_use
             ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+        // ignore: deprecated_member_use
         prefixIcon: Icon(prefixIcon, color: colors.onSurface.withOpacity(0.6)),
         suffixIcon: suffixIcon,
         filled: true,
@@ -46,6 +48,7 @@ class AuthTextField extends StatelessWidget {
         border: OutlineInputBorder(
           borderRadius:
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+          // ignore: deprecated_member_use
           borderSide: BorderSide(color: colors.onSurface.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(

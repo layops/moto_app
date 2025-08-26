@@ -46,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
             e.toString().replaceFirst('Exception: Giriş hatası: ', '');
       }
 
+      // ignore: use_build_context_synchronously
       AuthCommon.showErrorSnackbar(context, errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -72,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -86,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   'Welcome to Spiride',
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    color: colors.onBackground,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -95,7 +96,8 @@ class _LoginPageState extends State<LoginPage> {
                   'Connect with fellow motorcycle riders and track your adventures',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onBackground.withOpacity(0.6),
+                    // ignore: deprecated_member_use
+                    color: colors.onSurface.withOpacity(0.6),
                   ),
                 ),
                 SizedBox(height: 40.h),
@@ -139,7 +141,8 @@ class _LoginPageState extends State<LoginPage> {
                         Text(
                           'Remember me',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colors.onBackground.withOpacity(0.7),
+                            // ignore: deprecated_member_use
+                            color: colors.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -172,7 +175,8 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Expanded(
                       child: Divider(
-                        color: colors.onBackground.withOpacity(0.3),
+                        // ignore: deprecated_member_use
+                        color: colors.onSurface.withOpacity(0.3),
                         thickness: 1,
                       ),
                     ),
@@ -181,13 +185,15 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'OR CONTINUE WITH',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onBackground.withOpacity(0.6),
+                          // ignore: deprecated_member_use
+                          color: colors.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ),
                     Expanded(
                       child: Divider(
-                        color: colors.onBackground.withOpacity(0.3),
+                        // ignore: deprecated_member_use
+                        color: colors.onSurface.withOpacity(0.3),
                         thickness: 1,
                       ),
                     ),
@@ -220,7 +226,8 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Don\'t have an account? ',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onBackground.withOpacity(0.7),
+                        // ignore: deprecated_member_use
+                        color: colors.onSurface.withOpacity(0.7),
                       ),
                     ),
                     GestureDetector(

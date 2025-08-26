@@ -63,12 +63,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colors.onBackground),
+          icon: Icon(Icons.arrow_back, color: colors.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -86,7 +86,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Text(
                   'Forgot Password',
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    color: colors.onBackground,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -94,7 +94,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Text(
                   'Enter your email and we will send you a reset link',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onBackground.withOpacity(0.6),
+                    // ignore: deprecated_member_use
+                    color: colors.onSurface.withOpacity(0.6),
                   ),
                 ),
                 SizedBox(height: 40.h),

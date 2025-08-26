@@ -1,8 +1,7 @@
-# events/serializers.py
 from rest_framework import serializers
 from .models import Event
 from groups.models import Group
-from groups.serializers import GroupSerializer  # GroupSerializer'ı import edin
+from groups.serializers import GroupSerializer
 from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 
@@ -15,19 +14,20 @@ class EventSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    group = GroupSerializer(read_only=True)  # Group'u serialize et
+    group = GroupSerializer(read_only=True)
     group_id = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(),
         source='group',
         write_only=True,
-        required=False
+        required=False,
+        allow_null=True
     )
 
     class Meta:
         model = Event
         fields = [
-            'id', 'group', 'group_id', 'organizer', 'title', 'description', 
-            'location', 'start_time', 'end_time', 'participants', 
+            'id', 'group', 'group_id', 'organizer', 'title', 'description',
+            'location', 'start_time', 'end_time', 'participants',
             'created_at', 'updated_at'
         ]
         read_only_fields = ('id', 'organizer', 'created_at', 'updated_at')
@@ -35,7 +35,8 @@ class EventSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])
         event = super().create(validated_data)
-        event.participants.set(participants_data)
+        if participants_data:
+            event.participants.set(participants_data)
         return event
 
     def update(self, instance, validated_data):

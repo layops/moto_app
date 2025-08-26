@@ -61,6 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
             e.toString().replaceFirst('Exception: Registration error: ', '');
       }
 
+      // ignore: use_build_context_synchronously
       AuthCommon.showErrorSnackbar(context, errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -82,12 +83,12 @@ class _RegisterPageState extends State<RegisterPage> {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colors.onBackground),
+          icon: Icon(Icons.arrow_back, color: colors.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -104,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   'Create Account',
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    color: colors.onBackground,
+                    color: colors.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -112,7 +113,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   'Join the motorcycle community',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onBackground.withOpacity(0.6),
+                    // ignore: deprecated_member_use
+                    color: colors.onSurface.withOpacity(0.6),
                   ),
                 ),
                 SizedBox(height: 40.h),
@@ -174,7 +176,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Already have an account? ',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.onBackground.withOpacity(0.7),
+                        // ignore: deprecated_member_use
+                        color: colors.onSurface.withOpacity(0.7),
                       ),
                     ),
                     GestureDetector(

@@ -60,8 +60,9 @@ class _CreatePostPageState extends State<CreatePostPage> {
       );
 
       if (widget.onPostCreated != null) widget.onPostCreated!();
-      if (widget.onProfileRefresh != null)
+      if (widget.onProfileRefresh != null) {
         widget.onProfileRefresh!(); // Profili yenile
+      }
 
       // ignore: use_build_context_synchronously
       Navigator.pop(context);

@@ -23,8 +23,10 @@ class SocialButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         minimumSize: Size(double.infinity, 48.h),
-        foregroundColor: colors.onBackground.withOpacity(0.7),
-        side: BorderSide(color: colors.onBackground.withOpacity(0.3)),
+        // ignore: deprecated_member_use
+        foregroundColor: colors.onSurface.withOpacity(0.7),
+        // ignore: deprecated_member_use
+        side: BorderSide(color: colors.onSurface.withOpacity(0.3)),
         shape: RoundedRectangleBorder(
           borderRadius:
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
@@ -34,12 +36,14 @@ class SocialButton extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: colors.onBackground.withOpacity(0.7), size: 20.h),
+          // ignore: deprecated_member_use
+          Icon(icon, color: colors.onSurface.withOpacity(0.7), size: 20.h),
           SizedBox(width: 8.w),
           Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onBackground.withOpacity(0.7),
+              // ignore: deprecated_member_use
+              color: colors.onSurface.withOpacity(0.7),
             ),
           ),
         ],

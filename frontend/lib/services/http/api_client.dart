@@ -16,7 +16,7 @@ class ApiClient {
     // Token interceptor - users/login ve users/register hariç token ekle
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.getAuthToken();
+        final token = _storage.getAuthToken();
         if (token != null &&
             !options.path.contains('users/login') &&
             !options.path.contains('users/register')) {

@@ -5,7 +5,6 @@ import 'package:motoapp_frontend/services/auth/auth_service.dart';
 
 class AddEventPage extends StatefulWidget {
   final int groupId;
-
   const AddEventPage({super.key, required this.groupId});
 
   @override
@@ -20,7 +19,6 @@ class _AddEventPageState extends State<AddEventPage> {
   DateTime? _start;
   DateTime? _end;
   bool _submitting = false;
-
   late EventService _service;
 
   @override
@@ -32,64 +30,46 @@ class _AddEventPageState extends State<AddEventPage> {
 
   Future<void> _pickDateTime({required bool isStart}) async {
     final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-    );
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+        lastDate: DateTime.now().add(const Duration(days: 365 * 2)));
     if (date == null) return;
-
     final time = await showTimePicker(
-      // ignore: use_build_context_synchronously
-      context: context,
-      initialTime: const TimeOfDay(hour: 12, minute: 0),
-    );
+        context: context, initialTime: const TimeOfDay(hour: 12, minute: 0));
     if (time == null) return;
-
     final dt =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
-      if (isStart) {
+      if (isStart)
         _start = dt;
-      } else {
+      else
         _end = dt;
-      }
     });
-  }
-
-  String _displayDate(DateTime? dt) {
-    if (dt == null) return 'Seçilmedi';
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_start == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Başlangıç zamanı gerekli.')),
-      );
+          const SnackBar(content: Text('Başlangıç zamanı gerekli.')));
       return;
     }
-
     setState(() => _submitting = true);
-
     try {
       await _service.createEvent(
-        groupId: widget.groupId,
+        groupId: widget.groupId == 0 ? null : widget.groupId,
         title: _titleCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         location: _locCtrl.text.trim(),
         startTime: _start!,
         endTime: _end,
       );
-
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hata: ${e.toString()}')),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -114,48 +94,40 @@ class _AddEventPageState extends State<AddEventPage> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _titleCtrl,
-                decoration:
-                    const InputDecoration(labelText: 'Etkinlik Başlığı'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Başlık gerekli' : null,
-              ),
+                  controller: _titleCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'Etkinlik Başlığı'),
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Başlık gerekli' : null),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _descCtrl,
-                decoration: const InputDecoration(labelText: 'Açıklama'),
-                maxLines: 3,
-              ),
+                  controller: _descCtrl,
+                  decoration: const InputDecoration(labelText: 'Açıklama'),
+                  maxLines: 3),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _locCtrl,
-                decoration:
-                    const InputDecoration(labelText: 'Konum (opsiyonel)'),
-              ),
+                  controller: _locCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'Konum (opsiyonel)')),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: Text('Başlangıç: ${_displayDate(_start)}')),
-                  TextButton(
-                      onPressed: () => _pickDateTime(isStart: true),
-                      child: const Text('Seç')),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(child: Text('Bitiş: ${_displayDate(_end)}')),
-                  TextButton(
-                      onPressed: () => _pickDateTime(isStart: false),
-                      child: const Text('Seç')),
-                ],
-              ),
+              Row(children: [
+                Expanded(child: Text('Başlangıç: ${_start ?? 'Seçilmedi'}')),
+                TextButton(
+                    onPressed: () => _pickDateTime(isStart: true),
+                    child: const Text('Seç'))
+              ]),
+              Row(children: [
+                Expanded(child: Text('Bitiş: ${_end ?? 'Seçilmedi'}')),
+                TextButton(
+                    onPressed: () => _pickDateTime(isStart: false),
+                    child: const Text('Seç'))
+              ]),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const CircularProgressIndicator()
-                    : const Text('Oluştur'),
-              ),
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const CircularProgressIndicator()
+                      : const Text('Oluştur')),
             ],
           ),
         ),

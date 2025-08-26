@@ -13,7 +13,6 @@ class DarkTheme {
         outlinedButtonTheme: AppButtonThemes.outlinedDark,
         inputDecorationTheme: AppInputThemes.dark,
         useMaterial3: true,
-        scaffoldBackgroundColor: AppColorSchemes.dark.background,
         appBarTheme: AppBarTheme(
           backgroundColor: AppColorSchemes.dark.surface,
           foregroundColor: AppColorSchemes.dark.onSurface,

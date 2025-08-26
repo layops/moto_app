@@ -7,7 +7,9 @@ class Event(models.Model):
         Group,
         on_delete=models.CASCADE,
         related_name='events',
-        verbose_name="Grup"
+        verbose_name="Grup",
+        null=True,
+        blank=True
     )
     organizer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -17,9 +19,9 @@ class Event(models.Model):
     )
     title = models.CharField(max_length=200, verbose_name="Etkinlik Başlığı")
     description = models.TextField(blank=True, verbose_name="Açıklama")
-    location = models.CharField(max_length=255, verbose_name="Yer")
+    location = models.CharField(max_length=255, verbose_name="Yer", blank=True)
     start_time = models.DateTimeField(verbose_name="Başlangıç Zamanı")
-    end_time = models.DateTimeField(verbose_name="Bitiş Zamanı")
+    end_time = models.DateTimeField(verbose_name="Bitiş Zamanı", null=True, blank=True)
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name='participated_events',
@@ -35,4 +37,5 @@ class Event(models.Model):
         ordering = ['start_time']
 
     def __str__(self):
-        return f"Event: {self.title} in {self.group.name} by {self.organizer.username}"
+        grp = self.group.name if self.group else "Personal"
+        return f"Event: {self.title} in {grp} by {self.organizer.username}"

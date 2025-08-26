@@ -1,7 +1,5 @@
-// event_service.dart
 import 'package:dio/dio.dart';
 import '../auth/auth_service.dart';
-import '../http/api_client.dart';
 
 class EventService {
   final Dio _dio;
@@ -16,22 +14,28 @@ class EventService {
     return Options(headers: {'Authorization': 'Bearer $token'});
   }
 
-  // Tüm etkinlikleri getir
+  List<dynamic> _extractList(dynamic data) {
+    if (data is Map && data.containsKey('results'))
+      return (data['results'] as List).cast<dynamic>();
+    if (data is List) return data;
+    return [];
+  }
+
   Future<List<dynamic>> fetchAllEvents() async {
     final token = await _authService.getToken();
     final res = await _dio.get('events/', options: _authOptions(token));
-    return res.data as List<dynamic>;
+    return _extractList(res.data);
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
     final token = await _authService.getToken();
     final res =
         await _dio.get('groups/$groupId/events/', options: _authOptions(token));
-    return res.data as List<dynamic>;
+    return _extractList(res.data);
   }
 
   Future<Map<String, dynamic>> createEvent({
-    required int groupId,
+    int? groupId,
     required String title,
     String? description,
     String? location,
@@ -47,9 +51,17 @@ class EventService {
       'start_time': startTime.toUtc().toIso8601String(),
       if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
       if (participants != null) 'participants': participants,
+      if (groupId != null) 'group_id': groupId,
     };
-    final res = await _dio.post('groups/$groupId/events/',
-        data: payload, options: _authOptions(token));
-    return res.data as Map<String, dynamic>;
+
+    Response res;
+    if (groupId != null) {
+      res = await _dio.post('groups/$groupId/events/',
+          data: payload, options: _authOptions(token));
+    } else {
+      res = await _dio.post('events/',
+          data: payload, options: _authOptions(token));
+    }
+    return (res.data as Map).cast<String, dynamic>();
   }
 }
