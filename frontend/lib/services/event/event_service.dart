@@ -15,22 +15,25 @@ class EventService {
   }
 
   List<dynamic> _extractList(dynamic data) {
-    if (data is Map && data.containsKey('results'))
+    if (data is Map && data.containsKey('results')) {
       return (data['results'] as List).cast<dynamic>();
+    }
     if (data is List) return data;
     return [];
   }
 
   Future<List<dynamic>> fetchAllEvents() async {
     final token = await _authService.getToken();
-    final res = await _dio.get('events/', options: _authOptions(token));
+    final res = await _dio.get('events/',
+        options: _authOptions(token)); // api/events/ için
     return _extractList(res.data);
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
     final token = await _authService.getToken();
-    final res =
-        await _dio.get('groups/$groupId/events/', options: _authOptions(token));
+    if (groupId <= 0) return [];
+    final res = await _dio.get('events/groups/$groupId/events/',
+        options: _authOptions(token)); // api/events/groups/ için
     return _extractList(res.data);
   }
 
@@ -51,11 +54,11 @@ class EventService {
       'start_time': startTime.toUtc().toIso8601String(),
       if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
       if (participants != null) 'participants': participants,
-      if (groupId != null) 'group_id': groupId,
+      if (groupId != null && groupId > 0) 'group_id': groupId,
     };
 
     Response res;
-    if (groupId != null) {
+    if (groupId != null && groupId > 0) {
       res = await _dio.post('groups/$groupId/events/',
           data: payload, options: _authOptions(token));
     } else {

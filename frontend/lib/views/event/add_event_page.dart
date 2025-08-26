@@ -5,6 +5,7 @@ import 'package:motoapp_frontend/services/auth/auth_service.dart';
 
 class AddEventPage extends StatefulWidget {
   final int groupId;
+
   const AddEventPage({super.key, required this.groupId});
 
   @override
@@ -19,6 +20,7 @@ class _AddEventPageState extends State<AddEventPage> {
   DateTime? _start;
   DateTime? _end;
   bool _submitting = false;
+
   late EventService _service;
 
   @override
@@ -30,14 +32,18 @@ class _AddEventPageState extends State<AddEventPage> {
 
   Future<void> _pickDateTime({required bool isStart}) async {
     final date = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime.now().subtract(const Duration(days: 365)),
-        lastDate: DateTime.now().add(const Duration(days: 365 * 2)));
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
     if (date == null) return;
     final time = await showTimePicker(
-        context: context, initialTime: const TimeOfDay(hour: 12, minute: 0));
+      context: context,
+      initialTime: const TimeOfDay(hour: 12, minute: 0),
+    );
     if (time == null) return;
+
     final dt =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
@@ -48,6 +54,11 @@ class _AddEventPageState extends State<AddEventPage> {
     });
   }
 
+  String _displayDate(DateTime? dt) {
+    if (dt == null) return 'Seçilmedi';
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_start == null) {
@@ -55,10 +66,11 @@ class _AddEventPageState extends State<AddEventPage> {
           const SnackBar(content: Text('Başlangıç zamanı gerekli.')));
       return;
     }
+
     setState(() => _submitting = true);
     try {
       await _service.createEvent(
-        groupId: widget.groupId == 0 ? null : widget.groupId,
+        groupId: widget.groupId,
         title: _titleCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         location: _locCtrl.text.trim(),
@@ -111,13 +123,13 @@ class _AddEventPageState extends State<AddEventPage> {
                       const InputDecoration(labelText: 'Konum (opsiyonel)')),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: Text('Başlangıç: ${_start ?? 'Seçilmedi'}')),
+                Expanded(child: Text('Başlangıç: ${_displayDate(_start)}')),
                 TextButton(
                     onPressed: () => _pickDateTime(isStart: true),
                     child: const Text('Seç'))
               ]),
               Row(children: [
-                Expanded(child: Text('Bitiş: ${_end ?? 'Seçilmedi'}')),
+                Expanded(child: Text('Bitiş: ${_displayDate(_end)}')),
                 TextButton(
                     onPressed: () => _pickDateTime(isStart: false),
                     child: const Text('Seç'))

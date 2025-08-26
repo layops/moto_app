@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:motoapp_frontend/views/auth/login_page.dart';
-import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
-import '../event/events_page.dart';
+import 'package:motoapp_frontend/views/auth/login_page.dart';
+import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'create_group_page.dart';
 
 class GroupsPage extends StatefulWidget {
@@ -41,9 +41,7 @@ class _GroupsPageState extends State<GroupsPage> {
             'Kullanıcı oturumu bulunamadı. Lütfen yeniden giriş yapın.');
       }
 
-      // Burada _authService.apiClient.dio olarak düzelttik
       final dio = _authService.apiClient.dio;
-
       final response = await dio.get(
         'groups/',
         options: Options(headers: {'Authorization': 'Token $token'}),
@@ -57,17 +55,6 @@ class _GroupsPageState extends State<GroupsPage> {
         throw Exception(
             'HTTP ${response.statusCode} - ${response.statusMessage}');
       }
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      String errorMessage = 'Gruplar yüklenirken hata oluştu';
-
-      if (statusCode == 401) {
-        errorMessage = 'Oturum süreniz doldu. Lütfen yeniden giriş yapın.';
-      } else {
-        errorMessage = 'API isteği başarısız: ${e.message}';
-      }
-
-      setState(() => _error = errorMessage);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -81,48 +68,51 @@ class _GroupsPageState extends State<GroupsPage> {
       appBar: AppBar(
         title: const Text('Gruplar'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadGroups,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadGroups),
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab_groups',
+        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CreateGroupPage(
+                onGroupCreated: () => _loadGroups(),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                _error!,
-                style: const TextStyle(fontSize: 18, color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
+              Text(_error!,
+                  style: const TextStyle(color: Colors.red, fontSize: 18),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _loadGroups,
-                child: const Text('Tekrar Dene'),
-              ),
-              if (_error!.contains('Oturum') || _error!.contains('giriş'))
-                const SizedBox(height: 10),
-              if (_error!.contains('Oturum') || _error!.contains('giriş'))
+                  onPressed: _loadGroups, child: const Text('Tekrar Dene')),
+              if (_error!.contains('oturum') || _error!.contains('giriş'))
                 ElevatedButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => LoginPage(authService: _authService),
-                    ),
-                  ),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => LoginPage(authService: _authService)),
+                    );
+                  },
                   child: const Text('Giriş Yap'),
                 ),
             ],
@@ -133,33 +123,24 @@ class _GroupsPageState extends State<GroupsPage> {
 
     if (_groups.isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Henüz grup yok',
-                style: TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CreateGroupPage(
-                        onGroupCreated: () {
-                          _loadGroups();
-                        },
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('Yeni Grup Oluştur'),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Henüz grup yok', style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        CreateGroupPage(onGroupCreated: _loadGroups),
+                  ),
+                );
+              },
+              child: const Text('Yeni Grup Oluştur'),
+            ),
+          ],
         ),
       );
     }
@@ -170,20 +151,19 @@ class _GroupsPageState extends State<GroupsPage> {
         itemCount: _groups.length,
         itemBuilder: (context, index) {
           final group = _groups[index];
+          if (group is! Map<String, dynamic>)
+            return const ListTile(title: Text('Geçersiz grup verisi'));
 
-          if (group is! Map<String, dynamic>) {
-            return const ListTile(
-              title: Text('Geçersiz grup verisi'),
-            );
-          }
+          final groupId = (group['id'] is int)
+              ? group['id'] as int
+              : int.tryParse(group['id'].toString()) ?? 0;
+          final groupName = group['name']?.toString() ?? 'Grup';
 
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: ListTile(
-              title: Text(
-                group['name']?.toString() ?? 'İsimsiz Grup',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              title: Text(groupName,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle:
                   Text(group['description']?.toString() ?? 'Açıklama yok'),
               trailing: const Icon(Icons.arrow_forward_ios),
@@ -192,11 +172,7 @@ class _GroupsPageState extends State<GroupsPage> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => EventsPage.forGroup(
-                      groupId: (group['id'] is int)
-                          ? group['id'] as int
-                          : int.tryParse(group['id'].toString()) ?? 0,
-                      groupName: group['name']?.toString() ?? 'Grup',
-                    ),
+                        groupId: groupId, groupName: groupName),
                   ),
                 );
               },
