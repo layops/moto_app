@@ -121,8 +121,7 @@ class _AddEventPageState extends State<AddEventPage> {
               const SizedBox(height: 12),
               TextFormField(
                   controller: _locCtrl,
-                  decoration:
-                      const InputDecoration(labelText: 'Konum (opsiyonel)')),
+                  decoration: const InputDecoration(labelText: 'Konum')),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: Text('Başlangıç: ${_displayDate(_start)}')),

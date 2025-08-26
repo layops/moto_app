@@ -1,23 +1,334 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
+import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
-class MapPage extends StatelessWidget {
+class MapPage extends StatefulWidget {
   const MapPage({super.key});
 
   @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
+  LatLng? _currentPosition;
+  bool _isLoading = true;
+  double _zoomLevel = 13.0;
+
+  List<dynamic> _searchResults = [];
+
+  // Harita görünümü durumunu yönetmek için yeni değişken
+  bool _isSatelliteView = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+      _isLoading = false;
+    });
+  }
+
+  void _zoomIn() {
+    setState(() {
+      _zoomLevel += 1;
+      _mapController.move(_mapController.camera.center, _zoomLevel);
+    });
+  }
+
+  void _zoomOut() {
+    setState(() {
+      _zoomLevel -= 1;
+      _mapController.move(_mapController.camera.center, _zoomLevel);
+    });
+  }
+
+  void _goToCurrentLocation() {
+    if (_currentPosition != null) {
+      setState(() {
+        _zoomLevel = 15.0;
+        _mapController.move(_currentPosition!, _zoomLevel);
+      });
+    }
+  }
+
+  void _searchLocation() async {
+    final String searchText = _searchController.text;
+    if (searchText.isEmpty) {
+      setState(() {
+        _searchResults = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _searchResults = [];
+    });
+
+    try {
+      final String nominatimUrl =
+          'https://nominatim.openstreetmap.org/search?q=$searchText&format=json&limit=5';
+      final response = await http.get(Uri.parse(nominatimUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _searchResults = data;
+        });
+      } else {}
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _selectSearchResult(dynamic result) {
+    if (result != null) {
+      final double lat = double.parse(result['lat']);
+      final double lon = double.parse(result['lon']);
+
+      _mapController.move(LatLng(lat, lon), 15.0);
+
+      setState(() {
+        _searchResults = [];
+        _searchController.clear();
+      });
+    }
+  }
+
+  // Uydu görünümü arasında geçiş yapmak için yeni metot
+  void _toggleMapType() {
+    setState(() {
+      _isSatelliteView = !_isSatelliteView;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: LatLng(41.0082, 28.9784), // center yerine initialCenter
-        initialZoom: 13.0, // zoom yerine initialZoom
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    final bool isDarkTheme = theme.brightness == Brightness.dark;
+    final String mapUrl = isDarkTheme
+        ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
+        : 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png';
+
+    // Uydu görünümü için URL şablonu
+    final String satelliteUrl =
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: Stack(
+        children: [
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: LatLng(41.0082, 28.9784),
+              initialZoom: _zoomLevel,
+              onTap: (tapPosition, point) {
+                print("Tıklanan konum: ${point.latitude}, ${point.longitude}");
+              },
+            ),
+            children: [
+              TileLayer(
+                // Görünüm tipine göre dinamik URL
+                urlTemplate: _isSatelliteView ? satelliteUrl : mapUrl,
+                subdomains: const ['a', 'b', 'c', 'd'],
+                userAgentPackageName: 'com.example.frontend',
+                maxZoom: 20,
+              ),
+              if (_currentPosition != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentPosition!,
+                      width: 40,
+                      height: 40,
+                      child: Icon(Icons.location_pin,
+                          color: colorScheme.primary, size: 40),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+
+          Positioned(
+            bottom: ThemeConstants.paddingMedium.bottom,
+            right: ThemeConstants.paddingMedium.right,
+            child: FloatingActionButton(
+              onPressed: _goToCurrentLocation,
+              backgroundColor: colorScheme.primary,
+              mini: true,
+              child: Icon(Icons.my_location, color: colorScheme.onPrimary),
+            ),
+          ),
+
+          // Yeni eklenen uydu görünümü butonu
+          Positioned(
+            bottom: ThemeConstants.paddingMedium.bottom + 60,
+            right: ThemeConstants.paddingMedium.right,
+            child: FloatingActionButton(
+              onPressed: _toggleMapType,
+              backgroundColor: colorScheme.primary,
+              mini: true,
+              child: Icon(
+                _isSatelliteView
+                    ? Icons.map_outlined
+                    : Icons.satellite_outlined,
+                color: colorScheme.onPrimary,
+              ),
+            ),
+          ),
+
+          Positioned(
+            bottom:
+                ThemeConstants.paddingMedium.bottom + 120, // Konumu ayarlandı
+            right: ThemeConstants.paddingMedium.right,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  onPressed: _zoomIn,
+                  backgroundColor: colorScheme.primary,
+                  mini: true,
+                  child: Icon(Icons.add, color: colorScheme.onPrimary),
+                ),
+                SizedBox(height: ThemeConstants.paddingSmall.bottom),
+                FloatingActionButton(
+                  onPressed: _zoomOut,
+                  backgroundColor: colorScheme.primary,
+                  mini: true,
+                  child: Icon(Icons.remove, color: colorScheme.onPrimary),
+                ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            top: 40,
+            left: ThemeConstants.paddingMedium.left,
+            right: ThemeConstants.paddingMedium.right,
+            child: Container(
+              padding: ThemeConstants.paddingSmall,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius:
+                    BorderRadius.circular(ThemeConstants.borderRadiusXLarge),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.onSurface.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: textTheme.bodyLarge,
+                decoration: InputDecoration(
+                  hintText: "Konum ara...",
+                  border: InputBorder.none,
+                  hintStyle: textTheme.bodyMedium,
+                  suffixIcon: IconButton(
+                    icon:
+                        Icon(Icons.search, color: textTheme.bodyMedium?.color),
+                    onPressed: _searchLocation,
+                  ),
+                ),
+                onSubmitted: (_) => _searchLocation(),
+              ),
+            ),
+          ),
+
+          if (_searchResults.isNotEmpty)
+            Positioned(
+              top: 100,
+              left: ThemeConstants.paddingMedium.left,
+              right: ThemeConstants.paddingMedium.right,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius:
+                      BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, index) {
+                    final result = _searchResults[index];
+                    return ListTile(
+                      title: Text(result['display_name'],
+                          style: textTheme.bodyLarge),
+                      onTap: () => _selectSearchResult(result),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+          if (_isLoading)
+            Center(
+              child: CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
+            ),
+        ],
       ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.app',
-        ),
-      ],
     );
   }
 }

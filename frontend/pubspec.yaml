@@ -1,8 +1,8 @@
-name: motoapp_frontend  # Uygulama adı (zorunlu)
-description: MotoApp Flutter Frontend  # Uygulama açıklaması
-publish_to: 'none'  # Pub.dev'e yayınlamayı kapat
+name: motoapp_frontend
+description: MotoApp Flutter Frontend
+publish_to: 'none'
 
-version: 1.0.0+1  # Versiyon numarası
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -40,6 +40,7 @@ dependencies:
   latlong2: ^0.9.0
   geolocator: ^14.0.2
   permission_handler: ^12.0.1
+  http: ^1.2.1
 
   # Medya
   file_picker: ^10.2.1
