@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
+import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'create_group_page.dart';
 
 class GroupsPage extends StatefulWidget {
@@ -16,6 +18,7 @@ class GroupsPage extends StatefulWidget {
 class _GroupsPageState extends State<GroupsPage> {
   bool _loading = true;
   List<dynamic> _groups = [];
+  List<dynamic> _discoverGroups = []; // Keşfedilecek gruplar için yeni liste
   String? _error;
   late AuthService _authService;
 
@@ -50,6 +53,9 @@ class _GroupsPageState extends State<GroupsPage> {
       if (response.statusCode == 200) {
         setState(() {
           _groups = response.data is List ? response.data : [];
+          // Geçici olarak keşfedilecek grupları da aynı veriyle dolduruyoruz
+          // Gerçek uygulamada bu farklı bir API endpoint'inden gelmeli
+          _discoverGroups = List.from(_groups);
         });
       } else {
         throw Exception(
@@ -81,6 +87,7 @@ class _GroupsPageState extends State<GroupsPage> {
             MaterialPageRoute(
               builder: (_) => CreateGroupPage(
                 onGroupCreated: () => _loadGroups(),
+                authService: _authService, // Bu satırı ekleyin
               ),
             ),
           );
@@ -121,64 +128,183 @@ class _GroupsPageState extends State<GroupsPage> {
       );
     }
 
-    if (_groups.isEmpty) {
-      return Center(
+    return RefreshIndicator(
+      onRefresh: _loadGroups,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Henüz grup yok', style: TextStyle(fontSize: 18)),
+            // My Groups Section
+            _buildSectionTitle('My Groups'),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        CreateGroupPage(onGroupCreated: _loadGroups),
+            _groups.isEmpty
+                ? _buildEmptyState()
+                : Column(
+                    children: _groups
+                        .map((group) => _buildGroupCard(group, true))
+                        .toList(),
                   ),
-                );
-              },
-              child: const Text('Yeni Grup Oluştur'),
-            ),
+
+            const SizedBox(height: 32),
+
+            // Discover Groups Section
+            _buildSectionTitle('Discover Groups'),
+            const SizedBox(height: 16),
+            _discoverGroups.isEmpty
+                ? const Center(child: Text('Keşfedilecek grup bulunamadı'))
+                : Column(
+                    children: _discoverGroups
+                        .map((group) => _buildGroupCard(group, false))
+                        .toList(),
+                  ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColorSchemes.textPrimary,
+          ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Henüz grup yok', style: TextStyle(fontSize: 18)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CreateGroupPage(
+                    onGroupCreated: _loadGroups,
+                    authService: _authService, // Bu satırı ekleyin
+                  ),
+                ),
+              );
+            },
+            child: const Text('Yeni Grup Oluştur'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupCard(dynamic group, bool isMyGroup) {
+    if (group is! Map<String, dynamic>) {
+      return const Card(
+        child: ListTile(title: Text('Geçersiz grup verisi')),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadGroups,
-      child: ListView.builder(
-        itemCount: _groups.length,
-        itemBuilder: (context, index) {
-          final group = _groups[index];
-          if (group is! Map<String, dynamic>)
-            return const ListTile(title: Text('Geçersiz grup verisi'));
+    final groupId = (group['id'] is int)
+        ? group['id'] as int
+        : int.tryParse(group['id'].toString()) ?? 0;
+    final groupName = group['name']?.toString() ?? 'Grup';
+    final description = group['description']?.toString() ?? 'Açıklama yok';
 
-          final groupId = (group['id'] is int)
-              ? group['id'] as int
-              : int.tryParse(group['id'].toString()) ?? 0;
-          final groupName = group['name']?.toString() ?? 'Grup';
+    // Geçici veriler - gerçek uygulamada API'den gelmeli
+    final location = group['location']?.toString() ?? 'San Francisco, CA';
+    final memberCount = group['member_count']?.toString() ?? '1,247';
+    final activeTime = group['active_time']?.toString() ?? '2 hours ago';
 
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: ListTile(
-              title: Text(groupName,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle:
-                  Text(group['description']?.toString() ?? 'Açıklama yok'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EventsPage.forGroup(
-                        groupId: groupId, groupName: groupName),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+      ),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        groupName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          color: AppColorSchemes.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+                if (!isMyGroup)
+                  ElevatedButton(
+                    onPressed: () {
+                      // Gruba katılma işlevi
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColorSchemes.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            ThemeConstants.borderRadiusMedium),
+                      ),
+                    ),
+                    child: const Text('Join'),
+                  ),
+              ],
             ),
-          );
-        },
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+                const SizedBox(width: 4),
+                Text(
+                  location,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$memberCount members',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Active $activeTime',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -42,6 +42,10 @@ class AppTextTheme {
           color: AppColorSchemes.linkColor,
           fontWeight: FontWeight.w500,
         ),
+        titleSmall: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w500,
+        ),
       );
 
   static TextTheme get dark => TextTheme(
@@ -81,6 +85,10 @@ class AppTextTheme {
         titleMedium: TextStyle(
           fontSize: 16.sp,
           color: AppColorSchemes.linkColor,
+          fontWeight: FontWeight.w500,
+        ),
+        titleSmall: TextStyle(
+          fontSize: 12.sp,
           fontWeight: FontWeight.w500,
         ),
       );

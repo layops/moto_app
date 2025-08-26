@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
@@ -23,6 +24,7 @@ class _EventsPageState extends State<EventsPage> {
   List<dynamic> _events = [];
   String? _error;
   late final bool _isGeneralPage;
+  int _selectedFilterIndex = 0;
 
   @override
   void initState() {
@@ -65,150 +67,244 @@ class _EventsPageState extends State<EventsPage> {
     }
   }
 
+  Widget _buildEventChip(String label, Color color) {
+    return Chip(
+      label: Text(label, style: TextStyle(fontSize: 12, color: color)),
+      backgroundColor: color.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(int index, String label) {
+    return FilterChip(
+      label: Text(label),
+      selected: _selectedFilterIndex == index,
+      onSelected: (selected) {
+        setState(() {
+          _selectedFilterIndex = selected ? index : 0;
+        });
+      },
+      backgroundColor: Colors.transparent,
+      selectedColor: AppColorSchemes.primaryColor.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: _selectedFilterIndex == index
+            ? AppColorSchemes.primaryColor
+            : AppColorSchemes.textSecondary,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: _selectedFilterIndex == index
+              ? AppColorSchemes.primaryColor
+              : AppColorSchemes.borderColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isGeneralPage
-              ? 'Tüm Etkinlikler'
-              : (widget.groupName ?? 'Grup Etkinlikleri'))),
-      body: RefreshIndicator(
-        onRefresh: _loadEvents,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Center(
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline,
-                              size: 48, color: Colors.red),
-                          const SizedBox(height: 16),
-                          Text(_error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 16)),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                              onPressed: _loadEvents,
-                              child: const Text('Tekrar Dene')),
-                        ],
-                      ),
-                    ),
-                  )
-                : _events.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.event,
-                                size: 64, color: Colors.grey),
-                            const SizedBox(height: 16),
-                            Text(
-                                _isGeneralPage
-                                    ? 'Henüz etkinlik yok'
-                                    : 'Bu grupta henüz etkinlik yok',
-                                style: const TextStyle(
-                                    fontSize: 18, color: Colors.grey)),
-                            const SizedBox(height: 8),
-                            Text(
-                                _isGeneralPage
-                                    ? 'Kişisel etkinlik oluşturabilir veya gruplara katılabilirsiniz'
-                                    : 'İlk etkinliği sen oluştur!',
-                                style: const TextStyle(color: Colors.grey),
-                                textAlign: TextAlign.center),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: _events.length,
-                        itemBuilder: (context, index) {
-                          final e =
-                              (_events[index] as Map).cast<String, dynamic>();
-                          return Card(
-                            elevation: 3,
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 4),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            child: InkWell(
-                              onTap: () {},
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (_isGeneralPage && e['group'] != null)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 8),
-                                        child: Text(
-                                            (e['group'] as Map?)?['name']
-                                                    ?.toString() ??
-                                                'Grup',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.blue,
-                                                fontWeight: FontWeight.bold)),
-                                      ),
-                                    Text(
-                                        e['title']?.toString() ??
-                                            'Başlıksız Etkinlik',
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold)),
-                                    if ((e['description']?.toString() ?? '')
-                                        .isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(e['description'].toString(),
-                                            style:
-                                                const TextStyle(fontSize: 14)),
-                                      ),
-                                    const SizedBox(height: 12),
-                                    Row(children: [
-                                      const Icon(Icons.calendar_today,
-                                          size: 16, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                          _formatDate(
-                                              e['start_time']?.toString()),
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey)),
-                                    ]),
-                                    if ((e['location']?.toString() ?? '')
-                                        .isNotEmpty)
-                                      Row(
+        title: Text(_isGeneralPage
+            ? 'Tüm Etkinlikler'
+            : (widget.groupName ?? 'Grup Etkinlikleri')),
+      ),
+      body: Column(
+        children: [
+          // Filter Chips
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip(0, 'All Events'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(1, 'This Week'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(2, 'This Month'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(3, 'My Events'),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadEvents,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline,
+                                    size: 48, color: Colors.red),
+                                const SizedBox(height: 16),
+                                Text(_error!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 16)),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                    onPressed: _loadEvents,
+                                    child: const Text('Tekrar Dene')),
+                              ],
+                            ),
+                          ),
+                        )
+                      : _events.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.event,
+                                      size: 64, color: Colors.grey),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                      _isGeneralPage
+                                          ? 'Henüz etkinlik yok'
+                                          : 'Bu grupta henüz etkinlik yok',
+                                      style: const TextStyle(
+                                          fontSize: 18, color: Colors.grey)),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                      _isGeneralPage
+                                          ? 'Kişisel etkinlik oluşturabilir veya gruplara katılabilirsiniz'
+                                          : 'İlk etkinliği sen oluştur!',
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                      textAlign: TextAlign.center),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: _events.length,
+                              itemBuilder: (context, index) {
+                                final e = (_events[index] as Map)
+                                    .cast<String, dynamic>();
+                                return Card(
+                                  elevation: 3,
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 4),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: InkWell(
+                                    onTap: () {},
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          const Icon(Icons.location_on,
-                                              size: 16, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Text(e['location'].toString(),
+                                          Row(
+                                            children: [
+                                              _buildEventChip(
+                                                  'Group Ride', Colors.orange),
+                                              const Spacer(),
+                                              TextButton(
+                                                onPressed: () {},
+                                                child: const Text('Join'),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                              e['title']?.toString() ??
+                                                  'Başlıksız Etkinlik',
                                               style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey)),
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold)),
+                                          if ((e['description']?.toString() ??
+                                                  '')
+                                              .isNotEmpty)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 8),
+                                              child: Text(
+                                                  e['description'].toString(),
+                                                  style: const TextStyle(
+                                                      fontSize: 14)),
+                                            ),
+                                          const SizedBox(height: 12),
+                                          Row(children: [
+                                            const Icon(Icons.calendar_today,
+                                                size: 16, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                                _formatDate(e['start_time']
+                                                    ?.toString()),
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey)),
+                                          ]),
+                                          if ((e['location']?.toString() ?? '')
+                                              .isNotEmpty)
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.location_on,
+                                                    size: 16,
+                                                    color: Colors.grey),
+                                                const SizedBox(width: 4),
+                                                Text(e['location'].toString(),
+                                                    style: const TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.grey)),
+                                              ],
+                                            ),
+                                          const SizedBox(height: 12),
+                                          const Divider(),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              const Text('45/60',
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey)),
+                                              const Spacer(),
+                                              Text(
+                                                  'by ${(e['group'] as Map?)?['name']?.toString() ?? 'Grup'}',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey)),
+                                              const SizedBox(width: 8),
+                                              const Text('Easy',
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey)),
+                                              const SizedBox(width: 8),
+                                              const Text('Free',
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey)),
+                                            ],
+                                          ),
                                         ],
                                       ),
-                                  ],
-                                ),
-                              ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_events', // benzersiz tag
+        heroTag: 'fab_events',
         child: const Icon(Icons.add),
         onPressed: () async {
           final created = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-                builder: (_) => AddEventPage(groupId: widget.groupId ?? 0)),
+                builder: (_) => AddEventPage(groupId: widget.groupId)),
           );
           if (created == true) _loadEvents();
         },

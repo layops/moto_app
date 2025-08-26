@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
+import 'package:motoapp_frontend/core/theme/theme_constants.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
+import 'package:motoapp_frontend/services/group/group_service.dart';
 
 class CreateGroupPage extends StatefulWidget {
   final VoidCallback onGroupCreated;
+  final AuthService authService;
 
-  const CreateGroupPage({super.key, required this.onGroupCreated});
+  const CreateGroupPage({
+    super.key,
+    required this.onGroupCreated,
+    required this.authService,
+  });
 
   @override
   State<CreateGroupPage> createState() => _CreateGroupPageState();
@@ -18,12 +25,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   bool _loading = false;
   String? _error;
 
-  final Dio dio = Dio();
+  late GroupService _groupService;
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs
-        .getString('auth_token'); // Token'ı nasıl saklıyorsan ona göre ayarla
+  @override
+  void initState() {
+    super.initState();
+    _groupService = GroupService(authService: widget.authService);
   }
 
   Future<void> _createGroup() async {
@@ -36,36 +43,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     });
 
     try {
-      final token = await _getToken();
-      if (token == null) {
-        setState(() {
-          _error = "Lütfen giriş yapın.";
-          _loading = false;
-        });
-        return;
-      }
-
-      final response = await dio.post(
-        //'http://172.19.34.247:8000/api/groups/',  // EMRE
-        'http://172.17.62.146:8000/api/groups/',    // OZAN
-        data: {
-          'name': _name,
-          'description': _description,
-        },
-        options: Options(
-          headers: {'Authorization': 'Token $token'},
-        ),
-      );
-
-      if (response.statusCode == 201) {
-        widget.onGroupCreated();
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      } else {
-        setState(() {
-          _error = 'Grup oluşturulamadı: ${response.statusCode}';
-        });
+      await _groupService.createGroup(_name, _description);
+      widget.onGroupCreated();
+      if (mounted) {
+        Navigator.pop(context);
       }
     } catch (e) {
       setState(() {
@@ -81,38 +62,113 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Yeni Grup Oluştur')),
+      appBar: AppBar(
+        title: const Text('Yeni Grup Oluştur',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: AppColorSchemes.surfaceColor,
+        foregroundColor: AppColorSchemes.textPrimary,
+        elevation: 0,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ThemeConstants.paddingLarge,
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Yeni Bir Grup Başlat',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColorSchemes.textPrimary,
+                      )),
+              const SizedBox(height: 8),
+              Text('Motosiklet tutkunlarıyla bir araya gelin',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 24),
               if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child:
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                Container(
+                  width: double.infinity,
+                  padding: ThemeConstants.paddingMedium,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(
+                        ThemeConstants.borderRadiusMedium),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: Colors.red.shade700),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
+              if (_error != null) const SizedBox(height: 16),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Grup Adı'),
+                decoration: InputDecoration(
+                  labelText: 'Grup Adı',
+                  hintText: 'Örn: İstanbul Motosiklet Grubu',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                        ThemeConstants.borderRadiusMedium),
+                  ),
+                  filled: true,
+                  fillColor: AppColorSchemes.lightBackground,
+                  prefixIcon: const Icon(Icons.group),
+                ),
                 validator: (value) => value == null || value.isEmpty
                     ? 'Grup adı zorunludur'
                     : null,
                 onSaved: (value) => _name = value!.trim(),
               ),
+              const SizedBox(height: 20),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Açıklama'),
-                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Açıklama',
+                  hintText: 'Grubunuzu tanımlayan bir açıklama yazın...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                        ThemeConstants.borderRadiusMedium),
+                  ),
+                  filled: true,
+                  fillColor: AppColorSchemes.lightBackground,
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 4,
                 onSaved: (value) => _description = value?.trim() ?? '',
               ),
-              const SizedBox(height: 20),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _createGroup,
-                      child: const Text('Oluştur'),
-                    ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _createGroup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColorSchemes.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                ThemeConstants.borderRadiusMedium),
+                          ),
+                        ),
+                        child: const Text('Grubu Oluştur',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+              ),
+              const Spacer(),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'İpucu: Grubunuzu ilgi çekici bir isim ve açıklama ile oluşturun daha fazla üye çekin!',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColorSchemes.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
         ),

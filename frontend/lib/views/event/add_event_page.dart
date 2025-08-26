@@ -4,9 +4,9 @@ import 'package:motoapp_frontend/services/event/event_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 
 class AddEventPage extends StatefulWidget {
-  final int groupId;
+  final int? groupId; // Nullable yap
 
-  const AddEventPage({super.key, required this.groupId});
+  const AddEventPage({super.key, this.groupId}); // Artık required değil
 
   @override
   State<AddEventPage> createState() => _AddEventPageState();
@@ -47,10 +47,11 @@ class _AddEventPageState extends State<AddEventPage> {
     final dt =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
-      if (isStart)
+      if (isStart) {
         _start = dt;
-      else
+      } else {
         _end = dt;
+      }
     });
   }
 
@@ -70,7 +71,7 @@ class _AddEventPageState extends State<AddEventPage> {
     setState(() => _submitting = true);
     try {
       await _service.createEvent(
-        groupId: widget.groupId,
+        groupId: widget.groupId, // Nullable olarak gönder
         title: _titleCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         location: _locCtrl.text.trim(),
@@ -79,9 +80,10 @@ class _AddEventPageState extends State<AddEventPage> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
