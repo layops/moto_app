@@ -17,8 +17,8 @@ class GroupsPage extends StatefulWidget {
 
 class _GroupsPageState extends State<GroupsPage> {
   bool _loading = true;
-  List<dynamic> _groups = [];
-  List<dynamic> _discoverGroups = []; // Keşfedilecek gruplar için yeni liste
+  List<dynamic> _myGroups = []; // Kendi gruplarım
+  List<dynamic> _discoverGroups = []; // Keşfedilecek gruplar
   String? _error;
   late AuthService _authService;
 
@@ -26,7 +26,7 @@ class _GroupsPageState extends State<GroupsPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authService = Provider.of<AuthService>(context, listen: false);
-    if (_groups.isEmpty && _error == null) {
+    if (_myGroups.isEmpty && _error == null) {
       _loadGroups();
     }
   }
@@ -45,21 +45,32 @@ class _GroupsPageState extends State<GroupsPage> {
       }
 
       final dio = _authService.apiClient.dio;
-      final response = await dio.get(
-        'groups/',
-        options: Options(headers: {'Authorization': 'Token $token'}),
+      final headers = {'Authorization': 'Token $token'};
+
+      // 1. Kendi gruplarını çek
+      final myGroupsResponse = await dio.get(
+        'groups/my_groups/', // Yeni uç nokta
+        options: Options(headers: headers),
       );
 
-      if (response.statusCode == 200) {
+      // 2. Keşfedilecek grupları çek
+      final discoverGroupsResponse = await dio.get(
+        'groups/discover/', // Yeni uç nokta
+        options: Options(headers: headers),
+      );
+
+      if (myGroupsResponse.statusCode == 200 &&
+          discoverGroupsResponse.statusCode == 200) {
         setState(() {
-          _groups = response.data is List ? response.data : [];
-          // Geçici olarak keşfedilecek grupları da aynı veriyle dolduruyoruz
-          // Gerçek uygulamada bu farklı bir API endpoint'inden gelmeli
-          _discoverGroups = List.from(_groups);
+          _myGroups =
+              myGroupsResponse.data is List ? myGroupsResponse.data : [];
+          _discoverGroups = discoverGroupsResponse.data is List
+              ? discoverGroupsResponse.data
+              : [];
         });
       } else {
         throw Exception(
-            'HTTP ${response.statusCode} - ${response.statusMessage}');
+            'HTTP ${myGroupsResponse.statusCode} - Gruplar yüklenirken bir sorun oluştu.');
       }
     } catch (e) {
       setState(() => _error = e.toString());
@@ -87,7 +98,7 @@ class _GroupsPageState extends State<GroupsPage> {
             MaterialPageRoute(
               builder: (_) => CreateGroupPage(
                 onGroupCreated: () => _loadGroups(),
-                authService: _authService, // Bu satırı ekleyin
+                authService: _authService,
               ),
             ),
           );
@@ -138,10 +149,10 @@ class _GroupsPageState extends State<GroupsPage> {
             // My Groups Section
             _buildSectionTitle('My Groups'),
             const SizedBox(height: 16),
-            _groups.isEmpty
+            _myGroups.isEmpty
                 ? _buildEmptyState()
                 : Column(
-                    children: _groups
+                    children: _myGroups
                         .map((group) => _buildGroupCard(group, true))
                         .toList(),
                   ),
@@ -188,7 +199,7 @@ class _GroupsPageState extends State<GroupsPage> {
                 MaterialPageRoute(
                   builder: (_) => CreateGroupPage(
                     onGroupCreated: _loadGroups,
-                    authService: _authService, // Bu satırı ekleyin
+                    authService: _authService,
                   ),
                 ),
               );
