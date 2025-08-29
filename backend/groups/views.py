@@ -1,5 +1,3 @@
-# C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\backend\groups\views.py
-
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -31,7 +29,7 @@ class IsGroupOwnerOrMember(permissions.BasePermission):
 
 # --- VIEWS ---
 
-class MyGroupsListView(generics.ListAPIView): # <-- Adı değişti ve sadece listeleyecek
+class MyGroupsListView(generics.ListAPIView):
     """
     Kullanıcının üyesi olduğu grupları listeler.
     """
@@ -42,7 +40,7 @@ class MyGroupsListView(generics.ListAPIView): # <-- Adı değişti ve sadece lis
         # Kullanıcının üyesi olduğu grupları getir
         return self.request.user.member_of_groups.all()
 
-class GroupCreateView(generics.CreateAPIView): # <-- Yeni sınıf
+class GroupCreateView(generics.CreateAPIView):
     """
     Yeni grup oluşturur.
     """
