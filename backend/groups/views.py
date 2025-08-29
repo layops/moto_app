@@ -1,12 +1,14 @@
+# C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\backend\groups\views.py
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from django.db.models import Q 
 
 from .models import Group
 from .serializers import GroupSerializer, GroupMemberSerializer
 from users.models import CustomUser
-
 
 # --- PERMISSIONS ---
 
@@ -29,7 +31,10 @@ class IsGroupOwnerOrMember(permissions.BasePermission):
 
 # --- VIEWS ---
 
-class GroupListCreateView(generics.ListCreateAPIView):
+class MyGroupsListView(generics.ListAPIView): # <-- Adı değişti ve sadece listeleyecek
+    """
+    Kullanıcının üyesi olduğu grupları listeler.
+    """
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -37,10 +42,30 @@ class GroupListCreateView(generics.ListCreateAPIView):
         # Kullanıcının üyesi olduğu grupları getir
         return self.request.user.member_of_groups.all()
 
+class GroupCreateView(generics.CreateAPIView): # <-- Yeni sınıf
+    """
+    Yeni grup oluşturur.
+    """
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def perform_create(self, serializer):
         group = serializer.save(owner=self.request.user)
         # Grup sahibi aynı zamanda grup üyesi olarak eklenir
         group.members.add(self.request.user)
+
+
+class DiscoverGroupsView(generics.ListAPIView):
+    """
+    Kullanıcının henüz üyesi olmadığı, herkese açık grupları listeler.
+    """
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Kullanıcının üyesi olmadığı VE herkese açık olan grupları getir
+        return Group.objects.filter(is_public=True).exclude(members=user)
 
 
 class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
