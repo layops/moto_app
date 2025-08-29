@@ -1,3 +1,5 @@
+// C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\frontend\lib\views\groups\create_group_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
@@ -47,10 +49,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       widget.onGroupCreated();
       if (mounted) {
         Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Grup başarıyla oluşturuldu!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       setState(() {
-        _error = 'Hata: $e';
+        _error = e.toString().contains('Exception:')
+            ? e.toString().split('Exception: ')[1]
+            : 'Grup oluşturulurken bir hata oluştu: $e';
       });
     } finally {
       setState(() {
@@ -173,6 +183,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           ),
         ),
       ),
+      // Benzersiz heroTag eklendi ve _loading durumunda butonu tamamen kaldırdık
+      floatingActionButton: _loading
+          ? null
+          : FloatingActionButton(
+              heroTag: 'create_group_fab',
+              child: const Icon(Icons.check),
+              onPressed: _createGroup,
+            ),
     );
   }
 }
