@@ -35,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _errorMessage;
   String? _postsError;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isCurrentUser = false;
 
   @override
   void initState() {
@@ -79,11 +80,17 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
+      // Mevcut kullanıcı adını al ve kontrol et
+      final currentUsername = await ServiceLocator.user.getCurrentUsername();
+      final isCurrentUser = _currentUsername == currentUsername;
+
+      // Önce profil verilerini yükle
+      final profileResponse =
+          await ServiceLocator.profile.getProfile(_currentUsername!);
+
+      // Diğer verileri paralelde yükle
       final results = await Future.wait([
-        ServiceLocator.user.getProfile(_currentUsername!).catchError((e) {
-          print('Profil bilgisi getirme hatası: $e');
-          return {};
-        }),
+        Future.value(profileResponse),
         ServiceLocator.user.getPosts(_currentUsername!).catchError((e) {
           print('Gönderiler getirme hatası: $e');
           _postsError = 'Gönderiler yüklenirken hata oluştu';
@@ -105,7 +112,6 @@ class _ProfilePageState extends State<ProfilePage> {
           print('Takip edilenler getirme hatası: $e');
           return [];
         }),
-        // Removed the getMutualFollowers call as it doesn't exist
       ]);
 
       if (!mounted) return;
@@ -117,6 +123,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _events = results[3] as List<dynamic>?;
         _followers = results[4] as List<dynamic>?;
         _following = results[5] as List<dynamic>?;
+        _isCurrentUser = isCurrentUser;
         _isLoading = false;
       });
     } catch (e) {
@@ -156,24 +163,42 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _openEditProfile() {
-    Navigator.push(
+  void _openEditProfile() async {
+    // Önce kullanıcının oturum açık olup olmadığını kontrol et
+    final isLoggedIn = await ServiceLocator.auth.isLoggedIn();
+    if (!isLoggedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      // Kullanıcıyı login sayfasına yönlendir
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      return;
+    }
+
+    final updatedData = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EditProfilePage(
           initialData: _profileData ?? {},
         ),
       ),
-    ).then((updatedData) {
-      if (updatedData != null) {
-        setState(() {
-          _profileData = {..._profileData ?? {}, ...updatedData};
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil başarıyla güncellendi')),
-        );
-      }
-    });
+    );
+
+    if (updatedData != null) {
+      // Backend'den güncel verileri tekrar çek
+      _loadProfile();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profil başarıyla güncellendi'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -234,9 +259,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    // Mock data for mutual followers
-    final List<String> mutualFollowers = ['berriko takip ediyor'];
-
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -249,18 +271,21 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: const Icon(Icons.refresh),
               onPressed: _loadProfile,
               tooltip: 'Yenile'),
-          IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: _openEditProfile,
-              tooltip: 'Profili Düzenle'),
+          if (_isCurrentUser)
+            IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: _openEditProfile,
+                tooltip: 'Profili Düzenle'),
         ],
       ),
-      drawer: ProfileDrawer(
-        onSignOut: () => _signOut(context),
-        colorScheme: colorScheme,
-        theme: theme,
-        profileData: _profileData ?? {},
-      ),
+      drawer: _isCurrentUser
+          ? ProfileDrawer(
+              onSignOut: () => _signOut(context),
+              colorScheme: colorScheme,
+              theme: theme,
+              profileData: _profileData ?? {},
+            )
+          : null,
       body: DefaultTabController(
         length: 6,
         child: NestedScrollView(
@@ -268,25 +293,24 @@ class _ProfilePageState extends State<ProfilePage> {
             SliverToBoxAdapter(
               child: ProfileHeader(
                 imageFile: _imageFile,
-                coverImageUrl: _profileData?['coverImageUrl'],
+                coverImageUrl: _profileData?['cover_photo'],
                 colorScheme: colorScheme,
                 followerCount: _followers?.length ?? 0,
                 followingCount: _following?.length ?? 0,
                 username: _currentUsername!,
-                displayName: _profileData?['displayName'] ?? _currentUsername!,
-                bio: _profileData?['bio'] ??
-                    'Dijital Medya ve Haber | Gündemi bir tıkla takip etmek için bildirimleri açın.',
-                joinDate: _profileData?['joinDate'] ??
-                    'Aralık 2020 tarihinde katıldı',
-                website:
-                    _profileData?['website'] ?? 'instagram.com/bosunatiklamatr',
-                isVerified: _profileData?['isVerified'] ?? false,
-                isCurrentUser: _currentUsername == widget.username,
-                onEditPhoto: _showPhotoUploadDialog,
+                displayName: _profileData?['display_name'] ?? _currentUsername!,
+                bio: _profileData?['bio'] ?? 'Henüz bir bio eklenmemiş',
+                joinDate: _profileData?['date_joined'] != null
+                    ? '${DateTime.parse(_profileData!['date_joined']).year} yılında katıldı'
+                    : 'Katılım tarihi bilinmiyor',
+                website: _profileData?['website'] ?? '',
+                isVerified: _profileData?['is_verified'] ?? false,
+                isCurrentUser: _isCurrentUser,
+                onEditPhoto: _isCurrentUser ? _showPhotoUploadDialog : null,
                 onFollow: () {
                   // Implement follow functionality
                 },
-                mutualFollowers: mutualFollowers,
+                mutualFollowers: [],
               ),
             ),
             SliverPersistentHeader(
@@ -315,7 +339,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   posts: _posts ?? [],
                   theme: theme,
                   username: _currentUsername!,
-                  avatarUrl: _profileData?['avatar']?.toString(),
+                  avatarUrl: _profileData?['profile_photo'],
                   error: _postsError),
               Center(child: Text('Yanıtlar', style: theme.textTheme.bodyLarge)),
               MediaTab(media: _media ?? [], theme: theme),
@@ -327,11 +351,13 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: UniqueKey(),
-        onPressed: _showPhotoUploadDialog,
-        child: const Icon(Icons.camera_alt),
-      ),
+      floatingActionButton: _isCurrentUser
+          ? FloatingActionButton(
+              heroTag: UniqueKey(),
+              onPressed: _showPhotoUploadDialog,
+              child: const Icon(Icons.camera_alt),
+            )
+          : null,
     );
   }
 }

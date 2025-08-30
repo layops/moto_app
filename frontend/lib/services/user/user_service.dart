@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
-import '../http/api_exceptions.dart'; // Doğru import yolu
+import '../http/api_exceptions.dart';
 
 class UserService {
   final ApiClient _apiClient;
@@ -26,14 +26,6 @@ class UserService {
 
   Future<String?> getCurrentUsername() async {
     return _storage.getCurrentUsername();
-  }
-
-  Future<Response> updateProfile(
-      String username, Map<String, dynamic> profileData) async {
-    return await _apiClient.put(
-      'users/$username/profile/',
-      profileData,
-    );
   }
 
   Future<Map<String, dynamic>?> getProfile(String username) async {

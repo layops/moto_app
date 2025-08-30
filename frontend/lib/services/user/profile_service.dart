@@ -5,7 +5,6 @@ import '../auth/token_service.dart';
 
 class ProfileService {
   final ApiClient _apiClient;
-  // ignore: unused_field
   final TokenService _tokenService;
 
   ProfileService(this._apiClient, this._tokenService);
@@ -24,26 +23,76 @@ class ProfileService {
     );
   }
 
-  Future<Response> updateProfile(
-      String username, Map<String, dynamic> profileData) async {
-    return await _apiClient.put(
-      'users/$username/profile/',
-      profileData,
-    );
+// profile_service.dart
+  Future<Response> updateProfile(Map<String, dynamic> profileData) async {
+    try {
+      final username = await _tokenService.getUsernameFromToken();
+      if (username == null) {
+        final currentUsername = await _tokenService.getCurrentUsername();
+        if (currentUsername == null) {
+          throw Exception(
+              'Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
+        }
+        return await _apiClient.put(
+          '$currentUsername/profile/', // URL'deki "users/" önekini kaldırın
+          profileData,
+        );
+      }
+
+      return await _apiClient.put(
+        '$username/profile/', // URL'deki "users/" önekini kaldırın
+        profileData,
+      );
+    } catch (e) {
+      print('Profil güncelleme hatası: $e');
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> getProfile(String username) async {
-    final response = await _apiClient.get('users/$username/profile/');
-    return response.data as Map<String, dynamic>;
+    try {
+      final response = await _apiClient.get('users/$username/profile/');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      print('Profil getirme hatası: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getPosts(String username) async {
-    final response = await _apiClient.get('users/$username/posts/');
-    return List<Map<String, dynamic>>.from(response.data);
+    try {
+      final response = await _apiClient.get('users/$username/posts/');
+      return List<Map<String, dynamic>>.from(response.data);
+    } catch (e) {
+      print('Gönderiler getirme hatası: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getMedia(String username) async {
-    final response = await _apiClient.get('users/$username/media/');
-    return List<Map<String, dynamic>>.from(response.data);
+    try {
+      final response = await _apiClient.get('users/$username/media/');
+      return List<Map<String, dynamic>>.from(response.data);
+    } catch (e) {
+      print('Medya getirme hatası: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getCurrentUserProfile() async {
+    try {
+      final username = await _tokenService.getUsernameFromToken();
+      if (username == null) {
+        final currentUsername = await _tokenService.getCurrentUsername();
+        if (currentUsername == null) {
+          throw Exception('Kullanıcı adı bulunamadı');
+        }
+        return await getProfile(currentUsername);
+      }
+      return await getProfile(username);
+    } catch (e) {
+      print('Mevcut kullanıcı profili getirme hatası: $e');
+      rethrow;
+    }
   }
 }

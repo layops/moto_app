@@ -34,7 +34,7 @@ class ProfileHeader extends StatelessWidget {
     this.isCurrentUser = false,
     this.onEditPhoto,
     this.onFollow,
-    this.mutualFollowers = const [], // Changed to const
+    this.mutualFollowers = const [],
   });
 
   String _formatNumber(int number) {
@@ -48,9 +48,9 @@ class ProfileHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Kapak fotoğrafı
+        // Kapak fotoğrafı - Backend'den gelecek
         Container(
-          height: 200,
+          height: 150,
           width: double.infinity,
           decoration: coverImageUrl != null
               ? BoxDecoration(
@@ -60,22 +60,13 @@ class ProfileHeader extends StatelessWidget {
                   ),
                 )
               : BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withOpacity(0.1),
                 ),
-          child: coverImageUrl == null
-              ? Center(
-                  child: Icon(
-                    Icons.photo_camera,
-                    color: colorScheme.onSurface.withOpacity(0.3),
-                    size: 40,
-                  ),
-                )
-              : null,
         ),
 
         // Profil içeriği
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -85,58 +76,52 @@ class ProfileHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Profil fotoğrafı
-                  Transform.translate(
-                    offset: const Offset(0, -50),
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 55,
-                          backgroundColor: colorScheme.surface,
-                          child: CircleAvatar(
-                            radius: 52,
-                            backgroundColor: Colors.transparent,
-                            backgroundImage: imageFile != null
-                                ? FileImage(imageFile!)
-                                : null,
-                            child: imageFile == null
-                                ? Icon(
-                                    Icons.account_circle,
-                                    size: 104,
-                                    color:
-                                        colorScheme.onSurface.withOpacity(0.5),
-                                  )
-                                : null,
-                          ),
-                        ),
-                        if (onEditPhoto != null)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: onEditPhoto,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: colorScheme.surface,
-                                    width: 2,
-                                  ),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: colorScheme.surface,
+                        backgroundImage: imageFile != null
+                            ? FileImage(imageFile!)
+                            : (coverImageUrl != null
+                                ? NetworkImage(coverImageUrl!) as ImageProvider
+                                : null),
+                        child: imageFile == null && coverImageUrl == null
+                            ? Icon(
+                                Icons.account_circle,
+                                size: 100,
+                                color: colorScheme.onSurface.withOpacity(0.3),
+                              )
+                            : null,
+                      ),
+                      if (onEditPhoto != null)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: onEditPhoto,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colorScheme.surface,
+                                  width: 2,
                                 ),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 20,
-                                  color: colorScheme.onPrimary,
-                                ),
+                              ),
+                              child: Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: colorScheme.onPrimary,
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
 
-                  // Takip butonu
+                  // Takip butonu (sadece başka kullanıcılar için)
                   if (!isCurrentUser)
                     ElevatedButton(
                       onPressed: onFollow,
@@ -146,50 +131,49 @@ class ProfileHeader extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
                       ),
                       child: const Text('Takip Et'),
                     ),
                 ],
               ),
 
-              // Kullanıcı bilgileri
-              Transform.translate(
-                offset: const Offset(0, -30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // İsim ve kullanıcı adı
-                    Row(
-                      children: [
-                        Text(
-                          displayName,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        if (isVerified)
-                          Icon(
-                            Icons.verified,
-                            color: Colors.blue,
-                            size: 20,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '@$username',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
+              const SizedBox(height: 16),
 
-                    // Bio
+              // Kullanıcı bilgileri
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // İsim ve kullanıcı adı
+                  Row(
+                    children: [
+                      Text(
+                        displayName,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      if (isVerified)
+                        Icon(
+                          Icons.verified,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '@$username',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+
+                  // Bio
+                  if (bio.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Text(
                       bio,
@@ -198,123 +182,96 @@ class ProfileHeader extends StatelessWidget {
                         color: colorScheme.onSurface,
                       ),
                     ),
+                  ],
 
-                    // Website
-                    if (website.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.link,
-                            size: 18,
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            website,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    // Katılma tarihi
+                  // Website
+                  if (website.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Icon(
-                          Icons.calendar_today,
+                          Icons.link,
                           size: 18,
                           color: colorScheme.onSurface.withOpacity(0.7),
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          joinDate,
+                          website,
                           style: TextStyle(
                             fontSize: 14,
-                            color: colorScheme.onSurface.withOpacity(0.7),
+                            color: Colors.blue,
                           ),
                         ),
                       ],
                     ),
+                  ],
 
-                    // Takipçi ve takip edilen sayıları
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _formatNumber(followingCount),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' Takip edilen',
-                                style: TextStyle(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
+                  // Katılma tarihi
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        joinDate,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.onSurface.withOpacity(0.7),
                         ),
-                        const SizedBox(width: 16),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: _formatNumber(followerCount),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' Takipçi',
-                                style: TextStyle(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
 
-                    // Ortak takipçiler
-                    if (mutualFollowers.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.7),
-                            fontSize: 14,
-                          ),
+                  // Takipçi ve takip edilen sayıları
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text.rich(
+                        TextSpan(
                           children: [
                             TextSpan(
-                              text: mutualFollowers.take(3).join(', '),
+                              text: _formatNumber(followingCount),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onSurface,
                               ),
                             ),
                             TextSpan(
-                              text: mutualFollowers.length > 3
-                                  ? ' ve ${mutualFollowers.length - 3} kişi daha takip ediyor'
-                                  : ' takip ediyor',
+                              text: ' Takip edilen',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: _formatNumber(followerCount),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' Takipçi',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),

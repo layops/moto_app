@@ -129,6 +129,7 @@ class FollowingListView(APIView):
 # -------------------------------
 # USER PROFILE
 # -------------------------------
+# views.py
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -141,6 +142,28 @@ class UserProfileView(APIView):
         serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data)
 
+    # PUT ve PATCH metodlarını ekleyin
+    def put(self, request, username):
+        return self.update_profile(request, username)
+
+    def patch(self, request, username):
+        return self.update_profile(request, username, partial=True)
+
+    def update_profile(self, request, username, partial=False):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Sadece kullanıcı kendi profilini güncelleyebilir
+        if user != request.user:
+            return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = UserSerializer(user, data=request.data, partial=partial, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # -------------------------------
 # USER POSTS

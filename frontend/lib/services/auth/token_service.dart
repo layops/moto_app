@@ -44,8 +44,18 @@ class TokenService {
   }
 
   Future<String?> getUsernameFromToken() async {
-    final tokenData = await getTokenData();
-    return tokenData?['username']?.toString();
+    try {
+      final tokenData = await getTokenData();
+      return tokenData?['username']?.toString();
+    } catch (e) {
+      debugPrint('Token\'dan kullanıcı adı alma hatası: $e');
+      return null;
+    }
+  }
+
+  // Yeni metod: localStorage'dan kullanıcı adını al
+  Future<String?> getCurrentUsername() async {
+    return _storage.getCurrentUsername();
   }
 
   // Token süresi dolmuş mu kontrol et

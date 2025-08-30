@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -10,108 +11,108 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _lastController;
-  late TextEditingController _autographModelController;
-  late TextEditingController _gulagStyleController;
-  late TextEditingController _lucertoPseudoController;
-  late TextEditingController _socialMediaController;
-
-  // Justification preferences
-  bool _actualization = false;
-  bool _learnPlatform = false;
-  bool _changeActivities = false;
-  bool _justifications = false;
-  bool _privacySettings = false;
-  bool _showLocations = false;
-  bool _showNotes = false;
+  late TextEditingController _displayNameController;
+  late TextEditingController _bioController;
+  late TextEditingController _motorcycleModelController;
+  late TextEditingController _locationController;
+  late TextEditingController _websiteController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _lastController =
-        TextEditingController(text: widget.initialData['last'] ?? '');
-    _autographModelController =
-        TextEditingController(text: widget.initialData['autographModel'] ?? '');
-    _gulagStyleController =
-        TextEditingController(text: widget.initialData['gulagStyle'] ?? '');
-    _lucertoPseudoController =
-        TextEditingController(text: widget.initialData['lucertoPseudo'] ?? '');
-    _socialMediaController =
-        TextEditingController(text: widget.initialData['socialMedia'] ?? '');
-
-    // Initialize preferences
-    _actualization = widget.initialData['actualization'] ?? false;
-    _learnPlatform = widget.initialData['learnPlatform'] ?? false;
-    _changeActivities = widget.initialData['changeActivities'] ?? false;
-    _justifications = widget.initialData['justifications'] ?? false;
-    _privacySettings = widget.initialData['privacySettings'] ?? false;
-    _showLocations = widget.initialData['showLocations'] ?? false;
-    _showNotes = widget.initialData['showNotes'] ?? false;
+    _displayNameController =
+        TextEditingController(text: widget.initialData['display_name'] ?? '');
+    _bioController =
+        TextEditingController(text: widget.initialData['bio'] ?? '');
+    _motorcycleModelController = TextEditingController(
+        text: widget.initialData['motorcycle_model'] ?? '');
+    _locationController =
+        TextEditingController(text: widget.initialData['location'] ?? '');
+    _websiteController =
+        TextEditingController(text: widget.initialData['website'] ?? '');
   }
 
   @override
   void dispose() {
-    _lastController.dispose();
-    _autographModelController.dispose();
-    _gulagStyleController.dispose();
-    _lucertoPseudoController.dispose();
-    _socialMediaController.dispose();
+    _displayNameController.dispose();
+    _bioController.dispose();
+    _motorcycleModelController.dispose();
+    _locationController.dispose();
+    _websiteController.dispose();
     super.dispose();
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
-      final updatedData = {
-        'last': _lastController.text,
-        'autographModel': _autographModelController.text,
-        'gulagStyle': _gulagStyleController.text,
-        'lucertoPseudo': _lucertoPseudoController.text,
-        'socialMedia': _socialMediaController.text,
-        'actualization': _actualization,
-        'learnPlatform': _learnPlatform,
-        'changeActivities': _changeActivities,
-        'justifications': _justifications,
-        'privacySettings': _privacySettings,
-        'showLocations': _showLocations,
-        'showNotes': _showNotes,
-      };
-      Navigator.pop(context, updatedData);
-    }
-  }
+      setState(() {
+        _isSaving = true;
+      });
 
-  void _saveReference() {
-    // This button can have a different function, like just printing data
-    final data = {
-      'last': _lastController.text,
-      'autographModel': _autographModelController.text,
-      'gulagStyle': _gulagStyleController.text,
-      'lucertoPseudo': _lucertoPseudoController.text,
-      'socialMedia': _socialMediaController.text,
-      'actualization': _actualization,
-      'learnPlatform': _learnPlatform,
-      'changeActivities': _changeActivities,
-      'justifications': _justifications,
-      'privacySettings': _privacySettings,
-      'showLocations': _showLocations,
-      'showNotes': _showNotes,
-    };
-    debugPrint('Save Reference data: $data');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reference saved locally')),
-    );
+      try {
+        final updatedData = {
+          'display_name': _displayNameController.text,
+          'bio': _bioController.text,
+          'motorcycle_model': _motorcycleModelController.text,
+          'location': _locationController.text,
+          'website': _websiteController.text,
+        };
+
+        // Backend'e profil güncelleme isteği gönder
+        final response =
+            await ServiceLocator.profile.updateProfile(updatedData);
+
+        if (response.statusCode == 200) {
+          if (!mounted) return;
+
+          // Başarılıysa bir önceki sayfaya dön
+          Navigator.pop(context, updatedData);
+        } else {
+          // Hata durumunda kullanıcıyı bilgilendir
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Güncelleme hatası: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+
+        // Özel hata mesajları
+        String errorMessage = 'Kaydetme hatası: $e';
+        if (e.toString().contains('Kullanıcı adı bulunamadı')) {
+          errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
+
+          // Kullanıcıyı login sayfasına yönlendir
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (route) => false);
+            }
+          });
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      }
+    }
   }
 
   String? _validateRequired(String? value, String fieldName) {
     if (value == null || value.isEmpty) {
-      return '$fieldName is required';
-    }
-    return null;
-  }
-
-  String? _validateSocialMedia(String? value) {
-    if (value == null || value.isEmpty) return null;
-    if (!value.startsWith('@')) {
-      return 'Instagram handle must start with @';
+      return '$fieldName gerekli';
     }
     return null;
   }
@@ -120,11 +121,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Profili Düzenle'),
+        actions: [
+          if (_isSaving)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _saveProfile,
+              tooltip: 'Kaydet',
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -133,265 +143,100 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Editor Zone
+              // Display Name
               const Text(
-                'Editor Zone',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Görünen İsim',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Status: Name',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Last
-              const Text(
-                'Last',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const SizedBox(height: 8),
               TextFormField(
-                controller: _lastController,
+                controller: _displayNameController,
                 decoration: const InputDecoration(
+                  hintText: 'Görünen isminiz',
                   border: OutlineInputBorder(),
-                  hintText: 'Enter your last name',
                 ),
-                validator: (value) => _validateRequired(value, 'Last name'),
+                validator: (value) => _validateRequired(value, 'Görünen isim'),
               ),
               const SizedBox(height: 16),
 
-              // Autograph Model
+              // Bio
               const Text(
-                'Autograph Model',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Hakkımda',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
               TextFormField(
-                controller: _autographModelController,
+                controller: _bioController,
+                maxLines: 3,
                 decoration: const InputDecoration(
+                  hintText: 'Kendinizden bahsedin',
                   border: OutlineInputBorder(),
-                  hintText: 'Enter autograph model',
                 ),
-                validator: (value) =>
-                    _validateRequired(value, 'Autograph model'),
               ),
               const SizedBox(height: 16),
 
-              // Gulag Style
+              // Motorcycle Model
               const Text(
-                'Gulag Style',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Motosiklet Modeli',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
               TextFormField(
-                controller: _gulagStyleController,
+                controller: _motorcycleModelController,
                 decoration: const InputDecoration(
+                  hintText: 'Motosiklet modeliniz',
                   border: OutlineInputBorder(),
-                  hintText: 'Enter gulag style',
                 ),
-                validator: (value) => _validateRequired(value, 'Gulag style'),
               ),
               const SizedBox(height: 16),
 
-              // Lucerto Pseudo
+              // Location
               const Text(
-                'Lucerto Pseudo',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Konum',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
               TextFormField(
-                controller: _lucertoPseudoController,
+                controller: _locationController,
                 decoration: const InputDecoration(
+                  hintText: 'Bulunduğunuz şehir',
                   border: OutlineInputBorder(),
-                  hintText: 'Enter lucerto pseudo',
                 ),
-                validator: (value) =>
-                    _validateRequired(value, 'Lucerto pseudo'),
               ),
               const SizedBox(height: 16),
 
-              // Social Media (Instagram)
+              // Website
               const Text(
-                'Social Media (Instagram)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Web Sitesi',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
               TextFormField(
-                controller: _socialMediaController,
+                controller: _websiteController,
                 decoration: const InputDecoration(
+                  hintText: 'Web siteniz veya sosyal medya linki',
                   border: OutlineInputBorder(),
-                  hintText: '@username',
-                  prefixText: '@',
                 ),
-                validator: _validateSocialMedia,
               ),
               const SizedBox(height: 24),
 
-              // Set
-              const Text(
-                'Set',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              const SizedBox(height: 24),
-
-              // Justification Preferences
-              const Text(
-                'Justification Preferences',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Actualization
-              SwitchListTile(
-                title: const Text(
-                  'Actualization',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Create a collection of text messages.'),
-                value: _actualization,
-                onChanged: (value) {
-                  setState(() {
-                    _actualization = value;
-                  });
-                },
-              ),
-
-              // Learn the platform
-              SwitchListTile(
-                title: const Text(
-                  'Learn the platform',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Get on HTML videos across translations.'),
-                value: _learnPlatform,
-                onChanged: (value) {
-                  setState(() {
-                    _learnPlatform = value;
-                  });
-                },
-              ),
-
-              // Change Activities
-              SwitchListTile(
-                title: const Text(
-                  'Change Activities',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Try to describe any space questions.'),
-                value: _changeActivities,
-                onChanged: (value) {
-                  setState(() {
-                    _changeActivities = value;
-                  });
-                },
-              ),
-
-              // Justifications
-              SwitchListTile(
-                title: const Text(
-                  'Justifications',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Make the information about the topic.'),
-                value: _justifications,
-                onChanged: (value) {
-                  setState(() {
-                    _justifications = value;
-                  });
-                },
-              ),
-
-              // Privacy Settings
-              SwitchListTile(
-                title: const Text(
-                  'Privacy Settings',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text(
-                    'Show dialog details. Ensure creating my input dialog data below.'),
-                value: _privacySettings,
-                onChanged: (value) {
-                  setState(() {
-                    _privacySettings = value;
-                  });
-                },
-              ),
-
-              // Show Locations
-              SwitchListTile(
-                title: const Text(
-                  'Show Locations',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Remove existing my input messages.'),
-                value: _showLocations,
-                onChanged: (value) {
-                  setState(() {
-                    _showLocations = value;
-                  });
-                },
-              ),
-
-              // Show Notes
-              SwitchListTile(
-                title: const Text(
-                  'Show Notes',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Identify existing my input notes.'),
-                value: _showNotes,
-                onChanged: (value) {
-                  setState(() {
-                    _showNotes = value;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 32),
-
-              // Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _saveProfile,
-                      child: const Text('Submit'),
-                    ),
+              // Kaydet butonu
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _saveReference,
-                      child: const Text('Save Reference'),
-                    ),
-                  ),
-                ],
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Profili Kaydet',
+                          style: TextStyle(fontSize: 16)),
+                ),
               ),
             ],
           ),
