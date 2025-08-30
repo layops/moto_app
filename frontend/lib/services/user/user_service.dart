@@ -122,4 +122,41 @@ class UserService {
       return [];
     }
   }
+
+  // Takipçi ve takip edilenleri getirme metodları
+  Future<List<dynamic>> getFollowers(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/followers/');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        print(
+            'Takipçiler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Takipçiler getirme hatası (DioException): ${e.message}');
+      return [];
+    } catch (e) {
+      print('Takipçiler getirme hatası (genel): $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getFollowing(String username) async {
+    try {
+      final response = await _apiClient.get('users/$username/following/');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        print(
+            'Takip edilenler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Takip edilenler getirme hatası (DioException): ${e.message}');
+      return [];
+    } catch (e) {
+      print('Takip edilenler getirme hatası (genel): $e');
+      return [];
+    }
+  }
 }

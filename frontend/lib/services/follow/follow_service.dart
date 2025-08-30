@@ -74,4 +74,63 @@ class FollowService {
       throw Exception('Takip edilenler alınamadı: ${response.statusCode}');
     }
   }
+
+  // Kullanıcı adı ile takipçi ve takip edilenleri getirme metodları
+  Future<List<dynamic>> getFollowersByUsername(String username) async {
+    final token = await _tokenService.getToken();
+    if (token == null) throw Exception('Kullanıcı girişi gerekli');
+
+    try {
+      final response = await _apiClient.get(
+        'users/$username/followers/',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception('Takipçiler alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        print(
+            'Takipçiler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Takipçiler getirme hatası (DioException): ${e.message}');
+      return [];
+    } catch (e) {
+      print('Takipçiler getirme hatası (genel): $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getFollowingByUsername(String username) async {
+    final token = await _tokenService.getToken();
+    if (token == null) throw Exception('Kullanıcı girişi gerekli');
+
+    try {
+      final response = await _apiClient.get(
+        'users/$username/following/',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception('Takip edilenler alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 500) {
+        print(
+            'Takip edilenler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        return [];
+      }
+      print('Takip edilenler getirme hatası (DioException): ${e.message}');
+      return [];
+    } catch (e) {
+      print('Takip edilenler getirme hatası (genel): $e');
+      return [];
+    }
+  }
 }

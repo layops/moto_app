@@ -9,6 +9,8 @@ import 'profile_tabs/posts_tab.dart';
 import 'profile_tabs/media_tab.dart';
 import 'profile_tabs/events_tab.dart';
 import 'profile_tabs/info_tab.dart';
+import 'profile_tabs/followers_tab.dart';
+import 'profile_tabs/following_tab.dart';
 import 'photo_uploader.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -26,6 +28,8 @@ class _ProfilePageState extends State<ProfilePage> {
   List<dynamic>? _posts;
   List<dynamic>? _media;
   List<dynamic>? _events;
+  List<dynamic>? _followers;
+  List<dynamic>? _following;
   String? _currentUsername;
   bool _isLoading = true;
   String? _errorMessage;
@@ -101,6 +105,20 @@ class _ProfilePageState extends State<ProfilePage> {
       } catch (e) {
         print('Etkinlikler getirme hatası: $e');
         _events = [];
+      }
+
+      try {
+        _followers = await ServiceLocator.user.getFollowers(_currentUsername!);
+      } catch (e) {
+        print('Takipçiler getirme hatası: $e');
+        _followers = [];
+      }
+
+      try {
+        _following = await ServiceLocator.user.getFollowing(_currentUsername!);
+      } catch (e) {
+        print('Takip edilenler getirme hatası: $e');
+        _following = [];
       }
 
       if (!mounted) return;
@@ -269,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
         profileData: _profileData ?? {},
       ),
       body: DefaultTabController(
-        length: 4,
+        length: 6, // 2 yeni tab eklendi
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
@@ -287,6 +305,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 pinned: true,
                 delegate: ProfileTabBarDelegate(
                   TabBar(
+                    isScrollable:
+                        true, // Çok sayıda tab için kaydırılabilir yap
                     indicatorColor: colorScheme.primary,
                     labelColor: colorScheme.primary,
                     unselectedLabelColor:
@@ -296,6 +316,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       Tab(text: 'Medya'),
                       Tab(text: 'Etkinlikler'),
                       Tab(text: 'Bilgi'),
+                      Tab(text: 'Takipçiler'),
+                      Tab(text: 'Takip Edilenler'),
                     ],
                   ),
                 ),
@@ -314,6 +336,8 @@ class _ProfilePageState extends State<ProfilePage> {
               MediaTab(media: _media ?? [], theme: theme),
               EventsTab(events: _events ?? [], theme: theme),
               InfoTab(profileData: _profileData ?? {}),
+              FollowersTab(followers: _followers ?? []), // Yeni tab
+              FollowingTab(following: _following ?? []), // Yeni tab
             ],
           ),
         ),
