@@ -130,19 +130,13 @@ class FollowingListView(APIView):
 # USER PROFILE
 # -------------------------------
 # views.py
+# views.py
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, username):
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+        # ... mevcut kod
 
-        serializer = UserSerializer(user, context={'request': request})
-        return Response(serializer.data)
-
-    # PUT ve PATCH metodlarını ekleyin
     def put(self, request, username):
         return self.update_profile(request, username)
 
@@ -164,7 +158,6 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # -------------------------------
 # USER POSTS
 # -------------------------------

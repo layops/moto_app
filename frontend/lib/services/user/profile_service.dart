@@ -34,13 +34,13 @@ class ProfileService {
               'Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
         }
         return await _apiClient.put(
-          '$currentUsername/profile/', // URL'deki "users/" önekini kaldırın
+          'users/$currentUsername/profile/', // Doğru URL formatı
           profileData,
         );
       }
 
       return await _apiClient.put(
-        '$username/profile/', // URL'deki "users/" önekini kaldırın
+        'users/$username/profile/', // Doğru URL formatı
         profileData,
       );
     } catch (e) {

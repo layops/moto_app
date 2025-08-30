@@ -46,16 +46,30 @@ class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
 
+  # Frontend'den gelen alanları ekleyin
+    display_name = serializers.CharField(source='first_name', required=False)
+    bio = serializers.CharField(required=False)
+    motorcycle_model = serializers.CharField(required=False)
+    location = serializers.CharField(required=False)
+    website = serializers.URLField(required=False)
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'profile_picture', 'followers_count', 'following_count']
-
+        fields = [
+            'id', 'username', 'email', 'profile_picture', 
+            'followers_count', 'following_count', 'display_name',
+            'bio', 'motorcycle_model', 'location', 'website'
+        ]
     def get_followers_count(self, obj):
         return obj.followers.count() if hasattr(obj, 'followers') else 0
 
     def get_following_count(self, obj):
         return obj.following.count() if hasattr(obj, 'following') else 0
-
+    def update(self, instance, validated_data):
+        # Özel alanları güncelle
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        # Diğer özel alanları burada güncelleyin
+        return super().update(instance, validated_data)
 
 # -------------------------------
 # Follow Serializer
