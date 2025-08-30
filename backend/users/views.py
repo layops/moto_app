@@ -16,8 +16,7 @@ from .serializers import (
     FollowSerializer,
     PostSerializer,
     MediaSerializer,
-    EventSerializer,
-    UserProfileUpdateSerializer
+    EventSerializer
 )
 from posts.models import Post
 from media.models import Media
@@ -74,23 +73,6 @@ class ProfileImageUploadView(APIView):
         user.save()
 
         return Response({"message": "Profile image updated successfully."}, status=status.HTTP_200_OK)
-
-
-# -------------------------------
-# USER PROFILE UPDATE
-# -------------------------------
-class UserProfileUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def put(self, request, *args, **kwargs):
-        user = request.user
-        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # -------------------------------

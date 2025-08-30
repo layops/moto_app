@@ -26,14 +26,5 @@ class LightTheme {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        iconTheme: IconThemeData(color: AppColorSchemes.textPrimary),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: AppColorSchemes.primaryColor,
-          foregroundColor: Colors.white,
-        ),
-        snackBarTheme: SnackBarThemeData(
-          backgroundColor: AppColorSchemes.surfaceColor,
-          contentTextStyle: TextStyle(color: AppColorSchemes.textPrimary),
-        ),
       );
 }

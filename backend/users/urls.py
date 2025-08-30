@@ -12,7 +12,6 @@ from .views import (
     UserPostsView,
     UserMediaView,
     UserEventsView,
-    UserProfileUpdateView,
 )
 
 urlpatterns = [
@@ -22,7 +21,6 @@ urlpatterns = [
 
     # Profile
     path('<str:username>/profile/', UserProfileView.as_view(), name='user-profile'),
-    path('profile/update/', UserProfileUpdateView.as_view(), name='profile-update'),
     path('profile/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
 
     # Follow system

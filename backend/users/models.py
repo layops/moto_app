@@ -5,11 +5,6 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
-    bio = models.TextField(blank=True, null=True)
-    location = models.CharField(max_length=100, blank=True, null=True)
-    motor_model = models.CharField(max_length=100, blank=True, null=True)
-    push_notifications = models.BooleanField(default=True)
-    privacy_settings = models.BooleanField(default=True)
 
     # Takip ilişkisi (self-referential)
     following = models.ManyToManyField(

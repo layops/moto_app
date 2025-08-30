@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class MapPage extends StatefulWidget {
@@ -16,13 +17,14 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
-
   LatLng? _currentPosition;
   bool _isLoading = true;
   double _zoomLevel = 13.0;
-  bool _isSatelliteView = false;
 
   List<dynamic> _searchResults = [];
+
+  // Harita görünümü durumunu yönetmek için yeni değişken
+  bool _isSatelliteView = false;
 
   @override
   void initState() {
@@ -36,28 +38,37 @@ class _MapPageState extends State<MapPage> {
     super.dispose();
   }
 
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  void _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
-    final position = await Geolocator.getCurrentPosition();
+    Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
       _isLoading = false;
@@ -65,29 +76,34 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _zoomIn() {
-    _zoomLevel += 1;
-    _mapController.move(_mapController.camera.center, _zoomLevel);
-    setState(() {});
+    setState(() {
+      _zoomLevel += 1;
+      _mapController.move(_mapController.camera.center, _zoomLevel);
+    });
   }
 
   void _zoomOut() {
-    _zoomLevel -= 1;
-    _mapController.move(_mapController.camera.center, _zoomLevel);
-    setState(() {});
+    setState(() {
+      _zoomLevel -= 1;
+      _mapController.move(_mapController.camera.center, _zoomLevel);
+    });
   }
 
   void _goToCurrentLocation() {
     if (_currentPosition != null) {
-      _zoomLevel = 15.0;
-      _mapController.move(_currentPosition!, _zoomLevel);
-      setState(() {});
+      setState(() {
+        _zoomLevel = 15.0;
+        _mapController.move(_currentPosition!, _zoomLevel);
+      });
     }
   }
 
-  Future<void> _searchLocation() async {
-    final String searchText = _searchController.text.trim();
+  void _searchLocation() async {
+    final String searchText = _searchController.text;
     if (searchText.isEmpty) {
-      setState(() => _searchResults = []);
+      setState(() {
+        _searchResults = [];
+      });
       return;
     }
 
@@ -97,20 +113,20 @@ class _MapPageState extends State<MapPage> {
     });
 
     try {
-      final String url =
+      final String nominatimUrl =
           'https://nominatim.openstreetmap.org/search?q=$searchText&format=json&limit=5';
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(nominatimUrl));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        setState(() => _searchResults = data);
-      } else {
-        debugPrint("Search failed: ${response.statusCode}");
-      }
-    } catch (e) {
-      debugPrint("Search error: $e");
+        setState(() {
+          _searchResults = data;
+        });
+      } else {}
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -128,8 +144,11 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  // Uydu görünümü arasında geçiş yapmak için yeni metot
   void _toggleMapType() {
-    setState(() => _isSatelliteView = !_isSatelliteView);
+    setState(() {
+      _isSatelliteView = !_isSatelliteView;
+    });
   }
 
   @override
@@ -138,14 +157,17 @@ class _MapPageState extends State<MapPage> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // ✅ Tema bağımsız OSM harita URL'si
-    const String mapUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    final bool isDarkTheme = theme.brightness == Brightness.dark;
+    final String mapUrl = isDarkTheme
+        ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
+        : 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png';
 
-    // Uydu görünümü
-    const String satelliteUrl =
+    // Uydu görünümü için URL şablonu
+    final String satelliteUrl =
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           FlutterMap(
@@ -154,13 +176,14 @@ class _MapPageState extends State<MapPage> {
               initialCenter: LatLng(41.0082, 28.9784),
               initialZoom: _zoomLevel,
               onTap: (tapPosition, point) {
-                debugPrint(
-                    "Tıklanan konum: ${point.latitude}, ${point.longitude}");
+                print("Tıklanan konum: ${point.latitude}, ${point.longitude}");
               },
             ),
             children: [
               TileLayer(
+                // Görünüm tipine göre dinamik URL
                 urlTemplate: _isSatelliteView ? satelliteUrl : mapUrl,
+                subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.example.frontend',
                 maxZoom: 20,
               ),
@@ -171,18 +194,14 @@ class _MapPageState extends State<MapPage> {
                       point: _currentPosition!,
                       width: 40,
                       height: 40,
-                      child: Icon(
-                        Icons.location_pin,
-                        color: colorScheme.primary,
-                        size: 40,
-                      ),
+                      child: Icon(Icons.location_pin,
+                          color: colorScheme.primary, size: 40),
                     ),
                   ],
                 ),
             ],
           ),
 
-          // Mevcut konuma git
           Positioned(
             bottom: ThemeConstants.paddingMedium.bottom,
             right: ThemeConstants.paddingMedium.right,
@@ -194,7 +213,7 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // Uydu görünümü butonu
+          // Yeni eklenen uydu görünümü butonu
           Positioned(
             bottom: ThemeConstants.paddingMedium.bottom + 60,
             right: ThemeConstants.paddingMedium.right,
@@ -211,9 +230,9 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // Zoom in/out
           Positioned(
-            bottom: ThemeConstants.paddingMedium.bottom + 120,
+            bottom:
+                ThemeConstants.paddingMedium.bottom + 120, // Konumu ayarlandı
             right: ThemeConstants.paddingMedium.right,
             child: Column(
               children: [
@@ -234,7 +253,6 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // Arama kutusu
           Positioned(
             top: 40,
             left: ThemeConstants.paddingMedium.left,
@@ -271,7 +289,6 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // Arama sonuçları
           if (_searchResults.isNotEmpty)
             Positioned(
               top: 100,
@@ -282,10 +299,10 @@ class _MapPageState extends State<MapPage> {
                   color: colorScheme.surface,
                   borderRadius:
                       BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
                       blurRadius: 10,
-                      offset: Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -295,10 +312,8 @@ class _MapPageState extends State<MapPage> {
                   itemBuilder: (context, index) {
                     final result = _searchResults[index];
                     return ListTile(
-                      title: Text(
-                        result['display_name'],
-                        style: textTheme.bodyLarge,
-                      ),
+                      title: Text(result['display_name'],
+                          style: textTheme.bodyLarge),
                       onTap: () => _selectSearchResult(result),
                     );
                   },
@@ -308,7 +323,9 @@ class _MapPageState extends State<MapPage> {
 
           if (_isLoading)
             Center(
-              child: CircularProgressIndicator(color: colorScheme.primary),
+              child: CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
             ),
         ],
       ),

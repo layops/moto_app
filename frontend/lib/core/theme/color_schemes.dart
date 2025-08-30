@@ -1,10 +1,11 @@
-// color_schemes.dart
 import 'package:flutter/material.dart';
 
 class AppColorSchemes {
-  // Mevcut renkler
+  // Ana renk: Enerjik turuncu motosiklet teması için
   static const primaryColor = Color(0xFFFF8C00);
+  // İkincil renk: Koyu mavi güven ve profesyonellik için
   static const secondaryColor = Color(0xFF1A4B8C);
+  // Nötr renkler
   static const lightBackground = Color(0xFFF8F9FA);
   static const surfaceColor = Color(0xFFFFFFFF);
   static const textPrimary = Color(0xFF333333);
@@ -12,17 +13,6 @@ class AppColorSchemes {
   static const borderColor = Color(0xFFE0E0E0);
   static const linkColor = Color(0xFF007BFF);
 
-  // Light mod difficulty renkleri
-  static const difficultyEasyLight = Color(0xFF4CAF50);
-  static const difficultyModerateLight = Color(0xFFFFA500);
-  static const difficultyExpertLight = Color(0xFFF44336);
-
-  // Dark mod difficulty renkleri
-  static const difficultyEasyDark = Color(0xFF81C784);
-  static const difficultyModerateDark = Color(0xFFFFB74D);
-  static const difficultyExpertDark = Color(0xFFE57373);
-
-  // Light ColorScheme
   static ColorScheme get light => ColorScheme.light(
         primary: primaryColor,
         primaryContainer: Color(0xFFFF6A00),
@@ -36,7 +26,6 @@ class AppColorSchemes {
         brightness: Brightness.light,
       );
 
-  // Dark ColorScheme
   static ColorScheme get dark => ColorScheme.dark(
         primary: primaryColor,
         primaryContainer: Color(0xFFFF6A00),
@@ -49,20 +38,4 @@ class AppColorSchemes {
         onError: Colors.black,
         brightness: Brightness.dark,
       );
-
-  // Mod durumuna göre difficulty renkleri
-  static Color difficultyEasy(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-          ? difficultyEasyDark
-          : difficultyEasyLight;
-
-  static Color difficultyModerate(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-          ? difficultyModerateDark
-          : difficultyModerateLight;
-
-  static Color difficultyExpert(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-          ? difficultyExpertDark
-          : difficultyExpertLight;
 }

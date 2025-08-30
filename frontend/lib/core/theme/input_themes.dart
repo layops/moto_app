@@ -49,7 +49,7 @@ class AppInputThemes {
           borderSide: BorderSide(color: AppColorSchemes.primaryColor),
         ),
         contentPadding: ThemeConstants.paddingMedium,
-        fillColor: AppColorSchemes.dark.surface,
+        fillColor: Color(0xFF1E1E1E),
         filled: true,
         labelStyle: TextStyle(
           color: Colors.white70,
