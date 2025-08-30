@@ -24,6 +24,7 @@ class ProfileService {
   }
 
 // profile_service.dart
+// profile_service.dart
   Future<Response> updateProfile(Map<String, dynamic> profileData) async {
     try {
       final username = await _tokenService.getUsernameFromToken();
@@ -34,13 +35,13 @@ class ProfileService {
               'Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
         }
         return await _apiClient.put(
-          'users/$currentUsername/profile/', // Doğru URL formatı
+          'users/$currentUsername/profile/',
           profileData,
         );
       }
 
       return await _apiClient.put(
-        'users/$username/profile/', // Doğru URL formatı
+        'users/$username/profile/',
         profileData,
       );
     } catch (e) {
