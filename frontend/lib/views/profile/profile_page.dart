@@ -9,6 +9,7 @@ import 'profile_tabs/posts_tab.dart';
 import 'profile_tabs/media_tab.dart';
 import 'profile_tabs/events_tab.dart';
 import 'profile_tabs/info_tab.dart';
+import 'photo_uploader.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -28,7 +29,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _currentUsername;
   bool _isLoading = true;
   String? _errorMessage;
-  String? _postsError; // Gönderiler için özel hata mesajı
+  String? _postsError;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -73,14 +75,12 @@ class _ProfilePageState extends State<ProfilePage> {
         _postsError = null;
       });
 
-      // Profil bilgilerini al
       try {
         _profileData = await ServiceLocator.user.getProfile(_currentUsername!);
       } catch (e) {
         print('Profil bilgisi getirme hatası: $e');
       }
 
-      // Gönderileri al (hata yönetimi ile)
       try {
         _posts = await ServiceLocator.user.getPosts(_currentUsername!);
       } catch (e) {
@@ -89,7 +89,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _posts = [];
       }
 
-      // Medyayı al
       try {
         _media = await ServiceLocator.user.getMedia(_currentUsername!);
       } catch (e) {
@@ -97,7 +96,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _media = [];
       }
 
-      // Etkinlikleri al
       try {
         _events = await ServiceLocator.user.getEvents(_currentUsername!);
       } catch (e) {
@@ -124,15 +122,72 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
+  void _showPhotoUploadDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Profil Fotoğrafı Yükle'),
+        content: ProfilePhotoUploader(
+          onImageSelected: (File image) {
+            setState(() {
+              _imageFile = image;
+            });
+          },
+          onUploadStateChanged: (bool isUploading) {
+            // Yükleme durumuna göre arayüzü güncelle
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(
+          initialData: _profileData ?? {},
+        ),
+      ),
+    ).then((updatedData) {
+      if (updatedData != null) {
+        setState(() {
+          _profileData = {..._profileData ?? {}, ...updatedData};
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil başarıyla güncellendi')),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Profil yükleniyor...',
+                style: theme.textTheme.bodyLarge,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -143,7 +198,17 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(_errorMessage!),
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: theme.textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _loadProfile,
@@ -156,14 +221,29 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (_currentUsername == null) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: Text('Kullanıcı bulunamadı'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_off,
+                size: 64,
+                color: colorScheme.onSurface.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Kullanıcı bulunamadı',
+                style: theme.textTheme.bodyLarge,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(_currentUsername!),
         backgroundColor: colorScheme.surface,
@@ -173,6 +253,12 @@ class _ProfilePageState extends State<ProfilePage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadProfile,
+            tooltip: 'Yenile',
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _openEditProfile,
+            tooltip: 'Profili Düzenle',
           ),
         ],
       ),
@@ -194,6 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   imageFile: _imageFile,
                   colorScheme: colorScheme,
                   theme: theme,
+                  onEditPhoto: _showPhotoUploadDialog,
                 ),
               ),
               SliverPersistentHeader(
@@ -230,6 +317,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'profilePageFab',
+        onPressed: _showPhotoUploadDialog,
+        child: const Icon(Icons.camera_alt),
       ),
     );
   }

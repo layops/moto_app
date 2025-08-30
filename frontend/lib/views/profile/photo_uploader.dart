@@ -5,7 +5,14 @@ import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class ProfilePhotoUploader extends StatefulWidget {
-  const ProfilePhotoUploader({super.key});
+  final Function(File)? onImageSelected;
+  final Function(bool)? onUploadStateChanged;
+
+  const ProfilePhotoUploader({
+    super.key,
+    this.onImageSelected,
+    this.onUploadStateChanged,
+  });
 
   @override
   State<ProfilePhotoUploader> createState() => _ProfilePhotoUploaderState();
@@ -17,28 +24,63 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   bool _isUploading = false;
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
-    );
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
 
-    if (pickedFile != null && mounted) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+
+        if (widget.onImageSelected != null) {
+          widget.onImageSelected!(_image!);
+        }
+      }
+    } catch (e) {
+      _showMessage('Resim seçilirken hata oluştu: ${e.toString()}');
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+
+        if (widget.onImageSelected != null) {
+          widget.onImageSelected!(_image!);
+        }
+      }
+    } catch (e) {
+      _showMessage('Fotoğraf çekilirken hata oluştu: ${e.toString()}');
     }
   }
 
   Future<void> _uploadImage() async {
     if (_image == null) {
-      if (!mounted) return;
       _showMessage('Lütfen önce bir fotoğraf seçin');
       return;
     }
 
-    setState(() => _isUploading = true);
+    setState(() {
+      _isUploading = true;
+      if (widget.onUploadStateChanged != null) {
+        widget.onUploadStateChanged!(true);
+      }
+    });
 
     try {
       final currentUser = await ServiceLocator.user.getCurrentUsername();
@@ -64,7 +106,12 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isUploading = false);
+        setState(() {
+          _isUploading = false;
+          if (widget.onUploadStateChanged != null) {
+            widget.onUploadStateChanged!(false);
+          }
+        });
       }
     }
   }
@@ -76,8 +123,16 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
         content: Text(message),
         backgroundColor:
             isError ? theme.colorScheme.error : theme.colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  void _removeImage() {
+    setState(() {
+      _image = null;
+    });
   }
 
   @override
@@ -87,73 +142,112 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: theme.colorScheme.primary,
-              width: 2,
+        Stack(
+          children: [
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: _image != null
+                    ? Image.file(_image!, fit: BoxFit.cover)
+                    : Icon(
+                        Icons.account_circle,
+                        size: 150,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      ),
+              ),
             ),
-          ),
-          child: ClipOval(
-            child: _image != null
-                ? Image.file(_image!, fit: BoxFit.cover)
-                : Icon(
-                    Icons.account_circle,
-                    size: 150,
-                    // ignore: deprecated_member_use
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+            if (_image != null)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.error,
+                  child: IconButton(
+                    icon: Icon(Icons.close,
+                        size: 18, color: theme.colorScheme.onError),
+                    onPressed: _removeImage,
+                    padding: EdgeInsets.zero,
                   ),
-          ),
+                ),
+              ),
+          ],
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            _buildCameraButton(theme),
+            const SizedBox(width: 12),
             _buildGalleryButton(theme),
-            SizedBox(width: 16),
-            _buildUploadButton(theme),
+            const SizedBox(width: 12),
+            if (_image != null) _buildUploadButton(theme),
           ],
         ),
+        if (_isUploading) ...[
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            backgroundColor: theme.colorScheme.surface,
+            color: theme.colorScheme.primary,
+          ),
+        ],
       ],
     );
   }
 
+  Widget _buildCameraButton(ThemeData theme) {
+    return ElevatedButton(
+      onPressed: _takePhoto,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child:
+          Icon(Icons.camera_alt, size: 24, color: theme.colorScheme.onPrimary),
+    );
+  }
+
   Widget _buildGalleryButton(ThemeData theme) {
-    return ElevatedButton.icon(
-      icon: const Icon(Icons.photo_library),
-      label: const Text('Galeri'),
+    return ElevatedButton(
       onPressed: _pickImage,
       style: ElevatedButton.styleFrom(
-        padding: ThemeConstants.paddingMedium,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
+      child: Icon(Icons.photo_library,
+          size: 24, color: theme.colorScheme.onPrimary),
     );
   }
 
   Widget _buildUploadButton(ThemeData theme) {
-    return ElevatedButton.icon(
-      icon: _isUploading
+    return ElevatedButton(
+      onPressed: _isUploading ? null : _uploadImage,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: _isUploading
+            ? theme.colorScheme.surface.withOpacity(0.5)
+            : theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
+      child: _isUploading
           ? SizedBox(
-              width: 16,
-              height: 16,
+              width: 20,
+              height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color: theme.colorScheme.onPrimary,
               ),
             )
-          : const Icon(Icons.cloud_upload),
-      label: Text(_isUploading ? 'Yükleniyor' : 'Yükle'),
-      onPressed: _isUploading ? null : _uploadImage,
-      style: ElevatedButton.styleFrom(
-        padding: ThemeConstants.paddingMedium,
-        backgroundColor: _isUploading
-            // ignore: deprecated_member_use
-            ? theme.colorScheme.surface.withOpacity(0.5)
-            : theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-      ),
+          : Icon(Icons.cloud_upload, size: 24),
     );
   }
 }
