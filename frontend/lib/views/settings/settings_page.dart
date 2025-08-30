@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/theme_provider.dart';
+import 'notifications_page.dart'; // Add this import
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -45,105 +46,173 @@ class SettingsPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // Account Section
+          // General Section
           Text(
-            'Account',
+            'General',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.person),
-                  title: const Text('Profile'),
-                  subtitle: const Text('Manage your profile information'),
-                  onTap: () {
-                    // Navigate to profile page
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip),
-                  title: const Text('Privacy'),
-                  subtitle: const Text('Control your privacy settings'),
-                  onTap: () {
-                    // Navigate to privacy settings
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.link),
-                  title: const Text('Connected Accounts'),
-                  subtitle: const Text('Manage linked services'),
-                  onTap: () {
-                    // Navigate to connected accounts
-                  },
-                ),
-              ],
-            ),
+          _buildSettingItem(
+            context,
+            title: 'Language',
+            value: 'English',
+            onTap: () {
+              // Navigate to language settings
+            },
           ),
-          const SizedBox(height: 24),
-
-          // Preferences Section
-          Text(
-            'Preferences',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          const Divider(height: 1),
+          _buildSettingItem(
+            context,
+            title: 'Units of Measurement',
+            value: 'Miles',
+            onTap: () {
+              // Navigate to units settings
+            },
           ),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
+          const Divider(height: 1),
+          _buildSettingItem(
+            context,
+            title: 'Data Sync',
+            onTap: () {
+              // Navigate to data sync settings
+            },
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.notifications),
-                  title: const Text('Notifications'),
-                  subtitle: const Text('Manage push notifications'),
-                  onTap: () {
-                    // Navigate to notifications settings
-                  },
+                Text(
+                  'Theme',
+                  style: theme.textTheme.bodyLarge,
                 ),
-                const Divider(height: 1),
                 Consumer<ThemeProvider>(
                   builder: (context, themeProvider, child) {
-                    return ListTile(
-                      leading: const Icon(Icons.dark_mode),
-                      title: const Text('Theme'),
-                      subtitle: const Text('Dark Mode'),
-                      trailing: Switch(
-                        value: themeProvider.isDarkMode,
-                        onChanged: (value) {
-                          themeProvider.toggleTheme();
-                        },
-                      ),
+                    return Switch(
+                      value: themeProvider.isDarkMode,
+                      onChanged: (value) {
+                        themeProvider.toggleTheme();
+                      },
                     );
                   },
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.language),
-                  title: const Text('Language'),
-                  subtitle: const Text('English'),
-                  onTap: () {
-                    // Navigate to language settings
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.logout, color: colorScheme.error),
-                  title: Text(
-                    'Log Out',
-                    style: TextStyle(color: colorScheme.error),
-                  ),
-                  onTap: () => _showLogoutDialog(context),
-                ),
               ],
             ),
           ),
+          const SizedBox(height: 32),
+
+          // Account Management Section
+          Text(
+            'Account Management',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildSettingItem(
+            context,
+            title: 'Change Password',
+            onTap: () {
+              // Navigate to change password
+            },
+          ),
+          const Divider(height: 1),
+          _buildSettingItem(
+            context,
+            title: 'Delete Account',
+            onTap: () {
+              // Navigate to delete account
+            },
+          ),
+          const Divider(height: 1),
+          _buildSettingItem(
+            context,
+            title: 'Linked Accounts',
+            onTap: () {
+              // Navigate to linked accounts
+            },
+          ),
+          const Divider(height: 1),
+          _buildSettingItem(
+            context,
+            title: 'Notification Settings',
+            onTap: () {
+              // Navigate to notification settings
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const NotificationsPage()),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+
+          // Support Section
+          Text(
+            'Support',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildSettingItem(
+            context,
+            title: 'Help & Support',
+            onTap: () {
+              // Navigate to help & support
+            },
+          ),
+          const Divider(height: 1),
+          GestureDetector(
+            onTap: () => _showLogoutDialog(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                'Logout',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.error,
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingItem(BuildContext context,
+      {required String title, String? value, VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.bodyLarge,
+            ),
+            Row(
+              children: [
+                if (value != null)
+                  Text(
+                    value,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                if (onTap != null) const SizedBox(width: 8),
+                if (onTap != null) const Icon(Icons.chevron_right, size: 20),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

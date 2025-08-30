@@ -5,6 +5,7 @@ import '../../services/service_locator.dart';
 import '../post/create_post_page.dart';
 import '../../widgets/navigations/main_wrapper.dart';
 import '../../widgets/navigations/navigation_items.dart';
+import '../notifications/notifications_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,10 +19,13 @@ class _HomePageState extends State<HomePage> {
   String? error;
   List<dynamic> posts = [];
 
+  int unreadNotificationsCount = 0; // 🔹 Okunmamış bildirim sayısı
+
   @override
   void initState() {
     super.initState();
     _fetchPosts();
+    _fetchUnreadNotifications(); // 🔹 Okunmamış bildirimleri çek
   }
 
   Future<void> _fetchPosts() async {
@@ -49,6 +53,20 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _fetchUnreadNotifications() async {
+    try {
+      final notifications =
+          await ServiceLocator.notification.getNotifications();
+      final unreadCount =
+          notifications.where((n) => n['is_read'] == false).length;
+      setState(() {
+        unreadNotificationsCount = unreadCount;
+      });
+    } catch (e) {
+      debugPrint('Bildirimler alınamadı: $e');
+    }
+  }
+
   void _onPostButtonPressed() async {
     final result = await Navigator.push(
       context,
@@ -60,12 +78,21 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _onNotificationPressed() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationsPage()),
+    );
+    // NotificationsPage’ten döndükten sonra sayıyı güncelle
+    _fetchUnreadNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Image.asset(
-          'assets/images/spiride_logo.png', // Uygulama logosu ekleyin
+          'assets/images/spiride_logo.png',
           height: 50,
         ),
         centerTitle: true,
@@ -74,33 +101,32 @@ class _HomePageState extends State<HomePage> {
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_none),
-                Positioned(
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(1),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 12,
-                      minHeight: 12,
-                    ),
-                    child: const Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
+                if (unreadNotificationsCount > 0)
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      textAlign: TextAlign.center,
+                      constraints: const BoxConstraints(
+                        minWidth: 12,
+                        minHeight: 12,
+                      ),
+                      child: Text(
+                        unreadNotificationsCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                )
+                  )
               ],
             ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
+            onPressed: _onNotificationPressed,
           ),
         ],
       ),

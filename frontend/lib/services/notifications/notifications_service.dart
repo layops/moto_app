@@ -18,6 +18,7 @@ class NotificationsService {
   Stream<Map<String, dynamic>> get notificationStream =>
       _notificationStreamController.stream;
 
+  /// WebSocket bağlantısını başlatır
   Future<void> connectWebSocket() async {
     final token = await ServiceLocator.token.getToken();
     if (token == null) return;
@@ -41,11 +42,13 @@ class NotificationsService {
     }
   }
 
+  /// WebSocket bağlantısını kapatır
   void disconnectWebSocket() {
     _channel?.sink.close();
     print('WebSocket bağlantısı kesildi.');
   }
 
+  /// Backend'den bildirimleri çeker
   Future<List<dynamic>> getNotifications() async {
     final token = await ServiceLocator.token.getToken();
     if (token == null) return [];
@@ -62,6 +65,7 @@ class NotificationsService {
     }
   }
 
+  /// Tüm bildirimleri okundu olarak işaretler
   Future<void> markAllAsRead() async {
     final token = await ServiceLocator.token.getToken();
     if (token == null) return;
@@ -77,6 +81,7 @@ class NotificationsService {
     }
   }
 
+  /// Belirli bir bildirimi okundu olarak işaretler
   Future<void> markAsRead(int notificationId) async {
     final token = await ServiceLocator.token.getToken();
     if (token == null) return;

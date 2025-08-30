@@ -122,7 +122,24 @@ class _MapPageState extends State<MapPage> {
         setState(() {
           _searchResults = data;
         });
-      } else {}
+        if (data.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Hiç sonuç bulunamadı.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Arama sırasında bir hata oluştu. Lütfen tekrar deneyin.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Bir ağ hatası oluştu. İnternet bağlantınızı kontrol edin.')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -151,19 +168,138 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildMapControls(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Positioned(
+      bottom: ThemeConstants.paddingMedium.bottom,
+      right: ThemeConstants.paddingMedium.right,
+      child: Column(
+        children: [
+          FloatingActionButton(
+            onPressed: _zoomIn,
+            backgroundColor: colorScheme.primary,
+            mini: true,
+            child: Icon(Icons.add, color: colorScheme.onPrimary),
+          ),
+          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          FloatingActionButton(
+            onPressed: _zoomOut,
+            backgroundColor: colorScheme.primary,
+            mini: true,
+            child: Icon(Icons.remove, color: colorScheme.onPrimary),
+          ),
+          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          FloatingActionButton(
+            onPressed: _toggleMapType,
+            backgroundColor: colorScheme.primary,
+            mini: true,
+            child: Icon(
+              _isSatelliteView ? Icons.map_outlined : Icons.satellite_outlined,
+              color: colorScheme.onPrimary,
+            ),
+          ),
+          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          FloatingActionButton(
+            onPressed: _goToCurrentLocation,
+            backgroundColor: colorScheme.primary,
+            mini: true,
+            child: Icon(Icons.my_location, color: colorScheme.onPrimary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final bool isDarkTheme = theme.brightness == Brightness.dark;
-    final String mapUrl = isDarkTheme
-        ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
-        : 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png';
+    return Positioned(
+      top: 40,
+      left: ThemeConstants.paddingMedium.left,
+      right: ThemeConstants.paddingMedium.right,
+      child: Container(
+        padding: ThemeConstants.paddingSmall,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius:
+              BorderRadius.circular(ThemeConstants.borderRadiusXLarge),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.onSurface.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          style: textTheme.bodyLarge,
+          decoration: InputDecoration(
+            hintText: "Konum ara...",
+            border: InputBorder.none,
+            hintStyle: textTheme.bodyMedium,
+            suffixIcon: IconButton(
+              icon: Icon(Icons.search, color: textTheme.bodyMedium?.color),
+              onPressed: _searchLocation,
+            ),
+          ),
+          onSubmitted: (_) => _searchLocation(),
+        ),
+      ),
+    );
+  }
 
-    // Uydu görünümü için URL şablonu
-    final String satelliteUrl =
+  Widget _buildSearchResults(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    if (_searchResults.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      top: 100,
+      left: ThemeConstants.paddingMedium.left,
+      right: ThemeConstants.paddingMedium.right,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius:
+              BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+          boxShadow: const [
+            BoxShadow(
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: _searchResults.length,
+          itemBuilder: (context, index) {
+            final result = _searchResults[index];
+            return ListTile(
+              title: Text(result['display_name'], style: textTheme.bodyLarge),
+              onTap: () => _selectSearchResult(result),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Harita stilini dinamik olarak seçme kaldırıldı, artık hep aynı kalıp kullanılacak.
+    const String defaultMapUrl =
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const String satelliteUrl =
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
     return Scaffold(
@@ -182,8 +318,13 @@ class _MapPageState extends State<MapPage> {
             children: [
               TileLayer(
                 // Görünüm tipine göre dinamik URL
-                urlTemplate: _isSatelliteView ? satelliteUrl : mapUrl,
-                subdomains: const ['a', 'b', 'c', 'd'],
+                urlTemplate: _isSatelliteView ? satelliteUrl : defaultMapUrl,
+                subdomains: const [
+                  'a',
+                  'b',
+                  'c',
+                  'd'
+                ], // Bu kısım artık kullanılmasa da bırakılabilir
                 userAgentPackageName: 'com.example.frontend',
                 maxZoom: 20,
               ),
@@ -201,126 +342,9 @@ class _MapPageState extends State<MapPage> {
                 ),
             ],
           ),
-
-          Positioned(
-            bottom: ThemeConstants.paddingMedium.bottom,
-            right: ThemeConstants.paddingMedium.right,
-            child: FloatingActionButton(
-              onPressed: _goToCurrentLocation,
-              backgroundColor: colorScheme.primary,
-              mini: true,
-              child: Icon(Icons.my_location, color: colorScheme.onPrimary),
-            ),
-          ),
-
-          // Yeni eklenen uydu görünümü butonu
-          Positioned(
-            bottom: ThemeConstants.paddingMedium.bottom + 60,
-            right: ThemeConstants.paddingMedium.right,
-            child: FloatingActionButton(
-              onPressed: _toggleMapType,
-              backgroundColor: colorScheme.primary,
-              mini: true,
-              child: Icon(
-                _isSatelliteView
-                    ? Icons.map_outlined
-                    : Icons.satellite_outlined,
-                color: colorScheme.onPrimary,
-              ),
-            ),
-          ),
-
-          Positioned(
-            bottom:
-                ThemeConstants.paddingMedium.bottom + 120, // Konumu ayarlandı
-            right: ThemeConstants.paddingMedium.right,
-            child: Column(
-              children: [
-                FloatingActionButton(
-                  onPressed: _zoomIn,
-                  backgroundColor: colorScheme.primary,
-                  mini: true,
-                  child: Icon(Icons.add, color: colorScheme.onPrimary),
-                ),
-                SizedBox(height: ThemeConstants.paddingSmall.bottom),
-                FloatingActionButton(
-                  onPressed: _zoomOut,
-                  backgroundColor: colorScheme.primary,
-                  mini: true,
-                  child: Icon(Icons.remove, color: colorScheme.onPrimary),
-                ),
-              ],
-            ),
-          ),
-
-          Positioned(
-            top: 40,
-            left: ThemeConstants.paddingMedium.left,
-            right: ThemeConstants.paddingMedium.right,
-            child: Container(
-              padding: ThemeConstants.paddingSmall,
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius:
-                    BorderRadius.circular(ThemeConstants.borderRadiusXLarge),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.onSurface.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: textTheme.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: "Konum ara...",
-                  border: InputBorder.none,
-                  hintStyle: textTheme.bodyMedium,
-                  suffixIcon: IconButton(
-                    icon:
-                        Icon(Icons.search, color: textTheme.bodyMedium?.color),
-                    onPressed: _searchLocation,
-                  ),
-                ),
-                onSubmitted: (_) => _searchLocation(),
-              ),
-            ),
-          ),
-
-          if (_searchResults.isNotEmpty)
-            Positioned(
-              top: 100,
-              left: ThemeConstants.paddingMedium.left,
-              right: ThemeConstants.paddingMedium.right,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius:
-                      BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final result = _searchResults[index];
-                    return ListTile(
-                      title: Text(result['display_name'],
-                          style: textTheme.bodyLarge),
-                      onTap: () => _selectSearchResult(result),
-                    );
-                  },
-                ),
-              ),
-            ),
-
+          _buildMapControls(context),
+          _buildSearchBar(context),
+          _buildSearchResults(context),
           if (_isLoading)
             Center(
               child: CircularProgressIndicator(
