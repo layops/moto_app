@@ -129,3 +129,25 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'description', 'date']
+
+# -------------------------------
+# URL validasyonunu
+# -------------------------------
+def validate_website(self, value):
+    if value and value.strip():  # Eğer değer varsa ve boş değilse
+        import re
+        url_pattern = re.compile(
+            r'^(https?://)?'  # http:// or https://
+            r'(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})'  # domain
+            r'(:[0-9]{1,5})?'  # port
+            r'(/.*)?$'  # path
+        )
+        if not url_pattern.match(value):
+            # Eğer http:// veya https:// yoksa ekle ve tekrar dene
+            if not value.startswith(('http://', 'https://')):
+                value = 'https://' + value
+                if not url_pattern.match(value):
+                    raise serializers.ValidationError("Geçerli bir URL girin")
+            else:
+                raise serializers.ValidationError("Geçerli bir URL girin")
+    return value
