@@ -1,4 +1,7 @@
+// lib/views/notifications/notifications_page.dart
 import 'package:flutter/material.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
+import 'package:motoapp_frontend/services/notifications/notifications_service.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -8,185 +11,125 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      'type': 'like',
-      'user': 'Sarah Chen',
-      'content': 'Bay Bridge Night Ride - 95 km',
-      'time': '5 minutes ago',
-      'read': false,
-    },
-    {
-      'type': 'comment',
-      'user': 'Mike Johnson',
-      'content': 'Awesome ride! I love that route through the hills.',
-      'time': '1 hour ago',
-      'read': false,
-    },
-    {
-      'type': 'group',
-      'user': 'Bay Area Riders',
-      'content': 'Welcome Jessica Martinez to the group!',
-      'time': '2 hours ago',
-      'read': false,
-    },
-    {
-      'type': 'event',
-      'user': 'Laguna Seca Raceway',
-      'content': 'Event starts tomorrow at 8:00 AM',
-      'time': '3 hours ago',
-      'read': true,
-    },
-    {
-      'type': 'achievement',
-      'user': 'RideSocial',
-      'content':
-          'You earned the "Century Rider" badge for completing 100 rides',
-      'time': '1 day ago',
-      'read': true,
-    },
-    {
-      'type': 'like',
-      'user': 'Alex Thompson',
-      'content': 'Napa Valley Tour - 156 km',
-      'time': '1 day ago',
-      'read': true,
-    },
-    {
-      'type': 'group_post',
-      'user': 'Track Day Warriors',
-      'content': 'Sunset Canyon Run - Who\'s interested?',
-      'time': '2 days ago',
-      'read': true,
-    },
-    {
-      'type': 'comment',
-      'user': 'Emma Wilson',
-      'content': 'Great photos! That sunset looks incredible.',
-      'time': '2 days ago',
-      'read': true,
-    },
-  ];
+  final NotificationsService _notificationsService =
+      ServiceLocator.notification;
+  List<dynamic> _notifications = [];
+  bool _isLoading = true;
 
-  void _markAllAsRead() {
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+    _notificationsService.connectWebSocket();
+    _notificationsService.notificationStream.listen((newNotification) {
+      setState(() {
+        _notifications.insert(0, newNotification);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationsService.disconnectWebSocket();
+    super.dispose();
+  }
+
+  Future<void> _fetchNotifications() async {
+    setState(() => _isLoading = true);
+    try {
+      final notifications = await _notificationsService.getNotifications();
+      setState(() => _notifications = notifications);
+    } catch (e) {
+      print('Hata: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _markAllAsRead() async {
+    await _notificationsService.markAllAsRead();
     setState(() {
-      for (var notification in _notifications) {
-        notification['read'] = true;
-      }
+      _notifications = _notifications.map((n) {
+        n['is_read'] = true;
+        return n;
+      }).toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !n['read']).length;
+    final unreadCount = _notifications.where((n) => !n['is_read']).length;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: const Text('Bildirimler'),
         actions: [
-          if (unreadCount > 0)
+          if (_notifications.isNotEmpty)
             TextButton(
-              onPressed: _markAllAsRead,
-              child: const Text(
-                'Mark all read',
-                style: TextStyle(color: Colors.blue),
+              onPressed: unreadCount > 0 ? _markAllAsRead : null,
+              child: Text(
+                'Tümünü Okundu',
+                style: TextStyle(
+                  color: unreadCount > 0 ? Colors.white : Colors.grey[400],
+                ),
               ),
             ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: _notifications.length,
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          final isRead = notification['read'] as bool;
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+              ? const Center(child: Text('Henüz bildiriminiz yok.'))
+              : ListView.builder(
+                  itemCount: _notifications.length,
+                  itemBuilder: (context, index) {
+                    final notification = _notifications[index];
+                    final isRead = notification['is_read'] as bool;
 
-          return ListTile(
-            leading: _getNotificationIcon(notification['type']),
-            title: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: notification['user'],
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isRead ? Colors.grey : Colors.black,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' ${_getNotificationAction(notification['type'])}',
-                    style: TextStyle(
-                      color: isRead ? Colors.grey : Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification['content'],
-                  style: TextStyle(
-                    color: isRead ? Colors.grey : Colors.black54,
-                  ),
+                    return ListTile(
+                      leading: _getNotificationIcon(
+                          notification['notification_type'] ?? 'other'),
+                      title: Text(
+                        notification['message'],
+                        style: TextStyle(
+                          fontWeight:
+                              isRead ? FontWeight.normal : FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        notification['timestamp'] ?? 'Zaman bilgisi yok',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                      tileColor: isRead ? null : Colors.blue[50],
+                      onTap: () async {
+                        if (!isRead) {
+                          await _notificationsService
+                              .markAsRead(notification['id']);
+                          setState(() => notification['is_read'] = true);
+                        }
+                      },
+                    );
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  notification['time'],
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            tileColor: isRead ? null : Colors.blue[50],
-            onTap: () {
-              setState(() {
-                notification['read'] = true;
-              });
-            },
-          );
-        },
-      ),
     );
   }
 
   Widget _getNotificationIcon(String type) {
     switch (type) {
-      case 'like':
-        return const Icon(Icons.favorite, color: Colors.red);
-      case 'comment':
-        return const Icon(Icons.comment, color: Colors.blue);
-      case 'group':
-        return const Icon(Icons.group, color: Colors.green);
-      case 'event':
-        return const Icon(Icons.event, color: Colors.orange);
-      case 'achievement':
-        return const Icon(Icons.emoji_events, color: Colors.amber);
-      case 'group_post':
-        return const Icon(Icons.post_add, color: Colors.purple);
+      case 'message':
+        return const Icon(Icons.message, color: Colors.blue);
+      case 'group_invite':
+        return const Icon(Icons.group_add, color: Colors.green);
+      case 'ride_request':
+        return const Icon(Icons.two_wheeler, color: Colors.red);
+      case 'ride_update':
+        return const Icon(Icons.route, color: Colors.orange);
+      case 'group_update':
+        return const Icon(Icons.groups, color: Colors.purple);
+      case 'friend_request':
+        return const Icon(Icons.person_add, color: Colors.indigo);
       default:
         return const Icon(Icons.notifications, color: Colors.grey);
-    }
-  }
-
-  String _getNotificationAction(String type) {
-    switch (type) {
-      case 'like':
-        return 'liked your ride';
-      case 'comment':
-        return 'commented on your post';
-      case 'group':
-        return '';
-      case 'event':
-        return '';
-      case 'achievement':
-        return '';
-      case 'group_post':
-        return 'posted in group';
-      default:
-        return '';
     }
   }
 }

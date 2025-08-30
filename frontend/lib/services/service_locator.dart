@@ -6,7 +6,8 @@ import 'auth/token_service.dart';
 import 'user/user_service.dart';
 import 'user/profile_service.dart';
 import 'follow/follow_service.dart';
-import 'post/post_service.dart'; // 🔹 PostService import
+import 'post/post_service.dart';
+import 'notifications/notifications_service.dart'; // 🔹 Yeni servis import'u
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -25,7 +26,9 @@ class ServiceLocator {
   late final UserService _userService;
   late final ProfileService _profileService;
   late final FollowService _followService;
-  late final PostService _postService; // 🔹 PostService ekledik
+  late final PostService _postService;
+  late final NotificationsService
+      _notificationService; // 🔹 Yeni servis tanımlandı
 
   // Private constructor
   ServiceLocator._internal();
@@ -47,43 +50,47 @@ class ServiceLocator {
     if (_isInitialized) return;
 
     try {
+      final instance = _instance;
       // 1. Initialize storage
-      _instance._localStorage = LocalStorage();
-      await _instance._localStorage.init();
+      instance._localStorage = LocalStorage();
+      await instance._localStorage.init();
 
       // 2. Initialize API client with Dio
-      _instance._apiClient = ApiClient(_instance._localStorage);
+      instance._apiClient = ApiClient(instance._localStorage);
 
       // 3. Initialize token service
-      _instance._tokenService = TokenService(_instance._localStorage);
+      instance._tokenService = TokenService(instance._localStorage);
 
       // 4. Initialize auth service
-      _instance._authService = AuthService(
-        _instance._apiClient,
-        _instance._tokenService,
-        _instance._localStorage,
+      instance._authService = AuthService(
+        instance._apiClient,
+        instance._tokenService,
+        instance._localStorage,
       );
 
       // 5. Initialize user service
-      _instance._userService = UserService(
-        _instance._apiClient,
-        _instance._localStorage,
+      instance._userService = UserService(
+        instance._apiClient,
+        instance._localStorage,
       );
 
       // 6. Initialize profile service
-      _instance._profileService = ProfileService(
-        _instance._apiClient,
-        _instance._tokenService,
+      instance._profileService = ProfileService(
+        instance._apiClient,
+        instance._tokenService,
       );
 
       // 7. Initialize follow service
-      _instance._followService = FollowService(
-        _instance._apiClient,
-        _instance._tokenService,
+      instance._followService = FollowService(
+        instance._apiClient,
+        instance._tokenService,
       );
 
       // 8. Initialize post service
-      _instance._postService = PostService();
+      instance._postService = PostService();
+
+      // 9. Initialize notification service 🔹 Yeni servis başlatıldı
+      instance._notificationService = NotificationsService();
 
       _isInitialized = true;
     } catch (e, stackTrace) {
@@ -110,7 +117,9 @@ class ServiceLocator {
   static UserService get user => _instance._userService;
   static ProfileService get profile => _instance._profileService;
   static FollowService get follow => _instance._followService;
-  static PostService get post => _instance._postService; // 🔹 getter
+  static PostService get post => _instance._postService;
+  static NotificationsService get notification =>
+      _instance._notificationService; // 🔹 Yeni getter eklendi
   static LocalStorage get storage => _instance._localStorage;
 
   // Navigation helpers
