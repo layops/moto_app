@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme_constants.dart';
 import 'color_schemes.dart';
 import 'text_theme.dart';
 import 'button_themes.dart';
@@ -13,6 +14,7 @@ class DarkTheme {
         outlinedButtonTheme: AppButtonThemes.outlinedDark,
         inputDecorationTheme: AppInputThemes.dark,
         useMaterial3: true,
+        scaffoldBackgroundColor: AppColorSchemes.dark.surface,
         appBarTheme: AppBarTheme(
           backgroundColor: AppColorSchemes.dark.surface,
           foregroundColor: AppColorSchemes.dark.onSurface,
@@ -24,6 +26,15 @@ class DarkTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+        ),
+        iconTheme: IconThemeData(color: AppColorSchemes.dark.onSurface),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: AppColorSchemes.primaryColor,
+          foregroundColor: Colors.white,
+        ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: AppColorSchemes.dark.surface,
+          contentTextStyle: TextStyle(color: Colors.white),
         ),
       );
 }

@@ -1,14 +1,14 @@
-// post_item.dart
 import 'package:flutter/material.dart';
 import '../../views/profile/profile_page.dart';
+import '../../core/theme/color_schemes.dart';
 
 class PostItem extends StatelessWidget {
-  final dynamic post;
+  final Map<String, dynamic> post;
   const PostItem({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
-    // API'den gelen veri yapısına göre düzenleme
+    final theme = Theme.of(context);
     final authorData = post['author'] as Map<String, dynamic>?;
     final username = authorData?['username']?.toString() ?? 'Bilinmeyen';
     final avatarUrl = authorData?['avatar']?.toString();
@@ -26,9 +26,8 @@ class PostItem extends StatelessWidget {
           children: [
             // Rota başlığı
             Text(
-              routeData['title'] ?? 'Rota İsmi',
-              style: const TextStyle(
-                fontSize: 18,
+              routeData['title']?.toString() ?? 'Rota İsmi',
+              style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -37,32 +36,40 @@ class PostItem extends StatelessWidget {
             // Rota bilgileri
             Row(
               children: [
-                const Icon(Icons.add_road_sharp, size: 16, color: Colors.grey),
+                Icon(Icons.add_road_sharp,
+                    size: 16, color: AppColorSchemes.textSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  routeData['distance'] ?? '0 km',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  routeData['distance']?.toString() ?? '0 km',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColorSchemes.textSecondary,
+                  ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(Icons.timer, size: 16, color: Colors.grey),
+                Icon(Icons.timer,
+                    size: 16, color: AppColorSchemes.textSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  routeData['duration'] ?? '0s',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  routeData['duration']?.toString() ?? '0s',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColorSchemes.textSecondary,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getDifficultyColor(routeData['difficulty']),
+                    color:
+                        _getDifficultyColor(context, routeData['difficulty']),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    routeData['difficulty'] ?? 'Bilinmiyor',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _getDifficultyTextColor(routeData['difficulty']),
+                    routeData['difficulty']?.toString() ?? 'Bilinmiyor',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: _getDifficultyTextColor(
+                          context, routeData['difficulty']),
                     ),
                   ),
                 ),
@@ -78,7 +85,8 @@ class PostItem extends StatelessWidget {
                   backgroundImage:
                       avatarUrl != null ? NetworkImage(avatarUrl) : null,
                   child: avatarUrl == null
-                      ? const Icon(Icons.person, size: 20)
+                      ? Icon(Icons.person,
+                          size: 20, color: theme.colorScheme.onSurface)
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -88,15 +96,15 @@ class PostItem extends StatelessWidget {
                     children: [
                       Text(
                         username,
-                        style: const TextStyle(
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: AppColorSchemes.textPrimary,
                         ),
                       ),
                       Text(
                         '${post['bikeModel'] ?? 'Motosiklet'} • ${post['timeAgo'] ?? 'Şimdi'}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColorSchemes.textSecondary,
                         ),
                       ),
                     ],
@@ -112,7 +120,9 @@ class PostItem extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   post['content'].toString(),
-                  style: const TextStyle(fontSize: 14),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColorSchemes.textPrimary,
+                  ),
                 ),
               ),
 
@@ -134,19 +144,28 @@ class PostItem extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.favorite_border, size: 20),
+                    icon: Icon(Icons.favorite_border,
+                        size: 20, color: theme.colorScheme.primary),
                     onPressed: () {},
                   ),
-                  Text(post['likes']?.toString() ?? '0'),
+                  Text(
+                    post['likes']?.toString() ?? '0',
+                    style: theme.textTheme.bodySmall,
+                  ),
                   const SizedBox(width: 16),
                   IconButton(
-                    icon: const Icon(Icons.comment_outlined, size: 20),
+                    icon: Icon(Icons.comment_outlined,
+                        size: 20, color: theme.colorScheme.primary),
                     onPressed: () {},
                   ),
-                  Text(post['comments']?.toString() ?? '0'),
+                  Text(
+                    post['comments']?.toString() ?? '0',
+                    style: theme.textTheme.bodySmall,
+                  ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.share, size: 20),
+                    icon: Icon(Icons.share,
+                        size: 20, color: theme.colorScheme.primary),
                     onPressed: () {},
                   ),
                 ],
@@ -158,33 +177,34 @@ class PostItem extends StatelessWidget {
     );
   }
 
-  Color _getDifficultyColor(String? difficulty) {
+  Color _getDifficultyColor(BuildContext context, String? difficulty) {
     switch (difficulty?.toLowerCase()) {
       case 'kolay':
-        return Colors.green[100]!;
+      case 'easy':
+        return AppColorSchemes.difficultyEasy(context).withOpacity(0.1);
       case 'moderate':
-        return Colors.orange[100]!;
+        return AppColorSchemes.difficultyModerate(context).withOpacity(0.1);
       case 'expert':
-        return Colors.red[100]!;
+        return AppColorSchemes.difficultyExpert(context).withOpacity(0.1);
       default:
-        return Colors.grey[200]!;
+        return Theme.of(context).colorScheme.surfaceVariant;
     }
   }
 
-  Color _getDifficultyTextColor(String? difficulty) {
+  Color _getDifficultyTextColor(BuildContext context, String? difficulty) {
     switch (difficulty?.toLowerCase()) {
       case 'kolay':
-        return Colors.green[800]!;
+      case 'easy':
+        return AppColorSchemes.difficultyEasy(context);
       case 'moderate':
-        return Colors.orange[800]!;
+        return AppColorSchemes.difficultyModerate(context);
       case 'expert':
-        return Colors.red[800]!;
+        return AppColorSchemes.difficultyExpert(context);
       default:
-        return Colors.grey[800]!;
+        return Theme.of(context).colorScheme.onSurface;
     }
   }
 
-  // ignore: unused_element
   void _openProfile(BuildContext context, String username) {
     Navigator.push(
       context,
