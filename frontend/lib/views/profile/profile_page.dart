@@ -72,58 +72,51 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfile() async {
     if (_currentUsername == null) return;
 
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _postsError = null;
+    });
+
     try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-        _postsError = null;
-      });
-
-      try {
-        _profileData = await ServiceLocator.user.getProfile(_currentUsername!);
-      } catch (e) {
-        print('Profil bilgisi getirme hatası: $e');
-      }
-
-      try {
-        _posts = await ServiceLocator.user.getPosts(_currentUsername!);
-      } catch (e) {
-        print('Gönderiler getirme hatası: $e');
-        _postsError = 'Gönderiler yüklenirken hata oluştu';
-        _posts = [];
-      }
-
-      try {
-        _media = await ServiceLocator.user.getMedia(_currentUsername!);
-      } catch (e) {
-        print('Medya getirme hatası: $e');
-        _media = [];
-      }
-
-      try {
-        _events = await ServiceLocator.user.getEvents(_currentUsername!);
-      } catch (e) {
-        print('Etkinlikler getirme hatası: $e');
-        _events = [];
-      }
-
-      try {
-        _followers = await ServiceLocator.user.getFollowers(_currentUsername!);
-      } catch (e) {
-        print('Takipçiler getirme hatası: $e');
-        _followers = [];
-      }
-
-      try {
-        _following = await ServiceLocator.user.getFollowing(_currentUsername!);
-      } catch (e) {
-        print('Takip edilenler getirme hatası: $e');
-        _following = [];
-      }
+      final results = await Future.wait([
+        ServiceLocator.user.getProfile(_currentUsername!).catchError((e) {
+          print('Profil bilgisi getirme hatası: $e');
+          return {};
+        }),
+        ServiceLocator.user.getPosts(_currentUsername!).catchError((e) {
+          print('Gönderiler getirme hatası: $e');
+          _postsError = 'Gönderiler yüklenirken hata oluştu';
+          return [];
+        }),
+        ServiceLocator.user.getMedia(_currentUsername!).catchError((e) {
+          print('Medya getirme hatası: $e');
+          return [];
+        }),
+        ServiceLocator.user.getEvents(_currentUsername!).catchError((e) {
+          print('Etkinlikler getirme hatası: $e');
+          return [];
+        }),
+        ServiceLocator.user.getFollowers(_currentUsername!).catchError((e) {
+          print('Takipçiler getirme hatası: $e');
+          return [];
+        }),
+        ServiceLocator.user.getFollowing(_currentUsername!).catchError((e) {
+          print('Takip edilenler getirme hatası: $e');
+          return [];
+        }),
+        // Removed the getMutualFollowers call as it doesn't exist
+      ]);
 
       if (!mounted) return;
 
       setState(() {
+        _profileData = results[0] as Map<String, dynamic>?;
+        _posts = results[1] as List<dynamic>?;
+        _media = results[2] as List<dynamic>?;
+        _events = results[3] as List<dynamic>?;
+        _followers = results[4] as List<dynamic>?;
+        _following = results[5] as List<dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
@@ -151,9 +144,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _imageFile = image;
             });
           },
-          onUploadStateChanged: (bool isUploading) {
-            // Yükleme durumuna göre arayüzü güncelle
-          },
+          onUploadStateChanged: (bool isUploading) {},
         ),
         actions: [
           TextButton(
@@ -200,10 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Profil yükleniyor...',
-                style: theme.textTheme.bodyLarge,
-              ),
+              Text('Profil yükleniyor...', style: theme.textTheme.bodyLarge),
             ],
           ),
         ),
@@ -216,22 +204,14 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: colorScheme.error,
-              ),
+              Icon(Icons.error_outline, size: 64, color: colorScheme.error),
               const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
+              Text(_errorMessage!,
+                  style: theme.textTheme.bodyLarge,
+                  textAlign: TextAlign.center),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _loadProfile,
-                child: const Text('Tekrar Dene'),
-              ),
+                  onPressed: _loadProfile, child: const Text('Tekrar Dene')),
             ],
           ),
         ),
@@ -244,21 +224,18 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.person_off,
-                size: 64,
-                color: colorScheme.onSurface.withOpacity(0.5),
-              ),
+              Icon(Icons.person_off,
+                  size: 64, color: colorScheme.onSurface.withOpacity(0.5)),
               const SizedBox(height: 16),
-              Text(
-                'Kullanıcı bulunamadı',
-                style: theme.textTheme.bodyLarge,
-              ),
+              Text('Kullanıcı bulunamadı', style: theme.textTheme.bodyLarge),
             ],
           ),
         ),
       );
     }
+
+    // Mock data for mutual followers
+    final List<String> mutualFollowers = ['berriko takip ediyor'];
 
     return Scaffold(
       key: _scaffoldKey,
@@ -269,15 +246,13 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadProfile,
-            tooltip: 'Yenile',
-          ),
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadProfile,
+              tooltip: 'Yenile'),
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _openEditProfile,
-            tooltip: 'Profili Düzenle',
-          ),
+              icon: const Icon(Icons.edit),
+              onPressed: _openEditProfile,
+              tooltip: 'Profili Düzenle'),
         ],
       ),
       drawer: ProfileDrawer(
@@ -287,63 +262,73 @@ class _ProfilePageState extends State<ProfilePage> {
         profileData: _profileData ?? {},
       ),
       body: DefaultTabController(
-        length: 6, // 2 yeni tab eklendi
+        length: 6,
         child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(
-                child: ProfileHeader(
-                  username: _currentUsername!,
-                  profileData: _profileData,
-                  imageFile: _imageFile,
-                  colorScheme: colorScheme,
-                  theme: theme,
-                  onEditPhoto: _showPhotoUploadDialog,
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(
+              child: ProfileHeader(
+                imageFile: _imageFile,
+                coverImageUrl: _profileData?['coverImageUrl'],
+                colorScheme: colorScheme,
+                followerCount: _followers?.length ?? 0,
+                followingCount: _following?.length ?? 0,
+                username: _currentUsername!,
+                displayName: _profileData?['displayName'] ?? _currentUsername!,
+                bio: _profileData?['bio'] ??
+                    'Dijital Medya ve Haber | Gündemi bir tıkla takip etmek için bildirimleri açın.',
+                joinDate: _profileData?['joinDate'] ??
+                    'Aralık 2020 tarihinde katıldı',
+                website:
+                    _profileData?['website'] ?? 'instagram.com/bosunatiklamatr',
+                isVerified: _profileData?['isVerified'] ?? false,
+                isCurrentUser: _currentUsername == widget.username,
+                onEditPhoto: _showPhotoUploadDialog,
+                onFollow: () {
+                  // Implement follow functionality
+                },
+                mutualFollowers: mutualFollowers,
+              ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: ProfileTabBarDelegate(
+                TabBar(
+                  isScrollable: true,
+                  indicatorColor: colorScheme.primary,
+                  labelColor: colorScheme.primary,
+                  unselectedLabelColor: colorScheme.onSurface.withOpacity(0.5),
+                  tabs: const [
+                    Tab(text: 'Gönderiler'),
+                    Tab(text: 'Yanıtlar'),
+                    Tab(text: 'Medya'),
+                    Tab(text: 'Beğeniler'),
+                    Tab(text: 'Takipçiler'),
+                    Tab(text: 'Takip Edilenler'),
+                  ],
                 ),
               ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: ProfileTabBarDelegate(
-                  TabBar(
-                    isScrollable:
-                        true, // Çok sayıda tab için kaydırılabilir yap
-                    indicatorColor: colorScheme.primary,
-                    labelColor: colorScheme.primary,
-                    unselectedLabelColor:
-                        colorScheme.onSurface.withOpacity(0.5),
-                    tabs: const [
-                      Tab(text: 'Gönderiler'),
-                      Tab(text: 'Medya'),
-                      Tab(text: 'Etkinlikler'),
-                      Tab(text: 'Bilgi'),
-                      Tab(text: 'Takipçiler'),
-                      Tab(text: 'Takip Edilenler'),
-                    ],
-                  ),
-                ),
-              ),
-            ];
-          },
+            ),
+          ],
           body: TabBarView(
             children: [
               PostsTab(
-                posts: _posts ?? [],
-                theme: theme,
-                username: _currentUsername!,
-                avatarUrl: _profileData?['avatar']?.toString(),
-                error: _postsError,
-              ),
+                  posts: _posts ?? [],
+                  theme: theme,
+                  username: _currentUsername!,
+                  avatarUrl: _profileData?['avatar']?.toString(),
+                  error: _postsError),
+              Center(child: Text('Yanıtlar', style: theme.textTheme.bodyLarge)),
               MediaTab(media: _media ?? [], theme: theme),
-              EventsTab(events: _events ?? [], theme: theme),
-              InfoTab(profileData: _profileData ?? {}),
-              FollowersTab(followers: _followers ?? []), // Yeni tab
-              FollowingTab(following: _following ?? []), // Yeni tab
+              Center(
+                  child: Text('Beğeniler', style: theme.textTheme.bodyLarge)),
+              FollowersTab(followers: _followers ?? []),
+              FollowingTab(following: _following ?? []),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'profilePageFab',
+        heroTag: UniqueKey(),
         onPressed: _showPhotoUploadDialog,
         child: const Icon(Icons.camera_alt),
       ),
