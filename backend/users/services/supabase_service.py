@@ -18,7 +18,7 @@ class SupabaseStorage:
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
 
             # Bucket var mı kontrol et, yoksa hata ver
-            buckets = [b['name'] for b in self.client.storage.list_buckets()]
+            buckets = [b.name for b in self.client.storage.list_buckets()]
             if self.bucket not in buckets:
                 raise ValueError(f"Bucket bulunamadı: {self.bucket}")
                 
