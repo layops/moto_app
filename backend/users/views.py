@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, login
 from .serializers import (
     UserRegisterSerializer,
     UserLoginSerializer,
@@ -20,7 +20,8 @@ from .serializers import (
 from posts.models import Post
 from media.models import Media
 from events.models import Event
-from .supabase_service import SupabaseStorage
+from .services.supabase_service import SupabaseStorage
+
 User = get_user_model()
 
 # -------------------------------
@@ -50,7 +51,16 @@ class UserLoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'username': user.username}, status=status.HTTP_200_OK)
+            
+            # Kullanıcıyı login et (session için)
+            login(request, user)
+            
+            return Response({
+                'token': token.key, 
+                'username': user.username,
+                'user_id': user.id,
+                'email': user.email
+            }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

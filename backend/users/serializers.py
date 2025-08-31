@@ -1,6 +1,6 @@
 # users/serializers.py
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from posts.models import Post
 from events.models import Event
 from media.models import Media  
@@ -13,12 +13,19 @@ User = get_user_model()
 # -------------------------------
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
+        fields = ['id', 'username', 'email', 'password', 'password2']
+
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Şifreler eşleşmiyor")
+        return data
 
     def create(self, validated_data):
+        validated_data.pop('password2')
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data.get('email'),
@@ -32,12 +39,18 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        from django.contrib.auth import authenticate
-        user = authenticate(username=data['username'], password=data['password'])
-        if user and user.is_active:
-            data['user'] = user
-            return data
-        raise serializers.ValidationError("Geçersiz kullanıcı adı veya şifre")
+        username = data.get('username')
+        password = data.get('password')
+        
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if user:
+                if user.is_active:
+                    data['user'] = user
+                    return data
+                raise serializers.ValidationError("Kullanıcı hesabı devre dışı")
+            raise serializers.ValidationError("Geçersiz kullanıcı adı veya şifre")
+        raise serializers.ValidationError("Kullanıcı adı ve şifre gereklidir")
 
 
 # -------------------------------
