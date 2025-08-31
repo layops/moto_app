@@ -10,18 +10,19 @@ class SupabaseStorage:
     def __init__(self):
         self.supabase_url = settings.SUPABASE_URL
         self.supabase_key = settings.SUPABASE_SERVICE_KEY
-        self.bucket = settings.SUPABASE_BUCKET
-
+        self.bucket = settings.SUPABASE_BUCKET  # Örn: 'profile_pictures'
+        
         try:
-            # Proxy parametresi kaldırıldı
+            # Supabase istemcisi oluşturuluyor
             self.client = create_client(self.supabase_url, self.supabase_key)
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
 
-            # Bucket var mı kontrol et, yoksa hata ver
+            # Bucket kontrolü
             buckets = [b.name for b in self.client.storage.list_buckets()]
             if self.bucket not in buckets:
                 raise ValueError(f"Bucket bulunamadı: {self.bucket}")
-                
+            logger.info(f"Bucket bulundu: {self.bucket}")
+
         except Exception as e:
             logger.error(f"Supabase istemcisi oluşturulamadı: {str(e)}")
             raise
