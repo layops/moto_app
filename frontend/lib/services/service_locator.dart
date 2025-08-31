@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+import 'package:supabase/supabase.dart' as supabase_client; // Değişiklik burada
 import 'storage/local_storage.dart';
 import 'http/api_client.dart';
 import 'auth/auth_service.dart';
@@ -29,6 +29,7 @@ class ServiceLocator {
   late final FollowService _followService;
   late final PostService _postService;
   late final NotificationsService _notificationService;
+  late final supabase_client.SupabaseClient _supabaseClient; // Yeni ekleme
 
   // Private constructor
   ServiceLocator._internal();
@@ -37,7 +38,8 @@ class ServiceLocator {
   factory ServiceLocator() {
     if (!_isInitialized) {
       throw StateError(
-          'ServiceLocator has not been initialized. Call ServiceLocator.init() first.');
+        'ServiceLocator has not been initialized. Call ServiceLocator.init() first.',
+      );
     }
     return _instance;
   }
@@ -52,11 +54,10 @@ class ServiceLocator {
     try {
       final instance = _instance;
 
-      // 0. Initialize Supabase 🔹
-      await supabase.Supabase.initialize(
-        supabaseUrl: 'https://mosiqkyyribzlvdvedet.supabase.co',
-        anonKey:
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDM0NzUsImV4cCI6MjA3MjIxOTQ3NX0.x3_gZOXMbxNd_KAj_UxRif04hwpZ46aARB_ocZZIIbM',
+      // 0. Initialize Supabase - Manuel olarak
+      instance._supabaseClient = supabase_client.SupabaseClient(
+        'https://mosiqkyyribzlvdvedet.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDM0NzUsImV4cCI6MjA3MjIxOTQ3NX0.x3_gZOXMbxNd_KAj_UxRif04hwpZ46aARB_ocZZIIbM',
       );
 
       // 1. Initialize local storage (app)
@@ -104,7 +105,10 @@ class ServiceLocator {
     } catch (e, stackTrace) {
       _isInitialized = false;
       throw ServiceLocatorError(
-          'ServiceLocator initialization failed', e, stackTrace);
+        'ServiceLocator initialization failed',
+        e,
+        stackTrace,
+      );
     }
   }
 
@@ -130,9 +134,9 @@ class ServiceLocator {
       _instance._notificationService;
   static LocalStorage get storage => _instance._localStorage;
 
-  // Supabase helper 🔹
-  static supabase.SupabaseClient get supabaseClient =>
-      supabase.Supabase.instance.client;
+  // Supabase helper - Güncellenmiş
+  static supabase_client.SupabaseClient get supabaseClient =>
+      _instance._supabaseClient;
 
   static String? get currentUserId => supabaseClient.auth.currentUser?.id;
   static String? get currentUserEmail => supabaseClient.auth.currentUser?.email;

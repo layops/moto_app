@@ -1,7 +1,7 @@
 # users/services/supabase_service.py
 import logging
 from django.conf import settings
-from supabase import create_client, Client
+from supabase import create_client
 import re
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,8 @@ class SupabaseStorage:
         self.bucket = settings.SUPABASE_BUCKET
         
         try:
-            self.client: Client = create_client(self.supabase_url, self.supabase_key)
+            # Supabase client oluşturuluyor (proxy parametresi kaldırıldı)
+            self.client = create_client(self.supabase_url, self.supabase_key)
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
         except Exception as e:
             logger.error(f"Supabase istemcisi oluşturulamadı: {str(e)}")
@@ -42,7 +43,7 @@ class SupabaseStorage:
             file_content = file.read()
             
             # Supabase'e yükle
-            response = self.client.storage.from_(self.bucket).upload(
+            self.client.storage.from_(self.bucket).upload(
                 file_path, 
                 file_content, 
                 {"content-type": file.content_type}

@@ -27,7 +27,7 @@ dependencies:
 
   # Network & API
   dio: ^5.3.3
-  web_socket_channel: ^3.0.3
+  web_socket_channel: ^2.4.0
   retrofit: ^4.0.1
 
   # Storage
@@ -45,10 +45,9 @@ dependencies:
   # Medya
   file_picker: ^10.2.1
   image_picker: ^1.0.4
-  supabase_flutter: ^2.10.0
 
   # Supabase
-supabase_flutter: ^1.2.0
+  supabase: ^1.11.1
 
 dev_dependencies:
   flutter_test:

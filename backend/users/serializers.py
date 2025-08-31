@@ -116,15 +116,14 @@ class FollowSerializer(serializers.ModelSerializer):
     def get_following_count(self, obj):
         return obj.following.count()
 
-
 # -------------------------------
 # Post Serializer
 # -------------------------------
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['id', 'title', 'content', 'created_at']
-
+        # Post modelinde mevcut alanları buraya yazıyoruz
+        fields = ['id', 'content', 'created_at', 'author']  # 'title' kaldırıldı, model alanlarına göre düzenlendi
 
 # -------------------------------
 # Media Serializer
