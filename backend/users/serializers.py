@@ -84,17 +84,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_profile_photo_url(self, obj):
         if obj.profile_picture:
-            # Eğer profile_picture bir URL ise direkt döndür
+            # Eğer profile_picture zaten tam bir URL ise
             if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
                 return obj.profile_picture
             
             # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.profile_picture)
+                # MEDIA_URL ile birleştirerek tam URL oluştur
+                return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
             
-            # Request yoksa settings'den base URL'yi kullan
-            return f"{settings.BASE_URL}{obj.profile_picture}"
+            # Request yoksa BASE_URL ve MEDIA_URL'i kullan
+            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            return f"{base_url}{media_url}{obj.profile_picture}"
         return None
 
     def validate_website(self, value):
@@ -136,17 +139,20 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_profile_photo_url(self, obj):
         if obj.profile_picture:
-            # Eğer profile_picture bir URL ise direkt döndür
+            # Eğer profile_picture zaten tam bir URL ise
             if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
                 return obj.profile_picture
             
             # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.profile_picture)
+                # MEDIA_URL ile birleştirerek tam URL oluştur
+                return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
             
-            # Request yoksa settings'den base URL'yi kullan
-            return f"{settings.BASE_URL}{obj.profile_picture}"
+            # Request yoksa BASE_URL ve MEDIA_URL'i kullan
+            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            return f"{base_url}{media_url}{obj.profile_picture}"
         return None
 
 # -------------------------------
