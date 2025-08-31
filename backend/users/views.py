@@ -8,6 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model, authenticate
+from django.conf import settings
+import logging
 from .serializers import (
     UserRegisterSerializer,
     UserLoginSerializer,
@@ -23,6 +25,7 @@ from events.models import Event
 from .services.supabase_service import SupabaseStorage
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 # -------------------------------
 # REGISTER & LOGIN
@@ -32,55 +35,68 @@ class UserRegisterView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
-        serializer = UserRegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
-            response_data = serializer.data
-            response_data['token'] = token.key
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+        try:
+            serializer = UserRegisterSerializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                token, created = Token.objects.get_or_create(user=user)
+                response_data = serializer.data
+                response_data['token'] = token.key
+                return Response(response_data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Register error: {str(e)}", exc_info=True)
+            return Response(
+                {'error': 'Kayıt sırasında bir hata oluştu'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 @method_decorator(csrf_exempt, name='dispatch')
 class UserLoginView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
-        # Doğrudan authenticate kullanarak basitleştirilmiş login
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        if not username or not password:
-            return Response(
-                {'error': 'Kullanıcı adı ve şifre gereklidir'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Kullanıcıyı doğrudan authenticate et
-        user = authenticate(username=username, password=password)
-        
-        if user is not None:
-            if user.is_active:
-                # Token oluştur veya al
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({
-                    'token': token.key, 
-                    'username': user.username,
-                    'user_id': user.id,
-                    'email': user.email
-                }, status=status.HTTP_200_OK)
-            else:
+        try:
+            username = request.data.get('username')
+            password = request.data.get('password')
+            
+            if not username or not password:
                 return Response(
-                    {'error': 'Hesap devre dışı bırakılmış'}, 
+                    {'error': 'Kullanıcı adı ve şifre gereklidir'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        else:
+            
+            user = authenticate(username=username, password=password)
+            
+            if user is not None:
+                if user.is_active:
+                    token, created = Token.objects.get_or_create(user=user)
+                    return Response({
+                        'token': token.key, 
+                        'username': user.username,
+                        'user_id': user.id,
+                        'email': user.email
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response(
+                        {'error': 'Hesap devre dışı bırakılmış'}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                return Response(
+                    {'error': 'Geçersiz kullanıcı adı veya şifre'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}", exc_info=True)
+            if settings.DEBUG:
+                return Response(
+                    {'error': f'Login hatası: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
             return Response(
-                {'error': 'Geçersiz kullanıcı adı veya şifre'}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'Giriş sırasında bir hata oluştu'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
 
 # -------------------------------
 # PROFILE IMAGE UPLOAD (GÜNCELLENMİŞ)

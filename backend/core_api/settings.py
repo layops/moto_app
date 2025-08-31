@@ -4,25 +4,13 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ------------------------------
-# Güvenlik ve Debug
-# ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-# ------------------------------
-# Allowed Hosts
-# ------------------------------
 ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', 'spiride.onrender.com'
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1,spiride.onrender.com'
 ).split(',')
 
-# ------------------------------
-# Uygulamalar
-# ------------------------------
-# ------------------------------
-# Uygulamalar
-# ------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -52,9 +40,6 @@ INSTALLED_APPS = [
     'gamification',
 ]
 
-# ------------------------------
-# Middleware
-# ------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -67,9 +52,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# ------------------------------
-# URL ve Templates
-# ------------------------------
 ROOT_URLCONF = 'core_api.urls'
 
 TEMPLATES = [
@@ -91,9 +73,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-# ------------------------------
-# Veritabanı
-# ------------------------------
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -107,10 +86,6 @@ else:
         }
     }
 
-
-# ------------------------------
-# Şifre Doğrulama
-# ------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -126,28 +101,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# ------------------------------
-# Dil ve Zaman
-# ------------------------------
 LANGUAGE_CODE = 'tr'
 TIME_ZONE = 'Europe/Istanbul'
 USE_I18N = True
 USE_TZ = True
 
-# ------------------------------
-# Statik Dosyalar
-# ------------------------------
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# ------------------------------
-# Kullanıcı Modeli
-# ------------------------------
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# ------------------------------
-# CORS Ayarları
-# ------------------------------
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -169,9 +132,6 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# ------------------------------
-# REST Framework
-# ------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -185,18 +145,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
     ],
+    'EXCEPTION_HANDLER': 'core_api.exception_handler.custom_exception_handler'
 }
 
-# ------------------------------
-# CSRF
-# ------------------------------
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# ------------------------------
-# Swagger / Redoc
-# ------------------------------
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Token': {
@@ -213,9 +168,6 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-# ------------------------------
-# Channels Layer (Redis)
-# ------------------------------
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -225,9 +177,11 @@ CHANNEL_LAYERS = {
     },
 }
 
-# ------------------------------
-# Supabase Ayarları
-# ------------------------------
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
 SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
+
+# Yeni eklenen hata ayıklama ayarları
+if DEBUG:
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
