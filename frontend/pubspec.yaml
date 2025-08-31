@@ -45,6 +45,10 @@ dependencies:
   # Medya
   file_picker: ^10.2.1
   image_picker: ^1.0.4
+  supabase_flutter: ^2.10.0
+
+  # Supabase
+supabase_flutter: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -57,6 +61,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
-  
+
   assets:
     - assets/images/

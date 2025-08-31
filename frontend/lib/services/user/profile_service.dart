@@ -10,15 +10,22 @@ class ProfileService {
 
   ProfileService(this._apiClient, this._tokenService);
 
-  /// Profil fotoğrafı yükleme - ENDPOINT TAM DÜZELTİLDİ
+  /// Profil fotoğrafı yükleme
   Future<Response> uploadProfileImage(File imageFile) async {
     try {
-      // Önce mevcut kullanıcı adını al
+      // Kullanıcı adını al
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
         throw Exception('Kullanıcı adı bulunamadı');
       }
 
+      // Token al
+      final token = await _tokenService.getToken();
+      if (token == null) {
+        throw Exception('Kullanıcı tokeni bulunamadı');
+      }
+
+      // FormData hazırla
       final formData = FormData.fromMap({
         'profile_picture': await MultipartFile.fromFile(
           imageFile.path,
@@ -26,13 +33,13 @@ class ProfileService {
         ),
       });
 
-      // Kullanıcı adını URL'ye ekle
+      // API isteği gönder
       return await _apiClient.post(
-        'users/$username/upload-photo/', // Kullanıcı adını URL'ye ekledik
+        'users/$username/upload-photo/',
         formData,
         options: Options(
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Token $token',
           },
         ),
       );
@@ -48,8 +55,7 @@ class ProfileService {
       final response = await _apiClient.get('users/$username/profile/');
       final data = response.data as Map<String, dynamic>;
 
-      // Profil fotoğrafı URL'sini tam yola çevir
-      // Düzeltme: Backend'den gelen alan adı 'profile_picture'
+      // Backend'den gelen alan adı 'profile_picture'
       if (data.containsKey('profile_picture') &&
           data['profile_picture'] != null) {
         data['profile_photo'] = data['profile_picture'];
@@ -70,9 +76,19 @@ class ProfileService {
         throw Exception('Kullanıcı adı bulunamadı');
       }
 
+      final token = await _tokenService.getToken();
+      if (token == null) {
+        throw Exception('Kullanıcı tokeni bulunamadı');
+      }
+
       return await _apiClient.put(
         'users/$username/profile/',
         profileData,
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+          },
+        ),
       );
     } catch (e) {
       print('Profil güncelleme hatası: $e');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'storage/local_storage.dart';
 import 'http/api_client.dart';
 import 'auth/auth_service.dart';
@@ -7,7 +8,7 @@ import 'user/user_service.dart';
 import 'user/profile_service.dart';
 import 'follow/follow_service.dart';
 import 'post/post_service.dart';
-import 'notifications/notifications_service.dart'; // 🔹 Yeni servis import'u
+import 'notifications/notifications_service.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -27,8 +28,7 @@ class ServiceLocator {
   late final ProfileService _profileService;
   late final FollowService _followService;
   late final PostService _postService;
-  late final NotificationsService
-      _notificationService; // 🔹 Yeni servis tanımlandı
+  late final NotificationsService _notificationService;
 
   // Private constructor
   ServiceLocator._internal();
@@ -51,7 +51,14 @@ class ServiceLocator {
 
     try {
       final instance = _instance;
-      // 1. Initialize storage
+
+      // 0. Initialize Supabase 🔹
+      await supabase.Supabase.initialize(
+        url: 'https://YOUR-PROJECT.supabase.co',
+        anonKey: 'YOUR-ANON-KEY',
+      );
+
+      // 1. Initialize local storage (app)
       instance._localStorage = LocalStorage();
       await instance._localStorage.init();
 
@@ -89,7 +96,7 @@ class ServiceLocator {
       // 8. Initialize post service
       instance._postService = PostService();
 
-      // 9. Initialize notification service 🔹 Yeni servis başlatıldı
+      // 9. Initialize notification service
       instance._notificationService = NotificationsService();
 
       _isInitialized = true;
@@ -100,7 +107,7 @@ class ServiceLocator {
     }
   }
 
-  /// Reset all services (for testing/logout purposes)
+  /// Reset all services
   static Future<void> reset() async {
     try {
       await _instance._localStorage.clearAuthData();
@@ -119,8 +126,15 @@ class ServiceLocator {
   static FollowService get follow => _instance._followService;
   static PostService get post => _instance._postService;
   static NotificationsService get notification =>
-      _instance._notificationService; // 🔹 Yeni getter eklendi
+      _instance._notificationService;
   static LocalStorage get storage => _instance._localStorage;
+
+  // Supabase helper 🔹
+  static supabase.SupabaseClient get supabaseClient =>
+      supabase.Supabase.instance.client;
+
+  static String? get currentUserId => supabaseClient.auth.currentUser?.id;
+  static String? get currentUserEmail => supabaseClient.auth.currentUser?.email;
 
   // Navigation helpers
   static NavigatorState get navigator => navigatorKey.currentState!;

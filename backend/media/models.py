@@ -15,5 +15,6 @@ class Media(models.Model):
         verbose_name_plural = "Media"
         ordering = ['-uploaded_at']
 
+
     def __str__(self):
         return f"{self.group.name} - {self.file.name}"
