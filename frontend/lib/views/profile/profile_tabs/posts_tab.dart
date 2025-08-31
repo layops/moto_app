@@ -6,6 +6,7 @@ class PostsTab extends StatelessWidget {
   final ThemeData theme;
   final String username;
   final String? avatarUrl;
+  final String? displayName;
   final String? error;
 
   const PostsTab({
@@ -14,12 +15,12 @@ class PostsTab extends StatelessWidget {
     required this.theme,
     required this.username,
     this.avatarUrl,
+    this.displayName,
     this.error,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Hata durumunu kontrol et
     if (error != null) {
       return Center(
         child: Column(
@@ -36,9 +37,7 @@ class PostsTab extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                // Yeniden yükleme işlevi için bir callback ekleyebilirsiniz
-              },
+              onPressed: () {},
               child: const Text('Yeniden Dene'),
             ),
           ],
@@ -68,14 +67,42 @@ class PostsTab extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: posts.length,
       itemBuilder: (context, index) {
-        // Post verisini kopyala ve author bilgilerini düzelt
-        final post = Map<String, dynamic>.from(posts[index]);
-        if (post['author'] == null) {
-          post['author'] = {
-            'username': username,
-            'avatar': avatarUrl,
-          };
+        final originalPost = posts[index];
+
+        // Önce post verisini güvenli bir şekilde kopyala
+        final Map<String, dynamic> post = {};
+
+        if (originalPost is Map<String, dynamic>) {
+          post.addAll(originalPost);
+        } else {
+          // Eğer post bir Map değilse, içeriği 'content' alanına koy
+          post['content'] = originalPost.toString();
         }
+
+        // Author bilgisini güvenli şekilde işle
+        dynamic authorData = post['author'];
+        Map<String, dynamic> authorMap = {};
+
+        if (authorData is Map<String, dynamic>) {
+          authorMap.addAll(authorData);
+        } else if (authorData != null) {
+          // Author bilgisi beklenmeyen bir türdeyse, logla ve boş bırak
+          print('Beklenmeyen author veri türü: ${authorData.runtimeType}');
+        }
+
+        // Eksik author bilgilerini doldur
+        if (authorMap['username'] == null) {
+          authorMap['username'] = username;
+        }
+        if (authorMap['profile_photo'] == null && avatarUrl != null) {
+          authorMap['profile_photo'] = avatarUrl;
+        }
+        if (authorMap['display_name'] == null) {
+          authorMap['display_name'] = displayName ?? username;
+        }
+
+        post['author'] = authorMap;
+
         return PostItem(post: post);
       },
     );

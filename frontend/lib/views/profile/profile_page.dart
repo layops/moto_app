@@ -156,10 +156,21 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context) => AlertDialog(
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
+          networkImageUrl: _profileData?['profile_photo'],
           onImageSelected: (File image) {
             setState(() {
               _imageFile = image;
             });
+          },
+          onUploadSuccess: (Map<String, dynamic> updatedUser) {
+            setState(() {
+              _profileData?['profile_photo'] = updatedUser['profile_photo'];
+              _imageFile = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Profil fotoğrafı başarıyla güncellendi!')),
+            );
           },
           onUploadStateChanged: (bool isUploading) {},
         ),
@@ -303,6 +314,7 @@ class _ProfilePageState extends State<ProfilePage> {
             SliverToBoxAdapter(
               child: ProfileHeader(
                 imageFile: _imageFile,
+                networkImageUrl: _profileData?['profile_photo'],
                 coverImageUrl: _profileData?['cover_photo'],
                 colorScheme: colorScheme,
                 followerCount: _followers?.length ?? 0,
@@ -348,6 +360,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   theme: theme,
                   username: _currentUsername!,
                   avatarUrl: _profileData?['profile_photo'],
+                  displayName: _profileData?['display_name'],
                   error: _postsError),
               Center(child: Text('Yanıtlar', style: theme.textTheme.bodyLarge)),
               MediaTab(media: _media ?? [], theme: theme),

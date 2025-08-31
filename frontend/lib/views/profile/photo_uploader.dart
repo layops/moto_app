@@ -8,12 +8,14 @@ class ProfilePhotoUploader extends StatefulWidget {
   final Function(File)? onImageSelected;
   final Function(bool)? onUploadStateChanged;
   final Function(Map<String, dynamic>)? onUploadSuccess;
+  final String? networkImageUrl; // Yeni parametre eklendi
 
   const ProfilePhotoUploader({
     super.key,
     this.onImageSelected,
     this.onUploadStateChanged,
     this.onUploadSuccess,
+    this.networkImageUrl, // constructor’a ekledik
   });
 
   @override
@@ -118,6 +120,14 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    ImageProvider? avatarImage;
+    if (_image != null) {
+      avatarImage = FileImage(_image!);
+    } else if (widget.networkImageUrl != null &&
+        widget.networkImageUrl!.isNotEmpty) {
+      avatarImage = NetworkImage(widget.networkImageUrl!);
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -131,8 +141,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
                 border: Border.all(color: theme.colorScheme.primary, width: 2),
               ),
               child: ClipOval(
-                child: _image != null
-                    ? Image.file(_image!, fit: BoxFit.cover)
+                child: avatarImage != null
+                    ? Image(
+                        image: avatarImage,
+                        fit: BoxFit.cover,
+                      )
                     : Icon(Icons.account_circle,
                         size: 150,
                         color: theme.colorScheme.onSurface.withOpacity(0.5)),

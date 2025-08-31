@@ -1,6 +1,4 @@
-// post_item.dart
 import 'package:flutter/material.dart';
-import '../../views/profile/profile_page.dart';
 
 class PostItem extends StatelessWidget {
   final dynamic post;
@@ -8,16 +6,25 @@ class PostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Güvenli tip kontrolü
     final authorData = post['author'] is Map<String, dynamic>
         ? post['author'] as Map<String, dynamic>
-        : null;
+        : {};
+
     final routeData = post['route'] is Map<String, dynamic>
         ? post['route'] as Map<String, dynamic>
         : {};
 
-    final username = authorData?['username']?.toString() ?? 'Bilinmeyen';
-    final avatarUrl = authorData?['avatar']?.toString();
+    final username = authorData['username']?.toString() ??
+        post['username']?.toString() ??
+        'Bilinmeyen';
+
+    final profilePhoto = authorData['profile_photo']?.toString() ??
+        post['profile_photo']?.toString();
+
+    final displayName = authorData['display_name']?.toString() ??
+        post['display_name']?.toString() ??
+        username;
+
     final imageUrl = post['image']?.toString();
 
     return Card(
@@ -29,62 +36,63 @@ class PostItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Rota başlığı
-            Text(
-              routeData['title']?.toString() ?? 'Rota İsmi',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            if (routeData['title'] != null)
+              Text(
+                routeData['title']!.toString(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
             const SizedBox(height: 12),
-
-            // Rota bilgileri
-            Row(
-              children: [
-                const Icon(Icons.add_road_sharp, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  routeData['distance']?.toString() ?? '0 km',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(width: 16),
-                const Icon(Icons.timer, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  routeData['duration']?.toString() ?? '0s',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getDifficultyColor(
-                        routeData['difficulty']?.toString()),
-                    borderRadius: BorderRadius.circular(12),
+            if (routeData.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.add_road_sharp,
+                      size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${routeData['distance']?.toString() ?? '0'} km',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                  child: Text(
-                    routeData['difficulty']?.toString() ?? 'Bilinmiyor',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _getDifficultyTextColor(
-                          routeData['difficulty']?.toString()),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.timer, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${routeData['duration']?.toString() ?? '0'} dk',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(width: 16),
+                  if (routeData['difficulty'] != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getDifficultyColor(
+                            routeData['difficulty']?.toString()),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        routeData['difficulty']!.toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _getDifficultyTextColor(
+                              routeData['difficulty']?.toString()),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
             const SizedBox(height: 16),
-
-            // Kullanıcı bilgileri
             Row(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundImage:
-                      avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl == null
+                      profilePhoto != null && profilePhoto.isNotEmpty
+                          ? NetworkImage(profilePhoto)
+                          : null,
+                  child: profilePhoto == null || profilePhoto.isEmpty
                       ? const Icon(Icons.person, size: 20)
                       : null,
                 ),
@@ -94,7 +102,7 @@ class PostItem extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        username,
+                        displayName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
@@ -108,9 +116,8 @@ class PostItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Gönderi içeriği
-            if (post['content'] != null)
+            if (post['content'] != null &&
+                post['content'].toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
@@ -118,9 +125,7 @@ class PostItem extends StatelessWidget {
                   style: const TextStyle(fontSize: 14),
                 ),
               ),
-
-            // Gönderi görseli
-            if (imageUrl != null)
+            if (imageUrl != null && imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
@@ -128,10 +133,13 @@ class PostItem extends StatelessWidget {
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: 200,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.error),
+                  ),
                 ),
               ),
-
-            // Etkileşim butonları
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Row(
@@ -165,9 +173,9 @@ class PostItem extends StatelessWidget {
     switch (difficulty?.toLowerCase()) {
       case 'kolay':
         return Colors.green[100]!;
-      case 'moderate':
+      case 'orta':
         return Colors.orange[100]!;
-      case 'expert':
+      case 'zor':
         return Colors.red[100]!;
       default:
         return Colors.grey[200]!;
@@ -178,9 +186,9 @@ class PostItem extends StatelessWidget {
     switch (difficulty?.toLowerCase()) {
       case 'kolay':
         return Colors.green[800]!;
-      case 'moderate':
+      case 'orta':
         return Colors.orange[800]!;
-      case 'expert':
+      case 'zor':
         return Colors.red[800]!;
       default:
         return Colors.grey[800]!;

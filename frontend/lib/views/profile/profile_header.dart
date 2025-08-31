@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class ProfileHeader extends StatelessWidget {
   final File? imageFile;
+  final String? networkImageUrl; // Backend URL desteği
   final String? coverImageUrl;
   final ColorScheme colorScheme;
   final int followerCount;
@@ -21,6 +22,7 @@ class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
     this.imageFile,
+    this.networkImageUrl,
     this.coverImageUrl,
     required this.colorScheme,
     required this.followerCount,
@@ -43,8 +45,8 @@ class ProfileHeader extends StatelessWidget {
     ImageProvider? avatarImage;
     if (imageFile != null) {
       avatarImage = FileImage(imageFile!);
-    } else if (coverImageUrl != null && coverImageUrl!.isNotEmpty) {
-      avatarImage = NetworkImage(coverImageUrl!);
+    } else if (networkImageUrl != null && networkImageUrl!.isNotEmpty) {
+      avatarImage = NetworkImage(networkImageUrl!);
     }
 
     return Column(

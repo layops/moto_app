@@ -7,7 +7,6 @@ from media.models import Media
 
 User = get_user_model()
 
-
 # -------------------------------
 # Kullanıcı Kayıt ve Login
 # -------------------------------
@@ -60,11 +59,12 @@ class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     display_name = serializers.CharField(source='first_name', required=False, allow_blank=True)
+    profile_photo_url = serializers.SerializerMethodField()  # Yeni alan eklendi
 
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'profile_picture', 
+            'id', 'username', 'email', 'profile_picture', 'profile_photo_url',
             'followers_count', 'following_count', 'display_name',
             'bio', 'motorcycle_model', 'location', 'website',
             'phone_number', 'address'
@@ -79,6 +79,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_following_count(self, obj):
         return obj.following.count()
+
+    def get_profile_photo_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
 
     def validate_website(self, value):
         if value and value.strip():
@@ -105,10 +113,11 @@ class UserSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
+    profile_photo_url = serializers.SerializerMethodField()  # Yeni alan eklendi
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'profile_picture', 'followers_count', 'following_count']
+        fields = ['id', 'username', 'profile_picture', 'profile_photo_url', 'followers_count', 'following_count']
 
     def get_followers_count(self, obj):
         return obj.followers.count()
@@ -116,14 +125,21 @@ class FollowSerializer(serializers.ModelSerializer):
     def get_following_count(self, obj):
         return obj.following.count()
 
+    def get_profile_photo_url(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        return None
+
 # -------------------------------
 # Post Serializer
 # -------------------------------
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        # Post modelinde mevcut alanları buraya yazıyoruz
-        fields = ['id', 'content', 'created_at', 'author']  # 'title' kaldırıldı, model alanlarına göre düzenlendi
+        fields = ['id', 'content', 'created_at', 'author']
 
 # -------------------------------
 # Media Serializer

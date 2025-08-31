@@ -19,13 +19,13 @@ class _HomePageState extends State<HomePage> {
   String? error;
   List<dynamic> posts = [];
 
-  int unreadNotificationsCount = 0; // 🔹 Okunmamış bildirim sayısı
+  int unreadNotificationsCount = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchPosts();
-    _fetchUnreadNotifications(); // 🔹 Okunmamış bildirimleri çek
+    _fetchUnreadNotifications();
   }
 
   Future<void> _fetchPosts() async {
@@ -38,6 +38,10 @@ class _HomePageState extends State<HomePage> {
       final token = await ServiceLocator.token.getToken();
       if (token != null) {
         final fetchedPosts = await ServiceLocator.post.fetchPosts(token);
+
+        // Debug için gelen postları yazdır
+        print('Fetched posts: $fetchedPosts');
+
         setState(() {
           posts = fetchedPosts;
         });
@@ -83,7 +87,6 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (context) => const NotificationsPage()),
     );
-    // NotificationsPage’ten döndükten sonra sayıyı güncelle
     _fetchUnreadNotifications();
   }
 
