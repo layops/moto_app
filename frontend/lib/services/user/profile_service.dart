@@ -49,9 +49,10 @@ class ProfileService {
       final data = response.data as Map<String, dynamic>;
 
       // Profil fotoğrafı URL'sini tam yola çevir
-      if (data.containsKey('profile_picture_url') &&
-          data['profile_picture_url'] != null) {
-        data['profile_photo'] = data['profile_picture_url'];
+      // Düzeltme: Backend'den gelen alan adı 'profile_picture'
+      if (data.containsKey('profile_picture') &&
+          data['profile_picture'] != null) {
+        data['profile_photo'] = data['profile_picture'];
       }
 
       return data;
