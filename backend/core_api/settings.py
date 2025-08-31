@@ -20,6 +20,9 @@ ALLOWED_HOSTS = os.environ.get(
 # ------------------------------
 # Uygulamalar
 # ------------------------------
+# ------------------------------
+# Uygulamalar
+# ------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,7 +50,6 @@ INSTALLED_APPS = [
     'chat',
     'notifications',
     'gamification',
-    'motorcycles',
 ]
 
 # ------------------------------
