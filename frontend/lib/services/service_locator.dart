@@ -54,8 +54,9 @@ class ServiceLocator {
 
       // 0. Initialize Supabase 🔹
       await supabase.Supabase.initialize(
-        url: 'https://YOUR-PROJECT.supabase.co',
-        anonKey: 'YOUR-ANON-KEY',
+        supabaseUrl: 'https://mosiqkyyribzlvdvedet.supabase.co',
+        anonKey:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDM0NzUsImV4cCI6MjA3MjIxOTQ3NX0.x3_gZOXMbxNd_KAj_UxRif04hwpZ46aARB_ocZZIIbM',
       );
 
       // 1. Initialize local storage (app)
