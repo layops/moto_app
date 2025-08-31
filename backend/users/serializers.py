@@ -1,3 +1,4 @@
+# users/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from posts.models import Post
@@ -45,37 +46,44 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
-
-    # Frontend'den gelen alanları ekleyin
     display_name = serializers.CharField(source='first_name', required=False, allow_blank=True)
-    bio = serializers.CharField(required=False, allow_blank=True)
-    motorcycle_model = serializers.CharField(required=False, allow_blank=True)
-    location = serializers.CharField(required=False, allow_blank=True)
-    website = serializers.URLField(required=False, allow_blank=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'profile_picture', 
             'followers_count', 'following_count', 'display_name',
-            'bio', 'motorcycle_model', 'location', 'website'
+            'bio', 'motorcycle_model', 'location', 'website',
+            'phone_number', 'address'
         ]
         extra_kwargs = {
-            'username': {'read_only': True}  # username'i salt okunur yap
+            'username': {'read_only': True},
+            'email': {'read_only': True}
         }
 
     def get_followers_count(self, obj):
-        return obj.followers.count() if hasattr(obj, 'followers') else 0
+        return obj.followers.count()
 
     def get_following_count(self, obj):
-        return obj.following.count() if hasattr(obj, 'following') else 0
+        return obj.following.count()
 
-    def update(self, instance, validated_data):
-        # Özel alanları güncelle
-        if 'first_name' in validated_data:
-            instance.first_name = validated_data.get('first_name', instance.first_name)
-        # Diğer özel alanları burada güncelleyin
-        return super().update(instance, validated_data)
+    def validate_website(self, value):
+        if value and value.strip():
+            import re
+            url_pattern = re.compile(
+                r'^(https?://)?'
+                r'(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})'
+                r'(:[0-9]{1,5})?'
+                r'(/.*)?$'
+            )
+            if not url_pattern.match(value):
+                if not value.startswith(('http://', 'https://')):
+                    value = 'https://' + value
+                    if not url_pattern.match(value):
+                        raise serializers.ValidationError("Geçerli bir URL girin")
+                else:
+                    raise serializers.ValidationError("Geçerli bir URL girin")
+        return value
 
 
 # -------------------------------
@@ -87,13 +95,13 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'followers_count', 'following_count']
+        fields = ['id', 'username', 'profile_picture', 'followers_count', 'following_count']
 
     def get_followers_count(self, obj):
-        return obj.followers.count() if hasattr(obj, 'followers') else 0
+        return obj.followers.count()
 
     def get_following_count(self, obj):
-        return obj.following.count() if hasattr(obj, 'following') else 0
+        return obj.following.count()
 
 
 # -------------------------------
@@ -129,25 +137,3 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'description', 'date']
-
-# -------------------------------
-# URL validasyonunu
-# -------------------------------
-def validate_website(self, value):
-    if value and value.strip():  # Eğer değer varsa ve boş değilse
-        import re
-        url_pattern = re.compile(
-            r'^(https?://)?'  # http:// or https://
-            r'(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})'  # domain
-            r'(:[0-9]{1,5})?'  # port
-            r'(/.*)?$'  # path
-        )
-        if not url_pattern.match(value):
-            # Eğer http:// veya https:// yoksa ekle ve tekrar dene
-            if not value.startswith(('http://', 'https://')):
-                value = 'https://' + value
-                if not url_pattern.match(value):
-                    raise serializers.ValidationError("Geçerli bir URL girin")
-            else:
-                raise serializers.ValidationError("Geçerli bir URL girin")
-    return value

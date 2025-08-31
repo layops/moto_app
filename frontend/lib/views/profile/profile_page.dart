@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
-import 'package:motoapp_frontend/views/auth/login_page.dart'; // LoginPage import edildi
+import 'package:motoapp_frontend/views/auth/login_page.dart';
+import 'package:motoapp_frontend/views/profile/photo_uploader.dart';
 import 'edit_profile_page.dart';
 import 'profile_drawer.dart';
 import 'profile_header.dart';
@@ -9,10 +10,8 @@ import 'profile_tab_bar.dart';
 import 'profile_tabs/posts_tab.dart';
 import 'profile_tabs/media_tab.dart';
 import 'profile_tabs/events_tab.dart';
-import 'profile_tabs/info_tab.dart';
 import 'profile_tabs/followers_tab.dart';
 import 'profile_tabs/following_tab.dart';
-import 'photo_uploader.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -81,15 +80,12 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      // Mevcut kullanıcı adını al ve kontrol et
       final currentUsername = await ServiceLocator.user.getCurrentUsername();
       final isCurrentUser = _currentUsername == currentUsername;
 
-      // Önce profil verilerini yükle
       final profileResponse =
           await ServiceLocator.profile.getProfile(_currentUsername!);
 
-      // Diğer verileri paralelde yükle
       final results = await Future.wait([
         Future.value(profileResponse),
         ServiceLocator.user.getPosts(_currentUsername!).catchError((e) {
@@ -140,15 +136,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void _signOut(BuildContext context) async {
     try {
       await ServiceLocator.auth.logout();
-
-      // Navigator'ı doğrudan kullanmak yerine, global navigator key'i kullanın
       ServiceLocator.navigator.pushAndRemoveUntil(
         MaterialPageRoute(
             builder: (context) => LoginPage(authService: ServiceLocator.auth)),
         (route) => false,
       );
-    } catch (e) {
-      // Hata durumunda da login sayfasına yönlendir
+    } catch (_) {
       ServiceLocator.navigator.pushAndRemoveUntil(
         MaterialPageRoute(
             builder: (context) => LoginPage(authService: ServiceLocator.auth)),
@@ -181,7 +174,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openEditProfile() async {
-    // Önce kullanıcının oturum açık olup olmadığını kontrol et
     final isLoggedIn = await ServiceLocator.auth.isLoggedIn();
     if (!isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -190,8 +182,6 @@ class _ProfilePageState extends State<ProfilePage> {
           backgroundColor: Colors.red,
         ),
       );
-
-      // Kullanıcıyı login sayfasına yönlendir
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -211,9 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (updatedData != null) {
-      // Backend'den güncel verileri tekrar çek
       _loadProfile();
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profil başarıyla güncellendi'),
@@ -329,9 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 isVerified: _profileData?['is_verified'] ?? false,
                 isCurrentUser: _isCurrentUser,
                 onEditPhoto: _isCurrentUser ? _showPhotoUploadDialog : null,
-                onFollow: () {
-                  // Implement follow functionality
-                },
+                onFollow: () {},
                 mutualFollowers: [],
               ),
             ),

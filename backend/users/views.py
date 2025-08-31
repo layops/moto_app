@@ -1,13 +1,12 @@
+# users/views.py
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
-
 from django.contrib.auth import get_user_model
 from .serializers import (
     UserRegisterSerializer,
@@ -21,6 +20,7 @@ from .serializers import (
 from posts.models import Post
 from media.models import Media
 from events.models import Event
+from .services.supabase_service import SupabaseStorage
 
 User = get_user_model()
 
@@ -56,7 +56,7 @@ class UserLoginView(APIView):
 
 
 # -------------------------------
-# PROFILE IMAGE UPLOAD
+# PROFILE IMAGE UPLOAD (GÜNCELLENMİŞ)
 # -------------------------------
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -79,20 +79,48 @@ class ProfileImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Eski fotoğraf varsa sil
+        # Dosya tipi ve boyut kontrolü
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if file_obj.content_type not in allowed_types:
+            return Response(
+                {"error": "Geçersiz dosya formatı. Sadece JPEG, PNG, GIF veya WebP yükleyebilirsiniz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Dosya boyutu kontrolü (max 5MB)
+        if file_obj.size > 5 * 1024 * 1024:
+            return Response(
+                {"error": "Dosya boyutu 5MB'ı aşamaz"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Eski fotoğraf varsa Supabase'den sil
+        storage = SupabaseStorage()
         if user.profile_picture:
-            user.profile_picture.delete(save=False)
+            storage.delete_profile_picture(user.profile_picture)
 
-        # Dosyayı kaydet
-        user.profile_picture = file_obj
-        user.save()
+        try:
+            # Yeni dosyayı Supabase'e yükle
+            image_url = storage.upload_profile_picture(file_obj, user.id)
+            
+            # Kullanıcı profilini güncelle
+            user.profile_picture = image_url
+            user.save()
 
-        # Güncel kullanıcı verilerini dön
-        serializer = UserSerializer(user, context={'request': request})
-        return Response({
-            "message": "Profil fotoğrafı başarıyla güncellendi",
-            "user": serializer.data
-        }, status=status.HTTP_200_OK)
+            # Güncel kullanıcı verilerini dön
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                "message": "Profil fotoğrafı başarıyla güncellendi",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Dosya yüklenirken bir hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 # -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
@@ -177,6 +205,8 @@ class UserProfileView(APIView):
         data = request.data.copy()
         if 'username' in data:
             del data['username']
+        if 'email' in data:
+            del data['email']
 
         serializer = UserSerializer(user, data=data, partial=partial, context={'request': request})
         if serializer.is_valid():

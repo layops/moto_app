@@ -199,3 +199,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://xxxx.supabase.co')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', 'your-service-role-key')
+SUPABASE_BUCKET = "profile_pictures"
