@@ -15,6 +15,7 @@ class CustomUser(AbstractUser):
         related_name='followers',
         blank=True
     )
+    
 
     # Yeni profil alanları
     bio = models.TextField(blank=True, null=True, verbose_name="Hakkımda")
