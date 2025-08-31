@@ -17,8 +17,9 @@ class ProfileService {
       ),
     });
 
+    // URL'deki 'users/$username/' kısmını kaldırın veya backend'e uygun şekilde düzenleyin
     return await _apiClient.post(
-      'users/$username/profile/upload-photo/',
+      'profile/upload-photo/', // Doğru endpoint
       formData,
     );
   }

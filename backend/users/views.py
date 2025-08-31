@@ -57,15 +57,14 @@ class UserLoginView(APIView):
 
 # -------------------------------
 # PROFILE IMAGE UPLOAD
-# -------------------------------
-# views.py
+# -------------------------------# views.py
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        file_obj = request.FILES.get('profile_image')  # 'profile_picture' yerine 'profile_image'
+        file_obj = request.FILES.get('profile_image')  # Doğru field adı
         
         if not file_obj:
             return Response({"error": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,7 +87,6 @@ class ProfileImageUploadView(APIView):
             "message": "Profile image updated successfully.",
             "user": serializer.data
         }, status=status.HTTP_200_OK)
-
 # -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
