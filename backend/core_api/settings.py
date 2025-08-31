@@ -8,8 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Güvenlik ve Debug
 # ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 # ------------------------------
 # Allowed Hosts
 # ------------------------------
@@ -203,7 +202,6 @@ CHANNEL_LAYERS = {
 # ------------------------------
 # Supabase Ayarları
 # ------------------------------
-SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://xxxx.supabase.co')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', 'your-service-role-key')
-SUPABASE_BUCKET = "profile_pictures"
-
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')

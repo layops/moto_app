@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import get_user_model, authenticate, login
+from django.contrib.auth import get_user_model, authenticate
 from .serializers import (
     UserRegisterSerializer,
     UserLoginSerializer,
@@ -47,21 +47,39 @@ class UserLoginView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
-        serializer = UserLoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token, created = Token.objects.get_or_create(user=user)
-            
-            # Kullanıcıyı login et (session için)
-            login(request, user)
-            
-            return Response({
-                'token': token.key, 
-                'username': user.username,
-                'user_id': user.id,
-                'email': user.email
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Doğrudan authenticate kullanarak basitleştirilmiş login
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
+            return Response(
+                {'error': 'Kullanıcı adı ve şifre gereklidir'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Kullanıcıyı doğrudan authenticate et
+        user = authenticate(username=username, password=password)
+        
+        if user is not None:
+            if user.is_active:
+                # Token oluştur veya al
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({
+                    'token': token.key, 
+                    'username': user.username,
+                    'user_id': user.id,
+                    'email': user.email
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {'error': 'Hesap devre dışı bırakılmış'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                {'error': 'Geçersiz kullanıcı adı veya şifre'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 # -------------------------------
