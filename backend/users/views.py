@@ -20,7 +20,7 @@ from .serializers import (
 from posts.models import Post
 from media.models import Media
 from events.models import Event
-from .services.supabase_service import SupabaseStorage
+from .supabase_service import SupabaseStorage
 
 User = get_user_model()
 
