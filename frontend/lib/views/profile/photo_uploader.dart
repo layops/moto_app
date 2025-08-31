@@ -68,10 +68,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   }
 
   Future<void> _uploadImage() async {
-    if (_image == null) {
-      _showMessage('Lütfen önce bir fotoğraf seçin');
-      return;
-    }
+    if (_image == null) return;
 
     setState(() {
       _isUploading = true;
@@ -79,7 +76,6 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
     });
 
     try {
-      // USERNAME PARAMETRESİ KALDIRILDI
       final response = await ServiceLocator.profile.uploadProfileImage(_image!);
 
       if (!mounted) return;
@@ -87,31 +83,25 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
 
-        if (responseData is Map<String, dynamic>) {
-          // Yeni profil verilerini local storage'a kaydet
-          if (responseData.containsKey('user')) {
-            final userData = responseData['user'];
-            await ServiceLocator.storage.saveProfileData(userData);
-          }
+        // Yeni profil verilerini güncelle
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('user')) {
+          final userData = responseData['user'];
+          await ServiceLocator.storage.saveProfileData(userData);
 
           // UI'ı güncelle
-          widget.onUploadSuccess?.call(responseData);
+          widget.onUploadSuccess?.call(userData);
         }
 
         _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
 
+        // Sayfayı yeniden yüklemek için kısa bir gecikme
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) Navigator.pop(context);
         });
-      } else {
-        _showMessage(
-          'Yükleme hatası: ${response.data?.toString() ?? 'Bilinmeyen hata'}',
-        );
       }
     } catch (e) {
-      if (mounted) {
-        _showMessage('Profil fotoğrafı yükleme hatası: ${e.toString()}');
-      }
+      _showMessage('Profil fotoğrafı yükleme hatası: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() {

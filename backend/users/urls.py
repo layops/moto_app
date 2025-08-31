@@ -18,8 +18,7 @@ urlpatterns = [
     path('login/', UserLoginView.as_view(), name='user-login'),
 
     # Profile Image Upload
-    path('profile/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
-
+    path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
     # Follow / Followers / Following
     path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle'),
     path('<str:username>/followers/', FollowersListView.as_view(), name='followers-list'),

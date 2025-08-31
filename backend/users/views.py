@@ -62,12 +62,22 @@ class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, username, *args, **kwargs):
+        # URL'de belirtilen kullanıcı adı ile kimlik doğrulaması yap
+        if request.user.username != username:
+            return Response(
+                {"error": "Bu işlem için yetkiniz yok"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         user = request.user
-        file_obj = request.FILES.get('profile_picture')  # 👈 Model alan adı ile aynı olmalı
+        file_obj = request.FILES.get('profile_picture')
 
         if not file_obj:
-            return Response({"error": "Profil fotoğrafı yüklenmedi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Profil fotoğrafı yüklenmedi"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Eski fotoğraf varsa sil
         if user.profile_picture:
@@ -83,8 +93,6 @@ class ProfileImageUploadView(APIView):
             "message": "Profil fotoğrafı başarıyla güncellendi",
             "user": serializer.data
         }, status=status.HTTP_200_OK)
-
-
 # -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
