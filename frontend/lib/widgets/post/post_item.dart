@@ -8,12 +8,17 @@ class PostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // API'den gelen veri yapısına göre düzenleme
-    final authorData = post['author'] as Map<String, dynamic>?;
+    // Güvenli tip kontrolü
+    final authorData = post['author'] is Map<String, dynamic>
+        ? post['author'] as Map<String, dynamic>
+        : null;
+    final routeData = post['route'] is Map<String, dynamic>
+        ? post['route'] as Map<String, dynamic>
+        : {};
+
     final username = authorData?['username']?.toString() ?? 'Bilinmeyen';
     final avatarUrl = authorData?['avatar']?.toString();
     final imageUrl = post['image']?.toString();
-    final routeData = post['route'] as Map<String, dynamic>? ?? {};
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -26,7 +31,7 @@ class PostItem extends StatelessWidget {
           children: [
             // Rota başlığı
             Text(
-              routeData['title'] ?? 'Rota İsmi',
+              routeData['title']?.toString() ?? 'Rota İsmi',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -40,14 +45,14 @@ class PostItem extends StatelessWidget {
                 const Icon(Icons.add_road_sharp, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  routeData['distance'] ?? '0 km',
+                  routeData['distance']?.toString() ?? '0 km',
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
                 const Icon(Icons.timer, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  routeData['duration'] ?? '0s',
+                  routeData['duration']?.toString() ?? '0s',
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
@@ -55,14 +60,16 @@ class PostItem extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getDifficultyColor(routeData['difficulty']),
+                    color: _getDifficultyColor(
+                        routeData['difficulty']?.toString()),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    routeData['difficulty'] ?? 'Bilinmiyor',
+                    routeData['difficulty']?.toString() ?? 'Bilinmiyor',
                     style: TextStyle(
                       fontSize: 12,
-                      color: _getDifficultyTextColor(routeData['difficulty']),
+                      color: _getDifficultyTextColor(
+                          routeData['difficulty']?.toString()),
                     ),
                   ),
                 ),
@@ -88,16 +95,12 @@ class PostItem extends StatelessWidget {
                     children: [
                       Text(
                         username,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '${post['bikeModel'] ?? 'Motosiklet'} • ${post['timeAgo'] ?? 'Şimdi'}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        '${post['bikeModel']?.toString() ?? 'Motosiklet'} • ${post['timeAgo']?.toString() ?? 'Şimdi'}',
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -182,13 +185,5 @@ class PostItem extends StatelessWidget {
       default:
         return Colors.grey[800]!;
     }
-  }
-
-  // ignore: unused_element
-  void _openProfile(BuildContext context, String username) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ProfilePage(username: username)),
-    );
   }
 }
