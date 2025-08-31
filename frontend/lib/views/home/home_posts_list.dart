@@ -61,14 +61,16 @@ class HomePostsList extends StatelessWidget {
 
           // Eksik author bilgilerini doldur
           if (authorMap['username'] == null) {
-            authorMap['username'] = 'Bilinmeyen';
+            authorMap['username'] = post['username'] ?? 'Bilinmeyen';
           }
           if (authorMap['display_name'] == null) {
-            authorMap['display_name'] = authorMap['username'];
+            authorMap['display_name'] =
+                post['display_name'] ?? authorMap['username'];
           }
-          if (authorMap['profile_photo'] == null &&
-              authorMap['avatar'] != null) {
-            authorMap['profile_photo'] = authorMap['avatar'];
+          if (authorMap['profile_photo'] == null) {
+            // Check multiple possible sources for profile photo
+            authorMap['profile_photo'] =
+                post['profile_photo'] ?? post['avatar'] ?? authorMap['avatar'];
           }
 
           post['author'] = authorMap;

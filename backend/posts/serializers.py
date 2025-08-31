@@ -6,7 +6,7 @@ from users.serializers import UserSerializer
 from groups.models import Group
 
 class PostSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)  # Nested serializer ile detaylı user bilgisi
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
 
     class Meta:
@@ -20,9 +20,11 @@ class PostSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def to_representation(self, instance):
+        """
+        Eğer context'te 'only_content' flag'i varsa sadece content dön.
+        Aksi halde tüm alanları dön.
+        """
         representation = super().to_representation(instance)
-        
         if self.context.get('only_content'):
             return representation.get('content')
-        
         return representation

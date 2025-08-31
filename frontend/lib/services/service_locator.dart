@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase/supabase.dart' as supabase_client; // Değişiklik burada
+import 'package:supabase/supabase.dart' as supabase_client;
 import 'storage/local_storage.dart';
 import 'http/api_client.dart';
 import 'auth/auth_service.dart';
@@ -29,7 +29,7 @@ class ServiceLocator {
   late final FollowService _followService;
   late final PostService _postService;
   late final NotificationsService _notificationService;
-  late final supabase_client.SupabaseClient _supabaseClient; // Yeni ekleme
+  late final supabase_client.SupabaseClient _supabaseClient;
 
   // Private constructor
   ServiceLocator._internal();
@@ -54,7 +54,7 @@ class ServiceLocator {
     try {
       final instance = _instance;
 
-      // 0. Initialize Supabase - Manuel olarak
+      // 0. Initialize Supabase
       instance._supabaseClient = supabase_client.SupabaseClient(
         'https://mosiqkyyribzlvdvedet.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NDM0NzUsImV4cCI6MjA3MjIxOTQ3NX0.x3_gZOXMbxNd_KAj_UxRif04hwpZ46aARB_ocZZIIbM',
@@ -134,7 +134,7 @@ class ServiceLocator {
       _instance._notificationService;
   static LocalStorage get storage => _instance._localStorage;
 
-  // Supabase helper - Güncellenmiş
+  // Supabase helper
   static supabase_client.SupabaseClient get supabaseClient =>
       _instance._supabaseClient;
 

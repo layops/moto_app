@@ -42,8 +42,20 @@ class _HomePageState extends State<HomePage> {
         // Debug için gelen postları yazdır
         print('Fetched posts: $fetchedPosts');
 
+        // Process posts to get user details for author IDs
+        final updatedPosts = await Future.wait(fetchedPosts.map((post) async {
+          if (post['author'] is int) {
+            final userDetails = await _fetchUserDetails(post['author']);
+            return {
+              ...post,
+              'author': userDetails,
+            };
+          }
+          return post;
+        }));
+
         setState(() {
-          posts = fetchedPosts;
+          posts = updatedPosts;
         });
       }
     } catch (e) {
@@ -54,6 +66,15 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         loading = false;
       });
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchUserDetails(int userId) async {
+    try {
+      return await ServiceLocator.user.fetchUser(userId);
+    } catch (e) {
+      debugPrint('Error fetching user $userId: $e');
+      return {};
     }
   }
 

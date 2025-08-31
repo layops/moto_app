@@ -18,8 +18,10 @@ class PostItem extends StatelessWidget {
         post['username']?.toString() ??
         'Bilinmeyen';
 
+    /// Profil fotoğrafı fallback kontrolü
     final profilePhoto = authorData['profile_photo']?.toString() ??
-        post['profile_photo']?.toString();
+        post['profile_photo']?.toString() ??
+        post['avatar']?.toString();
 
     final displayName = authorData['display_name']?.toString() ??
         post['display_name']?.toString() ??
@@ -91,6 +93,13 @@ class PostItem extends StatelessWidget {
                   backgroundImage:
                       profilePhoto != null && profilePhoto.isNotEmpty
                           ? NetworkImage(profilePhoto)
+                          : null,
+                  onBackgroundImageError:
+                      profilePhoto != null && profilePhoto.isNotEmpty
+                          ? (exception, stackTrace) {
+                              debugPrint(
+                                  'Profile photo loading failed: $exception');
+                            }
                           : null,
                   child: profilePhoto == null || profilePhoto.isEmpty
                       ? const Icon(Icons.person, size: 20)

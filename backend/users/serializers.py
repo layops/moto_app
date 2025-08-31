@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model, authenticate
 from posts.models import Post
 from events.models import Event
 from media.models import Media  
-import os
 from django.conf import settings
+import re
 
 User = get_user_model()
 
@@ -34,7 +34,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         )
         return user
 
-
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -42,7 +41,6 @@ class UserLoginSerializer(serializers.Serializer):
     def validate(self, data):
         username = data.get('username')
         password = data.get('password')
-        
         if username and password:
             user = authenticate(username=username, password=password)
             if user:
@@ -83,18 +81,15 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.following.count()
 
     def get_profile_photo_url(self, obj):
+        """
+        Profil fotoğrafını tam URL olarak döner
+        """
         if obj.profile_picture:
-            # Eğer profile_picture zaten tam bir URL ise
-            if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
+            if obj.profile_picture.startswith(('http://', 'https://')):
                 return obj.profile_picture
-            
-            # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                # MEDIA_URL ile birleştirerek tam URL oluştur
                 return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
-            
-            # Request yoksa BASE_URL ve MEDIA_URL'i kullan
             base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
             media_url = getattr(settings, 'MEDIA_URL', '/media/')
             return f"{base_url}{media_url}{obj.profile_picture}"
@@ -102,7 +97,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_website(self, value):
         if value and value.strip():
-            import re
             url_pattern = re.compile(
                 r'^(https?://)?'
                 r'(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})'
@@ -139,29 +133,27 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_profile_photo_url(self, obj):
         if obj.profile_picture:
-            # Eğer profile_picture zaten tam bir URL ise
-            if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
+            if obj.profile_picture.startswith(('http://', 'https://')):
                 return obj.profile_picture
-            
-            # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                # MEDIA_URL ile birleştirerek tam URL oluştur
                 return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
-            
-            # Request yoksa BASE_URL ve MEDIA_URL'i kullan
             base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
             media_url = getattr(settings, 'MEDIA_URL', '/media/')
             return f"{base_url}{media_url}{obj.profile_picture}"
         return None
 
+
 # -------------------------------
 # Post Serializer
 # -------------------------------
 class PostSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)  # Nested user bilgisi
+
     class Meta:
         model = Post
         fields = ['id', 'content', 'created_at', 'author']
+
 
 # -------------------------------
 # Media Serializer

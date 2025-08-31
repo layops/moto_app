@@ -9,6 +9,23 @@ class UserService {
 
   UserService(this._apiClient, this._storage);
 
+  // Updated fetchUser method that works with your ApiClient
+  Future<Map<String, dynamic>> fetchUser(int userId) async {
+    try {
+      // Since ApiClient doesn't support headers parameter, we need to handle authentication differently
+      // Assuming ApiClient automatically handles authentication with stored token
+      final response = await _apiClient.get('/users/$userId');
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to fetch user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch user: $e');
+    }
+  }
+
   Future<Response> register({
     required String username,
     required String email,
