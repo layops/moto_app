@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
-import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class ProfilePhotoUploader extends StatefulWidget {
   final Function(File)? onImageSelected;
@@ -35,16 +34,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       );
 
       if (pickedFile != null && mounted) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
-
-        if (widget.onImageSelected != null) {
-          widget.onImageSelected!(_image!);
-        }
+        setState(() => _image = File(pickedFile.path));
+        widget.onImageSelected?.call(_image!);
       }
     } catch (e) {
-      _showMessage('Resim seçilirken hata oluştu: ${e.toString()}');
+      _showMessage('Resim seçilirken hata oluştu: $e');
     }
   }
 
@@ -58,16 +52,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       );
 
       if (pickedFile != null && mounted) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
-
-        if (widget.onImageSelected != null) {
-          widget.onImageSelected!(_image!);
-        }
+        setState(() => _image = File(pickedFile.path));
+        widget.onImageSelected?.call(_image!);
       }
     } catch (e) {
-      _showMessage('Fotoğraf çekilirken hata oluştu: ${e.toString()}');
+      _showMessage('Fotoğraf çekilirken hata oluştu: $e');
     }
   }
 
@@ -77,49 +66,32 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       return;
     }
 
-    setState(() {
-      _isUploading = true;
-      widget.onUploadStateChanged?.call(true);
-    });
+    setState(() => _isUploading = true);
+    widget.onUploadStateChanged?.call(true);
 
     try {
-      final currentUser = await ServiceLocator.user.getCurrentUsername();
-      if (currentUser == null) throw Exception('Kullanıcı bilgisi bulunamadı');
-
-      final response = await ServiceLocator.profile.uploadProfileImage(
-        _image!,
-        currentUser,
-      );
+      final response = await ServiceLocator.profile.uploadProfileImage(_image!);
 
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = response.data;
-
-        if (responseData is Map<String, dynamic> &&
-            responseData.containsKey('user')) {
-          final userData = responseData['user'];
-          widget.onUploadSuccess?.call(userData);
+        final data = response.data;
+        if (data is Map<String, dynamic> && data.containsKey('user')) {
+          widget.onUploadSuccess?.call(data['user']);
         }
-
         _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
-
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) Navigator.pop(context);
         });
       } else {
-        _showMessage(
-          'Yükleme hatası: ${response.data?.toString() ?? 'Bilinmeyen hata'}',
-        );
+        _showMessage('Yükleme hatası: ${response.data}');
       }
     } catch (e) {
-      if (mounted) _showMessage('Hata oluştu: ${e.toString()}');
+      _showMessage('Hata oluştu: $e');
     } finally {
       if (mounted) {
-        setState(() {
-          _isUploading = false;
-          widget.onUploadStateChanged?.call(false);
-        });
+        setState(() => _isUploading = false);
+        widget.onUploadStateChanged?.call(false);
       }
     }
   }
@@ -137,14 +109,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
     );
   }
 
-  void _removeImage() {
-    setState(() => _image = null);
-  }
+  void _removeImage() => setState(() => _image = null);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -163,11 +132,9 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
               child: ClipOval(
                 child: _image != null
                     ? Image.file(_image!, fit: BoxFit.cover)
-                    : Icon(
-                        Icons.account_circle,
+                    : Icon(Icons.account_circle,
                         size: 150,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
+                        color: theme.colorScheme.onSurface.withOpacity(0.5)),
               ),
             ),
             if (_image != null)
@@ -198,62 +165,57 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
             if (_image != null) _buildUploadButton(theme),
           ],
         ),
-        if (_isUploading) ...[
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            backgroundColor: theme.colorScheme.surface,
-            color: theme.colorScheme.primary,
+        if (_isUploading)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: LinearProgressIndicator(
+              backgroundColor: theme.colorScheme.surface,
+              color: theme.colorScheme.primary,
+            ),
           ),
-        ],
       ],
     );
   }
 
-  Widget _buildCameraButton(ThemeData theme) {
-    return ElevatedButton(
-      onPressed: _takePhoto,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child:
-          Icon(Icons.camera_alt, size: 24, color: theme.colorScheme.onPrimary),
-    );
-  }
+  Widget _buildCameraButton(ThemeData theme) => ElevatedButton(
+        onPressed: _takePhoto,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Icon(Icons.camera_alt,
+            size: 24, color: theme.colorScheme.onPrimary),
+      );
 
-  Widget _buildGalleryButton(ThemeData theme) {
-    return ElevatedButton(
-      onPressed: _pickImage,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Icon(Icons.photo_library,
-          size: 24, color: theme.colorScheme.onPrimary),
-    );
-  }
+  Widget _buildGalleryButton(ThemeData theme) => ElevatedButton(
+        onPressed: _pickImage,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Icon(Icons.photo_library,
+            size: 24, color: theme.colorScheme.onPrimary),
+      );
 
-  Widget _buildUploadButton(ThemeData theme) {
-    return ElevatedButton(
-      onPressed: _isUploading ? null : _uploadImage,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        backgroundColor: _isUploading
-            ? theme.colorScheme.surface.withOpacity(0.5)
-            : theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-      ),
-      child: _isUploading
-          ? SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.onPrimary,
-              ),
-            )
-          : Icon(Icons.cloud_upload, size: 24),
-    );
-  }
+  Widget _buildUploadButton(ThemeData theme) => ElevatedButton(
+        onPressed: _isUploading ? null : _uploadImage,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: _isUploading
+              ? theme.colorScheme.surface.withOpacity(0.5)
+              : theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+        ),
+        child: _isUploading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              )
+            : Icon(Icons.cloud_upload, size: 24),
+      );
 }
