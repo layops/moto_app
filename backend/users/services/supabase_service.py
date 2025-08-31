@@ -2,7 +2,6 @@ import os
 from supabase import create_client, Client
 from django.conf import settings
 import uuid
-from datetime import datetime
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import logging
 
@@ -29,20 +28,23 @@ class SupabaseStorage:
     
     def upload_profile_picture(self, file: InMemoryUploadedFile, user_id):
         try:
+            # Dosya uzantısını koru
             file_extension = file.name.split('.')[-1]
             filename = f"{user_id}_{uuid.uuid4().hex}.{file_extension}"
             file_path = f"profile_pictures/{filename}"
             
+            # Dosya objesi ile upload
             with file.open('rb') as f:
-                result = self.client.storage.from_(self.bucket).upload(
-                    file_path, f.read(), file_options={"content-type": file.content_type}
+                self.client.storage.from_(self.bucket).upload(
+                    file_path, f
                 )
             
+            # Public URL oluştur
             url = self.client.storage.from_(self.bucket).get_public_url(file_path)
             return url
             
         except Exception as e:
-            logger.error(f"Upload error: {str(e)}")
+            logger.error(f"Upload error: {str(e)}", exc_info=True)
             raise
     
     def delete_profile_picture(self, url):
@@ -53,5 +55,5 @@ class SupabaseStorage:
                 return True
             return False
         except Exception as e:
-            logger.error(f"Delete error: {str(e)}")
+            logger.error(f"Delete error: {str(e)}", exc_info=True)
             return False

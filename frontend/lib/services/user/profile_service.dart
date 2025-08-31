@@ -13,34 +13,31 @@ class ProfileService {
   /// Profil fotoğrafı yükleme
   Future<Response> uploadProfileImage(File imageFile) async {
     try {
-      // Kullanıcı adını al
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
         throw Exception('Kullanıcı adı bulunamadı');
       }
 
-      // Token al
       final token = await _tokenService.getToken();
       if (token == null) {
         throw Exception('Kullanıcı tokeni bulunamadı');
       }
 
-      // FormData hazırla
+      // Dosya uzantısını koru
+      final ext = imageFile.path.split('.').last;
+
       final formData = FormData.fromMap({
         'profile_picture': await MultipartFile.fromFile(
           imageFile.path,
-          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.$ext',
         ),
       });
 
-      // API isteği gönder
       return await _apiClient.post(
         'users/$username/upload-photo/',
         formData,
         options: Options(
-          headers: {
-            'Authorization': 'Token $token',
-          },
+          headers: {'Authorization': 'Token $token'},
         ),
       );
     } catch (e) {
@@ -55,7 +52,6 @@ class ProfileService {
       final response = await _apiClient.get('users/$username/profile/');
       final data = response.data as Map<String, dynamic>;
 
-      // Backend'den gelen alan adı 'profile_picture'
       if (data.containsKey('profile_picture') &&
           data['profile_picture'] != null) {
         data['profile_photo'] = data['profile_picture'];
@@ -85,9 +81,7 @@ class ProfileService {
         'users/$username/profile/',
         profileData,
         options: Options(
-          headers: {
-            'Authorization': 'Token $token',
-          },
+          headers: {'Authorization': 'Token $token'},
         ),
       );
     } catch (e) {
