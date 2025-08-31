@@ -57,36 +57,34 @@ class UserLoginView(APIView):
 
 # -------------------------------
 # PROFILE IMAGE UPLOAD
-# -------------------------------# views.py
+# -------------------------------
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        file_obj = request.FILES.get('profile_image')  # Doğru field adı
-        
+        file_obj = request.FILES.get('profile_picture')  # 👈 Model alan adı ile aynı olmalı
+
         if not file_obj:
-            return Response({"error": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Profil fotoğrafı yüklenmedi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Dosya adını kullanıcı adına göre özelleştir
-        file_extension = file_obj.name.split('.')[-1]
-        file_name = f"profile_{user.username}.{file_extension}"
-        file_obj.name = file_name
-
-        # Mevcut profil fotoğrafını sil (isteğe bağlı)
+        # Eski fotoğraf varsa sil
         if user.profile_picture:
             user.profile_picture.delete(save=False)
 
+        # Dosyayı kaydet
         user.profile_picture = file_obj
         user.save()
 
-        # Güncel kullanıcı bilgilerini döndür
+        # Güncel kullanıcı verilerini dön
         serializer = UserSerializer(user, context={'request': request})
         return Response({
-            "message": "Profile image updated successfully.",
+            "message": "Profil fotoğrafı başarıyla güncellendi",
             "user": serializer.data
         }, status=status.HTTP_200_OK)
+
+
 # -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
@@ -165,11 +163,9 @@ class UserProfileView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Sadece kullanıcı kendi profilini güncelleyebilir
         if user != request.user:
             return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Request data'dan username'i kaldır (eğer varsa)
         data = request.data.copy()
         if 'username' in data:
             del data['username']
@@ -210,7 +206,6 @@ class UserMediaView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Kullanıcının yüklediği tüm medyaları getir
         media_files = Media.objects.filter(uploaded_by=user)
         serializer = MediaSerializer(media_files, many=True, context={'request': request})
         return Response(serializer.data)
@@ -228,13 +223,9 @@ class UserEventsView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Kullanıcının organize ettiği etkinlikler
         organized_events = Event.objects.filter(organizer=user)
-        # Kullanıcının katıldığı etkinlikler
         participated_events = Event.objects.filter(participants=user)
-        # İki queryset'i birleştir
         events = organized_events | participated_events
-        # Tekrar eden kayıtları kaldır ve sırala
         events = events.distinct().order_by('start_time')
 
         serializer = EventSerializer(events, many=True, context={'request': request})

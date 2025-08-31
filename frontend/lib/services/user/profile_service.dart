@@ -11,38 +11,28 @@ class ProfileService {
 
   Future<Response> uploadProfileImage(File imageFile, String username) async {
     final formData = FormData.fromMap({
-      'profile_image': await MultipartFile.fromFile(
+      'profile_picture': await MultipartFile.fromFile(
         imageFile.path,
         filename: 'profile_$username.jpg',
       ),
     });
 
-    // URL'deki 'users/$username/' kısmını kaldırın veya backend'e uygun şekilde düzenleyin
     return await _apiClient.post(
-      'profile/upload-photo/', // Doğru endpoint
+      'profile/upload-photo/',
       formData,
     );
   }
 
-// profile_service.dart
-// profile_service.dart
   Future<Response> updateProfile(Map<String, dynamic> profileData) async {
     try {
       final username = await _tokenService.getUsernameFromToken();
-      if (username == null) {
-        final currentUsername = await _tokenService.getCurrentUsername();
-        if (currentUsername == null) {
-          throw Exception(
-              'Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
-        }
-        return await _apiClient.put(
-          'users/$currentUsername/profile/',
-          profileData,
-        );
+      final currentUsername =
+          username ?? await _tokenService.getCurrentUsername();
+      if (currentUsername == null) {
+        throw Exception('Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
       }
-
       return await _apiClient.put(
-        'users/$username/profile/',
+        'users/$currentUsername/profile/',
         profileData,
       );
     } catch (e) {
@@ -84,14 +74,12 @@ class ProfileService {
   Future<Map<String, dynamic>> getCurrentUserProfile() async {
     try {
       final username = await _tokenService.getUsernameFromToken();
-      if (username == null) {
-        final currentUsername = await _tokenService.getCurrentUsername();
-        if (currentUsername == null) {
-          throw Exception('Kullanıcı adı bulunamadı');
-        }
-        return await getProfile(currentUsername);
+      final currentUsername =
+          username ?? await _tokenService.getCurrentUsername();
+      if (currentUsername == null) {
+        throw Exception('Kullanıcı adı bulunamadı');
       }
-      return await getProfile(username);
+      return await getProfile(currentUsername);
     } catch (e) {
       print('Mevcut kullanıcı profili getirme hatası: $e');
       rethrow;

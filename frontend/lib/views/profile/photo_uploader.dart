@@ -79,9 +79,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
 
     setState(() {
       _isUploading = true;
-      if (widget.onUploadStateChanged != null) {
-        widget.onUploadStateChanged!(true);
-      }
+      widget.onUploadStateChanged?.call(true);
     });
 
     try {
@@ -98,24 +96,16 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
 
-        // Backend'den gelen güncel kullanıcı verilerini işle
         if (responseData is Map<String, dynamic> &&
             responseData.containsKey('user')) {
           final userData = responseData['user'];
-
-          // Profil sayfasını yenilemek için callback çağır
-          if (widget.onUploadSuccess != null) {
-            widget.onUploadSuccess!(userData);
-          }
+          widget.onUploadSuccess?.call(userData);
         }
 
         _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
 
-        // Dialog'u kapat ve profil sayfasını yenile
         Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.pop(context);
-          }
+          if (mounted) Navigator.pop(context);
         });
       } else {
         _showMessage(
@@ -123,16 +113,12 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        _showMessage('Hata oluştu: ${e.toString()}');
-      }
+      if (mounted) _showMessage('Hata oluştu: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() {
           _isUploading = false;
-          if (widget.onUploadStateChanged != null) {
-            widget.onUploadStateChanged!(false);
-          }
+          widget.onUploadStateChanged?.call(false);
         });
       }
     }
@@ -152,9 +138,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   }
 
   void _removeImage() {
-    setState(() {
-      _image = null;
-    });
+    setState(() => _image = null);
   }
 
   @override
