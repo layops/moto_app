@@ -35,14 +35,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       );
 
       if (pickedFile != null && mounted) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
-
+        setState(() => _image = File(pickedFile.path));
         widget.onImageSelected?.call(_image!);
       }
     } catch (e) {
-      _showMessage('Resim seçilirken hata oluştu: ${e.toString()}');
+      _showMessage('Resim seçilirken hata oluştu: $e');
     }
   }
 
@@ -56,14 +53,11 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       );
 
       if (pickedFile != null && mounted) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
-
+        setState(() => _image = File(pickedFile.path));
         widget.onImageSelected?.call(_image!);
       }
     } catch (e) {
-      _showMessage('Fotoğraf çekilirken hata oluştu: ${e.toString()}');
+      _showMessage('Fotoğraf çekilirken hata oluştu: $e');
     }
   }
 
@@ -82,26 +76,17 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
-
-        // Yeni profil verilerini güncelle
         if (responseData is Map<String, dynamic> &&
             responseData.containsKey('user')) {
           final userData = responseData['user'];
           await ServiceLocator.storage.saveProfileData(userData);
-
-          // UI'ı güncelle
           widget.onUploadSuccess?.call(userData);
         }
 
         _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
-
-        // Sayfayı yeniden yüklemek için kısa bir gecikme
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) Navigator.pop(context);
-        });
       }
     } catch (e) {
-      _showMessage('Profil fotoğrafı yükleme hatası: ${e.toString()}');
+      _showMessage('Profil fotoğrafı yükleme hatası: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -126,9 +111,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
   }
 
   void _removeImage() {
-    setState(() {
-      _image = null;
-    });
+    setState(() => _image = null);
   }
 
   @override
@@ -145,19 +128,14 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
+                border: Border.all(color: theme.colorScheme.primary, width: 2),
               ),
               child: ClipOval(
                 child: _image != null
                     ? Image.file(_image!, fit: BoxFit.cover)
-                    : Icon(
-                        Icons.account_circle,
+                    : Icon(Icons.account_circle,
                         size: 150,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      ),
+                        color: theme.colorScheme.onSurface.withOpacity(0.5)),
               ),
             ),
             if (_image != null)
