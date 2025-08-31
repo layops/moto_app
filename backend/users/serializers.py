@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model, authenticate
 from posts.models import Post
 from events.models import Event
 from media.models import Media  
+import os
+from django.conf import settings
 
 User = get_user_model()
 
@@ -59,7 +61,7 @@ class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     display_name = serializers.CharField(source='first_name', required=False, allow_blank=True)
-    profile_photo_url = serializers.SerializerMethodField()  # Yeni alan eklendi
+    profile_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -82,10 +84,17 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_profile_photo_url(self, obj):
         if obj.profile_picture:
+            # Eğer profile_picture bir URL ise direkt döndür
+            if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
+                return obj.profile_picture
+            
+            # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.profile_picture.url)
-            return obj.profile_picture.url
+                return request.build_absolute_uri(obj.profile_picture)
+            
+            # Request yoksa settings'den base URL'yi kullan
+            return f"{settings.BASE_URL}{obj.profile_picture}"
         return None
 
     def validate_website(self, value):
@@ -113,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
-    profile_photo_url = serializers.SerializerMethodField()  # Yeni alan eklendi
+    profile_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -127,10 +136,17 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_profile_photo_url(self, obj):
         if obj.profile_picture:
+            # Eğer profile_picture bir URL ise direkt döndür
+            if isinstance(obj.profile_picture, str) and obj.profile_picture.startswith(('http://', 'https://')):
+                return obj.profile_picture
+            
+            # Eğer relative path ise tam URL'yi oluştur
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.profile_picture.url)
-            return obj.profile_picture.url
+                return request.build_absolute_uri(obj.profile_picture)
+            
+            # Request yoksa settings'den base URL'yi kullan
+            return f"{settings.BASE_URL}{obj.profile_picture}"
         return None
 
 # -------------------------------
