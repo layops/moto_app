@@ -7,11 +7,13 @@ import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 class ProfilePhotoUploader extends StatefulWidget {
   final Function(File)? onImageSelected;
   final Function(bool)? onUploadStateChanged;
+  final Function(Map<String, dynamic>)? onUploadSuccess;
 
   const ProfilePhotoUploader({
     super.key,
     this.onImageSelected,
     this.onUploadStateChanged,
+    this.onUploadSuccess,
   });
 
   @override
@@ -94,7 +96,27 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data;
+
+        // Backend'den gelen güncel kullanıcı verilerini işle
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('user')) {
+          final userData = responseData['user'];
+
+          // Profil sayfasını yenilemek için callback çağır
+          if (widget.onUploadSuccess != null) {
+            widget.onUploadSuccess!(userData);
+          }
+        }
+
         _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
+
+        // Dialog'u kapat ve profil sayfasını yenile
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
       } else {
         _showMessage(
           'Yükleme hatası: ${response.data?.toString() ?? 'Bilinmeyen hata'}',

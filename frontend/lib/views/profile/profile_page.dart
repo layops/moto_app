@@ -351,13 +351,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      floatingActionButton: _isCurrentUser
-          ? FloatingActionButton(
-              heroTag: UniqueKey(),
-              onPressed: _showPhotoUploadDialog,
-              child: const Icon(Icons.camera_alt),
-            )
-          : null,
     );
   }
 }
