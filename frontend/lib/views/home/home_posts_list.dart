@@ -28,52 +28,14 @@ class HomePostsList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: posts.length,
         itemBuilder: (context, index) {
-          final originalPost = posts[index];
+          final post = posts[index] as Map<String, dynamic>;
 
-          // Önce post verisini güvenli bir şekilde kopyala
-          final Map<String, dynamic> post = {};
+          // Author zaten backend'den nested serializer ile geliyor
+          final authorData = post['author'] is Map<String, dynamic>
+              ? post['author'] as Map<String, dynamic>
+              : {};
 
-          if (originalPost is Map<String, dynamic>) {
-            post.addAll(originalPost);
-          } else {
-            // Eğer post bir Map değilse, içeriği 'content' alanına koy
-            post['content'] = originalPost.toString();
-          }
-
-          // Debug için post verisini yazdır
-          print('Post data: $post');
-
-          // Author bilgisini güvenli şekilde işle
-          dynamic authorData =
-              post['author'] ?? post['user']; // 'author' veya 'user' anahtarı
-          Map<String, dynamic> authorMap = {};
-
-          if (authorData is Map<String, dynamic>) {
-            authorMap.addAll(authorData);
-          } else if (authorData is int) {
-            // Author ID olarak geliyorsa, burada kullanıcı bilgilerini çekmemiz gerekebilir
-            authorMap['id'] = authorData;
-            authorMap['username'] = 'Kullanıcı $authorData';
-            print('Author ID olarak geldi: $authorData');
-          } else if (authorData != null) {
-            print('Beklenmeyen author veri türü: ${authorData.runtimeType}');
-          }
-
-          // Eksik author bilgilerini doldur
-          if (authorMap['username'] == null) {
-            authorMap['username'] = post['username'] ?? 'Bilinmeyen';
-          }
-          if (authorMap['display_name'] == null) {
-            authorMap['display_name'] =
-                post['display_name'] ?? authorMap['username'];
-          }
-          if (authorMap['profile_photo'] == null) {
-            // Check multiple possible sources for profile photo
-            authorMap['profile_photo'] =
-                post['profile_photo'] ?? post['avatar'] ?? authorMap['avatar'];
-          }
-
-          post['author'] = authorMap;
+          post['author'] = authorData;
 
           return PostItem(post: post);
         },

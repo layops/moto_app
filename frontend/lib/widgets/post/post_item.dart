@@ -6,6 +6,7 @@ class PostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Author verisi artık nested UserSerializer ile geliyor
     final authorData = post['author'] is Map<String, dynamic>
         ? post['author'] as Map<String, dynamic>
         : {};
@@ -18,13 +19,14 @@ class PostItem extends StatelessWidget {
         post['username']?.toString() ??
         'Bilinmeyen';
 
-    /// Profil fotoğrafı fallback kontrolü
-    final profilePhoto = authorData['profile_photo']?.toString() ??
+    /// Profil fotoğrafı backend'den gelen profile_photo_url ile alınacak
+    final profilePhoto = authorData['profile_photo_url']?.toString() ??
+        authorData['profile_picture']?.toString() ??
         post['profile_photo']?.toString() ??
         post['avatar']?.toString();
 
     final displayName = authorData['display_name']?.toString() ??
-        post['display_name']?.toString() ??
+        authorData['first_name']?.toString() ??
         username;
 
     final imageUrl = post['image']?.toString();
