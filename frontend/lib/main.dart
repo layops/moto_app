@@ -17,7 +17,7 @@ import 'package:motoapp_frontend/views/map/map_page.dart';
 import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
-import 'package:motoapp_frontend/views/notifications/notifications_page.dart'; // Yeni ekledik
+import 'package:motoapp_frontend/views/notifications/notifications_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,29 +85,6 @@ class MotoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final AuthService authService = ServiceLocator.auth;
 
-    final List<Widget> pages = [
-      const HomePage(),
-      const MapPage(),
-      const GroupsPage(),
-      const EventsPage(),
-      // ProfilePage için username alınacak
-      FutureBuilder<String?>(
-        future: ServiceLocator.token.getUsernameFromToken(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final username = snapshot.data ?? 'Kullanıcı';
-          return ProfilePage(username: username);
-        },
-      ),
-    ];
-
-    debugPrint("Uygulama başlatılıyor. Tanımlanan sayfalar:");
-    for (int i = 0; i < pages.length; i++) {
-      debugPrint("Index $i: ${pages[i].runtimeType}");
-    }
-
     return ScreenUtilInit(
       designSize: const Size(360, 690),
       minTextAdapt: true,
@@ -119,12 +96,10 @@ class MotoApp extends StatelessWidget {
               builder: (context, snapshot) {
                 final isAuthenticated = snapshot.hasData;
 
-                final homeScreen = isAuthenticated
-                    ? MainWrapper(
-                        pages: pages,
-                        navItems: NavigationItems.items,
-                      )
-                    : LoginPage(authService: authService);
+                // Ana sayfayı oluşturmadan önce biraz bekleyelim
+                Future.delayed(Duration.zero, () {
+                  // Navigator'ın hazır olmasını sağla
+                });
 
                 return MaterialApp(
                   title: 'Moto App',
@@ -139,9 +114,33 @@ class MotoApp extends StatelessWidget {
                     GlobalCupertinoLocalizations.delegate,
                     GlobalWidgetsLocalizations.delegate,
                   ],
-                  home: homeScreen,
+                  // Ana sayfa olarak doğrudan LoginPage veya MainWrapper veriyoruz
+                  home: isAuthenticated
+                      ? _buildMainWrapper()
+                      : LoginPage(authService: authService),
                   routes: {
+                    '/login': (context) =>
+                        LoginPage(authService: ServiceLocator.auth),
                     '/notifications': (context) => const NotificationsPage(),
+                    '/profile': (context) {
+                      final username =
+                          ModalRoute.of(context)!.settings.arguments as String?;
+                      return ProfilePage(username: username ?? 'Kullanıcı');
+                    },
+                  },
+                  // Navigator hatası için fallback
+                  onGenerateRoute: (settings) {
+                    return MaterialPageRoute(
+                      builder: (context) => isAuthenticated
+                          ? _buildMainWrapper()
+                          : LoginPage(authService: authService),
+                    );
+                  },
+                  onUnknownRoute: (settings) {
+                    return MaterialPageRoute(
+                      builder: (context) =>
+                          LoginPage(authService: ServiceLocator.auth),
+                    );
                   },
                   navigatorKey: ServiceLocator.navigatorKey,
                   scaffoldMessengerKey: ServiceLocator.scaffoldMessengerKey,
@@ -158,6 +157,31 @@ class MotoApp extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  // MainWrapper'ı ayrı bir metod olarak oluşturuyoruz
+  Widget _buildMainWrapper() {
+    final List<Widget> pages = [
+      const HomePage(),
+      const MapPage(),
+      const GroupsPage(),
+      const EventsPage(),
+      FutureBuilder<String?>(
+        future: ServiceLocator.token.getUsernameFromToken(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final username = snapshot.data ?? 'Kullanıcı';
+          return ProfilePage(username: username);
+        },
+      ),
+    ];
+
+    return MainWrapper(
+      pages: pages,
+      navItems: NavigationItems.items,
     );
   }
 }

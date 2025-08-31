@@ -9,25 +9,25 @@ class ProfileService {
 
   ProfileService(this._apiClient, this._tokenService);
 
-  /// Profil fotoğrafı yükleme
+  /// Profil fotoğrafı yükleme - ENDPOINT TAM DÜZELTİLDİ
   Future<Response> uploadProfileImage(File imageFile) async {
     try {
-      final username = await _tokenService.getUsernameFromToken();
-      if (username == null) {
-        throw Exception('Kullanıcı bilgisi bulunamadı');
-      }
-
       final formData = FormData.fromMap({
-        'profile_image': await MultipartFile.fromFile(
+        'profile_picture': await MultipartFile.fromFile(
           imageFile.path,
-          filename: 'profile_$username.jpg',
+          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
         ),
       });
 
-      // Backend endpoint tam olarak buraya eşleşmeli
+      // TAM DÜZELTİLMİŞ ENDPOINT - users/ öneki eklendi
       return await _apiClient.post(
-        'profile/upload-photo/',
+        'users/profile/upload-photo/', // users/ öneki eklendi
         formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
       );
     } catch (e) {
       print('Profil fotoğrafı yükleme hatası: $e');
@@ -35,7 +35,7 @@ class ProfileService {
     }
   }
 
-  // Mevcut profil bilgilerini getirme
+  /// Mevcut profil bilgilerini getirme
   Future<Map<String, dynamic>> getProfile(String username) async {
     try {
       final response = await _apiClient.get('users/$username/profile/');
@@ -46,7 +46,7 @@ class ProfileService {
     }
   }
 
-  // Profil güncelleme
+  /// Profil güncelleme
   Future<Response> updateProfile(Map<String, dynamic> profileData) async {
     try {
       final username = await _tokenService.getUsernameFromToken();

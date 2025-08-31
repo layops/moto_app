@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
+import 'package:motoapp_frontend/views/auth/login_page.dart'; // LoginPage import edildi
 import 'edit_profile_page.dart';
 import 'profile_drawer.dart';
 import 'profile_header.dart';
@@ -136,8 +137,24 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _signOut(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  void _signOut(BuildContext context) async {
+    try {
+      await ServiceLocator.auth.logout();
+
+      // Navigator'ı doğrudan kullanmak yerine, global navigator key'i kullanın
+      ServiceLocator.navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (context) => LoginPage(authService: ServiceLocator.auth)),
+        (route) => false,
+      );
+    } catch (e) {
+      // Hata durumunda da login sayfasına yönlendir
+      ServiceLocator.navigator.pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (context) => LoginPage(authService: ServiceLocator.auth)),
+        (route) => false,
+      );
+    }
   }
 
   void _showPhotoUploadDialog() {
@@ -175,7 +192,12 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       // Kullanıcıyı login sayfasına yönlendir
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => LoginPage(authService: ServiceLocator.auth)),
+        (route) => false,
+      );
       return;
     }
 

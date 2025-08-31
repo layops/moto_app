@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
@@ -45,5 +47,38 @@ class LocalStorage {
   Future<void> clearAuthData() async {
     await removeAuthToken();
     await removeCurrentUsername();
+  }
+
+  static const String _profileDataKey = 'profile_data';
+
+  Future<void> saveProfileData(Map<String, dynamic> profileData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_profileDataKey, json.encode(profileData));
+    } catch (e) {
+      print('Profil verileri kaydedilirken hata: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profileDataString = prefs.getString(_profileDataKey);
+      if (profileDataString != null) {
+        return json.decode(profileDataString) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      print('Profil verileri okunurken hata: $e');
+    }
+    return null;
+  }
+
+  Future<void> clearProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_profileDataKey);
+    } catch (e) {
+      print('Profil verileri temizlenirken hata: $e');
+    }
   }
 }

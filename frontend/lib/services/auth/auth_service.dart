@@ -159,6 +159,7 @@ class AuthService {
     await _storage.removeCurrentUsername();
     await _storage.clearRememberedUsername();
     await _storage.setRememberMe(false);
+    await _storage.clearProfileData(); // Profil verilerini de temizle
     _authStateController.add(false);
   }
 
