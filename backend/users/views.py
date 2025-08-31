@@ -99,14 +99,15 @@ class UserLoginView(APIView):
             )
 
 # -------------------------------
-# PROFILE IMAGE UPLOAD (GÜNCELLENMİŞ)
+# PROFILE IMAGE UPLOAD 
 # -------------------------------
+
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, username, *args, **kwargs):
-        # URL'de belirtilen kullanıcı adı ile kimlik doğrulaması yap
+        # URL'de belirtilen kullanıcı adı ile kimlik doğrulaması
         if request.user.username != username:
             return Response(
                 {"error": "Bu işlem için yetkiniz yok"}, 
@@ -114,7 +115,7 @@ class ProfileImageUploadView(APIView):
             )
         
         user = request.user
-        file_obj = request.FILES.get('profile_picture')
+        file_obj = request.FILES.get('profile_picture')  # Flutter FormData alanı "profile_picture" olmalı
 
         if not file_obj:
             return Response(
@@ -130,22 +131,27 @@ class ProfileImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Dosya boyutu kontrolü (max 5MB)
-        if file_obj.size > 5 * 1024 * 1024:
+        if file_obj.size > 5 * 1024 * 1024:  # 5MB sınırı
             return Response(
                 {"error": "Dosya boyutu 5MB'ı aşamaz"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Eski fotoğraf varsa Supabase'den sil
+        # Supabase Storage servisini kullan
         storage = SupabaseStorage()
+
+        # Eski fotoğraf varsa sil
         if user.profile_picture:
-            storage.delete_profile_picture(user.profile_picture)
+            try:
+                storage.delete_profile_picture(user.profile_picture)
+            except Exception as e:
+                # Silme hatası 500 değil, sadece logla
+                logger.warning(f"Eski profil resmi silinemedi: {str(e)}")
 
         try:
             # Yeni dosyayı Supabase'e yükle
             image_url = storage.upload_profile_picture(file_obj, user.id)
-            
+
             # Kullanıcı profilini güncelle
             user.profile_picture = image_url
             user.save()
@@ -158,6 +164,7 @@ class ProfileImageUploadView(APIView):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
+            logger.error(f"Profil resmi yükleme hatası: {str(e)}", exc_info=True)
             return Response(
                 {"error": f"Dosya yüklenirken bir hata oluştu: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
