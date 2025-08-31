@@ -42,5 +42,6 @@ zope.interface==7.2
 gunicorn==21.2.0
 dj-database-url==1.2.0
 uvicorn==0.25.0
-supabase==2.2.0
+httpx>=0.26,<0.27
+supabase==2.3.0
 gotrue==2.12.4
