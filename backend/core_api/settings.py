@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ------------------------------
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
+
 # ------------------------------
 # Allowed Hosts
 # ------------------------------
@@ -46,7 +47,7 @@ INSTALLED_APPS = [
     'chat',
     'notifications',
     'gamification',
-    'group_posts',
+    'motorcycles',
 ]
 
 # ------------------------------
@@ -85,66 +86,89 @@ TEMPLATES = [
     },
 ]
 
-# ------------------------------
-# WSGI / ASGI
-# ------------------------------
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
 # ------------------------------
 # Veritabanı
 # ------------------------------
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # ------------------------------
-# Parola doğrulama
+# Şifre Doğrulama
 # ------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 # ------------------------------
-# Uluslararası ayarlar
+# Dil ve Zaman
 # ------------------------------
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+LANGUAGE_CODE = 'tr'
+TIME_ZONE = 'Europe/Istanbul'
 USE_I18N = True
 USE_TZ = True
 
 # ------------------------------
-# Statik ve Medya Dosyaları
+# Statik Dosyalar
 # ------------------------------
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ------------------------------
-# CORS
-# ------------------------------
-CORS_ALLOWED_ORIGINS = os.environ.get(
-    'CORS_ALLOWED_ORIGINS', 
-    'https://spiride.onrender.com'
-).split(',')
-
-# ------------------------------
-# Özel kullanıcı modeli
+# Kullanıcı Modeli
 # ------------------------------
 AUTH_USER_MODEL = 'users.CustomUser'
 
 # ------------------------------
-# Django REST Framework
+# CORS Ayarları
+# ------------------------------
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# ------------------------------
+# REST Framework
 # ------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
