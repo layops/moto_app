@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import dj_database_url
-#ozan
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ------------------------------
@@ -200,6 +200,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+# ------------------------------
+# Supabase Ayarları
+# ------------------------------
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://xxxx.supabase.co')
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', 'your-service-role-key')
 SUPABASE_BUCKET = "profile_pictures"
