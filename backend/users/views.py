@@ -278,3 +278,24 @@ class UserEventsView(APIView):
 
         serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)
+
+# -------------------------------
+# FOLLOWERS / FOLLOWING LIST
+# -------------------------------
+class FollowersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+        followers = user.followers.all()  # Assuming related_name='followers' on User.following
+        serializer = UserSerializer(followers, many=True, context={'request': request})
+        return Response(serializer.data)
+
+class FollowingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+        following = user.following.all()  # Assuming related_name='following' on User model
+        serializer = UserSerializer(following, many=True, context={'request': request})
+        return Response(serializer.data)
