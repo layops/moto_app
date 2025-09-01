@@ -2,20 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
-import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class ProfilePhotoUploader extends StatefulWidget {
   final Function(File)? onImageSelected;
   final Function(bool)? onUploadStateChanged;
   final Function(Map<String, dynamic>)? onUploadSuccess;
-  final String? networkImageUrl; // Yeni parametre eklendi
+  final String? networkImageUrl;
 
   const ProfilePhotoUploader({
     super.key,
     this.onImageSelected,
     this.onUploadStateChanged,
     this.onUploadSuccess,
-    this.networkImageUrl, // constructor’a ekledik
+    this.networkImageUrl,
   });
 
   @override
@@ -142,10 +141,7 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
               ),
               child: ClipOval(
                 child: avatarImage != null
-                    ? Image(
-                        image: avatarImage,
-                        fit: BoxFit.cover,
-                      )
+                    ? Image(image: avatarImage, fit: BoxFit.cover)
                     : Icon(Icons.account_circle,
                         size: 150,
                         color: theme.colorScheme.onSurface.withOpacity(0.5)),

@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import '../settings/settings_page.dart';
-import 'edit_profile_page.dart';
+import '../../settings/settings_page.dart';
+import '../edit/edit_profile_page.dart';
 import 'photo_uploader.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final VoidCallback onSignOut;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-  final bool isProfileDataLoaded;
   final Map<String, dynamic> profileData;
 
   const ProfileDrawer({
     super.key,
     required this.onSignOut,
-    required this.colorScheme,
-    required this.theme,
     required this.profileData,
-    this.isProfileDataLoaded = true,
   });
 
   void _showPhotoUploadDialog(BuildContext context) {
@@ -37,6 +31,9 @@ class ProfileDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -75,20 +72,15 @@ class ProfileDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.edit, color: colorScheme.onSurface),
             title: Text('Profil Düzenle', style: theme.textTheme.bodyLarge),
-            enabled: isProfileDataLoaded,
-            onTap: isProfileDataLoaded
-                ? () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EditProfilePage(
-                          initialData: profileData,
-                        ),
-                      ),
-                    );
-                  }
-                : null,
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditProfilePage(initialData: profileData),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: Icon(Icons.settings, color: colorScheme.onSurface),
@@ -97,9 +89,7 @@ class ProfileDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
             },
           ),
@@ -107,16 +97,12 @@ class ProfileDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.help, color: colorScheme.onSurface),
             title: Text('Yardım', style: theme.textTheme.bodyLarge),
-            onTap: () {
-              // Yardım sayfasına yönlendirme
-            },
+            onTap: () {},
           ),
           ListTile(
             leading: Icon(Icons.info, color: colorScheme.onSurface),
             title: Text('Hakkında', style: theme.textTheme.bodyLarge),
-            onTap: () {
-              // Hakkında sayfasına yönlendirme
-            },
+            onTap: () {},
           ),
           Divider(color: colorScheme.onSurface.withOpacity(0.2)),
           ListTile(

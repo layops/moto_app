@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
-import 'package:motoapp_frontend/views/profile/photo_uploader.dart';
-import 'edit_profile_page.dart';
-import 'profile_drawer.dart';
-import 'profile_header.dart';
-import 'profile_tab_bar.dart';
-import 'profile_tabs/posts_tab.dart';
-import 'profile_tabs/media_tab.dart';
-import 'profile_tabs/followers_tab.dart';
-import 'profile_tabs/following_tab.dart';
+import 'components/photo_uploader.dart';
+import 'components/profile_drawer.dart';
+import 'components/profile_header.dart';
+import 'components/profile_tab_bar.dart';
+import 'tabs/posts_tab.dart';
+import 'tabs/media_tab.dart';
+import 'tabs/followers_tab.dart';
+import 'tabs/following_tab.dart';
+import 'edit/edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -26,7 +26,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _profileData;
   List<dynamic>? _posts;
   List<dynamic>? _media;
-  List<dynamic>? _events;
   List<dynamic>? _followers;
   List<dynamic>? _following;
   String? _currentUsername;
@@ -35,8 +34,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _postsError;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isCurrentUser = false;
-
-  // Takip işlemleri için ek alanlar
   bool _isFollowing = false;
   bool _isFollowLoading = false;
   int _followerCount = 0;
@@ -53,9 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
       try {
         final currentUser = await ServiceLocator.user.getCurrentUsername();
         if (!mounted) return;
-        setState(() {
-          _currentUsername = currentUser;
-        });
+        setState(() => _currentUsername = currentUser);
       } catch (e) {
         if (mounted) {
           setState(() {
@@ -86,49 +81,24 @@ class _ProfilePageState extends State<ProfilePage> {
       final isCurrentUser = _currentUsername == currentUsername;
 
       final results = await Future.wait([
-        ServiceLocator.profile
-            .getProfile(_currentUsername!)
-            .catchError((_) => null),
-        ServiceLocator.user.getPosts(_currentUsername!).catchError((e) {
-          debugPrint('Gönderiler getirme hatası: $e');
-          _postsError = 'Gönderiler yüklenirken hata oluştu';
-          return <dynamic>[];
-        }),
-        ServiceLocator.user.getMedia(_currentUsername!).catchError((e) {
-          debugPrint('Medya getirme hatası: $e');
-          return <dynamic>[];
-        }),
-        ServiceLocator.user.getEvents(_currentUsername!).catchError((e) {
-          debugPrint('Etkinlikler getirme hatası: $e');
-          return <dynamic>[];
-        }),
-        ServiceLocator.user.getFollowers(_currentUsername!).catchError((e) {
-          debugPrint('Takipçiler getirme hatası: $e');
-          return <dynamic>[];
-        }),
-        ServiceLocator.user.getFollowing(_currentUsername!).catchError((e) {
-          debugPrint('Takip edilenler getirme hatası: $e');
-          return <dynamic>[];
-        }),
+        _loadProfileData(),
+        _loadPosts(),
+        _loadMedia(),
+        _loadFollowers(),
+        _loadFollowing(),
       ]);
 
       if (!mounted) return;
 
-      final profileData = results[0] as Map<String, dynamic>?;
-
       setState(() {
-        _profileData = profileData;
+        _profileData = results[0] as Map<String, dynamic>?;
         _posts = results[1] as List<dynamic>? ?? [];
         _media = results[2] as List<dynamic>? ?? [];
-        _events = results[3] as List<dynamic>? ?? [];
-        _followers = results[4] as List<dynamic>? ?? [];
-        _following = results[5] as List<dynamic>? ?? [];
+        _followers = results[3] as List<dynamic>? ?? [];
+        _following = results[4] as List<dynamic>? ?? [];
         _isCurrentUser = isCurrentUser;
         _isLoading = false;
-
         _followerCount = _followers?.length ?? 0;
-
-        // Başlangıçta takip durumu belirleme (backend’den çek)
         _isFollowing =
             _followers?.any((f) => f['username'] == currentUsername) == true;
       });
@@ -142,16 +112,64 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<Map<String, dynamic>?> _loadProfileData() async {
+    try {
+      return await ServiceLocator.profile.getProfile(_currentUsername!);
+    } catch (e) {
+      debugPrint('Profil verisi yüklenirken hata: $e');
+      return null;
+    }
+  }
+
+  Future<List<dynamic>> _loadPosts() async {
+    try {
+      return await ServiceLocator.user.getPosts(_currentUsername!);
+    } catch (e) {
+      debugPrint('Gönderiler yüklenirken hata: $e');
+      _postsError = 'Gönderiler yüklenirken hata oluştu';
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> _loadMedia() async {
+    try {
+      return await ServiceLocator.user.getMedia(_currentUsername!);
+    } catch (e) {
+      debugPrint('Medya yüklenirken hata: $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> _loadFollowers() async {
+    try {
+      return await ServiceLocator.user.getFollowers(_currentUsername!);
+    } catch (e) {
+      debugPrint('Takipçiler yüklenirken hata: $e');
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> _loadFollowing() async {
+    try {
+      return await ServiceLocator.user.getFollowing(_currentUsername!);
+    } catch (e) {
+      debugPrint('Takip edilenler yüklenirken hata: $e');
+      return [];
+    }
+  }
+
   void _signOut(BuildContext context) async {
     try {
       await ServiceLocator.auth.logout();
-      ServiceLocator.navigator.pushAndRemoveUntil(
+      Navigator.pushAndRemoveUntil(
+        context,
         MaterialPageRoute(
             builder: (context) => LoginPage(authService: ServiceLocator.auth)),
         (route) => false,
       );
     } catch (_) {
-      ServiceLocator.navigator.pushAndRemoveUntil(
+      Navigator.pushAndRemoveUntil(
+        context,
         MaterialPageRoute(
             builder: (context) => LoginPage(authService: ServiceLocator.auth)),
         (route) => false,
@@ -162,9 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _toggleFollow() async {
     if (_isFollowLoading || _isCurrentUser || _currentUsername == null) return;
 
-    setState(() {
-      _isFollowLoading = true;
-    });
+    setState(() => _isFollowLoading = true);
 
     try {
       final userProfile =
@@ -172,32 +188,19 @@ class _ProfilePageState extends State<ProfilePage> {
       final userId = userProfile?['id'];
       if (userId == null) throw Exception('Kullanıcı ID bulunamadı');
 
-      if (_isFollowing) {
-        await ServiceLocator.follow.followToggleUser(_currentUsername!);
-        setState(() {
-          _isFollowing = false;
-          if (_followerCount > 0) _followerCount -= 1;
-        });
-      } else {
-        await ServiceLocator.follow.followToggleUser(_currentUsername!);
-        setState(() {
-          _isFollowing = true;
-          _followerCount += 1;
-        });
-      }
+      await ServiceLocator.follow.followToggleUser(_currentUsername!);
+
+      setState(() {
+        _isFollowing = !_isFollowing;
+        _followerCount += _isFollowing ? 1 : -1;
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('İşlem başarısız: $e'),
-          backgroundColor: Colors.red,
-        ),
+            content: Text('İşlem başarısız: $e'), backgroundColor: Colors.red),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isFollowLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isFollowLoading = false);
     }
   }
 
@@ -208,11 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
           networkImageUrl: _profileData?['profile_photo'],
-          onImageSelected: (File image) {
-            setState(() {
-              _imageFile = image;
-            });
-          },
+          onImageSelected: (File image) => setState(() => _imageFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {
             setState(() {
               _profileData?['profile_photo'] = updatedUser['profile_photo'];
@@ -223,7 +222,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   content: Text('Profil fotoğrafı başarıyla güncellendi!')),
             );
           },
-          onUploadStateChanged: (bool isUploading) {},
         ),
         actions: [
           TextButton(
@@ -256,21 +254,65 @@ class _ProfilePageState extends State<ProfilePage> {
     final updatedData = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EditProfilePage(
-          initialData: _profileData ?? {},
-        ),
+        builder: (_) => EditProfilePage(initialData: _profileData ?? {}),
       ),
     );
 
     if (updatedData != null) {
       _loadProfile();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil başarıyla güncellendi'),
-          duration: Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Profil başarıyla güncellendi')),
       );
     }
+  }
+
+  Widget _buildLoading() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(theme.colorScheme.primary)),
+          const SizedBox(height: 16),
+          Text('Profil yükleniyor...', style: theme.textTheme.bodyLarge),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+          const SizedBox(height: 16),
+          Text(_errorMessage!,
+              style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          ElevatedButton(
+              onPressed: _loadProfile, child: const Text('Tekrar Dene')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserNotFound() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_off,
+              size: 64, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text('Kullanıcı bulunamadı', style: theme.textTheme.bodyLarge),
+        ],
+      ),
+    );
   }
 
   @override
@@ -278,58 +320,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (_isLoading) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-              ),
-              const SizedBox(height: 16),
-              Text('Profil yükleniyor...', style: theme.textTheme.bodyLarge),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: colorScheme.error),
-              const SizedBox(height: 16),
-              Text(_errorMessage!,
-                  style: theme.textTheme.bodyLarge,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: _loadProfile, child: const Text('Tekrar Dene')),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_currentUsername == null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person_off,
-                  size: 64, color: colorScheme.onSurface.withOpacity(0.5)),
-              const SizedBox(height: 16),
-              Text('Kullanıcı bulunamadı', style: theme.textTheme.bodyLarge),
-            ],
-          ),
-        ),
-      );
-    }
+    if (_isLoading) return _buildLoading();
+    if (_errorMessage != null) return Scaffold(body: _buildError());
+    if (_currentUsername == null) return Scaffold(body: _buildUserNotFound());
 
     return Scaffold(
       key: _scaffoldKey,
@@ -353,8 +346,6 @@ class _ProfilePageState extends State<ProfilePage> {
       drawer: _isCurrentUser
           ? ProfileDrawer(
               onSignOut: () => _signOut(context),
-              colorScheme: colorScheme,
-              theme: theme,
               profileData: _profileData ?? {},
             )
           : null,
@@ -367,7 +358,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 imageFile: _imageFile,
                 networkImageUrl: _profileData?['profile_photo'],
                 coverImageUrl: _profileData?['cover_photo'],
-                colorScheme: colorScheme,
                 followerCount: _followerCount,
                 followingCount: _following?.length ?? 0,
                 username: _currentUsername!,
@@ -383,7 +373,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 isFollowLoading: _isFollowLoading,
                 onEditPhoto: _isCurrentUser ? _showPhotoUploadDialog : null,
                 onFollow: _isCurrentUser ? null : _toggleFollow,
-                mutualFollowers: [],
               ),
             ),
             SliverPersistentHeader(
@@ -409,14 +398,14 @@ class _ProfilePageState extends State<ProfilePage> {
           body: TabBarView(
             children: [
               PostsTab(
-                  posts: _posts ?? [],
-                  theme: theme,
-                  username: _currentUsername!,
-                  avatarUrl: _profileData?['profile_photo'],
-                  displayName: _profileData?['display_name'],
-                  error: _postsError),
+                posts: _posts ?? [],
+                username: _currentUsername!,
+                avatarUrl: _profileData?['profile_photo'],
+                displayName: _profileData?['display_name'],
+                error: _postsError,
+              ),
               Center(child: Text('Yanıtlar', style: theme.textTheme.bodyLarge)),
-              MediaTab(media: _media ?? [], theme: theme),
+              MediaTab(media: _media ?? []),
               Center(
                   child: Text('Beğeniler', style: theme.textTheme.bodyLarge)),
               FollowersTab(followers: _followers ?? []),

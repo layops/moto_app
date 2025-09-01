@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 
 class ProfileHeader extends StatelessWidget {
   final File? imageFile;
-  final String? networkImageUrl; // Backend URL desteği
+  final String? networkImageUrl;
   final String? coverImageUrl;
-  final ColorScheme colorScheme;
   final int followerCount;
   final int followingCount;
   final String username;
@@ -15,18 +14,16 @@ class ProfileHeader extends StatelessWidget {
   final String website;
   final bool isVerified;
   final bool isCurrentUser;
-  final bool isFollowing; // ✅ eklendi
-  final bool isFollowLoading; // ✅ eklendi
+  final bool isFollowing;
+  final bool isFollowLoading;
   final VoidCallback? onEditPhoto;
   final VoidCallback? onFollow;
-  final List<String> mutualFollowers;
 
   const ProfileHeader({
     super.key,
     this.imageFile,
     this.networkImageUrl,
     this.coverImageUrl,
-    required this.colorScheme,
     required this.followerCount,
     required this.followingCount,
     required this.username,
@@ -36,16 +33,17 @@ class ProfileHeader extends StatelessWidget {
     this.website = '',
     this.isVerified = false,
     this.isCurrentUser = false,
-    this.isFollowing = false, // default değer
-    this.isFollowLoading = false, // default değer
+    this.isFollowing = false,
+    this.isFollowLoading = false,
     this.onEditPhoto,
     this.onFollow,
-    this.mutualFollowers = const [],
   });
 
   @override
   Widget build(BuildContext context) {
-    // Profil resmi için ImageProvider seçimi
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     ImageProvider? avatarImage;
     if (imageFile != null) {
       avatarImage = FileImage(imageFile!);
@@ -60,9 +58,8 @@ class ProfileHeader extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: isFollowing ? Colors.grey : colorScheme.primary,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: isFollowLoading
             ? const SizedBox(
@@ -78,7 +75,6 @@ class ProfileHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Kapak fotoğrafı
         Container(
           height: 150,
           width: double.infinity,
@@ -89,13 +85,9 @@ class ProfileHeader extends StatelessWidget {
                     fit: BoxFit.cover,
                   ),
                 )
-              : BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                ),
+              : BoxDecoration(color: colorScheme.primary.withOpacity(0.1)),
         ),
         const SizedBox(height: 16),
-
-        // Profil ve takip butonları
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -125,10 +117,8 @@ class ProfileHeader extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.surface,
-                            width: 2,
-                          ),
+                          border:
+                              Border.all(color: colorScheme.surface, width: 2),
                         ),
                         child: Icon(
                           Icons.edit,
@@ -143,10 +133,7 @@ class ProfileHeader extends StatelessWidget {
             followButton(),
           ],
         ),
-
         const SizedBox(height: 16),
-
-        // Kullanıcı bilgileri
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -162,11 +149,7 @@ class ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 if (isVerified)
-                  Icon(
-                    Icons.verified,
-                    color: Colors.blue,
-                    size: 20,
-                  ),
+                  Icon(Icons.verified, color: Colors.blue, size: 20),
               ],
             ),
             const SizedBox(height: 4),
@@ -181,10 +164,7 @@ class ProfileHeader extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 bio,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: colorScheme.onSurface,
-                ),
+                style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
               ),
             ],
             if (website.isNotEmpty) ...[
@@ -196,10 +176,7 @@ class ProfileHeader extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     website,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.blue,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.blue),
                   ),
                 ],
               ),
@@ -214,9 +191,8 @@ class ProfileHeader extends StatelessWidget {
                   Text(
                     joinDate,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                        fontSize: 14,
+                        color: colorScheme.onSurface.withOpacity(0.7)),
                   ),
                 ],
               ),

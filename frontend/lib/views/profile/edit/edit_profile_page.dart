@@ -45,9 +45,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isSaving = true;
-      });
+      setState(() => _isSaving = true);
 
       try {
         final updatedData = {
@@ -58,17 +56,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'website': _websiteController.text,
         };
 
-        // Backend'e profil güncelleme isteği gönder
         final response =
             await ServiceLocator.profile.updateProfile(updatedData);
 
         if (response.statusCode == 200) {
           if (!mounted) return;
-
-          // Başarılıysa bir önceki sayfaya dön
           Navigator.pop(context, updatedData);
         } else {
-          // Hata durumunda kullanıcıyı bilgilendir
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Güncelleme hatası: ${response.statusCode}'),
@@ -79,12 +73,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       } catch (e) {
         if (!mounted) return;
 
-        // Özel hata mesajları
         String errorMessage = 'Kaydetme hatası: $e';
         if (e.toString().contains('Kullanıcı adı bulunamadı')) {
           errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
 
-          // Kullanıcıyı login sayfasına yönlendir
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) {
               Navigator.pushNamedAndRemoveUntil(
@@ -102,9 +94,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       } finally {
         if (mounted) {
-          setState(() {
-            _isSaving = false;
-          });
+          setState(() => _isSaving = false);
         }
       }
     }
@@ -143,7 +133,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Display Name
               const Text(
                 'Görünen İsim',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -158,8 +147,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 validator: (value) => _validateRequired(value, 'Görünen isim'),
               ),
               const SizedBox(height: 16),
-
-              // Bio
               const Text(
                 'Hakkımda',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -174,8 +161,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Motorcycle Model
               const Text(
                 'Motosiklet Modeli',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -189,8 +174,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Location
               const Text(
                 'Konum',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -204,8 +187,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Website
               const Text(
                 'Web Sitesi',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -219,8 +200,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Kaydet butonu
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

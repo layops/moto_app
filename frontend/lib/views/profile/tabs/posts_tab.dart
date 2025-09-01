@@ -3,7 +3,6 @@ import '../../../widgets/post/post_item.dart';
 
 class PostsTab extends StatelessWidget {
   final List<dynamic> posts;
-  final ThemeData theme;
   final String username;
   final String? avatarUrl;
   final String? displayName;
@@ -12,7 +11,6 @@ class PostsTab extends StatelessWidget {
   const PostsTab({
     super.key,
     required this.posts,
-    required this.theme,
     required this.username,
     this.avatarUrl,
     this.displayName,
@@ -21,6 +19,8 @@ class PostsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (error != null) {
       return Center(
         child: Column(
@@ -30,9 +30,8 @@ class PostsTab extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               error!,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.error,
-              ),
+              style: theme.textTheme.bodyLarge
+                  ?.copyWith(color: theme.colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -68,29 +67,23 @@ class PostsTab extends StatelessWidget {
       itemCount: posts.length,
       itemBuilder: (context, index) {
         final originalPost = posts[index];
-
-        // Önce post verisini güvenli bir şekilde kopyala
         final Map<String, dynamic> post = {};
 
         if (originalPost is Map<String, dynamic>) {
           post.addAll(originalPost);
         } else {
-          // Eğer post bir Map değilse, içeriği 'content' alanına koy
           post['content'] = originalPost.toString();
         }
 
-        // Author bilgisini güvenli şekilde işle
         dynamic authorData = post['author'];
         Map<String, dynamic> authorMap = {};
 
         if (authorData is Map<String, dynamic>) {
           authorMap.addAll(authorData);
         } else if (authorData != null) {
-          // Author bilgisi beklenmeyen bir türdeyse, logla ve boş bırak
-          print('Beklenmeyen author veri türü: ${authorData.runtimeType}');
+          debugPrint('Beklenmeyen author veri türü: ${authorData.runtimeType}');
         }
 
-        // Eksik author bilgilerini doldur
         if (authorMap['username'] == null) {
           authorMap['username'] = username;
         }
