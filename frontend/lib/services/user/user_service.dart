@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
-import '../http/api_exceptions.dart';
 
 class UserService {
   final ApiClient _apiClient;
@@ -9,29 +8,26 @@ class UserService {
 
   UserService(this._apiClient, this._storage);
 
-  // Updated fetchUser method that works with your ApiClient
+  /// Kullanıcı detaylarını getir (ID ile)
   Future<Map<String, dynamic>> fetchUser(int userId) async {
     try {
-      // Since ApiClient doesn't support headers parameter, we need to handle authentication differently
-      // Assuming ApiClient automatically handles authentication with stored token
       final response = await _apiClient.get('/users/$userId');
-
       if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw Exception('Failed to fetch user: ${response.statusCode}');
+        return response.data as Map<String, dynamic>;
       }
+      throw Exception('Failed to fetch user: ${response.statusCode}');
     } catch (e) {
       throw Exception('Failed to fetch user: $e');
     }
   }
 
+  /// Yeni kullanıcı kaydı
   Future<Response> register({
     required String username,
     required String email,
     required String password,
-  }) async {
-    return await _apiClient.post(
+  }) {
+    return _apiClient.post(
       'users/register/',
       {
         'username': username,
@@ -41,10 +37,12 @@ class UserService {
     );
   }
 
+  /// Local storage’dan aktif kullanıcı adını getir
   Future<String?> getCurrentUsername() async {
     return _storage.getCurrentUsername();
   }
 
+  /// Profil bilgilerini getir
   Future<Map<String, dynamic>?> getProfile(String username) async {
     try {
       final response = await _apiClient.get('users/$username/profile/');
@@ -55,13 +53,12 @@ class UserService {
     }
   }
 
+  /// Kullanıcının gönderilerini getir
   Future<List<dynamic>> getPosts(String username) async {
     try {
-      // Önce user-specific endpoint'i dene
       final response = await _apiClient.get('users/$username/posts/');
       return response.data as List<dynamic>;
     } on DioException catch (e) {
-      // 500 hatası alınırsa, fallback yap
       if (e.response?.statusCode == 500) {
         print('User posts endpoint 500 hatası, fallback yapılıyor');
         return await _getPostsFallback(username);
@@ -74,97 +71,77 @@ class UserService {
     }
   }
 
-  // Fallback method: Tüm postları al ve kullanıcıya göre filtrele
+  /// Fallback: tüm gönderilerden filtrele
   Future<List<dynamic>> _getPostsFallback(String username) async {
     try {
       final response = await _apiClient.get('posts/');
       final allPosts = response.data as List<dynamic>;
-
-      // Kullanıcının postlarını filtrele
-      final userPosts = allPosts
+      return allPosts
           .where((post) =>
               post['author'] != null && post['author']['username'] == username)
           .toList();
-
-      return userPosts;
     } catch (e) {
       print('Fallback gönderi getirme hatası: $e');
       return [];
     }
   }
 
+  /// Kullanıcının medya içeriklerini getir
   Future<List<dynamic>> getMedia(String username) async {
-    try {
-      final response = await _apiClient.get('users/$username/media/');
-      return response.data as List<dynamic>;
-    } on DioException catch (e) {
-      // Sadece DioException'ı yakala
-      if (e.response?.statusCode == 500) {
-        print('Medya endpointi sunucu hatası (500), boş liste döndürülüyor');
-        return [];
-      }
-      print('Medya getirme hatası (DioException): ${e.message}');
-      return [];
-    } catch (e) {
-      // Diğer tüm hataları yakala
-      print('Medya getirme hatası (genel): $e');
-      return [];
-    }
+    return _safeGetList('users/$username/media/', 'Medya');
   }
 
+  /// Kullanıcının etkinliklerini getir
   Future<List<dynamic>> getEvents(String username) async {
-    try {
-      final response = await _apiClient.get('users/$username/events/');
-      return response.data as List<dynamic>;
-    } on DioException catch (e) {
-      // Sadece DioException'ı yakala
-      if (e.response?.statusCode == 500) {
-        print(
-            'Etkinlikler endpointi sunucu hatası (500), boş liste döndürülüyor');
-        return [];
-      }
-      print('Etkinlikler getirme hatası (DioException): ${e.message}');
-      return [];
-    } catch (e) {
-      // Diğer tüm hataları yakala
-      print('Etkinlikler getirme hatası (genel): $e');
-      return [];
-    }
+    return _safeGetList('users/$username/events/', 'Etkinlikler');
   }
 
-  // Takipçi ve takip edilenleri getirme metodları
+  /// Takipçileri getir
   Future<List<dynamic>> getFollowers(String username) async {
+    return _safeGetList('users/$username/followers/', 'Takipçiler');
+  }
+
+  /// Takip edilenleri getir
+  Future<List<dynamic>> getFollowing(String username) async {
+    return _safeGetList('users/$username/following/', 'Takip edilenler');
+  }
+
+  /// Takip et
+  Future<bool> followUser(String username) async {
     try {
-      final response = await _apiClient.get('users/$username/followers/');
-      return response.data as List<dynamic>;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 500) {
-        print(
-            'Takipçiler endpointi sunucu hatası (500), boş liste döndürülüyor');
-        return [];
-      }
-      print('Takipçiler getirme hatası (DioException): ${e.message}');
-      return [];
+      final response = await _apiClient.post('users/$username/follow/', {});
+      return response.statusCode == 200;
     } catch (e) {
-      print('Takipçiler getirme hatası (genel): $e');
-      return [];
+      print('Takip etme hatası: $e');
+      return false;
     }
   }
 
-  Future<List<dynamic>> getFollowing(String username) async {
+  /// Takibi bırak
+  Future<bool> unfollowUser(String username) async {
     try {
-      final response = await _apiClient.get('users/$username/following/');
+      final response = await _apiClient.post('users/$username/unfollow/', {});
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Takipten çıkma hatası: $e');
+      return false;
+    }
+  }
+
+  /// Tekrarlayan endpoint çağrıları için güvenli liste döndüren helper
+  Future<List<dynamic>> _safeGetList(String path, String label) async {
+    try {
+      final response = await _apiClient.get(path);
       return response.data as List<dynamic>;
     } on DioException catch (e) {
       if (e.response?.statusCode == 500) {
-        print(
-            'Takip edilenler endpointi sunucu hatası (500), boş liste döndürülüyor');
+        print('$label endpointi sunucu hatası (500), boş liste döndürülüyor');
         return [];
       }
-      print('Takip edilenler getirme hatası (DioException): ${e.message}');
+      print('$label getirme hatası (DioException): ${e.message}');
       return [];
     } catch (e) {
-      print('Takip edilenler getirme hatası (genel): $e');
+      print('$label getirme hatası (genel): $e');
       return [];
     }
   }

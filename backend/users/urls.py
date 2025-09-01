@@ -35,4 +35,7 @@ urlpatterns = [
 
     # User Events
     path('<str:username>/events/', UserEventsView.as_view(), name='user-events'),
+    
+    # Follow Events
+     path('<int:user_id>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-id'),
 ]

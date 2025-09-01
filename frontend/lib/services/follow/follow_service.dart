@@ -43,6 +43,32 @@ class FollowService {
     }
   }
 
+  Future<bool> isFollowingUser(int userId) async {
+    final token = await _tokenService.getToken();
+    if (token == null) throw Exception('Kullanıcı girişi gerekli');
+
+    try {
+      final response = await _apiClient.get(
+        'users/$userId/is_following/',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['is_following'] ?? false;
+      } else {
+        throw Exception('Takip durumu sorgulanamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // Endpoint bulunamadı, alternatif yöntem
+        final username = await _tokenService.getUsernameFromToken();
+        final following = await getFollowingByUsername(username ?? '');
+        return following.any((user) => user['id'] == userId);
+      }
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> getFollowers(int userId) async {
     final token = await _tokenService.getToken();
     if (token == null) throw Exception('Kullanıcı girişi gerekli');
@@ -131,6 +157,41 @@ class FollowService {
     } catch (e) {
       print('Takip edilenler getirme hatası (genel): $e');
       return [];
+    }
+  }
+
+  Future<void> followUserByUsername(String username) async {
+    final token = await _tokenService.getToken();
+    if (token == null) throw Exception('Kullanıcı girişi gerekli');
+
+    final response = await _apiClient.post(
+      'users/$username/follow/',
+      {},
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Takip işlemi başarısız: ${response.statusCode}');
+    }
+  }
+
+  Future<void> unfollowUserByUsername(String username) async {
+    final token = await _tokenService.getToken();
+    if (token == null) throw Exception('Kullanıcı girişi gerekli');
+
+    final response = await _apiClient.post(
+      'users/$username/unfollow/',
+      {},
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+          'Takipten çıkma işlemi başarısız: ${response.statusCode}');
     }
   }
 }

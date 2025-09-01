@@ -175,53 +175,26 @@ class ProfileImageUploadView(APIView):
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
 class FollowToggleView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, username):
-        try:
-            target_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
-
-        user = request.user
-        if target_user in user.following.all():
-            user.following.remove(target_user)
-            action = 'unfollowed'
+    def post(self, request, username=None, user_id=None):
+        # Hem username hem id destekle
+        if username:
+            target_user = get_object_or_404(User, username=username)
+        elif user_id:
+            target_user = get_object_or_404(User, id=user_id)
         else:
-            user.following.add(target_user)
-            action = 'followed'
+            return Response({"detail": "Kullanıcı belirtilmedi"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'status': action}, status=status.HTTP_200_OK)
+        if target_user == request.user:
+            return Response({"detail": "Kendini takip edemezsin"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-class FollowersListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, username):
-        try:
-            target_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
-
-        followers = target_user.followers.all()
-        serializer = FollowSerializer(followers, many=True, context={'request': request})
-        return Response(serializer.data)
-
-
-class FollowingListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, username):
-        try:
-            target_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
-
-        following = target_user.following.all()
-        serializer = FollowSerializer(following, many=True, context={'request': request})
-        return Response(serializer.data)
-
-
+        if request.user.following.filter(id=target_user.id).exists():
+            request.user.following.remove(target_user)
+            return Response({"detail": "Takipten çıkıldı"}, status=status.HTTP_200_OK)
+        else:
+            request.user.following.add(target_user)
+            return Response({"detail": "Takip edildi"}, status=status.HTTP_200_OK)
 # -------------------------------
 # USER PROFILE
 # -------------------------------

@@ -96,7 +96,14 @@ class _MotoAppState extends State<MotoApp> {
 
   Future<void> _loadCurrentUsername() async {
     try {
-      final username = await ServiceLocator.token.getUsernameFromToken();
+      // Önce token'dan kullanıcı adını almayı dene
+      final usernameFromToken =
+          await ServiceLocator.token.getUsernameFromToken();
+
+      // Eğer token'dan alamazsak, localStorage'dan al
+      final username =
+          usernameFromToken ?? await ServiceLocator.token.getCurrentUsername();
+
       if (mounted) {
         setState(() {
           _currentUsername = username;

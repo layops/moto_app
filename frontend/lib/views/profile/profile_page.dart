@@ -9,7 +9,6 @@ import 'profile_header.dart';
 import 'profile_tab_bar.dart';
 import 'profile_tabs/posts_tab.dart';
 import 'profile_tabs/media_tab.dart';
-import 'profile_tabs/events_tab.dart';
 import 'profile_tabs/followers_tab.dart';
 import 'profile_tabs/following_tab.dart';
 
@@ -37,21 +36,23 @@ class _ProfilePageState extends State<ProfilePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isCurrentUser = false;
 
+  // Takip işlemleri için ek alanlar
+  bool _isFollowing = false;
+  bool _isFollowLoading = false;
+  int _followerCount = 0;
+
   @override
   void initState() {
     super.initState();
-    // ÖNEMLİ DEĞİŞİKLİK: widget.username doğrudan kullanılıyor
     _currentUsername = widget.username;
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
     if (_currentUsername == null) {
-      // Eğer username yoksa, mevcut kullanıcının profilini yükle
       try {
         final currentUser = await ServiceLocator.user.getCurrentUsername();
         if (!mounted) return;
-
         setState(() {
           _currentUsername = currentUser;
         });
@@ -84,51 +85,58 @@ class _ProfilePageState extends State<ProfilePage> {
       final currentUsername = await ServiceLocator.user.getCurrentUsername();
       final isCurrentUser = _currentUsername == currentUsername;
 
-      final profileResponse =
-          await ServiceLocator.profile.getProfile(_currentUsername!);
-
       final results = await Future.wait([
-        Future.value(profileResponse),
+        ServiceLocator.profile
+            .getProfile(_currentUsername!)
+            .catchError((_) => null),
         ServiceLocator.user.getPosts(_currentUsername!).catchError((e) {
-          print('Gönderiler getirme hatası: $e');
+          debugPrint('Gönderiler getirme hatası: $e');
           _postsError = 'Gönderiler yüklenirken hata oluştu';
-          return [];
+          return <dynamic>[];
         }),
         ServiceLocator.user.getMedia(_currentUsername!).catchError((e) {
-          print('Medya getirme hatası: $e');
-          return [];
+          debugPrint('Medya getirme hatası: $e');
+          return <dynamic>[];
         }),
         ServiceLocator.user.getEvents(_currentUsername!).catchError((e) {
-          print('Etkinlikler getirme hatası: $e');
-          return [];
+          debugPrint('Etkinlikler getirme hatası: $e');
+          return <dynamic>[];
         }),
         ServiceLocator.user.getFollowers(_currentUsername!).catchError((e) {
-          print('Takipçiler getirme hatası: $e');
-          return [];
+          debugPrint('Takipçiler getirme hatası: $e');
+          return <dynamic>[];
         }),
         ServiceLocator.user.getFollowing(_currentUsername!).catchError((e) {
-          print('Takip edilenler getirme hatası: $e');
-          return [];
+          debugPrint('Takip edilenler getirme hatası: $e');
+          return <dynamic>[];
         }),
       ]);
 
       if (!mounted) return;
 
+      final profileData = results[0] as Map<String, dynamic>?;
+
       setState(() {
-        _profileData = results[0] as Map<String, dynamic>?;
-        _posts = results[1] as List<dynamic>?;
-        _media = results[2] as List<dynamic>?;
-        _events = results[3] as List<dynamic>?;
-        _followers = results[4] as List<dynamic>?;
-        _following = results[5] as List<dynamic>?;
+        _profileData = profileData;
+        _posts = results[1] as List<dynamic>? ?? [];
+        _media = results[2] as List<dynamic>? ?? [];
+        _events = results[3] as List<dynamic>? ?? [];
+        _followers = results[4] as List<dynamic>? ?? [];
+        _following = results[5] as List<dynamic>? ?? [];
         _isCurrentUser = isCurrentUser;
         _isLoading = false;
+
+        _followerCount = _followers?.length ?? 0;
+
+        // Başlangıçta takip durumu belirleme (backend’den çek)
+        _isFollowing =
+            _followers?.any((f) => f['username'] == currentUsername) == true;
       });
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Profil yüklenirken genel hata oluştu: $e';
+          _errorMessage = 'Profil yüklenirken hata: $e';
         });
       }
     }
@@ -148,6 +156,48 @@ class _ProfilePageState extends State<ProfilePage> {
             builder: (context) => LoginPage(authService: ServiceLocator.auth)),
         (route) => false,
       );
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_isFollowLoading || _isCurrentUser || _currentUsername == null) return;
+
+    setState(() {
+      _isFollowLoading = true;
+    });
+
+    try {
+      final userProfile =
+          await ServiceLocator.profile.getProfile(_currentUsername!);
+      final userId = userProfile?['id'];
+      if (userId == null) throw Exception('Kullanıcı ID bulunamadı');
+
+      if (_isFollowing) {
+        await ServiceLocator.follow.unfollowUser(userId as int);
+        setState(() {
+          _isFollowing = false;
+          if (_followerCount > 0) _followerCount -= 1;
+        });
+      } else {
+        await ServiceLocator.follow.followUser(userId as int);
+        setState(() {
+          _isFollowing = true;
+          _followerCount += 1;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('İşlem başarısız: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFollowLoading = false;
+        });
+      }
     }
   }
 
@@ -318,19 +368,21 @@ class _ProfilePageState extends State<ProfilePage> {
                 networkImageUrl: _profileData?['profile_photo'],
                 coverImageUrl: _profileData?['cover_photo'],
                 colorScheme: colorScheme,
-                followerCount: _followers?.length ?? 0,
+                followerCount: _followerCount,
                 followingCount: _following?.length ?? 0,
                 username: _currentUsername!,
                 displayName: _profileData?['display_name'] ?? _currentUsername!,
-                bio: _profileData?['bio'] ?? 'Henüz bir bio eklenmemiş',
+                bio: _profileData?['bio'] ?? '',
                 joinDate: _profileData?['date_joined'] != null
                     ? '${DateTime.parse(_profileData!['date_joined']).year} yılında katıldı'
-                    : 'Katılım tarihi bilinmiyor',
+                    : '',
                 website: _profileData?['website'] ?? '',
                 isVerified: _profileData?['is_verified'] ?? false,
                 isCurrentUser: _isCurrentUser,
+                isFollowing: _isFollowing,
+                isFollowLoading: _isFollowLoading,
                 onEditPhoto: _isCurrentUser ? _showPhotoUploadDialog : null,
-                onFollow: () {},
+                onFollow: _isCurrentUser ? null : _toggleFollow,
                 mutualFollowers: [],
               ),
             ),

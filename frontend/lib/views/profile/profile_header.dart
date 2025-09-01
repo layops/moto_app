@@ -15,6 +15,8 @@ class ProfileHeader extends StatelessWidget {
   final String website;
   final bool isVerified;
   final bool isCurrentUser;
+  final bool isFollowing; // ✅ eklendi
+  final bool isFollowLoading; // ✅ eklendi
   final VoidCallback? onEditPhoto;
   final VoidCallback? onFollow;
   final List<String> mutualFollowers;
@@ -34,6 +36,8 @@ class ProfileHeader extends StatelessWidget {
     this.website = '',
     this.isVerified = false,
     this.isCurrentUser = false,
+    this.isFollowing = false, // default değer
+    this.isFollowLoading = false, // default değer
     this.onEditPhoto,
     this.onFollow,
     this.mutualFollowers = const [],
@@ -47,6 +51,28 @@ class ProfileHeader extends StatelessWidget {
       avatarImage = FileImage(imageFile!);
     } else if (networkImageUrl != null && networkImageUrl!.isNotEmpty) {
       avatarImage = NetworkImage(networkImageUrl!);
+    }
+
+    Widget followButton() {
+      if (isCurrentUser) return const SizedBox.shrink();
+      return ElevatedButton(
+        onPressed: isFollowLoading ? null : onFollow,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isFollowing ? Colors.grey : colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        child: isFollowLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            : Text(isFollowing ? 'Takiptesin' : 'Takip Et'),
+      );
     }
 
     return Column(
@@ -114,18 +140,7 @@ class ProfileHeader extends StatelessWidget {
                   ),
               ],
             ),
-            if (!isCurrentUser)
-              ElevatedButton(
-                onPressed: onFollow,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('Takip Et'),
-              ),
+            followButton(),
           ],
         ),
 
