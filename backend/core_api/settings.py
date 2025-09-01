@@ -181,6 +181,7 @@ CHANNEL_LAYERS = {
 SUPABASE_URL = "https://mosiqkyyribzlvdvedet.supabase.co"
 SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjY0MzQ3NSwiZXhwIjoyMDcyMjE5NDc1fQ.oxEaRtYZF74vTIttVCaBhmeNaEyUAEdQHVbSWYOPTUA"
 SUPABASE_BUCKET = "profile_pictures"  
+SUPABASE_COVER_BUCKET = "cover_pictures"
 SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
 # Yeni eklenen hata ayıklama ayarları
 if DEBUG:

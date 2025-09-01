@@ -60,11 +60,13 @@ class UserSerializer(serializers.ModelSerializer):
     following_count = serializers.SerializerMethodField()
     display_name = serializers.CharField(source='first_name', required=False, allow_blank=True)
     profile_photo_url = serializers.SerializerMethodField()
+    cover_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'profile_picture', 'profile_photo_url',
+            'cover_picture', 'cover_photo_url',
             'followers_count', 'following_count', 'display_name',
             'bio', 'motorcycle_model', 'location', 'website',
             'phone_number', 'address'
@@ -93,6 +95,21 @@ class UserSerializer(serializers.ModelSerializer):
             base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
             media_url = getattr(settings, 'MEDIA_URL', '/media/')
             return f"{base_url}{media_url}{obj.profile_picture}"
+        return None
+
+    def get_cover_photo_url(self, obj):
+        """
+        Kapak fotoğrafını tam URL olarak döner
+        """
+        if obj.cover_picture:
+            if obj.cover_picture.startswith(('http://', 'https://')):
+                return obj.cover_picture
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(settings.MEDIA_URL + str(obj.cover_picture))
+            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
+            media_url = getattr(settings, 'MEDIA_URL', '/media/')
+            return f"{base_url}{media_url}{obj.cover_picture}"
         return None
 
     def validate_website(self, value):

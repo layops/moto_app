@@ -22,7 +22,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  File? _imageFile;
+  File? _avatarFile;
+  File? _coverFile; // Yeni eklenen
   Map<String, dynamic>? _profileData;
   List<dynamic>? _posts;
   List<dynamic>? _media;
@@ -204,22 +205,53 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _showPhotoUploadDialog() {
+  void _showAvatarUploadDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
           networkImageUrl: _profileData?['profile_photo'],
-          onImageSelected: (File image) => setState(() => _imageFile = image),
+          onImageSelected: (File image) => setState(() => _avatarFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {
             setState(() {
               _profileData?['profile_photo'] = updatedUser['profile_photo'];
-              _imageFile = null;
+              _avatarFile = null;
             });
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                   content: Text('Profil fotoğrafı başarıyla güncellendi!')),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Yeni eklenen metod
+  void _showCoverUploadDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kapak Fotoğrafı Yükle'),
+        content: ProfilePhotoUploader(
+          // ProfilePhotoUploader'ı yeniden kullanabiliriz
+          networkImageUrl: _profileData?['cover_photo'],
+          onImageSelected: (File image) => setState(() => _coverFile = image),
+          onUploadSuccess: (Map<String, dynamic> updatedUser) {
+            setState(() {
+              _profileData?['cover_photo'] = updatedUser['cover_photo'];
+              _coverFile = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Kapak fotoğrafı başarıyla güncellendi!')),
             );
           },
         ),
@@ -355,9 +387,10 @@ class _ProfilePageState extends State<ProfilePage> {
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
             SliverToBoxAdapter(
               child: ProfileHeader(
-                imageFile: _imageFile,
-                networkImageUrl: _profileData?['profile_photo'],
-                coverImageUrl: _profileData?['cover_photo'],
+                avatarFile: _avatarFile,
+                avatarUrl: _profileData?['profile_photo'],
+                coverFile: _coverFile, // Yeni eklenen
+                coverUrl: _profileData?['cover_photo'],
                 followerCount: _followerCount,
                 followingCount: _following?.length ?? 0,
                 username: _currentUsername!,
@@ -371,7 +404,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 isCurrentUser: _isCurrentUser,
                 isFollowing: _isFollowing,
                 isFollowLoading: _isFollowLoading,
-                onEditPhoto: _isCurrentUser ? _showPhotoUploadDialog : null,
+                onEditAvatar: _isCurrentUser
+                    ? _showAvatarUploadDialog
+                    : null, // Callback güncellendi
+                onEditCover: _isCurrentUser
+                    ? _showCoverUploadDialog
+                    : null, // Yeni eklenen
                 onFollow: _isCurrentUser ? null : _toggleFollow,
               ),
             ),

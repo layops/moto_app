@@ -4,6 +4,7 @@ from .views import (
     UserRegisterView,
     UserLoginView,
     ProfileImageUploadView,
+    CoverImageUploadView, # Yeni eklendi
     FollowToggleView,
     FollowersListView,
     FollowingListView,
@@ -20,6 +21,7 @@ urlpatterns = [
 
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
+    path('<str:username>/upload-cover/', CoverImageUploadView.as_view(), name='profile-upload-cover'), # Yeni URL
 
     # Follow / Followers / Following
     path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-username'),

@@ -162,6 +162,67 @@ class ProfileImageUploadView(APIView):
             )
 
 # -------------------------------
+# COVER IMAGE UPLOAD (YENİ EKLENEN)
+# -------------------------------
+class CoverImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, username, *args, **kwargs):
+        if request.user.username != username:
+            return Response(
+                {"error": "Bu işlem için yetkiniz yok"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        user = request.user
+        file_obj = request.FILES.get('cover_picture')
+        
+        if not file_obj:
+            return Response(
+                {"error": "Kapak fotoğrafı yüklenmedi"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if file_obj.content_type not in allowed_types:
+            return Response(
+                {"error": "Geçersiz dosya formatı. Sadece JPEG, PNG, GIF veya WebP yükleyebilirsiniz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if file_obj.size > 10 * 1024 * 1024:
+            return Response(
+                {"error": "Dosya boyutu 10MB'ı aşamaz"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        storage = SupabaseStorage()
+        
+        if user.cover_picture:
+            try:
+                storage.delete_cover_picture(user.cover_picture)
+            except Exception as e:
+                logger.warning(f"Eski kapak resmi silinemedi: {str(e)}")
+
+        try:
+            image_url = storage.upload_cover_picture(file_obj, user.id)
+            user.cover_picture = image_url
+            user.save()
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                "message": "Kapak fotoğrafı başarıyla güncellendi",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Kapak resmi yükleme hatası: {str(e)}", exc_info=True)
+            return Response(
+                {"error": f"Dosya yüklenirken bir hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+# -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
 class FollowToggleView(APIView):

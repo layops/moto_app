@@ -7,6 +7,7 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     profile_picture = models.URLField(blank=True, null=True, verbose_name="Profil Resmi URL")
+    cover_picture = models.URLField(blank=True, null=True, verbose_name="Kapak Resmi URL")
 
     # Takip ilişkisi (self-referential)
     following = models.ManyToManyField(
@@ -16,7 +17,6 @@ class CustomUser(AbstractUser):
         blank=True
     )
     
-
     # Yeni profil alanları
     bio = models.TextField(blank=True, null=True, verbose_name="Hakkımda")
     motorcycle_model = models.CharField(max_length=100, blank=True, null=True, verbose_name="Motosiklet Modeli")
