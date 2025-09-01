@@ -1,6 +1,7 @@
 # users/views.py
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -50,6 +51,7 @@ class UserRegisterView(APIView):
                 {'error': 'Kayıt sırasında bir hata oluştu'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 @method_decorator(csrf_exempt, name='dispatch')
 class UserLoginView(APIView):
     permission_classes = (AllowAny,)
@@ -101,13 +103,11 @@ class UserLoginView(APIView):
 # -------------------------------
 # PROFILE IMAGE UPLOAD 
 # -------------------------------
-
 class ProfileImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, username, *args, **kwargs):
-        # URL'de belirtilen kullanıcı adı ile kimlik doğrulaması
         if request.user.username != username:
             return Response(
                 {"error": "Bu işlem için yetkiniz yok"}, 
@@ -115,7 +115,7 @@ class ProfileImageUploadView(APIView):
             )
         
         user = request.user
-        file_obj = request.FILES.get('profile_picture')  # Flutter FormData alanı "profile_picture" olmalı
+        file_obj = request.FILES.get('profile_picture')
 
         if not file_obj:
             return Response(
@@ -123,7 +123,6 @@ class ProfileImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Dosya tipi ve boyut kontrolü
         allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
         if file_obj.content_type not in allowed_types:
             return Response(
@@ -131,32 +130,24 @@ class ProfileImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if file_obj.size > 5 * 1024 * 1024:  # 5MB sınırı
+        if file_obj.size > 5 * 1024 * 1024:
             return Response(
                 {"error": "Dosya boyutu 5MB'ı aşamaz"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Supabase Storage servisini kullan
         storage = SupabaseStorage()
 
-        # Eski fotoğraf varsa sil
         if user.profile_picture:
             try:
                 storage.delete_profile_picture(user.profile_picture)
             except Exception as e:
-                # Silme hatası 500 değil, sadece logla
                 logger.warning(f"Eski profil resmi silinemedi: {str(e)}")
 
         try:
-            # Yeni dosyayı Supabase'e yükle
             image_url = storage.upload_profile_picture(file_obj, user.id)
-
-            # Kullanıcı profilini güncelle
             user.profile_picture = image_url
             user.save()
-
-            # Güncel kullanıcı verilerini dön
             serializer = UserSerializer(user, context={'request': request})
             return Response({
                 "message": "Profil fotoğrafı başarıyla güncellendi",
@@ -170,15 +161,13 @@ class ProfileImageUploadView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
 # -------------------------------
 # FOLLOW / FOLLOWERS / FOLLOWING
 # -------------------------------
 class FollowToggleView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, username=None, user_id=None):
-        # Hem username hem id destekle
         if username:
             target_user = get_object_or_404(User, username=username)
         elif user_id:
@@ -195,6 +184,7 @@ class FollowToggleView(APIView):
         else:
             request.user.following.add(target_user)
             return Response({"detail": "Takip edildi"}, status=status.HTTP_200_OK)
+
 # -------------------------------
 # USER PROFILE
 # -------------------------------
@@ -237,7 +227,6 @@ class UserProfileView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 # -------------------------------
 # USER POSTS
 # -------------------------------
@@ -254,7 +243,6 @@ class UserPostsView(APIView):
         serializer = PostSerializer(posts, many=True, context={'request': request})
         return Response(serializer.data)
 
-
 # -------------------------------
 # USER MEDIA
 # -------------------------------
@@ -270,7 +258,6 @@ class UserMediaView(APIView):
         media_files = Media.objects.filter(uploaded_by=user)
         serializer = MediaSerializer(media_files, many=True, context={'request': request})
         return Response(serializer.data)
-
 
 # -------------------------------
 # USER EVENTS

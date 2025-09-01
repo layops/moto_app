@@ -1,3 +1,4 @@
+# users/urls.py
 from django.urls import path
 from .views import (
     UserRegisterView,
@@ -19,8 +20,10 @@ urlpatterns = [
 
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
+
     # Follow / Followers / Following
-    path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle'),
+    path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-username'),
+    path('<int:user_id>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-id'),
     path('<str:username>/followers/', FollowersListView.as_view(), name='followers-list'),
     path('<str:username>/following/', FollowingListView.as_view(), name='following-list'),
 
@@ -35,7 +38,4 @@ urlpatterns = [
 
     # User Events
     path('<str:username>/events/', UserEventsView.as_view(), name='user-events'),
-    
-    # Follow Events
-     path('<int:user_id>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-id'),
 ]
