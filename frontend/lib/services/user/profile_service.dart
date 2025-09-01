@@ -23,7 +23,6 @@ class ProfileService {
         throw Exception('Kullanıcı tokeni bulunamadı');
       }
 
-      // Dosya uzantısını koru
       final ext = imageFile.path.split('.').last;
 
       final formData = FormData.fromMap({
@@ -46,6 +45,41 @@ class ProfileService {
     }
   }
 
+  /// Kapak fotoğrafı yükleme
+  Future<Response> uploadCoverImage(File imageFile) async {
+    try {
+      final username = await ServiceLocator.user.getCurrentUsername();
+      if (username == null) {
+        throw Exception('Kullanıcı adı bulunamadı');
+      }
+
+      final token = await _tokenService.getToken();
+      if (token == null) {
+        throw Exception('Kullanıcı tokeni bulunamadı');
+      }
+
+      final ext = imageFile.path.split('.').last;
+
+      final formData = FormData.fromMap({
+        'cover_picture': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: 'cover_${DateTime.now().millisecondsSinceEpoch}.$ext',
+        ),
+      });
+
+      return await _apiClient.post(
+        'users/$username/upload-cover/',
+        formData,
+        options: Options(
+          headers: {'Authorization': 'Token $token'},
+        ),
+      );
+    } catch (e) {
+      print('Kapak fotoğrafı yükleme hatası: $e');
+      rethrow;
+    }
+  }
+
   /// Mevcut profil bilgilerini getirme
   Future<Map<String, dynamic>> getProfile(String username) async {
     try {
@@ -55,6 +89,10 @@ class ProfileService {
       if (data.containsKey('profile_picture') &&
           data['profile_picture'] != null) {
         data['profile_photo'] = data['profile_picture'];
+      }
+
+      if (data.containsKey('cover_picture') && data['cover_picture'] != null) {
+        data['cover_photo'] = data['cover_picture'];
       }
 
       return data;

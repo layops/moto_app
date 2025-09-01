@@ -211,6 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context) => AlertDialog(
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
+          type: PhotoType.profile, // <-- type eklendi
           networkImageUrl: _profileData?['profile_photo'],
           onImageSelected: (File image) => setState(() => _avatarFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {
@@ -241,7 +242,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context) => AlertDialog(
         title: const Text('Kapak Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
-          // ProfilePhotoUploader'ı yeniden kullanabiliriz
+          type: PhotoType.cover, // <-- type eklendi
           networkImageUrl: _profileData?['cover_photo'],
           onImageSelected: (File image) => setState(() => _coverFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {

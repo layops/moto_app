@@ -13,12 +13,22 @@ class ProfileDrawer extends StatelessWidget {
     required this.profileData,
   });
 
-  void _showPhotoUploadDialog(BuildContext context) {
+  void _showPhotoUploadDialog(BuildContext context, {required PhotoType type}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Profil Fotoğrafı Yükle'),
-        content: const ProfilePhotoUploader(),
+        title: Text(type == PhotoType.profile
+            ? 'Profil Fotoğrafı Yükle'
+            : 'Kapak Fotoğrafı Yükle'),
+        content: ProfilePhotoUploader(
+          type: type,
+          networkImageUrl: type == PhotoType.profile
+              ? profileData['profile_picture'] ?? ''
+              : profileData['cover_picture'] ?? '',
+          onUploadSuccess: (userData) {
+            // Upload sonrası profileData güncellemesi yapılabilir
+          },
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -63,10 +73,20 @@ class ProfileDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(Icons.photo_camera, color: colorScheme.onSurface),
-            title: Text('Fotoğraf Yükle', style: theme.textTheme.bodyLarge),
+            title: Text('Profil Fotoğrafı Yükle',
+                style: theme.textTheme.bodyLarge),
             onTap: () {
               Navigator.pop(context);
-              _showPhotoUploadDialog(context);
+              _showPhotoUploadDialog(context, type: PhotoType.profile);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.image, color: colorScheme.onSurface),
+            title:
+                Text('Kapak Fotoğrafı Yükle', style: theme.textTheme.bodyLarge),
+            onTap: () {
+              Navigator.pop(context);
+              _showPhotoUploadDialog(context, type: PhotoType.cover);
             },
           ),
           ListTile(

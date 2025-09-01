@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 
+enum PhotoType { profile, cover }
+
 class ProfilePhotoUploader extends StatefulWidget {
+  final PhotoType type;
   final Function(File)? onImageSelected;
   final Function(bool)? onUploadStateChanged;
   final Function(Map<String, dynamic>)? onUploadSuccess;
@@ -11,6 +14,7 @@ class ProfilePhotoUploader extends StatefulWidget {
 
   const ProfilePhotoUploader({
     super.key,
+    required this.type,
     this.onImageSelected,
     this.onUploadStateChanged,
     this.onUploadSuccess,
@@ -71,7 +75,13 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
     });
 
     try {
-      final response = await ServiceLocator.profile.uploadProfileImage(_image!);
+      late final response;
+
+      if (widget.type == PhotoType.profile) {
+        response = await ServiceLocator.profile.uploadProfileImage(_image!);
+      } else {
+        response = await ServiceLocator.profile.uploadCoverImage(_image!);
+      }
 
       if (!mounted) return;
 
@@ -84,10 +94,19 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
           widget.onUploadSuccess?.call(userData);
         }
 
-        _showMessage('Profil fotoğrafı başarıyla güncellendi', isError: false);
+        _showMessage(
+          widget.type == PhotoType.profile
+              ? 'Profil fotoğrafı başarıyla güncellendi'
+              : 'Kapak fotoğrafı başarıyla güncellendi',
+          isError: false,
+        );
       }
     } catch (e) {
-      _showMessage('Profil fotoğrafı yükleme hatası: $e');
+      _showMessage(
+        widget.type == PhotoType.profile
+            ? 'Profil fotoğrafı yükleme hatası: $e'
+            : 'Kapak fotoğrafı yükleme hatası: $e',
+      );
     } finally {
       if (mounted) {
         setState(() {
