@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../views/profile/profile_page.dart';
 
 class PostItem extends StatelessWidget {
   final dynamic post;
@@ -88,43 +89,56 @@ class PostItem extends StatelessWidget {
                 ],
               ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage:
-                      profilePhoto != null && profilePhoto.isNotEmpty
-                          ? NetworkImage(profilePhoto)
-                          : null,
-                  onBackgroundImageError:
-                      profilePhoto != null && profilePhoto.isNotEmpty
-                          ? (exception, stackTrace) {
-                              debugPrint(
-                                  'Profile photo loading failed: $exception');
-                            }
-                          : null,
-                  child: profilePhoto == null || profilePhoto.isEmpty
-                      ? const Icon(Icons.person, size: 20)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${post['bikeModel']?.toString() ?? 'Motosiklet'} • ${post['timeAgo']?.toString() ?? 'Şimdi'}',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+            // Kullanıcı bilgileri - Tıklanabilir hale getirildi
+            InkWell(
+              onTap: () {
+                if (username.isNotEmpty && username != 'Bilinmeyen') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfilePage(username: username),
+                    ),
+                  );
+                }
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage:
+                        profilePhoto != null && profilePhoto.isNotEmpty
+                            ? NetworkImage(profilePhoto)
+                            : null,
+                    onBackgroundImageError:
+                        profilePhoto != null && profilePhoto.isNotEmpty
+                            ? (exception, stackTrace) {
+                                debugPrint(
+                                    'Profile photo loading failed: $exception');
+                              }
+                            : null,
+                    child: profilePhoto == null || profilePhoto.isEmpty
+                        ? const Icon(Icons.person, size: 20)
+                        : null,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '${post['bikeModel']?.toString() ?? 'Motosiklet'} • ${post['timeAgo']?.toString() ?? 'Şimdi'}',
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             if (post['content'] != null &&

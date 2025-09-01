@@ -78,8 +78,34 @@ void _runFallbackApp(Object error, StackTrace stackTrace) {
   );
 }
 
-class MotoApp extends StatelessWidget {
+class MotoApp extends StatefulWidget {
   const MotoApp({super.key});
+
+  @override
+  State<MotoApp> createState() => _MotoAppState();
+}
+
+class _MotoAppState extends State<MotoApp> {
+  String? _currentUsername;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUsername();
+  }
+
+  Future<void> _loadCurrentUsername() async {
+    try {
+      final username = await ServiceLocator.token.getUsernameFromToken();
+      if (mounted) {
+        setState(() {
+          _currentUsername = username;
+        });
+      }
+    } catch (e) {
+      print('Kullanıcı adı yüklenirken hata: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,11 +122,6 @@ class MotoApp extends StatelessWidget {
               builder: (context, snapshot) {
                 final isAuthenticated = snapshot.hasData;
 
-                // Ana sayfayı oluşturmadan önce biraz bekleyelim
-                Future.delayed(Duration.zero, () {
-                  // Navigator'ın hazır olmasını sağla
-                });
-
                 return MaterialApp(
                   title: 'Moto App',
                   debugShowCheckedModeBanner: false,
@@ -114,7 +135,6 @@ class MotoApp extends StatelessWidget {
                     GlobalCupertinoLocalizations.delegate,
                     GlobalWidgetsLocalizations.delegate,
                   ],
-                  // Ana sayfa olarak doğrudan LoginPage veya MainWrapper veriyoruz
                   home: isAuthenticated
                       ? _buildMainWrapper()
                       : LoginPage(authService: authService),
@@ -125,10 +145,9 @@ class MotoApp extends StatelessWidget {
                     '/profile': (context) {
                       final username =
                           ModalRoute.of(context)!.settings.arguments as String?;
-                      return ProfilePage(username: username ?? 'Kullanıcı');
+                      return ProfilePage(username: username);
                     },
                   },
-                  // Navigator hatası için fallback
                   onGenerateRoute: (settings) {
                     return MaterialPageRoute(
                       builder: (context) => isAuthenticated
@@ -167,16 +186,7 @@ class MotoApp extends StatelessWidget {
       const MapPage(),
       const GroupsPage(),
       const EventsPage(),
-      FutureBuilder<String?>(
-        future: ServiceLocator.token.getUsernameFromToken(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final username = snapshot.data ?? 'Kullanıcı';
-          return ProfilePage(username: username);
-        },
-      ),
+      ProfilePage(username: _currentUsername),
     ];
 
     return MainWrapper(

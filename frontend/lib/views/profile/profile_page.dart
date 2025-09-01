@@ -40,38 +40,39 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadCurrentUsername();
-  }
-
-  Future<void> _loadCurrentUsername() async {
-    try {
-      final username = await ServiceLocator.user.getCurrentUsername();
-      if (!mounted) return;
-
-      setState(() {
-        _currentUsername = username ?? widget.username;
-      });
-
-      if (_currentUsername != null) {
-        await _loadProfile();
-      } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Kullanıcı bilgisi bulunamadı';
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Kullanıcı bilgisi alınamadı: $e';
-        });
-      }
-    }
+    // ÖNEMLİ DEĞİŞİKLİK: widget.username doğrudan kullanılıyor
+    _currentUsername = widget.username;
+    _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    if (_currentUsername == null) return;
+    if (_currentUsername == null) {
+      // Eğer username yoksa, mevcut kullanıcının profilini yükle
+      try {
+        final currentUser = await ServiceLocator.user.getCurrentUsername();
+        if (!mounted) return;
+
+        setState(() {
+          _currentUsername = currentUser;
+        });
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Kullanıcı bilgisi alınamadı: $e';
+          });
+        }
+        return;
+      }
+    }
+
+    if (_currentUsername == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Kullanıcı bulunamadı';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
