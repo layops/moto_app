@@ -173,13 +173,13 @@ class _ProfilePageState extends State<ProfilePage> {
       if (userId == null) throw Exception('Kullanıcı ID bulunamadı');
 
       if (_isFollowing) {
-        await ServiceLocator.follow.unfollowUser(userId as int);
+        await ServiceLocator.follow.followToggleUser(_currentUsername!);
         setState(() {
           _isFollowing = false;
           if (_followerCount > 0) _followerCount -= 1;
         });
       } else {
-        await ServiceLocator.follow.followUser(userId as int);
+        await ServiceLocator.follow.followToggleUser(_currentUsername!);
         setState(() {
           _isFollowing = true;
           _followerCount += 1;
