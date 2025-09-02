@@ -45,7 +45,7 @@ urlpatterns = [
     path('api/bikes/', include('bikes.urls')),
     path('api/rides/', include('rides.urls')),
     path('api/groups/', include('groups.urls')),
-    path('api/events/', include('events.urls')),
+     path('api/', include('events.urls')),
     path('api/posts/', include('posts.urls')),  # DÜZELTME: Bu satırı olduğu gibi bırakın
     path('api/notifications/', include('notifications.urls')),
     path('api/gamification/', include('gamification.urls')),
