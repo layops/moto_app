@@ -67,6 +67,26 @@ class _EventsPageState extends State<EventsPage> {
     }
   }
 
+  Future<void> _joinEvent(int eventId) async {
+    try {
+      await _service.joinEvent(eventId);
+      _loadEvents();
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Katılamadı: $e')));
+    }
+  }
+
+  Future<void> _leaveEvent(int eventId) async {
+    try {
+      await _service.leaveEvent(eventId);
+      _loadEvents();
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Ayrılamadı: $e')));
+    }
+  }
+
   Widget _buildEventChip(String label, Color color) {
     return Chip(
       label: Text(label, style: TextStyle(fontSize: 12, color: color)),
@@ -189,6 +209,12 @@ class _EventsPageState extends State<EventsPage> {
                               itemBuilder: (context, index) {
                                 final e = (_events[index] as Map)
                                     .cast<String, dynamic>();
+                                final isJoined =
+                                    e['is_joined'] as bool? ?? false;
+                                final participantCount =
+                                    e['participants_count'] ?? 0;
+                                final guestLimit = e['guest_limit'] ?? '-';
+
                                 return Card(
                                   elevation: 3,
                                   margin: const EdgeInsets.symmetric(
@@ -207,11 +233,24 @@ class _EventsPageState extends State<EventsPage> {
                                           Row(
                                             children: [
                                               _buildEventChip(
-                                                  'Group Ride', Colors.orange),
+                                                  e['is_public'] == true
+                                                      ? 'Public'
+                                                      : 'Private',
+                                                  e['is_public'] == true
+                                                      ? Colors.green
+                                                      : Colors.red),
                                               const Spacer(),
                                               TextButton(
-                                                onPressed: () {},
-                                                child: const Text('Join'),
+                                                onPressed: () {
+                                                  if (isJoined) {
+                                                    _leaveEvent(e['id']);
+                                                  } else {
+                                                    _joinEvent(e['id']);
+                                                  }
+                                                },
+                                                child: Text(isJoined
+                                                    ? 'Leave'
+                                                    : 'Join'),
                                               ),
                                             ],
                                           ),
@@ -260,28 +299,32 @@ class _EventsPageState extends State<EventsPage> {
                                               ],
                                             ),
                                           const SizedBox(height: 12),
+                                          Text(
+                                              'Katılımcılar: $participantCount / $guestLimit',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey)),
+                                          const SizedBox(height: 8),
                                           const Divider(),
-                                          const SizedBox(height: 12),
+                                          const SizedBox(height: 8),
                                           Row(
                                             children: [
-                                              const Text('45/60',
-                                                  style: TextStyle(
+                                              Text(
+                                                  'by ${(e['group'] as Map?)?['name'] ?? 'Grup'}',
+                                                  style: const TextStyle(
                                                       fontSize: 12,
                                                       color: Colors.grey)),
                                               const Spacer(),
-                                              Text(
-                                                  'by ${(e['group'] as Map?)?['name']?.toString() ?? 'Grup'}',
+                                              Text('Easy',
                                                   style: const TextStyle(
                                                       fontSize: 12,
                                                       color: Colors.grey)),
                                               const SizedBox(width: 8),
-                                              const Text('Easy',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                              const SizedBox(width: 8),
-                                              const Text('Free',
-                                                  style: TextStyle(
+                                              Text(
+                                                  e['is_public'] == true
+                                                      ? 'Free'
+                                                      : 'Private',
+                                                  style: const TextStyle(
                                                       fontSize: 12,
                                                       color: Colors.grey)),
                                             ],

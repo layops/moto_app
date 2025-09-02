@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 
@@ -23,15 +25,9 @@ class _AddEventPageState extends State<AddEventPage> {
   bool _submitting = false;
   bool _isPublic = true;
   bool _noGuestLimit = true;
-  List<String> _selectedGroups = [];
+  File? _coverImageFile;
 
   late EventService _service;
-
-  final List<Map<String, String>> _groups = [
-    {'id': '1', 'name': 'The Renegades', 'description': 'Motorcycle Crew'},
-    {'id': '2', 'name': 'The Iron Riders', 'description': 'Road Warriors'},
-    {'id': '3', 'name': 'The Asphalt Angels', 'description': 'Speed Benners'},
-  ];
 
   @override
   void didChangeDependencies() {
@@ -47,9 +43,7 @@ class _AddEventPageState extends State<AddEventPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date != null) {
-      setState(() => _start = date);
-    }
+    if (date != null) setState(() => _start = date);
   }
 
   Future<void> _pickTime() async {
@@ -57,37 +51,29 @@ class _AddEventPageState extends State<AddEventPage> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (time != null) {
-      setState(() => _time = time);
+    if (time != null) setState(() => _time = time);
+  }
+
+  Future<void> _pickCoverImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _coverImageFile = File(pickedFile.path));
     }
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Select date';
-    return '${date.day}/${date.month}/${date.year}';
-  }
+  String _formatDate(DateTime? date) =>
+      date == null ? 'Select date' : '${date.day}/${date.month}/${date.year}';
 
-  String _formatTime(TimeOfDay? time) {
-    if (time == null) return 'Select time';
-    return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _toggleGroupSelection(String groupId) {
-    setState(() {
-      if (_selectedGroups.contains(groupId)) {
-        _selectedGroups.remove(groupId);
-      } else {
-        _selectedGroups.add(groupId);
-      }
-    });
-  }
+  String _formatTime(TimeOfDay? time) => time == null
+      ? 'Select time'
+      : '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_start == null || _time == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Date and time are required')),
-      );
+          const SnackBar(content: Text('Date and time are required')));
       return;
     }
 
@@ -110,6 +96,7 @@ class _AddEventPageState extends State<AddEventPage> {
         endTime: null,
         isPublic: _isPublic,
         guestLimit: _noGuestLimit ? null : int.tryParse(_guestLimitCtrl.text),
+        coverImageFile: _coverImageFile,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -177,7 +164,7 @@ class _AddEventPageState extends State<AddEventPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(_formatDate(_start)),
-                              const Icon(Icons.calendar_today, size: 20),
+                              const Icon(Icons.calendar_today, size: 20)
                             ],
                           ),
                         ),
@@ -203,7 +190,7 @@ class _AddEventPageState extends State<AddEventPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(_formatTime(_time)),
-                              const Icon(Icons.access_time, size: 20),
+                              const Icon(Icons.access_time, size: 20)
                             ],
                           ),
                         ),
@@ -234,24 +221,30 @@ class _AddEventPageState extends State<AddEventPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Upload Cover Image',
+                  const Text('Cover Image',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.grey[50],
-                      side: BorderSide(color: Colors.grey[300]!),
-                      minimumSize: const Size(double.infinity, 100),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.cloud_upload, size: 32, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text('Tap to upload image',
-                            style: TextStyle(color: Colors.grey)),
-                      ],
+                  GestureDetector(
+                    onTap: _pickCoverImage,
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[50],
+                        image: _coverImageFile != null
+                            ? DecorationImage(
+                                image: FileImage(_coverImageFile!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: _coverImageFile == null
+                          ? const Center(
+                              child: Icon(Icons.cloud_upload,
+                                  size: 40, color: Colors.grey))
+                          : null,
                     ),
                   ),
                 ],
@@ -266,19 +259,15 @@ class _AddEventPageState extends State<AddEventPage> {
                   Row(
                     children: [
                       Radio(
-                        value: true,
-                        groupValue: _isPublic,
-                        onChanged: (value) =>
-                            setState(() => _isPublic = value!),
-                      ),
+                          value: true,
+                          groupValue: _isPublic,
+                          onChanged: (v) => setState(() => _isPublic = v!)),
                       const Text('Public'),
                       const SizedBox(width: 16),
                       Radio(
-                        value: false,
-                        groupValue: _isPublic,
-                        onChanged: (value) =>
-                            setState(() => _isPublic = value!),
-                      ),
+                          value: false,
+                          groupValue: _isPublic,
+                          onChanged: (v) => setState(() => _isPublic = v!)),
                       const Text('Private'),
                     ],
                   ),
@@ -303,15 +292,12 @@ class _AddEventPageState extends State<AddEventPage> {
                   Row(
                     children: [
                       Checkbox(
-                        value: _noGuestLimit,
-                        onChanged: (value) =>
-                            setState(() => _noGuestLimit = value!),
-                      ),
+                          value: _noGuestLimit,
+                          onChanged: (v) => setState(() => _noGuestLimit = v!)),
                       const Text('No Limit'),
                     ],
                   ),
-                  if (!_noGuestLimit) ...[
-                    const SizedBox(height: 8),
+                  if (!_noGuestLimit)
                     TextFormField(
                       controller: _guestLimitCtrl,
                       keyboardType: TextInputType.number,
@@ -320,54 +306,6 @@ class _AddEventPageState extends State<AddEventPage> {
                         hintText: 'Enter guest limit',
                       ),
                     ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 24),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Invite Friends/Groups',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: 'Search friends or groups',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: () {},
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ..._groups.map((group) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.grey,
-                          child: Icon(Icons.group, color: Colors.white),
-                        ),
-                        title: Text(group['name']!),
-                        subtitle: Text(group['description']!),
-                        trailing: Checkbox(
-                          value: _selectedGroups.contains(group['id']),
-                          onChanged: (_) => _toggleGroupSelection(group['id']!),
-                        ),
-                        onTap: () => _toggleGroupSelection(group['id']!),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                            color: _selectedGroups.contains(group['id'])
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey[300]!,
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
                 ],
               ),
               const SizedBox(height: 32),
@@ -378,8 +316,7 @@ class _AddEventPageState extends State<AddEventPage> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                      borderRadius: BorderRadius.circular(8)),
                 ),
                 child: _submitting
                     ? const CircularProgressIndicator(color: Colors.white)
