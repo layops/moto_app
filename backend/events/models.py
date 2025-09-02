@@ -31,7 +31,6 @@ class Event(models.Model):
     is_public = models.BooleanField(default=True, verbose_name="Herkese Açık")
     guest_limit = models.PositiveIntegerField(null=True, blank=True, verbose_name="Katılımcı Sınırı")
     
-    # Supabase ile uyumlu URL alanı
     cover_image = models.URLField(
         blank=True,
         null=True,

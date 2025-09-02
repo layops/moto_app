@@ -26,7 +26,6 @@ class EventSerializer(serializers.ModelSerializer):
     is_full = serializers.ReadOnlyField()
     is_joined = serializers.SerializerMethodField()
 
-    # Supabase uyumlu cover_image URLField
     cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:

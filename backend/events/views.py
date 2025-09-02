@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import Event
 from .serializers import EventSerializer
@@ -15,6 +16,7 @@ supabase = SupabaseStorage()
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         user = self.request.user
@@ -28,27 +30,42 @@ class EventViewSet(viewsets.ModelViewSet):
         print("Gelen veri:", request.data)
         print("Dosyalar:", request.FILES)
         
-        serializer = self.get_serializer(data=request.data)
+        data = request.data.copy()
+        cover_file = request.FILES.get('cover_image')
+        
+        # Cover image dosyası varsa, veriden kaldır
+        if cover_file and 'cover_image' in data:
+            del data['cover_image']
+        
+        serializer = self.get_serializer(data=data)
         if not serializer.is_valid():
             print("Serializer hataları:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        self.perform_create(serializer)
+        # Önce event'i oluştur
+        event = serializer.save(organizer=request.user)
+        
+        # Cover image yükleme işlemi
+        if cover_file:
+            try:
+                cover_url = supabase.upload_event_picture(cover_file, str(event.id))
+                event.cover_image = cover_url
+                event.save()
+                
+                # Serializer'ı güncelle
+                serializer = self.get_serializer(event)
+            except Exception as e:
+                print("Resim yükleme hatası:", str(e))
+                # Hata durumunda event'i silebilir veya olduğu gibi bırakabilirsiniz
+                # event.delete()
+                # return Response({"error": "Resim yüklenemedi"}, status=status.HTTP_400_BAD_REQUEST)
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         user = self.request.user
         group = serializer.validated_data.get('group')
-        cover_file = self.request.FILES.get('cover_image')
-
-        if cover_file:
-            try:
-                cover_url = supabase.upload_event_picture(cover_file, user.id)
-                serializer.validated_data['cover_image'] = cover_url
-            except Exception as e:
-                print("Resim yükleme hatası:", str(e))
-                # Resim yükleme hatası durumunda işleme devam et (opsiyonel)
 
         if group:
             if (user in group.members.all()) or (group.owner == user):
