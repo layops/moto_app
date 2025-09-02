@@ -160,3 +160,11 @@ class EventLeaveView(generics.UpdateAPIView):
             {"message": "Etkinlikten ayrıldınız."},
             status=status.HTTP_200_OK
         )
+        
+        
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+
+    @action(detail=True, methods=['post'])
+    def join(self, request, pk=None):

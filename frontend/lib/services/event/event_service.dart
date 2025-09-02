@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
 import '../auth/auth_service.dart';
 
 class EventService {
@@ -13,7 +11,12 @@ class EventService {
 
   Options _authOptions(String? token) {
     if (token == null) throw Exception('Token bulunamadı. Lütfen giriş yapın.');
-    return Options(headers: {'Authorization': 'Bearer $token'});
+    return Options(
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json', // JSON gönderiyoruz
+      },
+    );
   }
 
   List<dynamic> _extractList(dynamic data) {
@@ -56,11 +59,11 @@ class EventService {
     List<int>? participants,
     bool? isPublic,
     int? guestLimit,
-    File? coverImageFile, // eklendi
+    String? coverImageUrl, // opsiyonel
   }) async {
     final token = await _authService.getToken();
 
-    FormData formData = FormData.fromMap({
+    final payload = {
       'title': title,
       'description': description ?? '',
       'location': location ?? '',
@@ -70,28 +73,14 @@ class EventService {
       if (groupId != null && groupId > 0) 'group_id': groupId,
       if (isPublic != null) 'is_public': isPublic,
       if (guestLimit != null) 'guest_limit': guestLimit,
-      if (coverImageFile != null)
-        'cover_image': await MultipartFile.fromFile(
-          coverImageFile.path,
-          filename: coverImageFile.path.split('/').last,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-    });
+      if (coverImageUrl != null) 'cover_image': coverImageUrl,
+    };
 
-    Response res;
-    if (groupId != null && groupId > 0) {
-      res = await _dio.post(
-        'groups/$groupId/events/',
-        data: formData,
-        options: _authOptions(token),
-      );
-    } else {
-      res = await _dio.post(
-        'events/',
-        data: formData,
-        options: _authOptions(token),
-      );
-    }
+    final res = await _dio.post(
+      groupId != null && groupId > 0 ? 'groups/$groupId/events/' : 'events/',
+      data: payload,
+      options: _authOptions(token),
+    );
 
     return (res.data as Map).cast<String, dynamic>();
   }
@@ -108,11 +97,11 @@ class EventService {
     List<int>? participants,
     bool? isPublic,
     int? guestLimit,
-    File? coverImageFile,
+    String? coverImageUrl, // opsiyonel
   }) async {
     final token = await _authService.getToken();
 
-    FormData formData = FormData.fromMap({
+    final payload = {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (location != null) 'location': location,
@@ -121,28 +110,16 @@ class EventService {
       if (participants != null) 'participants': participants,
       if (isPublic != null) 'is_public': isPublic,
       if (guestLimit != null) 'guest_limit': guestLimit,
-      if (coverImageFile != null)
-        'cover_image': await MultipartFile.fromFile(
-          coverImageFile.path,
-          filename: coverImageFile.path.split('/').last,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-    });
+      if (coverImageUrl != null) 'cover_image': coverImageUrl,
+    };
 
-    Response res;
-    if (groupId != null && groupId > 0) {
-      res = await _dio.patch(
-        'groups/$groupId/events/$eventId/',
-        data: formData,
-        options: _authOptions(token),
-      );
-    } else {
-      res = await _dio.patch(
-        'events/$eventId/',
-        data: formData,
-        options: _authOptions(token),
-      );
-    }
+    final res = await _dio.patch(
+      groupId != null && groupId > 0
+          ? 'groups/$groupId/events/$eventId/'
+          : 'events/$eventId/',
+      data: payload,
+      options: _authOptions(token),
+    );
 
     return (res.data as Map).cast<String, dynamic>();
   }
@@ -150,10 +127,13 @@ class EventService {
   // Etkinliğe katıl
   Future<Map<String, dynamic>> joinEvent(int eventId) async {
     final token = await _authService.getToken();
+
+    // baseUrl zaten 'https://spiride.onrender.com/api/' olarak ayarlanmış olmalı
     final res = await _dio.patch(
-      'events/$eventId/join/',
+      'events/$eventId/join/', // doğru URL pattern: api/events/<id>/join/
       options: _authOptions(token),
     );
+
     return (res.data as Map).cast<String, dynamic>();
   }
 

@@ -25,6 +25,7 @@ class _EventsPageState extends State<EventsPage> {
   String? _error;
   late final bool _isGeneralPage;
   int _selectedFilterIndex = 0;
+  String _currentUsername = '';
 
   @override
   void initState() {
@@ -37,7 +38,18 @@ class _EventsPageState extends State<EventsPage> {
     super.didChangeDependencies();
     final authService = Provider.of<AuthService>(context, listen: false);
     _service = EventService(authService: authService);
+    _loadCurrentUsername();
     _loadEvents();
+  }
+
+  Future<void> _loadCurrentUsername() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final username = await authService.getCurrentUsername();
+    if (mounted) {
+      setState(() {
+        _currentUsername = username ?? '';
+      });
+    }
   }
 
   Future<void> _loadEvents() async {
@@ -134,7 +146,6 @@ class _EventsPageState extends State<EventsPage> {
       ),
       body: Column(
         children: [
-          // Filter Chips
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: SingleChildScrollView(
@@ -214,6 +225,14 @@ class _EventsPageState extends State<EventsPage> {
                                 final participantCount =
                                     e['participants_count'] ?? 0;
                                 final guestLimit = e['guest_limit'] ?? '-';
+                                final organizerUsername =
+                                    (e['organizer'] as Map?)?['username'] ?? '';
+
+                                // Katılabilir mi? Kendi etkinliği değil, dolu değil ve henüz katılmamış
+                                final canJoin = !isJoined &&
+                                    organizerUsername != _currentUsername &&
+                                    (guestLimit == '-' ||
+                                        participantCount < guestLimit);
 
                                 return Card(
                                   elevation: 3,
@@ -240,18 +259,17 @@ class _EventsPageState extends State<EventsPage> {
                                                       ? Colors.green
                                                       : Colors.red),
                                               const Spacer(),
-                                              TextButton(
-                                                onPressed: () {
-                                                  if (isJoined) {
-                                                    _leaveEvent(e['id']);
-                                                  } else {
-                                                    _joinEvent(e['id']);
-                                                  }
-                                                },
-                                                child: Text(isJoined
-                                                    ? 'Leave'
-                                                    : 'Join'),
-                                              ),
+                                              if (isJoined || canJoin)
+                                                TextButton(
+                                                  onPressed: isJoined
+                                                      ? () =>
+                                                          _leaveEvent(e['id'])
+                                                      : () =>
+                                                          _joinEvent(e['id']),
+                                                  child: Text(isJoined
+                                                      ? 'Leave'
+                                                      : 'Join'),
+                                                ),
                                             ],
                                           ),
                                           const SizedBox(height: 8),

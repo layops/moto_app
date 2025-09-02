@@ -96,7 +96,8 @@ class _AddEventPageState extends State<AddEventPage> {
         endTime: null,
         isPublic: _isPublic,
         guestLimit: _noGuestLimit ? null : int.tryParse(_guestLimitCtrl.text),
-        coverImageFile: _coverImageFile,
+        // coverImageFile: ...  <-- bunu kaldır
+        coverImageUrl: null, // veya kullanıcıdan aldığın URL
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
