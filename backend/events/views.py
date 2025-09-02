@@ -25,8 +25,14 @@ class EventViewSet(viewsets.ModelViewSet):
         ).distinct().order_by('start_time')
 
     def create(self, request, *args, **kwargs):
+        print("Gelen veri:", request.data)
+        print("Dosyalar:", request.FILES)
+        
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print("Serializer hataları:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -37,8 +43,12 @@ class EventViewSet(viewsets.ModelViewSet):
         cover_file = self.request.FILES.get('cover_image')
 
         if cover_file:
-            cover_url = supabase.upload_event_picture(cover_file, user.id)
-            serializer.validated_data['cover_image'] = cover_url
+            try:
+                cover_url = supabase.upload_event_picture(cover_file, user.id)
+                serializer.validated_data['cover_image'] = cover_url
+            except Exception as e:
+                print("Resim yükleme hatası:", str(e))
+                # Resim yükleme hatası durumunda işleme devam et (opsiyonel)
 
         if group:
             if (user in group.members.all()) or (group.owner == user):

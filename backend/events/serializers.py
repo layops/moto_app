@@ -41,6 +41,11 @@ class EventSerializer(serializers.ModelSerializer):
             'id', 'organizer', 'created_at', 'updated_at', 
             'current_participant_count', 'is_full', 'is_joined'
         )
+        extra_kwargs = {
+            'title': {'required': True},
+            'start_time': {'required': True},
+            'is_public': {'required': True},
+        }
 
     def get_is_joined(self, obj):
         request = self.context.get('request')

@@ -1,141 +1,150 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import '../auth/auth_service.dart';
 
 class EventService {
-  final Dio _dio;
-  final AuthService _authService;
+  final AuthService authService;
+  final Dio _dio = Dio();
 
-  EventService({required AuthService authService})
-      : _dio = authService.apiClient.dio,
-        _authService = authService;
-
-  Options _authOptions(String? token) {
-    if (token == null) throw Exception('Token bulunamadı. Lütfen giriş yapın.');
-    return Options(
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-  }
-
-  List<dynamic> _extractList(dynamic data) {
-    if (data is Map && data.containsKey('results')) {
-      return (data['results'] as List).cast<dynamic>();
-    }
-    if (data is List) return data;
-    return [];
-  }
+  EventService({required this.authService});
 
   Future<List<dynamic>> fetchAllEvents() async {
-    final token = await _authService.getToken();
-    final res = await _dio.get('events/', options: _authOptions(token));
-    return _extractList(res.data);
+    try {
+      final token = await authService.getToken();
+      final response = await _dio.get(
+        'https://spiride.onrender.com/api/events/',
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+          },
+        ),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception('Failed to fetch events: ${e.message}');
+    }
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
-    final token = await _authService.getToken();
-    if (groupId <= 0) return [];
-    final res = await _dio.get(
-      'groups/$groupId/events/',
-      options: _authOptions(token),
-    );
-    return _extractList(res.data);
+    try {
+      final token = await authService.getToken();
+      final response = await _dio.get(
+        'https://spiride.onrender.com/api/events/',
+        queryParameters: {'group': groupId},
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+          },
+        ),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception('Failed to fetch group events: ${e.message}');
+    }
   }
 
-  Future<Map<String, dynamic>> createEvent({
-    int? groupId,
+  Future<void> createEvent({
     required String title,
-    String? description,
-    String? location,
+    required String description,
+    required String location,
     required DateTime startTime,
     DateTime? endTime,
-    List<int>? participants,
-    bool? isPublic,
+    required bool isPublic,
     int? guestLimit,
-    String? coverImageUrl, // artık URL ile gönderiliyor
-  }) async {
-    final token = await _authService.getToken();
-
-    final payload = {
-      'title': title,
-      'description': description ?? '',
-      'location': location ?? '',
-      'start_time': startTime.toUtc().toIso8601String(),
-      if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-      if (participants != null) 'participants': participants,
-      if (groupId != null && groupId > 0) 'group_id': groupId,
-      if (isPublic != null) 'is_public': isPublic,
-      if (guestLimit != null) 'guest_limit': guestLimit,
-      if (coverImageUrl != null) 'cover_image': coverImageUrl,
-    };
-
-    final endpoint =
-        groupId != null && groupId > 0 ? 'groups/$groupId/events/' : 'events/';
-
-    final res = await _dio.post(
-      endpoint,
-      data: payload,
-      options: _authOptions(token),
-    );
-
-    return (res.data as Map).cast<String, dynamic>();
-  }
-
-  Future<Map<String, dynamic>> updateEvent({
-    required int eventId,
+    File? coverImageFile,
     int? groupId,
-    String? title,
-    String? description,
-    String? location,
-    DateTime? startTime,
-    DateTime? endTime,
-    List<int>? participants,
-    bool? isPublic,
-    int? guestLimit,
-    String? coverImageUrl,
   }) async {
-    final token = await _authService.getToken();
+    try {
+      final token = await authService.getToken();
+      if (token == null) {
+        throw Exception('Token not available');
+      }
 
-    final payload = {
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (location != null) 'location': location,
-      if (startTime != null) 'start_time': startTime.toUtc().toIso8601String(),
-      if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-      if (participants != null) 'participants': participants,
-      if (isPublic != null) 'is_public': isPublic,
-      if (guestLimit != null) 'guest_limit': guestLimit,
-      if (coverImageUrl != null) 'cover_image': coverImageUrl,
-    };
+      // FormData oluştur
+      final formData = FormData.fromMap({
+        'title': title,
+        'description': description,
+        'location': location,
+        'start_time': startTime.toUtc().toIso8601String(), // UTC formatında
+        'is_public': isPublic.toString(), // String olarak gönder
+        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
+        if (guestLimit != null) 'guest_limit': guestLimit.toString(),
+        if (groupId != null) 'group_id': groupId.toString(),
+      });
 
-    final res = await _dio.patch(
-      groupId != null && groupId > 0
-          ? 'groups/$groupId/events/$eventId/'
-          : 'events/$eventId/',
-      data: payload,
-      options: _authOptions(token),
-    );
+      // Eğer resim dosyası varsa ekle
+      if (coverImageFile != null) {
+        final mimeType = lookupMimeType(coverImageFile.path);
+        final fileExtension = mimeType?.split('/')[1] ?? 'jpg';
 
-    return (res.data as Map).cast<String, dynamic>();
+        formData.files.add(MapEntry(
+          'cover_image',
+          await MultipartFile.fromFile(
+            coverImageFile.path,
+            contentType: MediaType('image', fileExtension),
+          ),
+        ));
+      }
+
+      final response = await _dio.post(
+        'https://spiride.onrender.com/api/events/',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (response.statusCode != 201) {
+        throw Exception(
+            'Failed to create event: ${response.statusCode} - ${response.data}');
+      }
+    } on DioException catch (e) {
+      // Detaylı hata bilgisi
+      final errorData = e.response?.data;
+      final errorMessage = errorData is Map
+          ? errorData['detail'] ?? errorData.toString()
+          : e.message;
+
+      throw Exception('Failed to create event: $errorMessage');
+    } catch (e) {
+      throw Exception('Failed to create event: $e');
+    }
   }
 
-  Future<Map<String, dynamic>> joinEvent(int eventId) async {
-    final token = await _authService.getToken();
-    final res = await _dio.post(
-      'events/$eventId/join/',
-      options: _authOptions(token),
-    );
-    return (res.data as Map).cast<String, dynamic>();
+  Future<void> joinEvent(int eventId) async {
+    try {
+      final token = await authService.getToken();
+      await _dio.post(
+        'https://spiride.onrender.com/api/events/$eventId/join/',
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to join event: ${e.message}');
+    }
   }
 
-  Future<Map<String, dynamic>> leaveEvent(int eventId) async {
-    final token = await _authService.getToken();
-    final res = await _dio.post(
-      'events/$eventId/leave/',
-      options: _authOptions(token),
-    );
-    return (res.data as Map).cast<String, dynamic>();
+  Future<void> leaveEvent(int eventId) async {
+    try {
+      final token = await authService.getToken();
+      await _dio.post(
+        'https://spiride.onrender.com/api/events/$eventId/leave/',
+        options: Options(
+          headers: {
+            'Authorization': 'Token $token',
+          },
+        ),
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to leave event: ${e.message}');
+    }
   }
 }

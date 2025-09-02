@@ -8,6 +8,7 @@ import 'user/user_service.dart';
 import 'user/profile_service.dart';
 import 'follow/follow_service.dart';
 import 'post/post_service.dart';
+import 'event/event_service.dart'; // Yeni eklenen import
 import 'notifications/notifications_service.dart';
 
 class ServiceLocator {
@@ -28,6 +29,7 @@ class ServiceLocator {
   late final ProfileService _profileService;
   late final FollowService _followService;
   late final PostService _postService;
+  late final EventService _eventService; // Yeni eklenen service
   late final NotificationsService _notificationService;
   late final supabase_client.SupabaseClient _supabaseClient;
 
@@ -98,7 +100,10 @@ class ServiceLocator {
       // 8. Initialize post service
       instance._postService = PostService();
 
-      // 9. Initialize notification service
+      // 9. Initialize event service
+      instance._eventService = EventService(authService: instance._authService);
+
+      // 10. Initialize notification service
       instance._notificationService = NotificationsService();
 
       _isInitialized = true;
@@ -130,6 +135,7 @@ class ServiceLocator {
   static ProfileService get profile => _instance._profileService;
   static FollowService get follow => _instance._followService;
   static PostService get post => _instance._postService;
+  static EventService get event => _instance._eventService; // Yeni getter
   static NotificationsService get notification =>
       _instance._notificationService;
   static LocalStorage get storage => _instance._localStorage;

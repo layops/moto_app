@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
-import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import '../../widgets/events/event_privacy_guest.dart';
 import '../../widgets/events/event_form_fields.dart';
 import '../../widgets/events/event_date_time_picker.dart';
@@ -18,7 +17,7 @@ class AddEventPage extends StatefulWidget {
 
 class _AddEventPageState extends State<AddEventPage> {
   final _formKey = GlobalKey<FormState>();
-  late EventService _service;
+  late final EventService _service;
 
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -33,38 +32,29 @@ class _AddEventPageState extends State<AddEventPage> {
   bool _submitting = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final authService = Provider.of<AuthService>(context, listen: false);
-    _service = EventService(authService: authService);
-  }
-
-  Future<String> uploadImageAndGetUrl(File file) async {
-    // TODO: Burada resmi Supabase veya başka bir sunucuya yükle
-    // ve URL döndür. Örnek placeholder:
-    final uploadedUrl =
-        'https://your-storage.com/path/to/${file.path.split('/').last}';
-    return uploadedUrl;
+  void initState() {
+    super.initState();
+    _service = ServiceLocator.event;
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields')),
+      ServiceLocator.messenger.showSnackBar(
+        const SnackBar(content: Text('Lütfen gerekli alanları doldurun')),
       );
       return;
     }
 
     if (_start == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a start date')),
+      ServiceLocator.messenger.showSnackBar(
+        const SnackBar(content: Text('Lütfen başlangıç tarihi seçin')),
       );
       return;
     }
 
     if (_time == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a start time')),
+      ServiceLocator.messenger.showSnackBar(
+        const SnackBar(content: Text('Lütfen başlangıç saati seçin')),
       );
       return;
     }
@@ -73,8 +63,8 @@ class _AddEventPageState extends State<AddEventPage> {
     if (!_noGuestLimit) {
       guestLimit = int.tryParse(_guestLimitCtrl.text);
       if (guestLimit == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Guest limit must be a number')),
+        ServiceLocator.messenger.showSnackBar(
+          const SnackBar(content: Text('Konuk sınırı bir sayı olmalıdır')),
         );
         return;
       }
@@ -99,17 +89,26 @@ class _AddEventPageState extends State<AddEventPage> {
         endTime: null,
         isPublic: _isPublic,
         guestLimit: _noGuestLimit ? null : guestLimit,
-        coverImageUrl: _coverImageFile != null
-            ? await uploadImageAndGetUrl(_coverImageFile!)
-            : null,
+        coverImageFile: _coverImageFile,
       );
 
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) ServiceLocator.navigator.pop(true);
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+      if (mounted) {
+        // Daha anlaşılır hata mesajı
+        String errorMessage = e.toString();
+        if (errorMessage.contains('Failed to create event:')) {
+          errorMessage =
+              errorMessage.replaceFirst('Failed to create event:', '');
+        }
+
+        ServiceLocator.messenger.showSnackBar(
+          SnackBar(
+            content: Text('Hata: $errorMessage'),
+            duration: const Duration(seconds: 5),
+          ),
         );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
