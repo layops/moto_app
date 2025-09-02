@@ -24,6 +24,7 @@ class EventSerializer(serializers.ModelSerializer):
     )
     current_participant_count = serializers.ReadOnlyField()
     is_full = serializers.ReadOnlyField()
+    is_joined = serializers.SerializerMethodField()
 
     # Supabase uyumlu cover_image URLField
     cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
@@ -34,12 +35,18 @@ class EventSerializer(serializers.ModelSerializer):
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
             'location', 'start_time', 'end_time', 'participants',
             'created_at', 'updated_at', 'is_public', 'guest_limit',
-            'cover_image', 'current_participant_count', 'is_full'
+            'cover_image', 'current_participant_count', 'is_full', 'is_joined'
         ]
         read_only_fields = (
             'id', 'organizer', 'created_at', 'updated_at', 
-            'current_participant_count', 'is_full'
+            'current_participant_count', 'is_full', 'is_joined'
         )
+
+    def get_is_joined(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.participants.filter(id=request.user.id).exists()
+        return False
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])

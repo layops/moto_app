@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../auth/auth_service.dart';
 
@@ -42,7 +43,7 @@ class EventService {
     final token = await _authService.getToken();
     if (groupId <= 0) return [];
     final res = await _dio.get(
-      'events/groups/$groupId/events/',
+      'groups/$groupId/events/',
       options: _authOptions(token),
     );
     return _extractList(res.data);
@@ -60,24 +61,45 @@ class EventService {
     bool? isPublic,
     int? guestLimit,
     String? coverImageUrl,
+    File? coverImageFile,
   }) async {
     final token = await _authService.getToken();
+    dynamic payload;
 
-    final payload = {
-      'title': title,
-      'description': description ?? '',
-      'location': location ?? '',
-      'start_time': startTime.toUtc().toIso8601String(),
-      if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-      if (participants != null) 'participants': participants,
-      if (groupId != null && groupId > 0) 'group_id': groupId,
-      if (isPublic != null) 'is_public': isPublic,
-      if (guestLimit != null) 'guest_limit': guestLimit,
-      if (coverImageUrl != null) 'cover_image': coverImageUrl,
-    };
+    if (coverImageFile != null) {
+      payload = FormData.fromMap({
+        'title': title,
+        'description': description ?? '',
+        'location': location ?? '',
+        'start_time': startTime.toUtc().toIso8601String(),
+        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
+        if (participants != null) 'participants': participants,
+        if (groupId != null && groupId > 0) 'group_id': groupId,
+        if (isPublic != null) 'is_public': isPublic,
+        if (guestLimit != null) 'guest_limit': guestLimit,
+        'cover_image': await MultipartFile.fromFile(coverImageFile.path,
+            filename: 'cover.jpg'),
+      });
+    } else {
+      payload = {
+        'title': title,
+        'description': description ?? '',
+        'location': location ?? '',
+        'start_time': startTime.toUtc().toIso8601String(),
+        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
+        if (participants != null) 'participants': participants,
+        if (groupId != null && groupId > 0) 'group_id': groupId,
+        if (isPublic != null) 'is_public': isPublic,
+        if (guestLimit != null) 'guest_limit': guestLimit,
+        if (coverImageUrl != null) 'cover_image': coverImageUrl,
+      };
+    }
+
+    final endpoint =
+        groupId != null && groupId > 0 ? 'groups/$groupId/events/' : 'events/';
 
     final res = await _dio.post(
-      groupId != null && groupId > 0 ? 'groups/$groupId/events/' : 'events/',
+      endpoint,
       data: payload,
       options: _authOptions(token),
     );
@@ -124,17 +146,15 @@ class EventService {
     return (res.data as Map).cast<String, dynamic>();
   }
 
-  // Etkinliğe katıl (POST metod)
   Future<Map<String, dynamic>> joinEvent(int eventId) async {
     final token = await _authService.getToken();
     final res = await _dio.post(
-      'events/$eventId/join/', // backend DRF'de @action(detail=True, methods=['post']) olmalı
+      'events/$eventId/join/',
       options: _authOptions(token),
     );
     return (res.data as Map).cast<String, dynamic>();
   }
 
-  // Etkinlikten ayrıl (POST metod)
   Future<Map<String, dynamic>> leaveEvent(int eventId) async {
     final token = await _authService.getToken();
     final res = await _dio.post(

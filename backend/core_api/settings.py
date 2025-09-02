@@ -145,9 +145,11 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',  # Dosya yüklemeleri için eklendi
+        'rest_framework.parsers.FormParser',       # Form verileri için eklendi
     ],
     'EXCEPTION_HANDLER': 'core_api.exception_handler.custom_exception_handler'
-}
+}}
 
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = False

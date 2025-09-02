@@ -57,9 +57,8 @@ class _AddEventPageState extends State<AddEventPage> {
   Future<void> _pickCoverImage() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+    if (pickedFile != null)
       setState(() => _coverImageFile = File(pickedFile.path));
-    }
   }
 
   String _formatDate(DateTime? date) =>
@@ -96,8 +95,7 @@ class _AddEventPageState extends State<AddEventPage> {
         endTime: null,
         isPublic: _isPublic,
         guestLimit: _noGuestLimit ? null : int.tryParse(_guestLimitCtrl.text),
-        // coverImageFile: ...  <-- bunu kaldır
-        coverImageUrl: null, // veya kullanıcıdan aldığın URL
+        coverImageFile: _coverImageFile,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {

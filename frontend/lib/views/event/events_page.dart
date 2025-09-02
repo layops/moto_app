@@ -58,9 +58,27 @@ class _EventsPageState extends State<EventsPage> {
       _error = null;
     });
     try {
-      _events = _isGeneralPage
+      List<dynamic> fetchedEvents = _isGeneralPage
           ? await _service.fetchAllEvents()
           : await _service.fetchGroupEvents(widget.groupId!);
+
+      // Filtreleme
+      final now = DateTime.now();
+      setState(() {
+        _events = fetchedEvents.where((e) {
+          final start = DateTime.parse(e['start_time']).toLocal();
+          switch (_selectedFilterIndex) {
+            case 1: // This Week
+              return start.isAfter(now) && start.difference(now).inDays <= 7;
+            case 2: // This Month
+              return start.year == now.year && start.month == now.month;
+            case 3: // My Events
+              return (e['organizer'] as Map?)?['username'] == _currentUsername;
+            default: // All Events
+              return true;
+          }
+        }).toList();
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -99,16 +117,6 @@ class _EventsPageState extends State<EventsPage> {
     }
   }
 
-  Widget _buildEventChip(String label, Color color) {
-    return Chip(
-      label: Text(label, style: TextStyle(fontSize: 12, color: color)),
-      backgroundColor: color.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-
   Widget _buildFilterChip(int index, String label) {
     return FilterChip(
       label: Text(label),
@@ -117,6 +125,7 @@ class _EventsPageState extends State<EventsPage> {
         setState(() {
           _selectedFilterIndex = selected ? index : 0;
         });
+        _loadEvents();
       },
       backgroundColor: Colors.transparent,
       selectedColor: AppColorSchemes.primaryColor.withOpacity(0.2),
@@ -228,7 +237,6 @@ class _EventsPageState extends State<EventsPage> {
                                 final organizerUsername =
                                     (e['organizer'] as Map?)?['username'] ?? '';
 
-                                // Katılabilir mi? Kendi etkinliği değil, dolu değil ve henüz katılmamış
                                 final canJoin = !isJoined &&
                                     organizerUsername != _currentUsername &&
                                     (guestLimit == '-' ||
@@ -240,58 +248,59 @@ class _EventsPageState extends State<EventsPage> {
                                       vertical: 8, horizontal: 4),
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
-                                  child: InkWell(
-                                    onTap: () {},
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              _buildEventChip(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Chip(
+                                              label: Text(
                                                   e['is_public'] == true
                                                       ? 'Public'
                                                       : 'Private',
+                                                  style: const TextStyle(
+                                                      color: Colors.white)),
+                                              backgroundColor:
                                                   e['is_public'] == true
                                                       ? Colors.green
-                                                      : Colors.red),
-                                              const Spacer(),
-                                              if (isJoined || canJoin)
-                                                TextButton(
-                                                  onPressed: isJoined
-                                                      ? () =>
-                                                          _leaveEvent(e['id'])
-                                                      : () =>
-                                                          _joinEvent(e['id']),
-                                                  child: Text(isJoined
-                                                      ? 'Leave'
-                                                      : 'Join'),
-                                                ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                              e['title']?.toString() ??
-                                                  'Başlıksız Etkinlik',
-                                              style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold)),
-                                          if ((e['description']?.toString() ??
-                                                  '')
-                                              .isNotEmpty)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 8),
-                                              child: Text(
-                                                  e['description'].toString(),
-                                                  style: const TextStyle(
-                                                      fontSize: 14)),
+                                                      : Colors.red,
                                             ),
-                                          const SizedBox(height: 12),
-                                          Row(children: [
+                                            const Spacer(),
+                                            if (isJoined || canJoin)
+                                              TextButton(
+                                                onPressed: isJoined
+                                                    ? () => _leaveEvent(e['id'])
+                                                    : () => _joinEvent(e['id']),
+                                                child: Text(isJoined
+                                                    ? 'Leave'
+                                                    : 'Join'),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          e['title']?.toString() ??
+                                              'Başlıksız Etkinlik',
+                                          style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        if ((e['description']?.toString() ?? '')
+                                            .isNotEmpty)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 8),
+                                            child: Text(
+                                                e['description'].toString(),
+                                                style: const TextStyle(
+                                                    fontSize: 14)),
+                                          ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
                                             const Icon(Icons.calendar_today,
                                                 size: 16, color: Colors.grey),
                                             const SizedBox(width: 4),
@@ -301,54 +310,28 @@ class _EventsPageState extends State<EventsPage> {
                                                 style: const TextStyle(
                                                     fontSize: 14,
                                                     color: Colors.grey)),
-                                          ]),
-                                          if ((e['location']?.toString() ?? '')
-                                              .isNotEmpty)
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.location_on,
-                                                    size: 16,
-                                                    color: Colors.grey),
-                                                const SizedBox(width: 4),
-                                                Text(e['location'].toString(),
-                                                    style: const TextStyle(
-                                                        fontSize: 14,
-                                                        color: Colors.grey)),
-                                              ],
-                                            ),
-                                          const SizedBox(height: 12),
-                                          Text(
-                                              'Katılımcılar: $participantCount / $guestLimit',
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey)),
-                                          const SizedBox(height: 8),
-                                          const Divider(),
-                                          const SizedBox(height: 8),
+                                          ],
+                                        ),
+                                        if ((e['location']?.toString() ?? '')
+                                            .isNotEmpty)
                                           Row(
                                             children: [
-                                              Text(
-                                                  'by ${(e['group'] as Map?)?['name'] ?? 'Grup'}',
+                                              const Icon(Icons.location_on,
+                                                  size: 16, color: Colors.grey),
+                                              const SizedBox(width: 4),
+                                              Text(e['location'].toString(),
                                                   style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                              const Spacer(),
-                                              Text('Easy',
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                  e['is_public'] == true
-                                                      ? 'Free'
-                                                      : 'Private',
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
+                                                      fontSize: 14,
                                                       color: Colors.grey)),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                            'Katılımcılar: $participantCount / $guestLimit',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey)),
+                                      ],
                                     ),
                                   ),
                                 );
