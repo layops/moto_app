@@ -95,7 +95,7 @@ class SupabaseStorage:
         except Exception as e:
             logger.error(f"Kapak resmi yükleme hatası: {str(e)}")
             raise
-
+    
     def delete_cover_picture(self, image_url):
         """
         Kapak fotoğrafını siler.
@@ -107,3 +107,42 @@ class SupabaseStorage:
                 logger.info(f"Kapak resmi silindi: {file_path}")
         except Exception as e:
             logger.warning(f"Kapak resmi silinemedi: {str(e)}")
+    
+        def upload_event_picture(self, file_obj, event_id):
+        """
+        Etkinlik resmi yükler ve public URL döner.
+        """
+        try:
+            file_extension = os.path.splitext(file_obj.name)[1]
+            unique_filename = f"events/{event_id}/event_{uuid.uuid4()}{file_extension}"
+
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            if file_obj.content_type not in allowed_types:
+                raise ValueError("Geçersiz dosya formatı")
+
+            # Burada event_pictures bucket’ını kullanıyoruz
+            self.client.storage.from_('event_pictures').upload(
+                unique_filename,
+                file_obj.read(),
+                {"content-type": file_obj.content_type}
+            )
+
+            url = f"{self.supabase_url}/storage/v1/object/public/event_pictures/{unique_filename}"
+            logger.info(f"Etkinlik resmi başarıyla yüklendi: {url}")
+            return url
+
+        except Exception as e:
+            logger.error(f"Etkinlik resmi yükleme hatası: {str(e)}")
+            raise
+
+    def delete_event_picture(self, image_url):
+        """
+        Etkinlik resmini siler.
+        """
+        try:
+            if "/event_pictures/" in image_url:
+                file_path = image_url.split("/event_pictures/")[-1]
+                self.client.storage.from_('event_pictures').remove([file_path])
+                logger.info(f"Etkinlik resmi silindi: {file_path}")
+        except Exception as e:
+            logger.warning(f"Etkinlik resmi silinemedi: {str(e)}")

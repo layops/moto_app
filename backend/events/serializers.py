@@ -25,6 +25,9 @@ class EventSerializer(serializers.ModelSerializer):
     current_participant_count = serializers.ReadOnlyField()
     is_full = serializers.ReadOnlyField()
 
+    # Artık cover_image URLField, direkt read/write
+    cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Event
         fields = [

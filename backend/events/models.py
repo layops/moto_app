@@ -30,7 +30,14 @@ class Event(models.Model):
     )
     is_public = models.BooleanField(default=True, verbose_name="Herkese Açık")
     guest_limit = models.PositiveIntegerField(null=True, blank=True, verbose_name="Katılımcı Sınırı")
-    cover_image = models.ImageField(upload_to='event_covers/', null=True, blank=True, verbose_name="Kapak Görseli")
+    
+    # Supabase ile uyumlu URL alanı
+    cover_image = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="Kapak Resmi URL"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
 
