@@ -22,6 +22,7 @@ group_event_leave = EventViewSet.as_view({
     'post': 'leave'
 })
 
+
 urlpatterns = [
     path('', include(router.urls)),  # /events/
     
