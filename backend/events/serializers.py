@@ -22,15 +22,18 @@ class EventSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    current_participant_count = serializers.ReadOnlyField()
+    is_full = serializers.ReadOnlyField()
 
     class Meta:
         model = Event
         fields = [
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
             'location', 'start_time', 'end_time', 'participants',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'is_public', 'guest_limit',
+            'cover_image', 'current_participant_count', 'is_full'
         ]
-        read_only_fields = ('id', 'organizer', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'organizer', 'created_at', 'updated_at', 'current_participant_count', 'is_full')
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])

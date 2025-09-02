@@ -28,6 +28,9 @@ class Event(models.Model):
         blank=True,
         verbose_name="Katılımcılar"
     )
+    is_public = models.BooleanField(default=True, verbose_name="Herkese Açık")
+    guest_limit = models.PositiveIntegerField(null=True, blank=True, verbose_name="Katılımcı Sınırı")
+    cover_image = models.ImageField(upload_to='event_covers/', null=True, blank=True, verbose_name="Kapak Görseli")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
 
@@ -39,3 +42,12 @@ class Event(models.Model):
     def __str__(self):
         grp = self.group.name if self.group else "Personal"
         return f"Event: {self.title} in {grp} by {self.organizer.username}"
+    
+    @property
+    def current_participant_count(self):
+        return self.participants.count()
+    
+    def is_full(self):
+        if self.guest_limit is None:
+            return False
+        return self.current_participant_count >= self.guest_limit

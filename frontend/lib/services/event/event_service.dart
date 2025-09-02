@@ -24,16 +24,20 @@ class EventService {
 
   Future<List<dynamic>> fetchAllEvents() async {
     final token = await _authService.getToken();
-    final res = await _dio.get('events/',
-        options: _authOptions(token)); // api/events/ için
+    final res = await _dio.get(
+      'events/',
+      options: _authOptions(token),
+    );
     return _extractList(res.data);
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
     final token = await _authService.getToken();
     if (groupId <= 0) return [];
-    final res = await _dio.get('events/groups/$groupId/events/',
-        options: _authOptions(token)); // api/events/groups/ için
+    final res = await _dio.get(
+      'events/groups/$groupId/events/',
+      options: _authOptions(token),
+    );
     return _extractList(res.data);
   }
 
@@ -45,6 +49,8 @@ class EventService {
     required DateTime startTime,
     DateTime? endTime,
     List<int>? participants,
+    bool? isPublic, // eklendi
+    int? guestLimit, // eklendi
   }) async {
     final token = await _authService.getToken();
     final payload = {
@@ -55,15 +61,23 @@ class EventService {
       if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
       if (participants != null) 'participants': participants,
       if (groupId != null && groupId > 0) 'group_id': groupId,
+      if (isPublic != null) 'is_public': isPublic,
+      if (guestLimit != null) 'guest_limit': guestLimit,
     };
 
     Response res;
     if (groupId != null && groupId > 0) {
-      res = await _dio.post('groups/$groupId/events/',
-          data: payload, options: _authOptions(token));
+      res = await _dio.post(
+        'groups/$groupId/events/',
+        data: payload,
+        options: _authOptions(token),
+      );
     } else {
-      res = await _dio.post('events/',
-          data: payload, options: _authOptions(token));
+      res = await _dio.post(
+        'events/',
+        data: payload,
+        options: _authOptions(token),
+      );
     }
     return (res.data as Map).cast<String, dynamic>();
   }
