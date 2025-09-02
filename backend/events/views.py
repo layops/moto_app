@@ -89,8 +89,13 @@ class EventViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         event.participants.add(user)
-        return Response({"message": "Etkinliğe başarıyla katıldınız."},
-                        status=status.HTTP_200_OK)
+        
+        # Güncellenmiş event verisi ile response döndür
+        serializer = self.get_serializer(event)
+        return Response({
+            "message": "Etkinliğe başarıyla katıldınız.",
+            "event": serializer.data
+        }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def leave(self, request, pk=None):
@@ -102,5 +107,10 @@ class EventViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         event.participants.remove(user)
-        return Response({"message": "Etkinlikten ayrıldınız."},
-                        status=status.HTTP_200_OK)
+        
+        # Güncellenmiş event verisi ile response döndür
+        serializer = self.get_serializer(event)
+        return Response({
+            "message": "Etkinlikten ayrıldınız.",
+            "event": serializer.data
+        }, status=status.HTTP_200_OK)

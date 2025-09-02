@@ -20,7 +20,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isJoined = event['is_joined'] as bool? ?? false;
-    final participantCount = event['participants_count'] ?? 0;
+    final participantCount = event['current_participant_count'] ?? 0;
     final guestLimit = event['guest_limit'] ?? '-';
     final organizerUsername = (event['organizer'] as Map?)?['username'] ?? '';
     final canJoin = !isJoined &&
@@ -119,8 +119,10 @@ class EventCard extends StatelessWidget {
                     ],
                   ),
                 const SizedBox(height: 12),
-                Text('Katılımcılar: $participantCount / $guestLimit',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  'Katılımcılar: ${event['participants_count'] ?? 0} / ${event['guest_limit'] ?? '-'}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),

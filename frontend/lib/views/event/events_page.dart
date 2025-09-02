@@ -85,8 +85,15 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> _joinEvent(int eventId) async {
     try {
-      await _service.joinEvent(eventId);
-      _loadEvents();
+      await _service.joinEvent(eventId); // void, sonucu kullanma
+      setState(() {
+        final index = _events.indexWhere((e) => e['id'] == eventId);
+        if (index != -1) {
+          _events[index]['current_participant_count'] =
+              (_events[index]['current_participant_count'] ?? 0) + 1;
+          _events[index]['is_joined'] = true;
+        }
+      });
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Katılamadı: $e')));
@@ -95,8 +102,15 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> _leaveEvent(int eventId) async {
     try {
-      await _service.leaveEvent(eventId);
-      _loadEvents();
+      await _service.leaveEvent(eventId); // void, sonucu kullanma
+      setState(() {
+        final index = _events.indexWhere((e) => e['id'] == eventId);
+        if (index != -1) {
+          _events[index]['current_participant_count'] =
+              (_events[index]['current_participant_count'] ?? 1) - 1;
+          _events[index]['is_joined'] = false;
+        }
+      });
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Ayrılamadı: $e')));

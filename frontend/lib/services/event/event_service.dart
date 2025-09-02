@@ -21,6 +21,7 @@ class EventService {
           },
         ),
       );
+      print('Fetched events: ${response.data}'); // Log ekleyelim
       return response.data;
     } on DioException catch (e) {
       throw Exception('Failed to fetch events: ${e.message}');
