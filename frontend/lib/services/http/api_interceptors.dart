@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../storage/local_storage.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class ApiInterceptors extends Interceptor {
   final LocalStorage _storage;
@@ -20,9 +21,9 @@ class ApiInterceptors extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      await _storage.removeAuthToken(); // removeAuthToken kullanıyoruz
-      await _storage.removeCurrentUsername();
+    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+      // Token geçersiz veya süresi dolmuşsa, logout yap
+      await ServiceLocator.auth.logout();
     }
     handler.next(err);
   }

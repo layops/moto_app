@@ -41,9 +41,9 @@ class ApiExceptions implements Exception {
       case 400:
         return 'Geçersiz istek';
       case 401:
-        return 'Yetkisiz erişim';
+        return 'Oturum süresi doldu'; // Değiştirildi
       case 403:
-        return 'Erişim reddedildi';
+        return 'Oturum süresi doldu'; // Değiştirildi
       case 404:
         return 'Kaynak bulunamadı';
       case 500:

@@ -3,26 +3,72 @@ import 'package:flutter/foundation.dart';
 import '../../config.dart';
 import '../storage/local_storage.dart';
 import 'api_exceptions.dart';
+import '../auth/token_service.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class ApiClient {
   final Dio _dio;
   final LocalStorage _storage;
+  final TokenService _tokenService;
+  bool _isRefreshing = false;
 
-  ApiClient(this._storage) : _dio = Dio() {
+  ApiClient(this._storage)
+      : _tokenService = TokenService(_storage),
+        _dio = Dio() {
     _dio.options.baseUrl = kBaseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
 
-    // Token interceptor - users/login ve users/register hariç token ekle
+    // Token interceptor
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = _storage.getAuthToken();
-        if (token != null &&
-            !options.path.contains('users/login') &&
-            !options.path.contains('users/register')) {
-          options.headers['Authorization'] = 'Token $token';
+        // Login ve register endpoint'lerinde token ekleme
+        if (options.path.contains('users/login') ||
+            options.path.contains('users/register')) {
+          return handler.next(options);
+        }
+
+        final token = await _tokenService.getToken();
+        if (token != null) {
+          // Token süresi kontrolü (5 dakika toleranslı)
+          if (await _tokenService.isTokenExpired()) {
+            if (!_isRefreshing) {
+              _isRefreshing = true;
+              try {
+                // Token yenileme mekanizması
+                await _refreshToken();
+              } catch (e) {
+                _isRefreshing = false;
+                // Token yenilenemezse logout yap
+                await ServiceLocator.auth.logout();
+                return handler.reject(DioException(
+                  requestOptions: options,
+                  error: 'Oturum süresi doldu',
+                ));
+              }
+              _isRefreshing = false;
+            }
+          }
+
+          // Yeni token'ı al ve header'a ekle
+          final newToken = await _tokenService.getToken();
+          if (newToken != null) {
+            options.headers['Authorization'] = 'Token $newToken';
+          }
         }
         return handler.next(options);
+      },
+    ));
+
+    // Error interceptor
+    _dio.interceptors.add(InterceptorsWrapper(
+      onError: (DioException err, ErrorInterceptorHandler handler) async {
+        if (err.response?.statusCode == 401 ||
+            err.response?.statusCode == 403) {
+          // Token geçersiz veya süresi dolmuşsa, logout yap
+          await ServiceLocator.auth.logout();
+        }
+        handler.next(err);
       },
     ));
 
@@ -39,6 +85,30 @@ class ApiClient {
   }
 
   Dio get dio => _dio;
+
+  // Token yenileme metodu
+  Future<void> _refreshToken() async {
+    try {
+      final username = await _tokenService.getCurrentUsername();
+      if (username == null) {
+        throw Exception('Kullanıcı adı bulunamadı');
+      }
+
+      // Burada token yenileme endpoint'inizi kullanmanız gerekir
+      // Örnek: /users/refresh-token/
+      debugPrint('Token yenileme işlemi başlatıldı');
+
+      // Şimdilik mevcut token'ı tekrar kullanıyoruz
+      // Gerçek uygulamada token refresh endpoint'ini çağırmanız gerekir
+      final currentToken = await _tokenService.getToken();
+      if (currentToken == null) {
+        throw Exception('Mevcut token bulunamadı');
+      }
+    } catch (e) {
+      debugPrint('Token yenileme hatası: $e');
+      rethrow;
+    }
+  }
 
   // ----------------------
   // GET

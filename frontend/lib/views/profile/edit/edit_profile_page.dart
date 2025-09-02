@@ -74,7 +74,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         if (!mounted) return;
 
         String errorMessage = 'Kaydetme hatası: $e';
-        if (e.toString().contains('Kullanıcı adı bulunamadı')) {
+        if (e.toString().contains('Oturum süresi doldu')) {
           errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
 
           Future.delayed(const Duration(seconds: 2), () {

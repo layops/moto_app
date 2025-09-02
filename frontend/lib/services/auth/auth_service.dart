@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
 import 'token_service.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class AuthService {
   final ApiClient _apiClient;
@@ -21,17 +24,14 @@ class AuthService {
     _authStateController.add(loggedIn);
   }
 
-  /// Login işlemi - endpoint düzeltildi
+  /// Login işlemi
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
-      final response = await _apiClient.post(
-        'users/login/', // ✅ Doğru endpoint
-        {
-          'username': username,
-          'password': password,
-        },
-      );
+      final response = await _apiClient.post('users/login/', {
+        'username': username,
+        'password': password,
+      });
 
       final token = _extractToken(response);
       if (token.isNotEmpty) {
@@ -54,26 +54,24 @@ class AuthService {
           e.response?.data?['error'] ??
           e.message ??
           'Giriş işlemi sırasında bir hata oluştu';
-
       throw Exception('Giriş hatası: $errorMessage');
     }
   }
 
-  /// Register işlemi - endpoint düzeltildi
+  /// Register işlemi (password2 desteği eklendi)
   Future<Response> register({
     required String username,
     required String email,
     required String password,
+    required String password2, // eklendi
   }) async {
     try {
-      final response = await _apiClient.post(
-        'users/register/', // ✅ Doğru endpoint
-        {
-          'username': username,
-          'email': email,
-          'password': password,
-        },
-      );
+      final response = await _apiClient.post('users/register/', {
+        'username': username,
+        'email': email,
+        'password': password,
+        'password2': password2, // eklendi
+      });
       return response;
     } on DioException catch (e) {
       final errorMessage = e.response?.data?['message'] ??
@@ -81,7 +79,6 @@ class AuthService {
           e.response?.data?['error'] ??
           e.message ??
           'Kayıt işlemi sırasında bir hata oluştu';
-
       throw Exception('Kayıt hatası: $errorMessage');
     }
   }
@@ -90,76 +87,69 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _apiClient.post('users/logout/', {});
-    } catch (e) {
-      // Logout hatası kritik değil, devam et
     } finally {
       await clearAllUserData();
+      ServiceLocator.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+      );
     }
   }
 
-  /// Kullanıcı giriş yapmış mı?
-  Future<bool> isLoggedIn() async {
-    return await _tokenService.hasToken();
-  }
+  Future<bool> isLoggedIn() async => await _tokenService.hasToken();
 
-  /// Token al
-  Future<String?> getToken() async {
-    return await _tokenService.getToken();
-  }
+  Future<String?> getToken() async => await _tokenService.getToken();
 
-  /// Şu anki kullanıcı adını al
   Future<String?> getCurrentUsername() async {
     final tokenData = await _tokenService.getTokenData();
-    if (tokenData?['username'] != null) {
-      return tokenData!['username'] as String;
-    }
+    if (tokenData?['username'] != null) return tokenData!['username'] as String;
     return _storage.getCurrentUsername() ?? _storage.getRememberedUsername();
   }
 
-  /// Remember me durumu
-  Future<void> saveRememberMe(bool rememberMe) async {
-    await _storage.setRememberMe(rememberMe);
-  }
+  Future<void> saveRememberMe(bool rememberMe) async =>
+      await _storage.setRememberMe(rememberMe);
 
-  Future<bool> getRememberMe() async {
-    return (_storage.getRememberMe()) ?? false;
-  }
+  Future<bool> getRememberMe() async => _storage.getRememberMe() ?? false;
 
-  /// Remembered username
-  Future<void> saveRememberedUsername(String username) async {
-    await _storage.setRememberedUsername(username);
-  }
+  Future<void> saveRememberedUsername(String username) async =>
+      await _storage.setRememberedUsername(username);
 
-  Future<String?> getRememberedUsername() async {
-    return _storage.getRememberedUsername();
-  }
+  Future<String?> getRememberedUsername() async =>
+      _storage.getRememberedUsername();
 
-  Future<void> clearRememberedUsername() async {
-    await _storage.clearRememberedUsername();
-  }
+  Future<void> clearRememberedUsername() async =>
+      await _storage.clearRememberedUsername();
 
-  /// Token'ı response'dan çıkar - Backend yapısına uygun
   String _extractToken(Response response) {
     try {
       final data = response.data;
-
       if (data is Map<String, dynamic>) {
-        return data['token'] ?? ''; // ✅ Backend 'token' döndürüyor
+        return data['token'] ??
+            data['access_token'] ??
+            data['accessToken'] ??
+            '';
+      } else if (data is String) {
+        final jsonData = jsonDecode(data);
+        if (jsonData is Map<String, dynamic>) {
+          return jsonData['token'] ??
+              jsonData['access_token'] ??
+              jsonData['accessToken'] ??
+              '';
+        }
       }
-
       return '';
     } catch (e) {
-      throw Exception('Token alınırken hata: $e');
+      debugPrint('Token alınırken hata: $e');
+      return '';
     }
   }
 
-  /// Tüm kullanıcı verilerini temizle
   Future<void> clearAllUserData() async {
     await _tokenService.deleteAuthData();
     await _storage.removeCurrentUsername();
     await _storage.clearRememberedUsername();
     await _storage.setRememberMe(false);
-    await _storage.clearProfileData(); // Profil verilerini de temizle
+    await _storage.clearProfileData();
     _authStateController.add(false);
   }
 

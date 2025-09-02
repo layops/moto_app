@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import '../http/api_client.dart';
 import '../auth/token_service.dart';
@@ -15,12 +16,12 @@ class ProfileService {
     try {
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
-        throw Exception('Kullanıcı adı bulunamadı');
+        throw Exception('Oturum süresi doldu');
       }
 
       final token = await _tokenService.getToken();
       if (token == null) {
-        throw Exception('Kullanıcı tokeni bulunamadı');
+        throw Exception('Oturum süresi doldu');
       }
 
       final ext = imageFile.path.split('.').last;
@@ -50,12 +51,12 @@ class ProfileService {
     try {
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
-        throw Exception('Kullanıcı adı bulunamadı');
+        throw Exception('Oturum süresi doldu');
       }
 
       final token = await _tokenService.getToken();
       if (token == null) {
-        throw Exception('Kullanıcı tokeni bulunamadı');
+        throw Exception('Oturum süresi doldu');
       }
 
       final ext = imageFile.path.split('.').last;
@@ -83,6 +84,11 @@ class ProfileService {
   /// Mevcut profil bilgilerini getirme
   Future<Map<String, dynamic>> getProfile(String username) async {
     try {
+      final token = await _tokenService.getToken();
+      if (token == null) {
+        throw Exception('Oturum süresi doldu');
+      }
+
       final response = await _apiClient.get('users/$username/profile/');
       final data = response.data as Map<String, dynamic>;
 
@@ -105,14 +111,21 @@ class ProfileService {
   /// Profil güncelleme
   Future<Response> updateProfile(Map<String, dynamic> profileData) async {
     try {
-      final username = await _tokenService.getUsernameFromToken();
+      // Önce token'dan kullanıcı adını almayı dene
+      String? username = await _tokenService.getUsernameFromToken();
+
+      // Token'dan alınamazsa localStorage'dan al
       if (username == null) {
-        throw Exception('Kullanıcı adı bulunamadı');
+        username = await ServiceLocator.user.getCurrentUsername();
+      }
+
+      if (username == null) {
+        throw Exception('Kullanıcı adı bulunamadı. Lütfen tekrar giriş yapın.');
       }
 
       final token = await _tokenService.getToken();
       if (token == null) {
-        throw Exception('Kullanıcı tokeni bulunamadı');
+        throw Exception('Token bulunamadı. Lütfen tekrar giriş yapın.');
       }
 
       return await _apiClient.put(
@@ -123,7 +136,7 @@ class ProfileService {
         ),
       );
     } catch (e) {
-      print('Profil güncelleme hatası: $e');
+      debugPrint('Profil güncelleme hatası: $e');
       rethrow;
     }
   }

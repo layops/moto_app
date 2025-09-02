@@ -29,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_passwordController.text != _confirmPasswordController.text) {
       AuthCommon.showErrorSnackbar(context, 'Passwords do not match');
       return;
@@ -41,6 +42,7 @@ class _RegisterPageState extends State<RegisterPage> {
         username: _usernameController.text,
         email: _emailController.text,
         password: _passwordController.text,
+        password2: _confirmPasswordController.text, // ekledik
       );
 
       if (mounted) {
@@ -55,13 +57,10 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       String errorMessage = 'Registration failed';
-
-      if (e.toString().contains('Registration error:')) {
+      if (e.toString().contains('Kayıt hatası:')) {
         errorMessage =
-            e.toString().replaceFirst('Exception: Registration error: ', '');
+            e.toString().replaceFirst('Exception: Kayıt hatası: ', '');
       }
-
-      // ignore: use_build_context_synchronously
       AuthCommon.showErrorSnackbar(context, errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -112,10 +111,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 12.h),
                 Text(
                   'Join the motorcycle community',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    // ignore: deprecated_member_use
-                    color: colors.onSurface.withOpacity(0.6),
-                  ),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
                 ),
                 SizedBox(height: 40.h),
                 AuthTextField(
@@ -175,10 +172,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Text(
                       'Already have an account? ',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        // ignore: deprecated_member_use
-                        color: colors.onSurface.withOpacity(0.7),
-                      ),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: colors.onSurface.withOpacity(0.7)),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pushReplacement(
