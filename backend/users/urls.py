@@ -11,7 +11,8 @@ from .views import (
     UserProfileView,
     UserPostsView,
     UserMediaView,
-    UserEventsView
+    UserEventsView,
+    UserLogoutView
 )
 
 urlpatterns = [

@@ -83,15 +83,11 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    try {
-      await _apiClient.post('users/logout/', {});
-    } finally {
-      await clearAllUserData();
-      ServiceLocator.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        '/login',
-        (route) => false,
-      );
-    }
+    await clearAllUserData();
+    ServiceLocator.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      '/login',
+      (route) => false,
+    );
   }
 
   Future<bool> isLoggedIn() async => await _tokenService.hasToken();
