@@ -24,7 +24,6 @@ class AuthService {
     _authStateController.add(loggedIn);
   }
 
-  /// Login işlemi
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
@@ -45,6 +44,7 @@ class AuthService {
           await clearRememberedUsername();
         }
 
+        // Auth state güncelle
         _authStateController.add(true);
       }
       return response;
@@ -58,19 +58,18 @@ class AuthService {
     }
   }
 
-  /// Register işlemi (password2 desteği eklendi)
   Future<Response> register({
     required String username,
     required String email,
     required String password,
-    required String password2, // eklendi
+    required String password2,
   }) async {
     try {
       final response = await _apiClient.post('users/register/', {
         'username': username,
         'email': email,
         'password': password,
-        'password2': password2, // eklendi
+        'password2': password2,
       });
       return response;
     } on DioException catch (e) {
@@ -83,7 +82,6 @@ class AuthService {
     }
   }
 
-  /// Logout işlemi
   Future<void> logout() async {
     try {
       await _apiClient.post('users/logout/', {});
@@ -150,6 +148,8 @@ class AuthService {
     await _storage.clearRememberedUsername();
     await _storage.setRememberMe(false);
     await _storage.clearProfileData();
+
+    // Auth state sıfırla
     _authStateController.add(false);
   }
 

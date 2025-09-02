@@ -40,4 +40,7 @@ urlpatterns = [
 
     # User Events
     path('<str:username>/events/', UserEventsView.as_view(), name='user-events'),
+    
+    #Users Logout
+    path('logout/', UserLogoutView.as_view(), name='user-logout'),
 ]

@@ -33,7 +33,6 @@ class TokenService {
       final parts = token.split('.');
       if (parts.length != 3) return null;
 
-      // Base64Url decode için padding ekleme
       String normalizedPayload = parts[1];
       final padding = 4 - (normalizedPayload.length % 4);
       if (padding != 4) {
@@ -50,13 +49,10 @@ class TokenService {
 
   Future<String?> getUsernameFromToken() async {
     try {
-      // Önce token'dan almayı dene
       final tokenData = await getTokenData();
       if (tokenData?['username'] != null) {
         return tokenData!['username']?.toString();
       }
-
-      // Token'da yoksa localStorage'dan al
       return await getCurrentUsername();
     } catch (e) {
       debugPrint('Token\'dan kullanıcı adı alma hatası: $e');
@@ -64,12 +60,10 @@ class TokenService {
     }
   }
 
-  // Yeni metod: localStorage'dan kullanıcı adını al
   Future<String?> getCurrentUsername() async {
     return _storage.getCurrentUsername();
   }
 
-  // Token süresi dolmuş mu kontrol et
   Future<bool> isTokenExpired() async {
     final tokenData = await getTokenData();
     if (tokenData == null) return true;
@@ -77,9 +71,7 @@ class TokenService {
     final exp = tokenData['exp'];
     if (exp == null) return true;
 
-    // exp değerinin saniye cinsinden olduğunu varsayalım
     final expiryTime = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-    // 5 dakika tolerans ekleyelim
     return DateTime.now()
         .isAfter(expiryTime.subtract(const Duration(minutes: 5)));
   }

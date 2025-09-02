@@ -96,11 +96,9 @@ class _MotoAppState extends State<MotoApp> {
 
   Future<void> _loadCurrentUsername() async {
     try {
-      // Önce token'dan kullanıcı adını almayı dene
       final usernameFromToken =
           await ServiceLocator.token.getUsernameFromToken();
 
-      // Eğer token'dan alamazsak, localStorage'dan al
       final username =
           usernameFromToken ?? await ServiceLocator.token.getCurrentUsername();
 
@@ -124,10 +122,10 @@ class _MotoAppState extends State<MotoApp> {
       builder: (context, child) {
         return Consumer<ThemeProvider>(
           builder: (context, themeProvider, _) {
-            return StreamBuilder<dynamic>(
+            return StreamBuilder<bool>(
               stream: authService.authStateChanges,
               builder: (context, snapshot) {
-                final isAuthenticated = snapshot.hasData;
+                final isAuthenticated = snapshot.data == true;
 
                 return MaterialApp(
                   title: 'Moto App',
@@ -186,7 +184,6 @@ class _MotoAppState extends State<MotoApp> {
     );
   }
 
-  // MainWrapper'ı ayrı bir metod olarak oluşturuyoruz
   Widget _buildMainWrapper() {
     final List<Widget> pages = [
       const HomePage(),

@@ -360,3 +360,17 @@ class FollowingListView(APIView):
         following = user.following.all()  # Assuming related_name='following' on User model
         serializer = UserSerializer(following, many=True, context={'request': request})
         return Response(serializer.data)
+    
+
+
+ # -------------------------------
+# Logout
+# -------------------------------
+
+class UserLogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Eğer token kullanıyorsan burada token'ı blacklist'e ekleyebilirsin
+        # Basit kullanım için sadece frontend tarafında logout yapılacak
+        return Response({"detail": "Başarıyla çıkış yapıldı"}, status=200)
