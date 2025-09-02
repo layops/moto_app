@@ -14,7 +14,7 @@ class EventService {
     return Options(
       headers: {
         'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json', // JSON gönderiyoruz
+        'Content-Type': 'application/json',
       },
     );
   }
@@ -59,7 +59,7 @@ class EventService {
     List<int>? participants,
     bool? isPublic,
     int? guestLimit,
-    String? coverImageUrl, // opsiyonel
+    String? coverImageUrl,
   }) async {
     final token = await _authService.getToken();
 
@@ -97,7 +97,7 @@ class EventService {
     List<int>? participants,
     bool? isPublic,
     int? guestLimit,
-    String? coverImageUrl, // opsiyonel
+    String? coverImageUrl,
   }) async {
     final token = await _authService.getToken();
 
@@ -124,23 +124,20 @@ class EventService {
     return (res.data as Map).cast<String, dynamic>();
   }
 
-  // Etkinliğe katıl
+  // Etkinliğe katıl (POST metod)
   Future<Map<String, dynamic>> joinEvent(int eventId) async {
     final token = await _authService.getToken();
-
-    // baseUrl zaten 'https://spiride.onrender.com/api/' olarak ayarlanmış olmalı
-    final res = await _dio.patch(
-      'events/$eventId/join/', // doğru URL pattern: api/events/<id>/join/
+    final res = await _dio.post(
+      'events/$eventId/join/', // backend DRF'de @action(detail=True, methods=['post']) olmalı
       options: _authOptions(token),
     );
-
     return (res.data as Map).cast<String, dynamic>();
   }
 
-  // Etkinlikten ayrıl
+  // Etkinlikten ayrıl (POST metod)
   Future<Map<String, dynamic>> leaveEvent(int eventId) async {
     final token = await _authService.getToken();
-    final res = await _dio.patch(
+    final res = await _dio.post(
       'events/$eventId/leave/',
       options: _authOptions(token),
     );

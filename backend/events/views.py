@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -9,6 +10,7 @@ from groups.models import Group
 from users.services.supabase_service import SupabaseStorage
 
 supabase = SupabaseStorage()
+
 
 class AllEventListCreateView(generics.ListCreateAPIView):
     serializer_class = EventSerializer
@@ -88,7 +90,6 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         cover_file = self.request.FILES.get('cover_image')
         if cover_file:
-            # Eski resmi sil (opsiyonel)
             if event.cover_image:
                 supabase.delete_event_picture(event.cover_image)
             cover_url = supabase.upload_event_picture(cover_file, user.id)
@@ -102,7 +103,6 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
         user = self.request.user
         if instance.organizer != user and instance.group.owner != user:
             raise PermissionDenied("Bu etkinliği silme yetkiniz yok.")
-        # Supabase'deki resmi sil
         if instance.cover_image:
             supabase.delete_event_picture(instance.cover_image)
         instance.delete()
@@ -160,11 +160,49 @@ class EventLeaveView(generics.UpdateAPIView):
             {"message": "Etkinlikten ayrıldınız."},
             status=status.HTTP_200_OK
         )
-        
-        
+
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=True, methods=['post'])
     def join(self, request, pk=None):
+        event = self.get_object()
+        user = request.user
+
+        if event.is_full():
+            return Response(
+                {"error": "Etkinlik kontenjanı dolmuştur."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user in event.participants.all():
+            return Response(
+                {"error": "Zaten bu etkinliğe katılıyorsunuz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        event.participants.add(user)
+        return Response(
+            {"message": "Etkinliğe başarıyla katıldınız."},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['post'])
+    def leave(self, request, pk=None):
+        event = self.get_object()
+        user = request.user
+
+        if user not in event.participants.all():
+            return Response(
+                {"error": "Bu etkinliğe zaten katılmıyorsunuz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        event.participants.remove(user)
+        return Response(
+            {"message": "Etkinlikten ayrıldınız."},
+            status=status.HTTP_200_OK
+        )

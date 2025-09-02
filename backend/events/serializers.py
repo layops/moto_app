@@ -25,7 +25,7 @@ class EventSerializer(serializers.ModelSerializer):
     current_participant_count = serializers.ReadOnlyField()
     is_full = serializers.ReadOnlyField()
 
-    # Artık cover_image URLField, direkt read/write
+    # Supabase uyumlu cover_image URLField
     cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
@@ -36,7 +36,10 @@ class EventSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'is_public', 'guest_limit',
             'cover_image', 'current_participant_count', 'is_full'
         ]
-        read_only_fields = ('id', 'organizer', 'created_at', 'updated_at', 'current_participant_count', 'is_full')
+        read_only_fields = (
+            'id', 'organizer', 'created_at', 'updated_at', 
+            'current_participant_count', 'is_full'
+        )
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])
