@@ -28,17 +28,12 @@ class EventService {
     return [];
   }
 
-  // Tüm etkinlikleri çek
   Future<List<dynamic>> fetchAllEvents() async {
     final token = await _authService.getToken();
-    final res = await _dio.get(
-      'events/',
-      options: _authOptions(token),
-    );
+    final res = await _dio.get('events/', options: _authOptions(token));
     return _extractList(res.data);
   }
 
-  // Grup etkinliklerini çek
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
     final token = await _authService.getToken();
     if (groupId <= 0) return [];
@@ -49,7 +44,6 @@ class EventService {
     return _extractList(res.data);
   }
 
-  // Yeni etkinlik oluştur
   Future<Map<String, dynamic>> createEvent({
     int? groupId,
     required String title,
@@ -60,40 +54,22 @@ class EventService {
     List<int>? participants,
     bool? isPublic,
     int? guestLimit,
-    String? coverImageUrl,
-    File? coverImageFile,
+    String? coverImageUrl, // artık URL ile gönderiliyor
   }) async {
     final token = await _authService.getToken();
-    dynamic payload;
 
-    if (coverImageFile != null) {
-      payload = FormData.fromMap({
-        'title': title,
-        'description': description ?? '',
-        'location': location ?? '',
-        'start_time': startTime.toUtc().toIso8601String(),
-        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-        if (participants != null) 'participants': participants,
-        if (groupId != null && groupId > 0) 'group_id': groupId,
-        if (isPublic != null) 'is_public': isPublic,
-        if (guestLimit != null) 'guest_limit': guestLimit,
-        'cover_image': await MultipartFile.fromFile(coverImageFile.path,
-            filename: 'cover.jpg'),
-      });
-    } else {
-      payload = {
-        'title': title,
-        'description': description ?? '',
-        'location': location ?? '',
-        'start_time': startTime.toUtc().toIso8601String(),
-        if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-        if (participants != null) 'participants': participants,
-        if (groupId != null && groupId > 0) 'group_id': groupId,
-        if (isPublic != null) 'is_public': isPublic,
-        if (guestLimit != null) 'guest_limit': guestLimit,
-        if (coverImageUrl != null) 'cover_image': coverImageUrl,
-      };
-    }
+    final payload = {
+      'title': title,
+      'description': description ?? '',
+      'location': location ?? '',
+      'start_time': startTime.toUtc().toIso8601String(),
+      if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
+      if (participants != null) 'participants': participants,
+      if (groupId != null && groupId > 0) 'group_id': groupId,
+      if (isPublic != null) 'is_public': isPublic,
+      if (guestLimit != null) 'guest_limit': guestLimit,
+      if (coverImageUrl != null) 'cover_image': coverImageUrl,
+    };
 
     final endpoint =
         groupId != null && groupId > 0 ? 'groups/$groupId/events/' : 'events/';
@@ -107,7 +83,6 @@ class EventService {
     return (res.data as Map).cast<String, dynamic>();
   }
 
-  // Etkinlik güncelle
   Future<Map<String, dynamic>> updateEvent({
     required int eventId,
     int? groupId,

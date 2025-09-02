@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'add_event_page.dart';
+import 'event_card.dart';
+import 'event_filter_chips.dart';
+import 'event_helpers.dart';
 
 class EventsPage extends StatefulWidget {
   final int? groupId;
@@ -45,11 +47,7 @@ class _EventsPageState extends State<EventsPage> {
   Future<void> _loadCurrentUsername() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final username = await authService.getCurrentUsername();
-    if (mounted) {
-      setState(() {
-        _currentUsername = username ?? '';
-      });
-    }
+    if (mounted) setState(() => _currentUsername = username ?? '');
   }
 
   Future<void> _loadEvents() async {
@@ -62,19 +60,18 @@ class _EventsPageState extends State<EventsPage> {
           ? await _service.fetchAllEvents()
           : await _service.fetchGroupEvents(widget.groupId!);
 
-      // Filtreleme
       final now = DateTime.now();
       setState(() {
         _events = fetchedEvents.where((e) {
           final start = DateTime.parse(e['start_time']).toLocal();
           switch (_selectedFilterIndex) {
-            case 1: // This Week
+            case 1:
               return start.isAfter(now) && start.difference(now).inDays <= 7;
-            case 2: // This Month
+            case 2:
               return start.year == now.year && start.month == now.month;
-            case 3: // My Events
+            case 3:
               return (e['organizer'] as Map?)?['username'] == _currentUsername;
-            default: // All Events
+            default:
               return true;
           }
         }).toList();
@@ -83,17 +80,6 @@ class _EventsPageState extends State<EventsPage> {
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  String _formatDate(String? iso) {
-    if (iso == null || iso.isEmpty) return '-';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      String two(int v) => v.toString().padLeft(2, '0');
-      return '${two(dt.day)}/${two(dt.month)}/${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
-    } catch (_) {
-      return iso;
     }
   }
 
@@ -117,34 +103,6 @@ class _EventsPageState extends State<EventsPage> {
     }
   }
 
-  Widget _buildFilterChip(int index, String label) {
-    return FilterChip(
-      label: Text(label),
-      selected: _selectedFilterIndex == index,
-      onSelected: (selected) {
-        setState(() {
-          _selectedFilterIndex = selected ? index : 0;
-        });
-        _loadEvents();
-      },
-      backgroundColor: Colors.transparent,
-      selectedColor: AppColorSchemes.primaryColor.withOpacity(0.2),
-      labelStyle: TextStyle(
-        color: _selectedFilterIndex == index
-            ? AppColorSchemes.primaryColor
-            : AppColorSchemes.textSecondary,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: _selectedFilterIndex == index
-              ? AppColorSchemes.primaryColor
-              : AppColorSchemes.borderColor,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,13 +119,13 @@ class _EventsPageState extends State<EventsPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterChip(0, 'All Events'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(1, 'This Week'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(2, 'This Month'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(3, 'My Events'),
+                  EventFilterChips(
+                    selectedIndex: _selectedFilterIndex,
+                    onSelected: (index) {
+                      setState(() => _selectedFilterIndex = index);
+                      _loadEvents();
+                    },
+                  )
                 ],
               ),
             ),
@@ -179,161 +137,21 @@ class _EventsPageState extends State<EventsPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
                       ? Center(
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline,
-                                    size: 48, color: Colors.red),
-                                const SizedBox(height: 16),
-                                Text(_error!,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                    onPressed: _loadEvents,
-                                    child: const Text('Tekrar Dene')),
-                              ],
-                            ),
-                          ),
+                          child: Text('Hata: $_error'),
                         )
                       : _events.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.event,
-                                      size: 64, color: Colors.grey),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                      _isGeneralPage
-                                          ? 'Henüz etkinlik yok'
-                                          : 'Bu grupta henüz etkinlik yok',
-                                      style: const TextStyle(
-                                          fontSize: 18, color: Colors.grey)),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                      _isGeneralPage
-                                          ? 'Kişisel etkinlik oluşturabilir veya gruplara katılabilirsiniz'
-                                          : 'İlk etkinliği sen oluştur!',
-                                      style:
-                                          const TextStyle(color: Colors.grey),
-                                      textAlign: TextAlign.center),
-                                ],
-                              ),
-                            )
+                          ? Center(child: Text('Henüz etkinlik yok'))
                           : ListView.builder(
                               padding: const EdgeInsets.all(8),
                               itemCount: _events.length,
                               itemBuilder: (context, index) {
                                 final e = (_events[index] as Map)
                                     .cast<String, dynamic>();
-                                final isJoined =
-                                    e['is_joined'] as bool? ?? false;
-                                final participantCount =
-                                    e['participants_count'] ?? 0;
-                                final guestLimit = e['guest_limit'] ?? '-';
-                                final organizerUsername =
-                                    (e['organizer'] as Map?)?['username'] ?? '';
-
-                                final canJoin = !isJoined &&
-                                    organizerUsername != _currentUsername &&
-                                    (guestLimit == '-' ||
-                                        participantCount < guestLimit);
-
-                                return Card(
-                                  elevation: 3,
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 4),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Chip(
-                                              label: Text(
-                                                  e['is_public'] == true
-                                                      ? 'Public'
-                                                      : 'Private',
-                                                  style: const TextStyle(
-                                                      color: Colors.white)),
-                                              backgroundColor:
-                                                  e['is_public'] == true
-                                                      ? Colors.green
-                                                      : Colors.red,
-                                            ),
-                                            const Spacer(),
-                                            if (isJoined || canJoin)
-                                              TextButton(
-                                                onPressed: isJoined
-                                                    ? () => _leaveEvent(e['id'])
-                                                    : () => _joinEvent(e['id']),
-                                                child: Text(isJoined
-                                                    ? 'Leave'
-                                                    : 'Join'),
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          e['title']?.toString() ??
-                                              'Başlıksız Etkinlik',
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        if ((e['description']?.toString() ?? '')
-                                            .isNotEmpty)
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 8),
-                                            child: Text(
-                                                e['description'].toString(),
-                                                style: const TextStyle(
-                                                    fontSize: 14)),
-                                          ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.calendar_today,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                                _formatDate(e['start_time']
-                                                    ?.toString()),
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey)),
-                                          ],
-                                        ),
-                                        if ((e['location']?.toString() ?? '')
-                                            .isNotEmpty)
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.location_on,
-                                                  size: 16, color: Colors.grey),
-                                              const SizedBox(width: 4),
-                                              Text(e['location'].toString(),
-                                                  style: const TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.grey)),
-                                            ],
-                                          ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                            'Katılımcılar: $participantCount / $guestLimit',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey)),
-                                      ],
-                                    ),
-                                  ),
+                                return EventCard(
+                                  event: e,
+                                  currentUsername: _currentUsername,
+                                  onJoin: _joinEvent,
+                                  onLeave: _leaveEvent,
                                 );
                               },
                             ),
