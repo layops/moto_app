@@ -9,6 +9,13 @@ import 'package:motoapp_frontend/views/auth/widgets/auth_logo.dart';
 import 'package:motoapp_frontend/views/auth/widgets/auth_text_field.dart';
 import 'package:motoapp_frontend/views/auth/widgets/password_field.dart';
 import 'package:motoapp_frontend/views/auth/widgets/social_button.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
+import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
+import 'package:motoapp_frontend/views/home/home_page.dart';
+import 'package:motoapp_frontend/views/map/map_page.dart';
+import 'package:motoapp_frontend/views/groups/group_page.dart';
+import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/profile/profile_page.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthService authService;
@@ -33,23 +40,62 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await widget.authService.login(
-        _userOrEmailController.text.trim(),
-        _passwordController.text,
+      final username = _userOrEmailController.text.trim();
+      final password = _passwordController.text;
+
+      final response = await widget.authService.login(
+        username,
+        password,
         rememberMe: _rememberMe,
       );
-    } catch (e) {
-      String errorMessage = 'Giriş başarısız';
 
-      if (e.toString().contains('Giriş hatası:')) {
-        errorMessage =
-            e.toString().replaceFirst('Exception: Giriş hatası: ', '');
+      if (response.statusCode == 200) {
+        final pages = [
+          const HomePage(),
+          const MapPage(),
+          const GroupsPage(),
+          const EventsPage(),
+          ProfilePage(username: username),
+        ];
+
+        // Başarılı girişten sonra ana sayfaya yönlendirme ve tüm geçmiş rotaları temizleme
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainWrapper(
+                pages: pages,
+                navItems: NavigationItems.items,
+              ),
+            ),
+            (route) => false,
+          );
+        }
+      } else {
+        // Başarısız giriş durumunda snackbar ile hata mesajı gösterme
+        String errorMessage = 'Invalid credentials. Please try again.';
+        if (response.data != null && response.data['detail'] is String) {
+          errorMessage = response.data['detail'];
+        }
+        if (mounted) {
+          AuthCommon.showErrorSnackbar(context, errorMessage);
+        }
       }
-
-      // ignore: use_build_context_synchronously
-      AuthCommon.showErrorSnackbar(context, errorMessage);
+    } catch (e) {
+      debugPrint('Giriş yapılırken hata: $e');
+      if (mounted) {
+        String errorMessage =
+            'An unexpected error occurred. Please try again later.';
+        if (e.toString().contains('Giriş hatası:')) {
+          errorMessage =
+              e.toString().replaceFirst('Exception: Giriş hatası: ', '');
+        }
+        AuthCommon.showErrorSnackbar(context, errorMessage);
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -82,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               children: [
                 SizedBox(height: 80.h),
-                AuthLogo(size: 100),
+                const AuthLogo(size: 100),
                 SizedBox(height: 40.h),
                 Text(
                   'Welcome to Spiride',
@@ -90,6 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                     color: colors.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 12.h),
                 Text(
