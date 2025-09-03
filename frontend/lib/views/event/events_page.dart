@@ -85,13 +85,11 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> _joinEvent(int eventId) async {
     try {
-      await _service.joinEvent(eventId); // void, sonucu kullanma
+      final updatedEvent = await _service.joinEvent(eventId);
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {
-          _events[index]['current_participant_count'] =
-              (_events[index]['current_participant_count'] ?? 0) + 1;
-          _events[index]['is_joined'] = true;
+          _events[index] = updatedEvent;
         }
       });
     } catch (e) {
@@ -102,13 +100,11 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> _leaveEvent(int eventId) async {
     try {
-      await _service.leaveEvent(eventId); // void, sonucu kullanma
+      final updatedEvent = await _service.leaveEvent(eventId);
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {
-          _events[index]['current_participant_count'] =
-              (_events[index]['current_participant_count'] ?? 1) - 1;
-          _events[index]['is_joined'] = false;
+          _events[index] = updatedEvent;
         }
       });
     } catch (e) {

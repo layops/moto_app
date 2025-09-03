@@ -92,10 +92,7 @@ class EventViewSet(viewsets.ModelViewSet):
         
         # Güncellenmiş event verisi ile response döndür
         serializer = self.get_serializer(event)
-        return Response({
-            "message": "Etkinliğe başarıyla katıldınız.",
-            "event": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def leave(self, request, pk=None):
@@ -110,7 +107,4 @@ class EventViewSet(viewsets.ModelViewSet):
         
         # Güncellenmiş event verisi ile response döndür
         serializer = self.get_serializer(event)
-        return Response({
-            "message": "Etkinlikten ayrıldınız.",
-            "event": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

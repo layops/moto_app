@@ -120,7 +120,7 @@ class EventCard extends StatelessWidget {
                   ),
                 const SizedBox(height: 12),
                 Text(
-                  'Katılımcılar: ${event['participants_count'] ?? 0} / ${event['guest_limit'] ?? '-'}',
+                  'Katılımcılar: $participantCount / $guestLimit',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

@@ -21,7 +21,6 @@ class EventService {
           },
         ),
       );
-      print('Fetched events: ${response.data}'); // Log ekleyelim
       return response.data;
     } on DioException catch (e) {
       throw Exception('Failed to fetch events: ${e.message}');
@@ -117,10 +116,10 @@ class EventService {
     }
   }
 
-  Future<void> joinEvent(int eventId) async {
+  Future<Map<String, dynamic>> joinEvent(int eventId) async {
     try {
       final token = await authService.getToken();
-      await _dio.post(
+      final response = await _dio.post(
         'https://spiride.onrender.com/api/events/$eventId/join/',
         options: Options(
           headers: {
@@ -128,15 +127,16 @@ class EventService {
           },
         ),
       );
+      return response.data; // Doğrudan event verisini döndür
     } on DioException catch (e) {
       throw Exception('Failed to join event: ${e.message}');
     }
   }
 
-  Future<void> leaveEvent(int eventId) async {
+  Future<Map<String, dynamic>> leaveEvent(int eventId) async {
     try {
       final token = await authService.getToken();
-      await _dio.post(
+      final response = await _dio.post(
         'https://spiride.onrender.com/api/events/$eventId/leave/',
         options: Options(
           headers: {
@@ -144,6 +144,7 @@ class EventService {
           },
         ),
       );
+      return response.data; // Doğrudan event verisini döndür
     } on DioException catch (e) {
       throw Exception('Failed to leave event: ${e.message}');
     }
