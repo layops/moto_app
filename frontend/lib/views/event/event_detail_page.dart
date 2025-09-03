@@ -48,6 +48,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final organizer = widget.event['organizer'] is Map
+        ? widget.event['organizer'] as Map<String, dynamic>
+        : null;
+    final organizerName = organizer?['username'] ?? 'Bilinmiyor';
+    final organizerEmail = organizer?['email'] ?? '';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.event['title']?.toString() ?? 'Etkinlik Detayları'),
@@ -69,15 +75,56 @@ class _EventDetailPageState extends State<EventDetailPage> {
                             fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 16),
+
+                      // Etkinlik kurucusu
+                      const Text(
+                        'Etkinlik Kurucusu',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ListTile(
+                        leading: CircleAvatar(
+                          child: Text(organizerName.isNotEmpty
+                              ? organizerName[0].toUpperCase()
+                              : '?'),
+                        ),
+                        title: Text(organizerName),
+                        subtitle: organizerEmail.isNotEmpty
+                            ? Text(organizerEmail)
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Etkinlik açıklaması
                       if ((widget.event['description']?.toString() ?? '')
                           .isNotEmpty)
-                        Text(widget.event['description'].toString()),
-                      const SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Açıklama',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(widget.event['description'].toString()),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+
+                      // Etkinlik tarih ve konum bilgileri
+                      const Text(
+                        'Detaylar',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.calendar_today,
                               size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
                           Text(formatDate(widget.event['start_time']),
                               style: const TextStyle(
                                   fontSize: 14, color: Colors.grey)),
@@ -90,7 +137,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           children: [
                             const Icon(Icons.location_on,
                                 size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             Text(widget.event['location'].toString(),
                                 style: const TextStyle(
                                     fontSize: 14, color: Colors.grey)),
@@ -105,18 +152,29 @@ class _EventDetailPageState extends State<EventDetailPage> {
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      ..._participants.map((user) => ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: user['profile_picture'] != null
-                                  ? NetworkImage(user['profile_picture'])
-                                  : null,
-                              child: user['profile_picture'] == null
-                                  ? Text(user['username'][0].toUpperCase())
-                                  : null,
+                      _participants.isEmpty
+                          ? const Text('Henüz katılımcı yok')
+                          : Column(
+                              children: _participants
+                                  .map((user) => ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundImage:
+                                              user['profile_picture'] != null
+                                                  ? NetworkImage(
+                                                      user['profile_picture'])
+                                                  : null,
+                                          child: user['profile_picture'] == null
+                                              ? Text(user['username'][0]
+                                                  .toUpperCase())
+                                              : null,
+                                        ),
+                                        title: Text(user['username']),
+                                        subtitle: user['email'] != null
+                                            ? Text(user['email'])
+                                            : null,
+                                      ))
+                                  .toList(),
                             ),
-                            title: Text(user['username']),
-                            subtitle: Text(user['email'] ?? ''),
-                          )),
                     ],
                   ),
                 ),
