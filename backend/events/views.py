@@ -1,3 +1,4 @@
+# events/views.py
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from .models import Event
 from .serializers import EventSerializer
 from groups.models import Group
 from users.services.supabase_service import SupabaseStorage
+from users.serializers import UserSerializer  # Yeni import
 
 supabase = SupabaseStorage()
 
@@ -33,7 +35,6 @@ class EventViewSet(viewsets.ModelViewSet):
         data = request.data.copy()
         cover_file = request.FILES.get('cover_image')
         
-        # Cover image dosyası varsa, veriden kaldır
         if cover_file and 'cover_image' in data:
             del data['cover_image']
         
@@ -42,23 +43,16 @@ class EventViewSet(viewsets.ModelViewSet):
             print("Serializer hataları:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        # Önce event'i oluştur
         event = serializer.save(organizer=request.user)
         
-        # Cover image yükleme işlemi
         if cover_file:
             try:
                 cover_url = supabase.upload_event_picture(cover_file, str(event.id))
                 event.cover_image = cover_url
                 event.save()
-                
-                # Serializer'ı güncelle
                 serializer = self.get_serializer(event)
             except Exception as e:
                 print("Resim yükleme hatası:", str(e))
-                # Hata durumunda event'i silebilir veya olduğu gibi bırakabilirsiniz
-                # event.delete()
-                # return Response({"error": "Resim yüklenemedi"}, status=status.HTTP_400_BAD_REQUEST)
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -75,7 +69,6 @@ class EventViewSet(viewsets.ModelViewSet):
         else:
             event = serializer.save(organizer=user, group=None)
         
-        # Organizatörü otomatik olarak katılımcı yap
         event.participants.add(user)
 
     @action(detail=True, methods=['post'])
@@ -92,8 +85,6 @@ class EventViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         event.participants.add(user)
-        
-        # Güncellenmiş event verisi ile response döndür
         serializer = self.get_serializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -107,7 +98,13 @@ class EventViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         event.participants.remove(user)
-        
-        # Güncellenmiş event verisi ile response döndür
         serializer = self.get_serializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # Yeni eklenen action - Katılımcıları getir
+    @action(detail=True, methods=['get'])
+    def participants(self, request, pk=None):
+        event = self.get_object()
+        participants = event.participants.all()
+        serializer = UserSerializer(participants, many=True)
+        return Response(serializer.data)

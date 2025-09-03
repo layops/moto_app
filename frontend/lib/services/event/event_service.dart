@@ -133,6 +133,19 @@ class EventService {
     }
   }
 
+  Future<List<dynamic>> fetchEventParticipants(int eventId) async {
+    try {
+      final token = await authService.getToken();
+      final response = await _dio.get(
+        'https://spiride.onrender.com/api/events/$eventId/participants/',
+        options: Options(headers: {'Authorization': 'Token $token'}),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception('Failed to fetch participants: ${e.message}');
+    }
+  }
+
   Future<Map<String, dynamic>> leaveEvent(int eventId) async {
     try {
       final token = await authService.getToken();
