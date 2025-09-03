@@ -64,17 +64,19 @@ class EventViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-    user = self.request.user
-    group = serializer.validated_data.get('group')
+        user = self.request.user
+        group = serializer.validated_data.get('group')
 
-    if group:
-        if (user in group.members.all()) or (group.owner == user):
-            event = serializer.save(organizer=user, group=group)
+        if group:
+            if (user in group.members.all()) or (group.owner == user):
+                event = serializer.save(organizer=user, group=group)
+            else:
+                raise PermissionDenied("Bu gruba etkinlik ekleme yetkiniz yok.")
         else:
-            raise PermissionDenied("Bu gruba etkinlik ekleme yetkiniz yok.")
-    else:
-        event = serializer.save(organizer=user, group=None)
-    
+            event = serializer.save(organizer=user, group=None)
+        
+        # Organizatörü otomatik olarak katılımcı yap
+        event.participants.add(user)
 
     @action(detail=True, methods=['post'])
     def join(self, request, pk=None):
