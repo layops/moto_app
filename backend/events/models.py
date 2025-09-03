@@ -51,7 +51,12 @@ class Event(models.Model):
     
     @property
     def current_participant_count(self):
-        return self.participants.count()
+        # Organizatörü de katılımcı sayısına dahil et
+        # Organizatör zaten participants içinde mi kontrol et
+        if self.organizer in self.participants.all():
+            return self.participants.count()
+        else:
+            return self.participants.count() + 1
     
     def is_full(self):
         if self.guest_limit is None:
