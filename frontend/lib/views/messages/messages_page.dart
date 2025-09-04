@@ -26,6 +26,7 @@ class MessagesPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'messages_fab',
         child: const Icon(Icons.message),
         onPressed: () {
           // Yeni mesaj oluştur

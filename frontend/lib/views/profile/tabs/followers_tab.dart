@@ -30,10 +30,12 @@ class FollowersTab extends StatelessWidget {
       itemCount: followers.length,
       itemBuilder: (context, index) {
         final follower = followers[index];
+        final String url = (follower['avatarUrl'] ?? '').toString();
+        final bool isValidUrl = url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: NetworkImage(follower['avatarUrl'] ?? ''),
-            child: follower['avatarUrl'] == null
+            backgroundImage: isValidUrl ? NetworkImage(url) : null,
+            child: !isValidUrl
                 ? Icon(Icons.person, color: theme.colorScheme.onSurface)
                 : null,
           ),

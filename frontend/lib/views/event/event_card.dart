@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'event_helpers.dart';
 import 'event_detail_page.dart'; // Yeni sayfa için import
@@ -121,16 +123,7 @@ class EventCard extends StatelessWidget {
                     ],
                   ),
                   if ((event['location']?.toString() ?? '').isNotEmpty)
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(event['location'].toString(),
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.grey)),
-                      ],
-                    ),
+                    LocationText(location: event['location'].toString()),
                   const SizedBox(height: 12),
                   Text(
                     'Katılımcılar: $participantCount / $guestLimit',
@@ -142,6 +135,82 @@ class EventCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class LocationText extends StatefulWidget {
+  final String location;
+  const LocationText({super.key, required this.location});
+
+  @override
+  State<LocationText> createState() => _LocationTextState();
+}
+
+class _LocationTextState extends State<LocationText> {
+  String? _displayName;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveAddress();
+  }
+
+  Future<void> _resolveAddress() async {
+    final parts = widget.location.split(',');
+    if (parts.length != 2) {
+      setState(() {
+        _displayName = widget.location;
+        _loading = false;
+      });
+      return;
+    }
+    final String lat = parts[0].trim();
+    final String lon = parts[1].trim();
+    try {
+      final uri = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'motoapp-front/1.0 (reverse-geocode)'
+      });
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          _displayName = data['display_name']?.toString() ?? widget.location;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _displayName = widget.location;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _displayName = widget.location;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+        const SizedBox(width: 4),
+        Expanded(
+          child: _loading
+              ? const Text('Konum yükleniyor...',
+                  style: TextStyle(fontSize: 14, color: Colors.grey))
+              : Text(_displayName ?? '-',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        ),
+      ],
     );
   }
 }

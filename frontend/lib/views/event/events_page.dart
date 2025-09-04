@@ -61,6 +61,7 @@ class _EventsPageState extends State<EventsPage> {
           : await _service.fetchGroupEvents(widget.groupId!);
 
       final now = DateTime.now();
+      if (!mounted) return;
       setState(() {
         _events = fetchedEvents.where((e) {
           final start = DateTime.parse(e['start_time']).toLocal();
@@ -77,6 +78,7 @@ class _EventsPageState extends State<EventsPage> {
         }).toList();
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -86,6 +88,7 @@ class _EventsPageState extends State<EventsPage> {
   Future<void> _joinEvent(int eventId) async {
     try {
       final updatedEvent = await _service.joinEvent(eventId);
+      if (!mounted) return;
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {
@@ -101,6 +104,7 @@ class _EventsPageState extends State<EventsPage> {
   Future<void> _leaveEvent(int eventId) async {
     try {
       final updatedEvent = await _service.leaveEvent(eventId);
+      if (!mounted) return;
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {

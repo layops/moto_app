@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
@@ -33,6 +35,7 @@ class _AddEventPageState extends State<AddEventPage> {
   File? _coverImageFile;
   bool _submitting = false;
   LatLng? _selectedLatLng; // Seçilen konum
+  String? _selectedAddress; // Kullanıcıya gösterilecek adres adı
 
   @override
   void initState() {
@@ -44,14 +47,41 @@ class _AddEventPageState extends State<AddEventPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const MapPage(), // artık MapPage isSelectionMode var
+        builder: (_) => const MapPage(allowSelection: true),
       ),
     );
     if (result != null && result is LatLng) {
       setState(() {
         _selectedLatLng = result;
-        _locCtrl.text =
-            "Lat: ${result.latitude.toStringAsFixed(5)}, Lng: ${result.longitude.toStringAsFixed(5)}";
+        _selectedAddress = null;
+      });
+      await _reverseGeocode(result);
+    }
+  }
+
+  Future<void> _reverseGeocode(LatLng position) async {
+    final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?lat=${position.latitude}&lon=${position.longitude}&format=json');
+    try {
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'motoapp-front/1.0 (reverse-geocode)'
+      });
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final String displayName = data['display_name']?.toString() ?? 'Seçilen konum';
+        setState(() {
+          _selectedAddress = displayName;
+        });
+      } else {
+        setState(() {
+          _selectedAddress = 'Seçilen konum';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _selectedAddress = 'Seçilen konum';
       });
     }
   }
@@ -166,13 +196,88 @@ class _AddEventPageState extends State<AddEventPage> {
               EventFormFields(
                 titleCtrl: _titleCtrl,
                 descCtrl: _descCtrl,
-                locCtrl: _locCtrl,
+                showLocationField: false,
               ),
               const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: _pickLocation,
-                icon: const Icon(Icons.map),
-                label: const Text("Konumu Haritadan Seç"),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.place, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Etkinlik Konumu',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on_outlined,
+                                color: Colors.redAccent),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _selectedAddress ??
+                                    'Konum seçilmedi. Haritadan seçin.',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _pickLocation,
+                              icon: const Icon(Icons.map_outlined),
+                              label: const Text('Haritadan Seç'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _selectedLatLng == null
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _selectedLatLng = null;
+                                        _selectedAddress = null;
+                                        _locCtrl.text = '';
+                                      });
+                                    },
+                              icon: const Icon(Icons.clear),
+                              label: const Text('Temizle'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               EventDateTimePicker(

@@ -86,6 +86,7 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'map_screen_fab',
         onPressed: _getCurrentLocation,
         backgroundColor: const Color(0xFFD10000),
         child: const Icon(Icons.gps_fixed, color: Colors.white),

@@ -3,19 +3,27 @@ import 'package:flutter/material.dart';
 class EventFormFields extends StatelessWidget {
   final TextEditingController titleCtrl;
   final TextEditingController descCtrl;
-  final TextEditingController locCtrl;
+  final TextEditingController? locCtrl;
   final String? Function(String?)? titleValidator;
   final String? Function(String?)? descValidator;
   final String? Function(String?)? locValidator;
+  final bool locationReadOnly;
+  final VoidCallback? onTapLocation;
+  final VoidCallback? onClearLocation;
+  final bool showLocationField;
 
   const EventFormFields({
     super.key,
     required this.titleCtrl,
     required this.descCtrl,
-    required this.locCtrl,
+    this.locCtrl,
     this.titleValidator,
     this.descValidator,
     this.locValidator,
+    this.locationReadOnly = false,
+    this.onTapLocation,
+    this.onClearLocation,
+    this.showLocationField = true,
   });
 
   @override
@@ -33,17 +41,39 @@ class EventFormFields extends StatelessWidget {
                   ? 'Event name is required'
                   : null,
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: locCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Location',
-            border: OutlineInputBorder(),
+        if (showLocationField) ...[
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: locCtrl,
+            readOnly: locationReadOnly,
+            onTap: locationReadOnly ? onTapLocation : null,
+            decoration: InputDecoration(
+              labelText: 'Location',
+              border: const OutlineInputBorder(),
+              suffixIcon: locationReadOnly
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Haritadan seç',
+                          icon: const Icon(Icons.map_outlined),
+                          onPressed: onTapLocation,
+                        ),
+                        IconButton(
+                          tooltip: 'Temizle',
+                          icon: const Icon(Icons.clear),
+                          onPressed: onClearLocation,
+                        ),
+                      ],
+                    )
+                  : null,
+            ),
+            validator: locValidator ??
+                (v) => v == null || v.trim().isEmpty
+                    ? 'Location is required'
+                    : null,
           ),
-          validator: locValidator ??
-              (v) =>
-                  v == null || v.trim().isEmpty ? 'Location is required' : null,
-        ),
+        ],
         const SizedBox(height: 16),
         TextFormField(
           controller: descCtrl,

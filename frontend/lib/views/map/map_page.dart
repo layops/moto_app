@@ -7,7 +7,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final LatLng? initialCenter;
+  final bool allowSelection;
+  final bool showMarker; // Read-only modda da pin gösterilsin mi?
+  const MapPage({
+    super.key,
+    this.initialCenter,
+    this.allowSelection = false,
+    this.showMarker = false,
+  });
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -28,7 +36,15 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    if (widget.initialCenter != null) {
+      if (widget.allowSelection || widget.showMarker) {
+        _selectedPosition = widget.initialCenter;
+      }
+      _isLoading = false;
+      setState(() {});
+    } else {
+      _getCurrentLocation();
+    }
   }
 
   @override
@@ -43,7 +59,7 @@ class _MapPageState extends State<MapPage> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
 
@@ -51,17 +67,18 @@ class _MapPageState extends State<MapPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
 
     Position position = await Geolocator.getCurrentPosition();
+    if (!mounted) return;
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
       _isLoading = false;
@@ -71,14 +88,16 @@ class _MapPageState extends State<MapPage> {
   void _zoomIn() {
     setState(() {
       _zoomLevel += 1;
-      _mapController.move(_mapController.camera.center, _zoomLevel);
+      final center = _selectedPosition ?? _mapController.camera.center;
+      _mapController.move(center, _zoomLevel);
     });
   }
 
   void _zoomOut() {
     setState(() {
       _zoomLevel -= 1;
-      _mapController.move(_mapController.camera.center, _zoomLevel);
+      final center = _selectedPosition ?? _mapController.camera.center;
+      _mapController.move(center, _zoomLevel);
     });
   }
 
@@ -86,28 +105,50 @@ class _MapPageState extends State<MapPage> {
     if (_currentPosition != null) {
       setState(() {
         _zoomLevel = 15.0;
-        _mapController.move(_currentPosition!, _zoomLevel);
+        final center = _selectedPosition ?? _currentPosition!;
+        _mapController.move(center, _zoomLevel);
       });
     }
   }
 
   void _searchLocation() async {
     final String searchText = _searchController.text;
-    if (searchText.isEmpty) {
-      setState(() => _searchResults = []);
+    if (searchText.isEmpty || searchText.trim().length < 3) {
+      if (mounted) setState(() => _searchResults = []);
+      if (searchText.isNotEmpty && searchText.trim().length < 3) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lütfen en az 3 karakter yazın.')),
+          );
+        }
+      }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _searchResults = [];
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _searchResults = [];
+      });
+    }
 
     try {
-      final String nominatimUrl =
-          'https://nominatim.openstreetmap.org/search?q=$searchText&format=json&limit=5';
-      final response = await http.get(Uri.parse(nominatimUrl));
+      final uri = Uri.https(
+        'nominatim.openstreetmap.org',
+        '/search',
+        {
+          'q': searchText.trim(),
+          'format': 'json',
+          'limit': '5',
+          'addressdetails': '0',
+        },
+      );
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'motoapp-front/1.0 (search)'},
+      );
 
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() => _searchResults = data);
@@ -116,24 +157,38 @@ class _MapPageState extends State<MapPage> {
             const SnackBar(content: Text('Hiç sonuç bulunamadı.')),
           );
         }
+      } else if (response.statusCode == 429) {
+        // Rate limit aşıldı
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Çok hızlı arama yapıldı. Lütfen tekrar deneyin.')),
+        );
+        if (mounted) setState(() => _searchResults = []);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Arama sırasında hata oluştu.')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('İnternet bağlantınızı kontrol edin.')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _selectSearchResult(dynamic result) {
     if (result != null) {
-      final double lat = double.parse(result['lat']);
-      final double lon = double.parse(result['lon']);
+      final double? lat = double.tryParse(result['lat'].toString());
+      final double? lon = double.tryParse(result['lon'].toString());
+      if (lat == null || lon == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geçersiz konum sonucu.')),
+        );
+        return;
+      }
 
       setState(() {
         _selectedPosition = LatLng(lat, lon);
@@ -157,6 +212,7 @@ class _MapPageState extends State<MapPage> {
       child: Column(
         children: [
           FloatingActionButton(
+            heroTag: 'map_zoom_in_fab',
             onPressed: _zoomIn,
             backgroundColor: colorScheme.primary,
             mini: true,
@@ -164,6 +220,7 @@ class _MapPageState extends State<MapPage> {
           ),
           const SizedBox(height: 8),
           FloatingActionButton(
+            heroTag: 'map_zoom_out_fab',
             onPressed: _zoomOut,
             backgroundColor: colorScheme.primary,
             mini: true,
@@ -171,6 +228,7 @@ class _MapPageState extends State<MapPage> {
           ),
           const SizedBox(height: 8),
           FloatingActionButton(
+            heroTag: 'map_toggle_type_fab',
             onPressed: _toggleMapType,
             backgroundColor: colorScheme.primary,
             mini: true,
@@ -181,6 +239,7 @@ class _MapPageState extends State<MapPage> {
           ),
           const SizedBox(height: 8),
           FloatingActionButton(
+            heroTag: 'map_my_location_fab',
             onPressed: _goToCurrentLocation,
             backgroundColor: colorScheme.primary,
             mini: true,
@@ -287,7 +346,14 @@ class _MapPageState extends State<MapPage> {
         icon: const Icon(Icons.check),
         label: const Text("Bu Konumu Seç"),
         onPressed: () {
-          Navigator.pop(context, _selectedPosition);
+          if (!mounted) return;
+          final result = _selectedPosition;
+          setState(() {
+            _isLoading = false;
+          });
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(result);
+          }
         },
       ),
     );
@@ -309,9 +375,10 @@ class _MapPageState extends State<MapPage> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: LatLng(41.0082, 28.9784),
+              initialCenter: widget.initialCenter ?? LatLng(41.0082, 28.9784),
               initialZoom: _zoomLevel,
               onTap: (tapPosition, point) {
+                if (!widget.allowSelection) return;
                 setState(() => _selectedPosition = point);
               },
             ),
@@ -343,10 +410,10 @@ class _MapPageState extends State<MapPage> {
                 ]),
             ],
           ),
-          _buildMapControls(context),
-          _buildSearchBar(context),
-          _buildSearchResults(context),
-          _buildConfirmButton(context),
+          if (widget.allowSelection) _buildMapControls(context),
+          if (widget.allowSelection) _buildSearchBar(context),
+          if (widget.allowSelection) _buildSearchResults(context),
+          if (widget.allowSelection) _buildConfirmButton(context),
           if (_isLoading)
             Center(
               child: CircularProgressIndicator(color: colorScheme.primary),

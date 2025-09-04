@@ -30,10 +30,12 @@ class FollowingTab extends StatelessWidget {
       itemCount: following.length,
       itemBuilder: (context, index) {
         final user = following[index];
+        final String url = (user['avatarUrl'] ?? '').toString();
+        final bool isValidUrl = url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: NetworkImage(user['avatarUrl'] ?? ''),
-            child: user['avatarUrl'] == null
+            backgroundImage: isValidUrl ? NetworkImage(url) : null,
+            child: !isValidUrl
                 ? Icon(Icons.person, color: theme.colorScheme.onSurface)
                 : null,
           ),

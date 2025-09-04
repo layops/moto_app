@@ -161,6 +161,7 @@ class _HomePageState extends State<HomePage> {
         onRefresh: _fetchPosts,
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'home_fab',
         onPressed: _onPostButtonPressed,
         child: const Icon(Icons.add),
       ),

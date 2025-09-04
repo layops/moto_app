@@ -36,7 +36,29 @@ class MediaTab extends StatelessWidget {
       itemCount: media.length,
       itemBuilder: (context, index) {
         final item = media[index];
-        return Image.network(item['url'], fit: BoxFit.cover);
+        final String url = (item['url'] ?? '').toString();
+
+        // Geçersiz/boş veya desteklenmeyen uzantıysa placeholder göster
+        final bool isValidUrl = url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
+        final bool isPossiblyUnsupported = url.toLowerCase().endsWith('.svg') || url.toLowerCase().endsWith('.heic');
+
+        if (!isValidUrl || isPossiblyUnsupported) {
+          return Container(
+            color: Colors.grey[200],
+            child: const Icon(Icons.broken_image),
+          );
+        }
+
+        return Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[200],
+              child: const Icon(Icons.broken_image),
+            );
+          },
+        );
       },
     );
   }
