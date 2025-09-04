@@ -4,12 +4,18 @@ class EventFormFields extends StatelessWidget {
   final TextEditingController titleCtrl;
   final TextEditingController descCtrl;
   final TextEditingController locCtrl;
+  final String? Function(String?)? titleValidator;
+  final String? Function(String?)? descValidator;
+  final String? Function(String?)? locValidator;
 
   const EventFormFields({
     super.key,
     required this.titleCtrl,
     required this.descCtrl,
     required this.locCtrl,
+    this.titleValidator,
+    this.descValidator,
+    this.locValidator,
   });
 
   @override
@@ -22,8 +28,10 @@ class EventFormFields extends StatelessWidget {
             labelText: 'Event Name',
             border: OutlineInputBorder(),
           ),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Event name is required' : null,
+          validator: titleValidator ??
+              (v) => v == null || v.trim().isEmpty
+                  ? 'Event name is required'
+                  : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -32,6 +40,9 @@ class EventFormFields extends StatelessWidget {
             labelText: 'Location',
             border: OutlineInputBorder(),
           ),
+          validator: locValidator ??
+              (v) =>
+                  v == null || v.trim().isEmpty ? 'Location is required' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -42,6 +53,10 @@ class EventFormFields extends StatelessWidget {
             alignLabelWithHint: true,
           ),
           maxLines: 3,
+          validator: descValidator ??
+              (v) => v == null || v.trim().isEmpty
+                  ? 'Description is required'
+                  : null,
         ),
       ],
     );

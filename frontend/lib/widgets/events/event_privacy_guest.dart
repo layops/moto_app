@@ -66,6 +66,17 @@ class EventPrivacyGuest extends StatelessWidget {
               border: OutlineInputBorder(),
               hintText: 'Enter guest limit',
             ),
+            validator: (v) {
+              if (!noGuestLimit) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Guest limit is required';
+                }
+                if (int.tryParse(v.trim()) == null) {
+                  return 'Guest limit must be a number';
+                }
+              }
+              return null;
+            },
           ),
       ],
     );

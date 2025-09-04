@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 
 class MapPage extends StatefulWidget {
@@ -18,12 +17,12 @@ class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
   LatLng? _currentPosition;
+  LatLng? _selectedPosition; // Kullanıcının seçtiği konum
   bool _isLoading = true;
   double _zoomLevel = 13.0;
 
   List<dynamic> _searchResults = [];
 
-  // Harita görünümü durumunu yönetmek için yeni değişken
   bool _isSatelliteView = false;
 
   @override
@@ -44,9 +43,7 @@ class _MapPageState extends State<MapPage> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -54,17 +51,13 @@ class _MapPageState extends State<MapPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -101,9 +94,7 @@ class _MapPageState extends State<MapPage> {
   void _searchLocation() async {
     final String searchText = _searchController.text;
     if (searchText.isEmpty) {
-      setState(() {
-        _searchResults = [];
-      });
+      setState(() => _searchResults = []);
       return;
     }
 
@@ -119,9 +110,7 @@ class _MapPageState extends State<MapPage> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          _searchResults = data;
-        });
+        setState(() => _searchResults = data);
         if (data.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Hiç sonuç bulunamadı.')),
@@ -129,21 +118,15 @@ class _MapPageState extends State<MapPage> {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Arama sırasında bir hata oluştu. Lütfen tekrar deneyin.')),
+          const SnackBar(content: Text('Arama sırasında hata oluştu.')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Bir ağ hatası oluştu. İnternet bağlantınızı kontrol edin.')),
+        const SnackBar(content: Text('İnternet bağlantınızı kontrol edin.')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -152,26 +135,24 @@ class _MapPageState extends State<MapPage> {
       final double lat = double.parse(result['lat']);
       final double lon = double.parse(result['lon']);
 
-      _mapController.move(LatLng(lat, lon), 15.0);
-
       setState(() {
+        _selectedPosition = LatLng(lat, lon);
         _searchResults = [];
         _searchController.clear();
       });
+
+      _mapController.move(_selectedPosition!, 15.0);
     }
   }
 
-  // Uydu görünümü arasında geçiş yapmak için yeni metot
   void _toggleMapType() {
-    setState(() {
-      _isSatelliteView = !_isSatelliteView;
-    });
+    setState(() => _isSatelliteView = !_isSatelliteView);
   }
 
   Widget _buildMapControls(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Positioned(
-      bottom: ThemeConstants.paddingMedium.bottom,
+      bottom: ThemeConstants.paddingMedium.bottom + 60,
       right: ThemeConstants.paddingMedium.right,
       child: Column(
         children: [
@@ -181,14 +162,14 @@ class _MapPageState extends State<MapPage> {
             mini: true,
             child: Icon(Icons.add, color: colorScheme.onPrimary),
           ),
-          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          const SizedBox(height: 8),
           FloatingActionButton(
             onPressed: _zoomOut,
             backgroundColor: colorScheme.primary,
             mini: true,
             child: Icon(Icons.remove, color: colorScheme.onPrimary),
           ),
-          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          const SizedBox(height: 8),
           FloatingActionButton(
             onPressed: _toggleMapType,
             backgroundColor: colorScheme.primary,
@@ -198,7 +179,7 @@ class _MapPageState extends State<MapPage> {
               color: colorScheme.onPrimary,
             ),
           ),
-          SizedBox(height: ThemeConstants.paddingSmall.bottom),
+          const SizedBox(height: 8),
           FloatingActionButton(
             onPressed: _goToCurrentLocation,
             backgroundColor: colorScheme.primary,
@@ -256,9 +237,7 @@ class _MapPageState extends State<MapPage> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    if (_searchResults.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (_searchResults.isEmpty) return const SizedBox.shrink();
 
     return Positioned(
       top: 100,
@@ -269,12 +248,7 @@ class _MapPageState extends State<MapPage> {
           color: colorScheme.surface,
           borderRadius:
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
+          boxShadow: const [BoxShadow(blurRadius: 10, offset: Offset(0, 5))],
         ),
         child: ListView.builder(
           shrinkWrap: true,
@@ -291,12 +265,38 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
+  Widget _buildConfirmButton(BuildContext context) {
+    if (_selectedPosition == null) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Positioned(
+      bottom: ThemeConstants.paddingMedium.bottom,
+      left: ThemeConstants.paddingMedium.left,
+      right: ThemeConstants.paddingMedium.right,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(ThemeConstants.borderRadiusXLarge),
+          ),
+        ),
+        icon: const Icon(Icons.check),
+        label: const Text("Bu Konumu Seç"),
+        onPressed: () {
+          Navigator.pop(context, _selectedPosition);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    // Harita stilini dinamik olarak seçme kaldırıldı, artık hep aynı kalıp kullanılacak.
     const String defaultMapUrl =
         'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     const String satelliteUrl =
@@ -312,44 +312,44 @@ class _MapPageState extends State<MapPage> {
               initialCenter: LatLng(41.0082, 28.9784),
               initialZoom: _zoomLevel,
               onTap: (tapPosition, point) {
-                print("Tıklanan konum: ${point.latitude}, ${point.longitude}");
+                setState(() => _selectedPosition = point);
               },
             ),
             children: [
               TileLayer(
-                // Görünüm tipine göre dinamik URL
                 urlTemplate: _isSatelliteView ? satelliteUrl : defaultMapUrl,
-                subdomains: const [
-                  'a',
-                  'b',
-                  'c',
-                  'd'
-                ], // Bu kısım artık kullanılmasa da bırakılabilir
                 userAgentPackageName: 'com.example.frontend',
                 maxZoom: 20,
               ),
               if (_currentPosition != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _currentPosition!,
-                      width: 40,
-                      height: 40,
-                      child: Icon(Icons.location_pin,
-                          color: colorScheme.primary, size: 40),
-                    ),
-                  ],
-                ),
+                MarkerLayer(markers: [
+                  Marker(
+                    point: _currentPosition!,
+                    width: 40,
+                    height: 40,
+                    child: Icon(Icons.my_location,
+                        color: colorScheme.primary, size: 32),
+                  ),
+                ]),
+              if (_selectedPosition != null)
+                MarkerLayer(markers: [
+                  Marker(
+                    point: _selectedPosition!,
+                    width: 50,
+                    height: 50,
+                    child:
+                        Icon(Icons.location_pin, color: Colors.red, size: 50),
+                  ),
+                ]),
             ],
           ),
           _buildMapControls(context),
           _buildSearchBar(context),
           _buildSearchResults(context),
+          _buildConfirmButton(context),
           if (_isLoading)
             Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
+              child: CircularProgressIndicator(color: colorScheme.primary),
             ),
         ],
       ),

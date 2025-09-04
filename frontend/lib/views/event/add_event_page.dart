@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/services/event/event_service.dart';
 import '../../widgets/events/event_privacy_guest.dart';
 import '../../widgets/events/event_form_fields.dart';
 import '../../widgets/events/event_date_time_picker.dart';
 import '../../widgets/events/event_cover_image_picker.dart';
+import '../map/map_page.dart'; // Harita sayfasını import ettik
 
 class AddEventPage extends StatefulWidget {
   final int? groupId;
@@ -30,11 +32,28 @@ class _AddEventPageState extends State<AddEventPage> {
   bool _noGuestLimit = true;
   File? _coverImageFile;
   bool _submitting = false;
+  LatLng? _selectedLatLng; // Seçilen konum
 
   @override
   void initState() {
     super.initState();
     _service = ServiceLocator.event;
+  }
+
+  Future<void> _pickLocation() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MapPage(), // artık MapPage isSelectionMode var
+      ),
+    );
+    if (result != null && result is LatLng) {
+      setState(() {
+        _selectedLatLng = result;
+        _locCtrl.text =
+            "Lat: ${result.latitude.toStringAsFixed(5)}, Lng: ${result.longitude.toStringAsFixed(5)}";
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -55,6 +74,13 @@ class _AddEventPageState extends State<AddEventPage> {
     if (_time == null) {
       ServiceLocator.messenger.showSnackBar(
         const SnackBar(content: Text('Lütfen başlangıç saati seçin')),
+      );
+      return;
+    }
+
+    if (_selectedLatLng == null) {
+      ServiceLocator.messenger.showSnackBar(
+        const SnackBar(content: Text('Lütfen konumu haritadan seçin')),
       );
       return;
     }
@@ -84,7 +110,7 @@ class _AddEventPageState extends State<AddEventPage> {
         groupId: widget.groupId,
         title: _titleCtrl.text.trim(),
         description: _descCtrl.text.trim(),
-        location: _locCtrl.text.trim(),
+        location: "${_selectedLatLng!.latitude}, ${_selectedLatLng!.longitude}",
         startTime: eventDateTime,
         endTime: null,
         isPublic: _isPublic,
@@ -95,7 +121,6 @@ class _AddEventPageState extends State<AddEventPage> {
       if (mounted) ServiceLocator.navigator.pop(true);
     } catch (e) {
       if (mounted) {
-        // Daha anlaşılır hata mesajı
         String errorMessage = e.toString();
         if (errorMessage.contains('Failed to create event:')) {
           errorMessage =
@@ -142,6 +167,12 @@ class _AddEventPageState extends State<AddEventPage> {
                 titleCtrl: _titleCtrl,
                 descCtrl: _descCtrl,
                 locCtrl: _locCtrl,
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _pickLocation,
+                icon: const Icon(Icons.map),
+                label: const Text("Konumu Haritadan Seç"),
               ),
               const SizedBox(height: 16),
               EventDateTimePicker(
