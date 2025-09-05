@@ -14,6 +14,8 @@ from .serializers import (
 )
 from users.models import CustomUser
 from users.services.supabase_service import SupabaseStorage
+from group_posts.models import Post
+from group_posts.serializers import PostSerializer
 
 # --- PERMISSIONS ---
 
@@ -378,9 +380,6 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
 # --- GROUP POSTS (using existing group_posts app) ---
 
 class GroupPostViewSet(viewsets.ModelViewSet):
-    from group_posts.models import Post
-    from group_posts.serializers import PostSerializer
-    
     serializer_class = PostSerializer
     permission_classes = [IsGroupMember]
 

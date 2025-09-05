@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'bikes',
     'rides',
     'groups',
+    'group_posts',
     'posts',
     'events',
     'media',

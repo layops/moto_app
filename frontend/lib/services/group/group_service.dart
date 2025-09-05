@@ -92,4 +92,192 @@ class GroupService {
       throw Exception('Profil fotoğrafı güncellenemedi: ${response.statusCode}');
     }
   }
+
+  // --- GRUP KATILIM TALEPLERİ ---
+
+  /// Grup katılım talebi gönder
+  Future<void> sendJoinRequest(int groupId, {String? message}) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/$groupId/join-requests/',
+      data: {'message': message ?? ''},
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 201) {
+      throw Exception('Katılım talebi gönderilemedi: ${response.statusCode}');
+    }
+  }
+
+  /// Grup katılım taleplerini getir
+  Future<List<dynamic>> getJoinRequests(int groupId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.get(
+      'groups/$groupId/join-requests/',
+      options: _authOptions(token),
+    );
+    
+    return response.data as List<dynamic>;
+  }
+
+  /// Katılım talebini onayla
+  Future<void> approveJoinRequest(int groupId, int requestId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/$groupId/join-requests/$requestId/approve/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Katılım talebi onaylanamadı: ${response.statusCode}');
+    }
+  }
+
+  /// Katılım talebini reddet
+  Future<void> rejectJoinRequest(int groupId, int requestId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/$groupId/join-requests/$requestId/reject/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Katılım talebi reddedilemedi: ${response.statusCode}');
+    }
+  }
+
+  // --- GRUP MESAJLARI ---
+
+  /// Grup mesajlarını getir
+  Future<List<dynamic>> getGroupMessages(int groupId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.get(
+      'groups/$groupId/messages/',
+      options: _authOptions(token),
+    );
+    
+    return response.data as List<dynamic>;
+  }
+
+  /// Grup mesajı gönder
+  Future<dynamic> sendGroupMessage(int groupId, String content, {String? messageType, String? fileUrl, int? replyTo}) async {
+    final token = await _authService.getToken();
+    
+    final data = {
+      'content': content,
+      'message_type': messageType ?? 'text',
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (replyTo != null) 'reply_to': replyTo,
+    };
+    
+    final response = await _dio.post(
+      'groups/$groupId/messages/',
+      data: data,
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 201) {
+      throw Exception('Mesaj gönderilemedi: ${response.statusCode}');
+    }
+    
+    return response.data;
+  }
+
+  /// Grup mesajını düzenle
+  Future<void> editGroupMessage(int groupId, int messageId, String content) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.patch(
+      'groups/$groupId/messages/$messageId/',
+      data: {'content': content},
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Mesaj düzenlenemedi: ${response.statusCode}');
+    }
+  }
+
+  /// Grup mesajını sil
+  Future<void> deleteGroupMessage(int groupId, int messageId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.delete(
+      'groups/$groupId/messages/$messageId/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 204) {
+      throw Exception('Mesaj silinemedi: ${response.statusCode}');
+    }
+  }
+
+  // --- GRUP POSTLARI ---
+
+  /// Grup postlarını getir
+  Future<List<dynamic>> getGroupPosts(int groupId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.get(
+      'groups/$groupId/posts/',
+      options: _authOptions(token),
+    );
+    
+    return response.data as List<dynamic>;
+  }
+
+  /// Grup postu oluştur
+  Future<dynamic> createGroupPost(int groupId, String content, {File? image}) async {
+    final token = await _authService.getToken();
+    
+    FormData formData = FormData.fromMap({
+      'content': content,
+    });
+    
+    if (image != null) {
+      formData.files.add(MapEntry(
+        'image',
+        await MultipartFile.fromFile(
+          image.path,
+          filename: image.path.split('/').last,
+        ),
+      ));
+    }
+    
+    final response = await _dio.post(
+      'groups/$groupId/posts/',
+      data: formData,
+      options: Options(
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+    
+    if (response.statusCode != 201) {
+      throw Exception('Post oluşturulamadı: ${response.statusCode}');
+    }
+    
+    return response.data;
+  }
+
+  /// Grup postunu sil
+  Future<void> deleteGroupPost(int groupId, int postId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.delete(
+      'groups/$groupId/posts/$postId/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 204) {
+      throw Exception('Post silinemedi: ${response.statusCode}');
+    }
+  }
 }
