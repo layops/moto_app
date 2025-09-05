@@ -189,7 +189,6 @@ SUPABASE_EVENTS_BUCKET = "events_pictures"
 SUPABASE_GROUPS_BUCKET = "groups_profile_pictures"
 SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
 
-# Yeni eklenen hata ayıklama ayarları
 if DEBUG:
     import logging
     logging.basicConfig(level=logging.DEBUG)
