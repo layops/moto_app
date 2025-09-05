@@ -1,13 +1,18 @@
 # C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\backend\groups\urls.py
 
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
-    MyGroupsListView, # <-- MyGroupsListView'i import edin
-    GroupCreateView,  # <-- GroupCreateView'i import edin
-    GroupDetailView, GroupMembersView,
-    GroupJoinLeaveView, GroupMemberDetailView,
-    DiscoverGroupsView 
+    MyGroupsListView, GroupCreateView, GroupDetailView, GroupMembersView,
+    GroupJoinLeaveView, GroupMemberDetailView, DiscoverGroupsView,
+    GroupJoinRequestViewSet, GroupMessageViewSet, GroupPostViewSet
 )
+
+# Router for ViewSets
+router = DefaultRouter()
+router.register(r'join-requests', GroupJoinRequestViewSet, basename='group-join-request')
+router.register(r'messages', GroupMessageViewSet, basename='group-message')
+router.register(r'posts', GroupPostViewSet, basename='group-post')
 
 
 urlpatterns = [
@@ -22,8 +27,10 @@ urlpatterns = [
     path('<int:pk>/join-leave/', GroupJoinLeaveView.as_view(), name='group-join-leave'),
     path('<int:group_pk>/members/<int:user_pk>/', GroupMemberDetailView.as_view(), name='group-member-detail'),
 
-    # Grup alt kaynakları
-    path('<int:group_pk>/posts/', include('posts.urls')),
+    # Grup alt kaynakları - ViewSets
+    path('<int:group_pk>/', include(router.urls)),
+    
+    # Diğer alt kaynaklar
     path('<int:group_pk>/events/', include('events.urls')),
     path('<int:group_pk>/media/', include('media.urls')),
 ]

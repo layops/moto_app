@@ -1,12 +1,17 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q 
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
 
-from .models import Group
-from .serializers import GroupSerializer, GroupMemberSerializer
+from .models import Group, GroupJoinRequest, GroupMessage
+from .serializers import (
+    GroupSerializer, GroupMemberSerializer, GroupJoinRequestSerializer,
+    GroupJoinRequestCreateSerializer, GroupMessageSerializer, GroupMessageCreateSerializer
+)
 from users.models import CustomUser
 from users.services.supabase_service import SupabaseStorage
 
@@ -23,6 +28,27 @@ class IsGroupOwnerOrMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
             return request.user == obj.owner or request.user in obj.members.all()
+        return False
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+class IsGroupOwnerOrModerator(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_authenticated:
+            return (request.user == obj.owner or 
+                   request.user in obj.moderators.all())
+        return False
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+class IsGroupMember(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_authenticated:
+            return (request.user == obj.owner or 
+                   request.user in obj.members.all() or 
+                   request.user in obj.moderators.all())
         return False
 
     def has_permission(self, request, view):
@@ -218,3 +244,159 @@ class GroupMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.put(request, *args, **kwargs)
+
+
+# --- GROUP JOIN REQUESTS ---
+
+class GroupJoinRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = GroupJoinRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return GroupJoinRequest.objects.filter(
+            Q(user=user) | Q(group__owner=user) | Q(group__moderators=user)
+        ).distinct()
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return GroupJoinRequestCreateSerializer
+        return GroupJoinRequestSerializer
+
+    def perform_create(self, serializer):
+        group_id = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_id)
+        
+        # Kullanıcının zaten üye olup olmadığını kontrol et
+        if self.request.user in group.members.all():
+            raise PermissionDenied("Zaten grubun üyesisiniz")
+        
+        # Zaten bekleyen bir talebi var mı kontrol et
+        if GroupJoinRequest.objects.filter(
+            group=group, user=self.request.user, status='pending'
+        ).exists():
+            raise PermissionDenied("Zaten bekleyen bir katılım talebiniz var")
+        
+        serializer.save(user=self.request.user, group=group)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None, group_pk=None):
+        join_request = self.get_object()
+        group = join_request.group
+        
+        # Yetki kontrolü
+        if not (request.user == group.owner or request.user in group.moderators.all()):
+            raise PermissionDenied("Bu işlem için yetkiniz yok")
+        
+        if join_request.status != 'pending':
+            return Response(
+                {"error": "Bu talep zaten işlenmiş"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Kullanıcıyı gruba ekle
+        group.members.add(join_request.user)
+        
+        # Talebi onayla
+        join_request.status = 'approved'
+        join_request.responded_at = timezone.now()
+        join_request.responded_by = request.user
+        join_request.save()
+        
+        return Response({"message": "Katılım talebi onaylandı"})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None, group_pk=None):
+        join_request = self.get_object()
+        group = join_request.group
+        
+        # Yetki kontrolü
+        if not (request.user == group.owner or request.user in group.moderators.all()):
+            raise PermissionDenied("Bu işlem için yetkiniz yok")
+        
+        if join_request.status != 'pending':
+            return Response(
+                {"error": "Bu talep zaten işlenmiş"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Talebi reddet
+        join_request.status = 'rejected'
+        join_request.responded_at = timezone.now()
+        join_request.responded_by = request.user
+        join_request.save()
+        
+        return Response({"message": "Katılım talebi reddedildi"})
+
+
+# --- GROUP MESSAGES ---
+
+class GroupMessageViewSet(viewsets.ModelViewSet):
+    serializer_class = GroupMessageSerializer
+    permission_classes = [IsGroupMember]
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_id)
+        
+        # Grup üyesi kontrolü
+        if not (self.request.user == group.owner or 
+                self.request.user in group.members.all() or 
+                self.request.user in group.moderators.all()):
+            raise PermissionDenied("Bu grubun mesajlarını görme yetkiniz yok")
+        
+        return GroupMessage.objects.filter(group=group)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return GroupMessageCreateSerializer
+        return GroupMessageSerializer
+
+    def perform_create(self, serializer):
+        group_id = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_id)
+        serializer.save(sender=self.request.user, group=group)
+
+    def perform_update(self, serializer):
+        # Sadece mesaj sahibi düzenleyebilir
+        if serializer.instance.sender != self.request.user:
+            raise PermissionDenied("Sadece kendi mesajlarınızı düzenleyebilirsiniz")
+        
+        serializer.save(is_edited=True)
+
+    def perform_destroy(self, instance):
+        # Sadece mesaj sahibi, grup sahibi veya moderatör silebilir
+        group = instance.group
+        if not (instance.sender == self.request.user or 
+                self.request.user == group.owner or 
+                self.request.user in group.moderators.all()):
+            raise PermissionDenied("Bu mesajı silme yetkiniz yok")
+        
+        instance.delete()
+
+
+# --- GROUP POSTS (using existing group_posts app) ---
+
+class GroupPostViewSet(viewsets.ModelViewSet):
+    from group_posts.models import Post
+    from group_posts.serializers import PostSerializer
+    
+    serializer_class = PostSerializer
+    permission_classes = [IsGroupMember]
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_id)
+        
+        # Grup üyesi kontrolü
+        if not (self.request.user == group.owner or 
+                self.request.user in group.members.all() or 
+                self.request.user in group.moderators.all()):
+            raise PermissionDenied("Bu grubun postlarını görme yetkiniz yok")
+        
+        return Post.objects.filter(group=group).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        group_id = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_id)
+        serializer.save(author=self.request.user, group=group)
