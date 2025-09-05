@@ -1,6 +1,8 @@
 // C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\frontend\lib\views\groups\create_group_page.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
@@ -22,8 +24,10 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final _formKey = GlobalKey<FormState>();
+  final _imagePicker = ImagePicker();
   String _name = '';
   String _description = '';
+  File? _selectedImage;
   bool _loading = false;
   String? _error;
 
@@ -33,6 +37,56 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   void initState() {
     super.initState();
     _groupService = GroupService(authService: widget.authService);
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+          _error = null;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Fotoğraf seçilirken hata oluştu: $e';
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+          _error = null;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Fotoğraf çekilirken hata oluştu: $e';
+      });
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+    });
   }
 
   Future<void> _createGroup() async {
@@ -45,7 +99,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     });
 
     try {
-      await _groupService.createGroup(_name, _description);
+      await _groupService.createGroup(_name, _description, profilePicture: _selectedImage);
       widget.onGroupCreated();
       if (mounted) {
         Navigator.pop(context);
@@ -112,6 +166,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   ),
                 ),
               if (_error != null) const SizedBox(height: 16),
+              
+              // Profil Fotoğrafı Seçimi
+              _buildProfilePictureSection(),
+              const SizedBox(height: 20),
+              
               TextFormField(
                 decoration: InputDecoration(
                   labelText: 'Grup Adı',
@@ -191,6 +250,115 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               child: const Icon(Icons.check),
               onPressed: _createGroup,
             ),
+    );
+  }
+
+  Widget _buildProfilePictureSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Grup Profil Fotoğrafı',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColorSchemes.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Grubunuzu temsil eden bir fotoğraf seçin (opsiyonel)',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColorSchemes.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        
+        if (_selectedImage != null) ...[
+          // Seçilen fotoğrafı göster
+          Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+              border: Border.all(color: AppColorSchemes.primaryColor, width: 2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+              child: Stack(
+                children: [
+                  Image.file(
+                    _selectedImage!,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: _removeImage,
+                        iconSize: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        
+        // Fotoğraf seçme butonları
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _loading ? null : _pickImage,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Galeriden Seç'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _loading ? null : _takePhoto,
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Fotoğraf Çek'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        if (_selectedImage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Maksimum dosya boyutu: 5MB • Desteklenen formatlar: JPG, PNG, WebP',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColorSchemes.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
     );
   }
 }

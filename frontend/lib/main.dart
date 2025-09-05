@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/services/post/post_service.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
+import 'package:motoapp_frontend/config/supabase_config.dart';
 
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
@@ -23,6 +25,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Supabase'i initialize et
+    await Supabase.initialize(
+      url: SupabaseConfig.supabaseUrl,
+      anonKey: SupabaseConfig.supabaseAnonKey,
+    );
+    
     await ServiceLocator.init();
     await ServiceLocator.auth.initializeAuthState();
 

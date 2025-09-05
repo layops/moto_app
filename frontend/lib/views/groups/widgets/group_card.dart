@@ -28,9 +28,9 @@ class GroupCard extends StatelessWidget {
         : int.tryParse(group['id'].toString()) ?? 0;
     final groupName = group['name']?.toString() ?? 'Grup';
     final description = group['description']?.toString() ?? 'Açıklama yok';
-    final location = group['location']?.toString() ?? 'San Francisco, CA';
-    final memberCount = group['member_count']?.toString() ?? '1,247';
-    final activeTime = group['active_time']?.toString() ?? '2 hours ago';
+    final profilePictureUrl = group['profile_picture_url']?.toString();
+    final memberCount = group['members']?.length?.toString() ?? '0';
+    final createdDate = group['created_at']?.toString() ?? '';
 
     return InkWell(
       onTap: () {
@@ -57,6 +57,38 @@ class GroupCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Profil Fotoğrafı
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: AppColorSchemes.lightBackground,
+                    ),
+                    child: profilePictureUrl != null && profilePictureUrl.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: Image.network(
+                              profilePictureUrl,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.group,
+                                  size: 30,
+                                  color: AppColorSchemes.primaryColor,
+                                );
+                              },
+                            ),
+                          )
+                        : Icon(
+                            Icons.group,
+                            size: 30,
+                            color: AppColorSchemes.primaryColor,
+                          ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,11 +96,13 @@ class GroupCard extends StatelessWidget {
                         Text(groupName,
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 18)),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         Text(description,
                             style: TextStyle(
                                 color: AppColorSchemes.textSecondary,
-                                fontSize: 14)),
+                                fontSize: 14),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
@@ -85,32 +119,49 @@ class GroupCard extends StatelessWidget {
                               ThemeConstants.borderRadiusMedium),
                         ),
                       ),
-                      child: const Text('Join'),
+                      child: const Text('Katıl'),
                     ),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.location_on,
+                  Icon(Icons.people,
                       size: 16, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
-                  Text(location,
+                  Text('$memberCount üye',
                       style:
                           TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const Spacer(),
-                  Text('$memberCount members',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  if (createdDate.isNotEmpty)
+                    Text('Oluşturuldu: ${_formatDate(createdDate)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text('Active $activeTime',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays} gün önce';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} saat önce';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} dakika önce';
+      } else {
+        return 'Az önce';
+      }
+    } catch (e) {
+      return 'Bilinmeyen';
+    }
   }
 }
