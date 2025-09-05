@@ -116,8 +116,8 @@ class DiscoverGroupsView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        # Kullanıcının üyesi olmadığı VE herkese açık olan grupları getir
-        return Group.objects.filter(join_type='public').exclude(members=user)
+        # Kullanıcının üyesi olmadığı grupları getir (geçici olarak tüm gruplar)
+        return Group.objects.exclude(members=user)
 
 
 class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -186,19 +186,18 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Grup türü kontrolü
-        if group.join_type != 'public':
-            return Response(
-                {'message': 'Bu grup herkese açık değil'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Geçici olarak grup türü ve maksimum üye kontrolü devre dışı
+        # if group.join_type != 'public':
+        #     return Response(
+        #         {'message': 'Bu grup herkese açık değil'}, 
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
         
-        # Maksimum üye sayısı kontrolü
-        if group.members.count() >= group.max_members:
-            return Response(
-                {'message': 'Grup maksimum üye sayısına ulaştı'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # if group.members.count() >= group.max_members:
+        #     return Response(
+        #         {'message': 'Grup maksimum üye sayısına ulaştı'}, 
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
         
         # Gruba katıl
         group.members.add(user)
