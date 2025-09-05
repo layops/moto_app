@@ -5,7 +5,7 @@ import 'button_themes.dart';
 import 'input_themes.dart';
 
 class DarkTheme {
-  static ThemeData get theme => ThemeData(
+  static final ThemeData theme = ThemeData(
         colorScheme: AppColorSchemes.dark,
         textTheme: AppTextTheme.dark,
         buttonTheme: AppButtonThemes.dark,

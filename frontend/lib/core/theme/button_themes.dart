@@ -9,7 +9,7 @@ class AppButtonThemes {
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
         ),
         padding: ThemeConstants.paddingMedium,
-        buttonColor: AppColorSchemes.primaryColor,
+        buttonColor: AppColorSchemes.light.primary,
         textTheme: ButtonTextTheme.primary,
       );
 
@@ -19,17 +19,17 @@ class AppButtonThemes {
               BorderRadius.circular(ThemeConstants.borderRadiusMedium),
         ),
         padding: ThemeConstants.paddingMedium,
-        buttonColor: AppColorSchemes.primaryColor,
+        buttonColor: AppColorSchemes.dark.primary,
         textTheme: ButtonTextTheme.primary,
       );
 
   // ElevatedButton teması
   static ElevatedButtonThemeData get elevatedLight => ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColorSchemes.primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColorSchemes.light.primary,
+          foregroundColor: AppColorSchemes.light.onPrimary,
           padding: ThemeConstants.paddingMedium,
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -42,10 +42,10 @@ class AppButtonThemes {
 
   static ElevatedButtonThemeData get elevatedDark => ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColorSchemes.primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColorSchemes.dark.primary,
+          foregroundColor: AppColorSchemes.dark.onPrimary,
           padding: ThemeConstants.paddingMedium,
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -60,10 +60,10 @@ class AppButtonThemes {
   static OutlinedButtonThemeData get outlinedLight => OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.transparent,
-          foregroundColor: AppColorSchemes.textPrimary,
+          foregroundColor: AppColorSchemes.light.onSurface,
           padding: ThemeConstants.paddingMedium,
-          side: BorderSide(color: AppColorSchemes.borderColor),
-          textStyle: TextStyle(
+          side: BorderSide(color: AppColorSchemes.light.outline),
+          textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -77,10 +77,10 @@ class AppButtonThemes {
   static OutlinedButtonThemeData get outlinedDark => OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColorSchemes.dark.onSurface,
           padding: ThemeConstants.paddingMedium,
-          side: BorderSide(color: AppColorSchemes.borderColor),
-          textStyle: TextStyle(
+          side: BorderSide(color: AppColorSchemes.dark.outline),
+          textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),

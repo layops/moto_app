@@ -1,94 +1,93 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 
 class AppTextTheme {
-  static TextTheme get light => TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 28.sp,
+  static final TextTheme light = TextTheme(
+        displayLarge: const TextStyle(
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColorSchemes.textPrimary,
         ),
-        displayMedium: TextStyle(
-          fontSize: 24.sp,
+        displayMedium: const TextStyle(
+          fontSize: 24,
           fontWeight: FontWeight.w600,
           color: AppColorSchemes.textPrimary,
         ),
-        headlineLarge: TextStyle(
-          fontSize: 20.sp,
+        headlineLarge: const TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColorSchemes.textPrimary,
         ),
-        headlineMedium: TextStyle(
-          fontSize: 18.sp,
+        headlineMedium: const TextStyle(
+          fontSize: 18,
           fontWeight: FontWeight.w500,
           color: AppColorSchemes.textPrimary,
         ),
-        bodyLarge: TextStyle(
-          fontSize: 16.sp,
+        bodyLarge: const TextStyle(
+          fontSize: 16,
           color: AppColorSchemes.textPrimary,
         ),
-        bodyMedium: TextStyle(
-          fontSize: 14.sp,
+        bodyMedium: const TextStyle(
+          fontSize: 14,
           color: AppColorSchemes.textSecondary,
         ),
-        labelLarge: TextStyle(
-          fontSize: 16.sp,
+        labelLarge: const TextStyle(
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleMedium: TextStyle(
-          fontSize: 16.sp,
+        titleMedium: const TextStyle(
+          fontSize: 16,
           color: AppColorSchemes.linkColor,
           fontWeight: FontWeight.w500,
         ),
-        titleSmall: TextStyle(
-          fontSize: 12.sp,
+        titleSmall: const TextStyle(
+          fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
       );
 
-  static TextTheme get dark => TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 28.sp,
+  static final TextTheme dark = TextTheme(
+        displayLarge: const TextStyle(
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-        displayMedium: TextStyle(
-          fontSize: 24.sp,
+        displayMedium: const TextStyle(
+          fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineLarge: TextStyle(
-          fontSize: 20.sp,
+        headlineLarge: const TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineMedium: TextStyle(
-          fontSize: 18.sp,
+        headlineMedium: const TextStyle(
+          fontSize: 18,
           fontWeight: FontWeight.w500,
           color: Colors.white,
         ),
-        bodyLarge: TextStyle(
-          fontSize: 16.sp,
+        bodyLarge: const TextStyle(
+          fontSize: 16,
           color: Colors.white,
         ),
-        bodyMedium: TextStyle(
-          fontSize: 14.sp,
+        bodyMedium: const TextStyle(
+          fontSize: 14,
           color: Colors.white70,
         ),
-        labelLarge: TextStyle(
-          fontSize: 16.sp,
+        labelLarge: const TextStyle(
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleMedium: TextStyle(
-          fontSize: 16.sp,
+        titleMedium: const TextStyle(
+          fontSize: 16,
           color: AppColorSchemes.linkColor,
           fontWeight: FontWeight.w500,
         ),
-        titleSmall: TextStyle(
-          fontSize: 12.sp,
+        titleSmall: const TextStyle(
+          fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
       );

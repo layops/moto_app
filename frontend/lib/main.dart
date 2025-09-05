@@ -185,9 +185,10 @@ class _MotoAppState extends State<MotoApp> {
   }
 
   Widget _buildMainWrapper() {
+    print('MainWrapper oluşturuluyor - MapPage allowSelection: true ile');
     final List<Widget> pages = [
       const HomePage(),
-      const MapPage(),
+      const MapPage(allowSelection: true),
       const GroupsPage(),
       const EventsPage(),
       ProfilePage(username: _currentUsername),

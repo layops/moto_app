@@ -5,7 +5,7 @@ import 'button_themes.dart';
 import 'input_themes.dart';
 
 class LightTheme {
-  static ThemeData get theme => ThemeData(
+  static final ThemeData theme = ThemeData(
         colorScheme: AppColorSchemes.light,
         textTheme: AppTextTheme.light,
         buttonTheme: AppButtonThemes.light,
@@ -14,7 +14,7 @@ class LightTheme {
         inputDecorationTheme: AppInputThemes.light,
         useMaterial3: true,
         scaffoldBackgroundColor: AppColorSchemes.lightBackground,
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: AppColorSchemes.surfaceColor,
           foregroundColor: AppColorSchemes.textPrimary,
           elevation: 0,
