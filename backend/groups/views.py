@@ -7,9 +7,9 @@ from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 
-from .models import Group
+from .models import Group, GroupJoinRequest
 from .serializers import (
-    GroupSerializer, GroupMemberSerializer
+    GroupSerializer, GroupMemberSerializer, GroupJoinRequestSerializer
 )
 from users.models import CustomUser
 from users.services.supabase_service import SupabaseStorage
@@ -272,3 +272,91 @@ class GroupMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.put(request, *args, **kwargs)
+
+
+# --- GRUP KATILIM TALEPLERİ ---
+
+class GroupJoinRequestViewSet(viewsets.ModelViewSet):
+    """
+    Grup katılım talepleri için ViewSet
+    """
+    serializer_class = GroupJoinRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        group_pk = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_pk)
+        
+        # Sadece grup sahibi katılım taleplerini görebilir
+        if group.owner == self.request.user:
+            return GroupJoinRequest.objects.filter(group=group)
+        
+        # Diğer kullanıcılar sadece kendi taleplerini görebilir
+        return GroupJoinRequest.objects.filter(group=group, user=self.request.user)
+    
+    def perform_create(self, serializer):
+        group_pk = self.kwargs.get('group_pk')
+        group = get_object_or_404(Group, pk=group_pk)
+        
+        # Zaten üye mi kontrol et
+        if self.request.user in group.members.all():
+            raise PermissionDenied("Zaten bu grubun üyesisiniz.")
+        
+        # Zaten bekleyen bir talep var mı kontrol et
+        if GroupJoinRequest.objects.filter(group=group, user=self.request.user, status='pending').exists():
+            raise PermissionDenied("Bu grup için zaten bekleyen bir katılım talebiniz var.")
+        
+        serializer.save(group=group, user=self.request.user)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def approve(self, request, group_pk=None, pk=None):
+        """Katılım talebini onayla"""
+        join_request = self.get_object()
+        group = join_request.group
+        
+        # Sadece grup sahibi onaylayabilir
+        if group.owner != request.user:
+            raise PermissionDenied("Sadece grup sahibi katılım taleplerini onaylayabilir.")
+        
+        if join_request.status != 'pending':
+            return Response(
+                {'detail': 'Bu talep zaten işlenmiş.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Talebi onayla
+        join_request.status = 'approved'
+        join_request.save()
+        
+        # Kullanıcıyı gruba ekle
+        group.members.add(join_request.user)
+        
+        return Response(
+            {'detail': 'Katılım talebi onaylandı ve kullanıcı gruba eklendi.'}, 
+            status=status.HTTP_200_OK
+        )
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reject(self, request, group_pk=None, pk=None):
+        """Katılım talebini reddet"""
+        join_request = self.get_object()
+        group = join_request.group
+        
+        # Sadece grup sahibi reddedebilir
+        if group.owner != request.user:
+            raise PermissionDenied("Sadece grup sahibi katılım taleplerini reddedebilir.")
+        
+        if join_request.status != 'pending':
+            return Response(
+                {'detail': 'Bu talep zaten işlenmiş.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Talebi reddet
+        join_request.status = 'rejected'
+        join_request.save()
+        
+        return Response(
+            {'detail': 'Katılım talebi reddedildi.'}, 
+            status=status.HTTP_200_OK
+        )
