@@ -1,5 +1,5 @@
 # Generated manually for Render.com deployment
-# Migration number 0005 to avoid conflicts with existing migrations
+# Migration number 0002 to be applied before events.0002
 
 from django.db import migrations, models
 
