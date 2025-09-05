@@ -185,6 +185,7 @@ SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 SUPABASE_BUCKET = "profile_pictures"
 SUPABASE_COVER_BUCKET = "cover_pictures"
 SUPABASE_EVENTS_BUCKET = "events_pictures"
+SUPABASE_GROUPS_BUCKET = "groups_profile_pictures"
 SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
 
 # Yeni eklenen hata ayıklama ayarları

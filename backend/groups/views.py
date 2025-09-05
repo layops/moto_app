@@ -3,10 +3,12 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q 
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import Group
 from .serializers import GroupSerializer, GroupMemberSerializer
 from users.models import CustomUser
+from users.services.supabase_service import SupabaseStorage
 
 # --- PERMISSIONS ---
 
@@ -46,11 +48,39 @@ class GroupCreateView(generics.CreateAPIView):
     """
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
-    def perform_create(self, serializer):
-        group = serializer.save(owner=self.request.user)
+    def create(self, request, *args, **kwargs):
+        print("Gelen veri:", request.data)
+        print("Dosyalar:", request.FILES)
+        
+        data = request.data.copy()
+        profile_file = request.FILES.get('profile_picture')
+        
+        if profile_file and 'profile_picture' in data:
+            del data['profile_picture']
+        
+        serializer = self.get_serializer(data=data)
+        if not serializer.is_valid():
+            print("Serializer hataları:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        group = serializer.save(owner=request.user)
         # Grup sahibi aynı zamanda grup üyesi olarak eklenir
-        group.members.add(self.request.user)
+        group.members.add(request.user)
+        
+        if profile_file:
+            try:
+                supabase = SupabaseStorage()
+                profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
+                group.profile_picture_url = profile_url
+                group.save()
+                serializer = self.get_serializer(group)
+            except Exception as e:
+                print("Profil resmi yükleme hatası:", str(e))
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class DiscoverGroupsView(generics.ListAPIView):
@@ -70,6 +100,54 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsGroupOwnerOrReadOnly]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        data = request.data.copy()
+        profile_file = request.FILES.get('profile_picture')
+        
+        if profile_file and 'profile_picture' in data:
+            del data['profile_picture']
+        
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        group = serializer.save()
+        
+        if profile_file:
+            try:
+                supabase = SupabaseStorage()
+                # Eski profil fotoğrafını sil
+                if group.profile_picture_url:
+                    supabase.delete_group_profile_picture(group.profile_picture_url)
+                
+                # Yeni profil fotoğrafını yükle
+                profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
+                group.profile_picture_url = profile_url
+                group.save()
+                serializer = self.get_serializer(group)
+            except Exception as e:
+                print("Profil resmi güncelleme hatası:", str(e))
+        
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Grup silinmeden önce profil fotoğrafını da sil
+        if instance.profile_picture_url:
+            try:
+                supabase = SupabaseStorage()
+                supabase.delete_group_profile_picture(instance.profile_picture_url)
+            except Exception as e:
+                print("Profil resmi silme hatası:", str(e))
+        
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GroupMembersView(generics.ListAPIView):
