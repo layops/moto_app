@@ -35,17 +35,15 @@ class IsGroupOwnerOrMember(permissions.BasePermission):
 
 class IsGroupOwnerOrModerator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        # Grup sahibi veya moderatör ise erişim izni var
-        return (obj.owner == request.user or 
-                request.user in obj.moderators.all())
+        # Grup sahibi ise erişim izni var (moderatör alanı kaldırıldı)
+        return obj.owner == request.user
 
 
 class IsGroupMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        # Grup sahibi, moderatör veya üye ise erişim izni var
+        # Grup sahibi veya üye ise erişim izni var
         return (obj.owner == request.user or 
-                request.user in obj.members.all() or 
-                request.user in obj.moderators.all())
+                request.user in obj.members.all())
 
 
 # --- VIEWS ---
@@ -60,7 +58,7 @@ class MyGroupsListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return Group.objects.filter(
-            Q(owner=user) | Q(members=user) | Q(moderators=user)
+            Q(owner=user) | Q(members=user)
         ).distinct()
 
 
