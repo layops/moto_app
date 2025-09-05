@@ -11,16 +11,12 @@ from .views import (
 
 
 urlpatterns = [
-    # Kullanıcının üyesi olduğu grupları listeler
+    # REST standartlarına uygun URL'ler
+    path('', GroupCreateView.as_view(), name='group-list-create'),  # POST için grup oluşturma
     path('my_groups/', MyGroupsListView.as_view(), name='my-groups'),
-    
-    # Yeni grup oluşturma
-    path('create/', GroupCreateView.as_view(), name='create-group'),
-    
-    # Keşfedilecek grupları listeler
     path('discover/', DiscoverGroupsView.as_view(), name='discover-groups'),
     
-    # Diğer yollarınızda değişiklik yok
+    # Grup detay işlemleri
     path('<int:pk>/', GroupDetailView.as_view(), name='group-detail'),
     path('<int:pk>/members/', GroupMembersView.as_view(), name='group-members'),
     path('<int:pk>/join-leave/', GroupJoinLeaveView.as_view(), name='group-join-leave'),

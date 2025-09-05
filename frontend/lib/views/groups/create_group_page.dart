@@ -133,7 +133,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         foregroundColor: AppColorSchemes.textPrimary,
         elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: ThemeConstants.paddingLarge,
         child: Form(
           key: _formKey,
@@ -225,7 +225,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                                 fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               const Divider(),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -238,6 +238,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   textAlign: TextAlign.center,
                 ),
               ),
+              const SizedBox(height: 100), // FAB için boşluk
             ],
           ),
         ),

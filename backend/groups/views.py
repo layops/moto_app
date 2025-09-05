@@ -42,13 +42,17 @@ class MyGroupsListView(generics.ListAPIView):
         # Kullanıcının üyesi olduğu grupları getir
         return self.request.user.member_of_groups.all()
 
-class GroupCreateView(generics.CreateAPIView):
+class GroupCreateView(generics.ListCreateAPIView):
     """
-    Yeni grup oluşturur.
+    Grup listesi (GET) ve yeni grup oluşturma (POST).
     """
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self):
+        # Tüm grupları listele (isteğe bağlı olarak filtreleme eklenebilir)
+        return Group.objects.all().order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         print("Gelen veri:", request.data)
