@@ -39,28 +39,34 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void initState() {
     super.initState();
     _groupService = GroupService(authService: widget.authService);
-    _isMember = _checkMembership();
-    _isOwner = _checkOwnership();
-    _isModerator = _checkModeratorStatus();
-    _loadGroupData();
+    _isMember = false;
+    _isOwner = false;
+    _isModerator = false;
+    _checkUserStatus();
   }
 
-  bool _checkMembership() {
-    final members = widget.groupData['members'] as List<dynamic>? ?? [];
-    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
-    return false; // Geçici olarak false döndürüyoruz
+  Future<void> _checkUserStatus() async {
+    try {
+      final currentUsername = await widget.authService.getCurrentUsername();
+      if (currentUsername == null) return;
+
+      final members = widget.groupData['members'] as List<dynamic>? ?? [];
+      final owner = widget.groupData['owner'];
+      final moderators = widget.groupData['moderators'] as List<dynamic>? ?? [];
+
+      setState(() {
+        _isMember = members.any((member) => member['username'] == currentUsername);
+        _isOwner = owner != null && owner['username'] == currentUsername;
+        _isModerator = moderators.any((moderator) => moderator['username'] == currentUsername);
+      });
+
+      _loadGroupData();
+    } catch (e) {
+      print('Kullanıcı durumu kontrol edilirken hata: $e');
+      _loadGroupData();
+    }
   }
 
-  bool _checkOwnership() {
-    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
-    return false; // Geçici olarak false döndürüyoruz
-  }
-
-  bool _checkModeratorStatus() {
-    final moderators = widget.groupData['moderators'] as List<dynamic>? ?? [];
-    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
-    return false; // Geçici olarak false döndürüyoruz
-  }
 
   Future<void> _loadGroupData() async {
     setState(() => _loading = true);
@@ -309,6 +315,38 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildActionButtons() {
+    // Grup sahibi ise hiçbir buton gösterme
+    if (_isOwner) {
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreatePostDialog(),
+              icon: const Icon(Icons.add),
+              label: const Text('Post Oluştur'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColorSchemes.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _showChatDialog(),
+              icon: const Icon(Icons.chat),
+              label: const Text('Mesajlaş'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // Grup üyesi ise (ama sahibi değilse) üye butonları göster
     if (_isMember) {
       return Row(
         children: [
@@ -337,31 +375,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ),
         ],
       );
-    } else {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _joinGroup,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColorSchemes.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(widget.groupData['join_type'] == 'public' ? 'Gruba Katıl' : 'Katılım Talebi Gönder'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareGroup(),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColorSchemes.lightBackground,
-            ),
-          ),
-        ],
-      );
     }
+    
+    // Ne üye ne de sahip ise katılım talebi butonu göster
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _joinGroup,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColorSchemes.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: Text(widget.groupData['join_type'] == 'public' ? 'Gruba Katıl' : 'Katılım Talebi Gönder'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        IconButton(
+          icon: const Icon(Icons.share),
+          onPressed: () => _shareGroup(),
+          style: IconButton.styleFrom(
+            backgroundColor: AppColorSchemes.lightBackground,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildContentTabs() {
@@ -687,6 +726,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   // --- ACTION METHODS ---
 
   Future<void> _joinGroup() async {
+    // Zaten üye veya sahip ise işlem yapma
+    if (_isMember || _isOwner) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Zaten bu grubun üyesisiniz!')),
+      );
+      return;
+    }
+
     try {
       if (widget.groupData['join_type'] == 'public') {
         // Direkt katıl
@@ -694,7 +741,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gruba başarıyla katıldınız!')),
         );
-        _loadGroupData();
+        // Kullanıcı durumunu yeniden kontrol et
+        _checkUserStatus();
       } else {
         // Katılım talebi gönder
         await _groupService.sendJoinRequest(widget.groupId);
@@ -715,7 +763,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Katılım talebi onaylandı!')),
       );
-      _loadGroupData();
+      // Kullanıcı durumunu ve grup verilerini yeniden yükle
+      _checkUserStatus();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata: $e')),
@@ -729,6 +778,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Katılım talebi reddedildi!')),
       );
+      // Sadece grup verilerini yeniden yükle (kullanıcı durumu değişmez)
       _loadGroupData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
