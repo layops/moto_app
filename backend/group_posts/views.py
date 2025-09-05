@@ -4,7 +4,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from .models import Post
 from .serializers import PostSerializer
-from groups.models import Group
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
@@ -14,20 +13,20 @@ class PostViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         group_pk = self.kwargs.get('group_pk')
         if group_pk:
+            from groups.models import Group
             group = get_object_or_404(Group, pk=group_pk)
             return Post.objects.filter(group=group)
         return Post.objects.all()
 
     def perform_create(self, serializer):
         group_pk = self.kwargs.get('group_pk')
+        from groups.models import Group
         group = get_object_or_404(Group, pk=group_pk)
         
         # Kullanıcının grup üyesi olup olmadığını kontrol et
         if self.request.user not in group.members.all() and self.request.user != group.owner:
-            return Response(
-                {'detail': 'Bu grubun üyesi değilsiniz.'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Bu grubun üyesi değilsiniz.")
         
         serializer.save(author=self.request.user, group=group)
 
