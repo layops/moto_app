@@ -18,6 +18,12 @@ class AuthService {
 
   Stream<bool> get authStateChanges => _authStateController.stream;
   ApiClient get apiClient => _apiClient;
+  
+  // Current user bilgisi için getter
+  Map<String, dynamic>? get currentUser {
+    // Bu basit bir implementasyon, gerçek uygulamada token'dan user bilgisi alınabilir
+    return null; // Şimdilik null döndürüyoruz, token'dan user ID alınabilir
+  }
 
   Future<void> initializeAuthState() async {
     final loggedIn = await isLoggedIn();

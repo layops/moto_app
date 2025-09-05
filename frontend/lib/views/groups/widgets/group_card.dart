@@ -3,16 +3,19 @@
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import '../group_detail_page.dart';
 
 class GroupCard extends StatelessWidget {
   final dynamic group;
   final bool isMyGroup;
+  final AuthService authService;
 
   const GroupCard({
     super.key,
     required this.group,
     required this.isMyGroup,
+    required this.authService,
   });
 
   @override
@@ -37,8 +40,11 @@ class GroupCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                GroupDetailPage(groupId: groupId, groupData: group),
+            builder: (context) => GroupDetailPage(
+              groupId: groupId, 
+              groupData: group,
+              authService: authService,
+            ),
           ),
         );
       },

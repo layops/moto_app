@@ -181,6 +181,41 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def join(self, request, pk=None):
+        """Gruba katıl (public gruplar için)"""
+        group = self.get_object()
+        user = request.user
+        
+        # Zaten üye mi kontrol et
+        if user in group.members.all():
+            return Response(
+                {'message': 'Zaten bu grubun üyesisiniz'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Grup türü kontrolü
+        if group.join_type != 'public':
+            return Response(
+                {'message': 'Bu grup herkese açık değil'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Maksimum üye sayısı kontrolü
+        if group.members.count() >= group.max_members:
+            return Response(
+                {'message': 'Grup maksimum üye sayısına ulaştı'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Gruba katıl
+        group.members.add(user)
+        
+        return Response(
+            {'message': 'Gruba başarıyla katıldınız'}, 
+            status=status.HTTP_200_OK
+        )
+
 
 class GroupMembersView(generics.ListAPIView):
     serializer_class = GroupMemberSerializer

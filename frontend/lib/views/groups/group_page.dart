@@ -169,6 +169,7 @@ class _GroupsPageState extends State<GroupsPage> {
                         GroupListSection(
                           title: 'Gruplarım',
                           groups: _myGroups,
+                          authService: _authService,
                           isMyGroupsSection: true,
                           emptyStateWidget: _buildEmptyState(),
                         ),
@@ -176,6 +177,7 @@ class _GroupsPageState extends State<GroupsPage> {
                         GroupListSection(
                           title: 'Keşfet',
                           groups: _discoverGroups,
+                          authService: _authService,
                           isMyGroupsSection: false,
                           emptyStateWidget: const Center(
                             child: Text('Keşfedilecek grup bulunamadı',

@@ -40,21 +40,26 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     super.initState();
     _groupService = GroupService(authService: widget.authService);
     _isMember = _checkMembership();
-    _isOwner = widget.groupData['owner']['id'] == widget.authService.currentUser?.id;
+    _isOwner = _checkOwnership();
     _isModerator = _checkModeratorStatus();
     _loadGroupData();
   }
 
   bool _checkMembership() {
     final members = widget.groupData['members'] as List<dynamic>? ?? [];
-    final currentUserId = widget.authService.currentUser?.id;
-    return members.any((member) => member['id'] == currentUserId);
+    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
+    return false; // Geçici olarak false döndürüyoruz
+  }
+
+  bool _checkOwnership() {
+    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
+    return false; // Geçici olarak false döndürüyoruz
   }
 
   bool _checkModeratorStatus() {
     final moderators = widget.groupData['moderators'] as List<dynamic>? ?? [];
-    final currentUserId = widget.authService.currentUser?.id;
-    return moderators.any((moderator) => moderator['id'] == currentUserId);
+    // Şimdilik basit bir kontrol, gerçek uygulamada token'dan user ID alınabilir
+    return false; // Geçici olarak false döndürüyoruz
   }
 
   Future<void> _loadGroupData() async {
@@ -433,8 +438,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         ],
                       ),
                     ),
-                    if (post['author']['id'] == widget.authService.currentUser?.id ||
-                        _isOwner || _isModerator)
+                    if (_isOwner || _isModerator) // Geçici olarak sadece owner/moderator kontrolü
                       PopupMenuButton(
                         itemBuilder: (context) => [
                           const PopupMenuItem(
@@ -481,7 +485,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        final isOwnMessage = message['sender']['id'] == widget.authService.currentUser?.id;
+        final isOwnMessage = false; // Geçici olarak false, gerçek uygulamada token'dan user ID alınabilir
         
         return Container(
           margin: const EdgeInsets.only(bottom: 8),

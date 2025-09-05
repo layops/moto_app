@@ -95,6 +95,20 @@ class GroupService {
 
   // --- GRUP KATILIM TALEPLERİ ---
 
+  /// Gruba katıl (public gruplar için)
+  Future<void> joinGroup(int groupId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/$groupId/join/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Gruba katılınamadı: ${response.statusCode}');
+    }
+  }
+
   /// Grup katılım talebi gönder
   Future<void> sendJoinRequest(int groupId, {String? message}) async {
     final token = await _authService.getToken();

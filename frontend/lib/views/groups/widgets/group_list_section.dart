@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
+import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'group_card.dart';
 
 class GroupListSection extends StatelessWidget {
@@ -10,11 +11,13 @@ class GroupListSection extends StatelessWidget {
   final List<dynamic> groups;
   final bool isMyGroupsSection;
   final Widget? emptyStateWidget;
+  final AuthService authService;
 
   const GroupListSection({
     super.key,
     required this.title,
     required this.groups,
+    required this.authService,
     this.isMyGroupsSection = false,
     this.emptyStateWidget,
   });
@@ -54,6 +57,7 @@ class GroupListSection extends StatelessWidget {
                 .map((group) => GroupCard(
                       group: group,
                       isMyGroup: isMyGroupsSection,
+                      authService: authService,
                     ))
                 .toList(),
           ),
