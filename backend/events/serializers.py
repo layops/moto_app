@@ -9,11 +9,12 @@ User = get_user_model()
 
 class EventSerializer(serializers.ModelSerializer):
     organizer = UserSerializer(read_only=True)
-    participants = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        many=True,
-        required=False
-    )
+    # participants field'ını geçici olarak kaldırıyoruz
+    # participants = serializers.PrimaryKeyRelatedField(
+    #     queryset=User.objects.all(),
+    #     many=True,
+    #     required=False
+    # )
     group = GroupSerializer(read_only=True)
     group_id = serializers.PrimaryKeyRelatedField(
         queryset=Group.objects.all(),
@@ -32,7 +33,7 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
-            'location', 'start_time', 'end_time', 'participants',
+            'location', 'start_time', 'end_time',
             'created_at', 'updated_at', 'is_public', 'guest_limit',
             'cover_image', 'current_participant_count', 'is_full', 'is_joined'
         ]

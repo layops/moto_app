@@ -10,10 +10,15 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Event
 from .serializers import EventSerializer
 from groups.models import Group
-from users.services.supabase_service import SupabaseStorage
-from users.serializers import UserSerializer  # Yeni import
+try:
+    from users.services.supabase_service import SupabaseStorage
+    supabase = SupabaseStorage()
+    print("SupabaseStorage başarıyla yüklendi")
+except Exception as e:
+    print(f"SupabaseStorage yükleme hatası: {str(e)}")
+    supabase = None
 
-supabase = SupabaseStorage()
+from users.serializers import UserSerializer  # Yeni import
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
@@ -22,21 +27,26 @@ class EventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        print(f"get_queryset çağrıldı, kullanıcı: {user.username}")
+        
         try:
-            # Kullanıcının üye olduğu grupları al
-            user_groups = Group.objects.filter(Q(members=user) | Q(owner=user)).distinct()
+            # En basit sorgu ile başlayalım
+            print("En basit sorgu başlatılıyor...")
             
-            # Etkinlikleri filtrele
-            events = Event.objects.filter(
-                Q(group__in=user_groups) |  # Kullanıcının üye olduğu gruplardaki etkinlikler
-                Q(group__isnull=True, organizer=user) |  # Kullanıcının kendi etkinlikleri
-                Q(is_public=True)  # Herkese açık etkinlikler
-            ).distinct().order_by('start_time')
+            # Sadece tüm etkinlikleri getir
+            all_events = Event.objects.all().order_by('start_time')
+            print(f"Tüm etkinlikler: {all_events.count()}")
             
-            return events
+            return all_events
+            
         except Exception as e:
-            # Hata durumunda sadece public etkinlikleri döndür
-            return Event.objects.filter(is_public=True).order_by('start_time')
+            print(f"get_queryset hatası: {str(e)}")
+            print(f"Hata türü: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            # Hata durumunda boş queryset döndür
+            return Event.objects.none()
 
     def create(self, request, *args, **kwargs):
         print("Gelen veri:", request.data)
@@ -62,7 +72,7 @@ class EventViewSet(viewsets.ModelViewSet):
                 event.participants.add(request.user)
             
             # Kapak resmi varsa yükle
-            if cover_file:
+            if cover_file and supabase is not None:
                 try:
                     cover_url = supabase.upload_event_picture(cover_file, str(event.id))
                     event.cover_image = cover_url
@@ -71,6 +81,8 @@ class EventViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     print("Resim yükleme hatası:", str(e))
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
+            elif cover_file and supabase is None:
+                print("SupabaseStorage mevcut değil, resim yüklenemedi")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
