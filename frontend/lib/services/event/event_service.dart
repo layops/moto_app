@@ -13,35 +13,81 @@ class EventService {
   Future<List<dynamic>> fetchAllEvents() async {
     try {
       final token = await authService.getToken();
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+      
       final response = await _dio.get(
         'https://spiride.onrender.com/api/events/',
         options: Options(
           headers: {
             'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) {
+            return status != null && status < 500;
           },
         ),
       );
-      return response.data;
+      
+      if (response.statusCode == 200) {
+        return response.data ?? [];
+      } else {
+        throw Exception('Server returned status ${response.statusCode}: ${response.data}');
+      }
     } on DioException catch (e) {
-      throw Exception('Failed to fetch events: ${e.message}');
+      if (e.response != null) {
+        final errorData = e.response?.data;
+        final errorMessage = errorData is Map
+            ? errorData['detail'] ?? errorData['error'] ?? errorData.toString()
+            : e.response?.data?.toString() ?? e.message;
+        throw Exception('Failed to fetch events: $errorMessage');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
     }
   }
 
   Future<List<dynamic>> fetchGroupEvents(int groupId) async {
     try {
       final token = await authService.getToken();
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+      
       final response = await _dio.get(
         'https://spiride.onrender.com/api/events/',
         queryParameters: {'group': groupId},
         options: Options(
           headers: {
             'Authorization': 'Token $token',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) {
+            return status != null && status < 500;
           },
         ),
       );
-      return response.data;
+      
+      if (response.statusCode == 200) {
+        return response.data ?? [];
+      } else {
+        throw Exception('Server returned status ${response.statusCode}: ${response.data}');
+      }
     } on DioException catch (e) {
-      throw Exception('Failed to fetch group events: ${e.message}');
+      if (e.response != null) {
+        final errorData = e.response?.data;
+        final errorMessage = errorData is Map
+            ? errorData['detail'] ?? errorData['error'] ?? errorData.toString()
+            : e.response?.data?.toString() ?? e.message;
+        throw Exception('Failed to fetch group events: $errorMessage');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
     }
   }
 

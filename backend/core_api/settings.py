@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import dj_database_url
+import dj_database_url  # pyright: ignore[reportMissingImports]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = 'https://spiride.onrender.com'

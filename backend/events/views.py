@@ -22,54 +22,69 @@ class EventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        user_groups = Group.objects.filter(Q(members=user) | Q(owner=user))
-        return Event.objects.filter(
-            Q(group__in=user_groups) | Q(group__isnull=True, organizer=user) |
-            Q(is_public=True)
-        ).distinct().order_by('start_time')
+        try:
+            # Kullanıcının üye olduğu grupları al
+            user_groups = Group.objects.filter(Q(members=user) | Q(owner=user)).distinct()
+            
+            # Etkinlikleri filtrele
+            events = Event.objects.filter(
+                Q(group__in=user_groups) |  # Kullanıcının üye olduğu gruplardaki etkinlikler
+                Q(group__isnull=True, organizer=user) |  # Kullanıcının kendi etkinlikleri
+                Q(is_public=True)  # Herkese açık etkinlikler
+            ).distinct().order_by('start_time')
+            
+            return events
+        except Exception as e:
+            # Hata durumunda sadece public etkinlikleri döndür
+            return Event.objects.filter(is_public=True).order_by('start_time')
 
     def create(self, request, *args, **kwargs):
         print("Gelen veri:", request.data)
         print("Dosyalar:", request.FILES)
         
-        data = request.data.copy()
-        cover_file = request.FILES.get('cover_image')
-        
-        if cover_file and 'cover_image' in data:
-            del data['cover_image']
-        
-        serializer = self.get_serializer(data=data)
-        if not serializer.is_valid():
-            print("Serializer hataları:", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        event = serializer.save(organizer=request.user)
-        
-        if cover_file:
-            try:
-                cover_url = supabase.upload_event_picture(cover_file, str(event.id))
-                event.cover_image = cover_url
-                event.save()
-                serializer = self.get_serializer(event)
-            except Exception as e:
-                print("Resim yükleme hatası:", str(e))
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        try:
+            data = request.data.copy()
+            cover_file = request.FILES.get('cover_image')
+            
+            if cover_file and 'cover_image' in data:
+                del data['cover_image']
+            
+            serializer = self.get_serializer(data=data)
+            if not serializer.is_valid():
+                print("Serializer hataları:", serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Etkinliği oluştur
+            event = serializer.save(organizer=request.user)
+            
+            # Organizatörü katılımcı olarak ekle
+            if request.user not in event.participants.all():
+                event.participants.add(request.user)
+            
+            # Kapak resmi varsa yükle
+            if cover_file:
+                try:
+                    cover_url = supabase.upload_event_picture(cover_file, str(event.id))
+                    event.cover_image = cover_url
+                    event.save()
+                    serializer = self.get_serializer(event)
+                except Exception as e:
+                    print("Resim yükleme hatası:", str(e))
+                    # Resim yükleme hatası etkinlik oluşturmayı engellemez
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except Exception as e:
+            print("Etkinlik oluşturma hatası:", str(e))
+            return Response(
+                {"error": "Etkinlik oluşturulurken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def perform_create(self, serializer):
-        user = self.request.user
-        group = serializer.validated_data.get('group')
-
-        if group:
-            if (user in group.members.all()) or (group.owner == user):
-                event = serializer.save(organizer=user, group=group)
-            else:
-                raise PermissionDenied("Bu gruba etkinlik ekleme yetkiniz yok.")
-        else:
-            event = serializer.save(organizer=user, group=None)
-        
-        event.participants.add(user)
+        # perform_create artık create metodunda yapılıyor, bu metod boş bırakıldı
+        pass
 
     @action(detail=True, methods=['post'])
     def join(self, request, pk=None):

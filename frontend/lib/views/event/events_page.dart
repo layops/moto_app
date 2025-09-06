@@ -62,24 +62,44 @@ class _EventsPageState extends State<EventsPage> {
 
       final now = DateTime.now();
       if (!mounted) return;
+      
       setState(() {
         _events = fetchedEvents.where((e) {
-          final start = DateTime.parse(e['start_time']).toLocal();
-          switch (_selectedFilterIndex) {
-            case 1:
-              return start.isAfter(now) && start.difference(now).inDays <= 7;
-            case 2:
-              return start.year == now.year && start.month == now.month;
-            case 3:
-              return (e['organizer'] as Map?)?['username'] == _currentUsername;
-            default:
-              return true;
+          try {
+            final start = DateTime.parse(e['start_time']).toLocal();
+            switch (_selectedFilterIndex) {
+              case 1:
+                return start.isAfter(now) && start.difference(now).inDays <= 7;
+              case 2:
+                return start.year == now.year && start.month == now.month;
+              case 3:
+                return (e['organizer'] as Map?)?['username'] == _currentUsername;
+              default:
+                return true;
+            }
+          } catch (e) {
+            // Geçersiz tarih formatı olan etkinlikleri atla
+            print('Geçersiz tarih formatı: ${e.toString()}');
+            return false;
           }
         }).toList();
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      
+      // Daha kullanıcı dostu hata mesajları
+      String errorMessage;
+      if (e.toString().contains('Authentication token not available')) {
+        errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+      } else if (e.toString().contains('Network error')) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+      } else if (e.toString().contains('500')) {
+        errorMessage = 'Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.';
+      } else {
+        errorMessage = 'Etkinlikler yüklenirken bir hata oluştu: ${e.toString()}';
+      }
+      
+      setState(() => _error = errorMessage);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -151,7 +171,37 @@ class _EventsPageState extends State<EventsPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
                       ? Center(
-                          child: Text('Hata: $_error'),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: 64,
+                                  color: Colors.red.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Etkinlikler Yüklenemedi',
+                                  style: Theme.of(context).textTheme.headlineSmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _error!,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _loadEvents,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Tekrar Dene'),
+                                ),
+                              ],
+                            ),
+                          ),
                         )
                       : _events.isEmpty
                           ? Center(child: Text('Henüz etkinlik yok'))
