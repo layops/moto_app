@@ -68,8 +68,12 @@ class EventViewSet(viewsets.ModelViewSet):
             event = serializer.save(organizer=request.user)
             
             # Organizatörü katılımcı olarak ekle
-            if request.user not in event.participants.all():
-                event.participants.add(request.user)
+            try:
+                if request.user not in event.participants.all():
+                    event.participants.add(request.user)
+            except Exception as e:
+                print(f"Organizatör ekleme hatası: {str(e)}")
+                # Bu hata etkinlik oluşturmayı engellemez
             
             # Kapak resmi varsa yükle
             if cover_file and supabase is not None:
@@ -100,38 +104,59 @@ class EventViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def join(self, request, pk=None):
-        event = self.get_object()
-        user = request.user
+        try:
+            event = self.get_object()
+            user = request.user
 
-        if event.is_full():
-            return Response({"error": "Etkinlik kontenjanı dolmuştur."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if event.is_full():
+                return Response({"error": "Etkinlik kontenjanı dolmuştur."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        if user in event.participants.all():
-            return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if user in event.participants.all():
+                return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        event.participants.add(user)
-        serializer = self.get_serializer(event)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            event.participants.add(user)
+            serializer = self.get_serializer(event)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Join event hatası: {str(e)}")
+            return Response(
+                {"error": "Etkinliğe katılırken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['post'])
     def leave(self, request, pk=None):
-        event = self.get_object()
-        user = request.user
+        try:
+            event = self.get_object()
+            user = request.user
 
-        if user not in event.participants.all():
-            return Response({"error": "Bu etkinliğe zaten katılmıyorsunuz."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if user not in event.participants.all():
+                return Response({"error": "Bu etkinliğe zaten katılmıyorsunuz."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        event.participants.remove(user)
-        serializer = self.get_serializer(event)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            event.participants.remove(user)
+            serializer = self.get_serializer(event)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Leave event hatası: {str(e)}")
+            return Response(
+                {"error": "Etkinlikten ayrılırken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     # Yeni eklenen action - Katılımcıları getir
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
-        event = self.get_object()
-        participants = event.participants.all()
-        serializer = UserSerializer(participants, many=True)
-        return Response(serializer.data)
+        try:
+            event = self.get_object()
+            participants = event.participants.all()
+            serializer = UserSerializer(participants, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Participants getirme hatası: {str(e)}")
+            return Response(
+                {"error": "Katılımcılar getirilirken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

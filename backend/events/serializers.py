@@ -48,10 +48,14 @@ class EventSerializer(serializers.ModelSerializer):
         }
 
     def get_is_joined(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.participants.filter(id=request.user.id).exists()
-        return False
+        try:
+            request = self.context.get('request')
+            if request and request.user.is_authenticated:
+                return obj.participants.filter(id=request.user.id).exists()
+            return False
+        except Exception as e:
+            print(f"get_is_joined hatası: {str(e)}")
+            return False
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])

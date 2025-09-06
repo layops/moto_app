@@ -51,14 +51,22 @@ class Event(models.Model):
     
     @property
     def current_participant_count(self):
-        # Organizatörü de katılımcı sayısına dahil et
-        # Organizatör zaten participants içinde mi kontrol et
-        if self.organizer in self.participants.all():
-            return self.participants.count()
-        else:
-            return self.participants.count() + 1
+        try:
+            # Organizatörü de katılımcı sayısına dahil et
+            # Organizatör zaten participants içinde mi kontrol et
+            if self.organizer in self.participants.all():
+                return self.participants.count()
+            else:
+                return self.participants.count() + 1
+        except Exception as e:
+            print(f"current_participant_count hatası: {str(e)}")
+            return 0
     
     def is_full(self):
-        if self.guest_limit is None:
+        try:
+            if self.guest_limit is None:
+                return False
+            return self.current_participant_count >= self.guest_limit
+        except Exception as e:
+            print(f"is_full hatası: {str(e)}")
             return False
-        return self.current_participant_count >= self.guest_limit
