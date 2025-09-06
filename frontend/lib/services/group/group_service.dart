@@ -246,7 +246,7 @@ class GroupService {
   }
 
   /// Grup postu oluştur
-  Future<dynamic> createGroupPost(int groupId, String content, {File? image}) async {
+  Future<Map<String, dynamic>> createGroupPost(int groupId, String content, {File? image}) async {
     final token = await _authService.getToken();
     
     FormData formData = FormData.fromMap({
@@ -278,7 +278,48 @@ class GroupService {
       throw Exception('Post oluşturulamadı: ${response.statusCode}');
     }
     
-    return response.data;
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Grup postunu güncelle
+  Future<Map<String, dynamic>> updateGroupPost(
+    int groupId, 
+    int postId, 
+    String content, {
+    File? image,
+  }) async {
+    final token = await _authService.getToken();
+    
+    FormData formData = FormData.fromMap({
+      'content': content,
+    });
+    
+    if (image != null) {
+      formData.files.add(MapEntry(
+        'image',
+        await MultipartFile.fromFile(
+          image.path,
+          filename: image.path.split('/').last,
+        ),
+      ));
+    }
+    
+    final response = await _dio.patch(
+      'groups/$groupId/posts/$postId/',
+      data: formData,
+      options: Options(
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Post güncellenemedi: ${response.statusCode}');
+    }
+    
+    return response.data as Map<String, dynamic>;
   }
 
   /// Grup postunu sil
@@ -336,4 +377,5 @@ class GroupService {
       throw Exception('Moderator yapılamadı: ${response.statusCode}');
     }
   }
+
 }
