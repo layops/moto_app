@@ -5,6 +5,7 @@ class Group(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Grup Adı")
     description = models.TextField(blank=True, verbose_name="Açıklama")
     profile_picture_url = models.URLField(blank=True, null=True, verbose_name="Profil Fotoğrafı URL")
+    is_public = models.BooleanField(default=True, verbose_name="Herkese Açık Mı?")
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -34,10 +35,6 @@ class Group(models.Model):
         """Grup üye sayısını döndürür"""
         return self.members.count()
 
-    @property
-    def is_public(self):
-        """Grup herkese açık mı kontrol eder (geçici olarak her zaman True)"""
-        return True
 
     def can_user_join(self, user):
         """Kullanıcının gruba katılabileceğini kontrol eder"""

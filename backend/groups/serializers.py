@@ -9,7 +9,6 @@ class GroupSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
     members = UserSerializer(many=True, read_only=True)
     member_count = serializers.ReadOnlyField()
-    is_public = serializers.ReadOnlyField()
     
     class Meta:
         model = Group
@@ -18,7 +17,7 @@ class GroupSerializer(serializers.ModelSerializer):
             'member_count', 'is_public', 'owner', 'members', 
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'member_count', 'is_public']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'member_count']
 
 class GroupMemberSerializer(serializers.ModelSerializer):
     class Meta:
