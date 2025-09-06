@@ -315,65 +315,37 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildActionButtons() {
-    // Grup sahibi ise hiçbir buton gösterme
+    // Grup sahibi ise sadece post oluştur butonu göster
     if (_isOwner) {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _showCreatePostDialog(),
-              icon: const Icon(Icons.add),
-              label: const Text('Post Oluştur'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColorSchemes.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _showCreatePostDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('Post Oluştur'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColorSchemes.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showChatDialog(),
-              icon: const Icon(Icons.chat),
-              label: const Text('Mesajlaş'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
-          ),
-        ],
+        ),
       );
     }
     
-    // Grup üyesi ise (ama sahibi değilse) üye butonları göster
+    // Grup üyesi ise sadece post oluştur butonu göster
     if (_isMember) {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _showCreatePostDialog(),
-              icon: const Icon(Icons.add),
-              label: const Text('Post Oluştur'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColorSchemes.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _showCreatePostDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('Post Oluştur'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColorSchemes.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showChatDialog(),
-              icon: const Icon(Icons.chat),
-              label: const Text('Mesajlaş'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
-          ),
-        ],
+        ),
       );
     }
     
@@ -516,87 +488,179 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildMessagesTab() {
-    if (_messages.isEmpty) {
-      return _buildPlaceholderContent('Henüz mesaj yok');
-    }
-    
-    return ListView.builder(
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final message = _messages[index];
-        final isOwnMessage = false; // Geçici olarak false, gerçek uygulamada token'dan user ID alınabilir
-        
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: [
-              if (!isOwnMessage) ...[
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: message['sender']['profile_picture'] != null
-                      ? NetworkImage(message['sender']['profile_picture'])
-                      : null,
-                  child: message['sender']['profile_picture'] == null
-                      ? const Icon(Icons.person, size: 16)
-                      : null,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isOwnMessage ? AppColorSchemes.primaryColor : AppColorSchemes.lightBackground,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!isOwnMessage)
-                        Text(
-                          message['sender']['username'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColorSchemes.textSecondary,
+    return Column(
+      children: [
+        // Mesajlar listesi
+        Expanded(
+          child: _messages.isEmpty
+              ? _buildPlaceholderContent('Henüz mesaj yok')
+              : ListView.builder(
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    final isOwnMessage = false; // Geçici olarak false, gerçek uygulamada token'dan user ID alınabilir
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        children: [
+                          if (!isOwnMessage) ...[
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundImage: message['sender']['profile_picture'] != null
+                                  ? NetworkImage(message['sender']['profile_picture'])
+                                  : null,
+                              child: message['sender']['profile_picture'] == null
+                                  ? const Icon(Icons.person, size: 16)
+                                  : null,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isOwnMessage ? AppColorSchemes.primaryColor : AppColorSchemes.lightBackground,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!isOwnMessage)
+                                    Text(
+                                      message['sender']['username'],
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColorSchemes.textSecondary,
+                                      ),
+                                    ),
+                                  Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                      color: isOwnMessage ? Colors.white : AppColorSchemes.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatDate(message['created_at']),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isOwnMessage ? Colors.white70 : AppColorSchemes.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      Text(
-                        message['content'],
-                        style: TextStyle(
-                          color: isOwnMessage ? Colors.white : AppColorSchemes.textPrimary,
-                        ),
+                          if (isOwnMessage) ...[
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundImage: message['sender']['profile_picture'] != null
+                                  ? NetworkImage(message['sender']['profile_picture'])
+                                  : null,
+                              child: message['sender']['profile_picture'] == null
+                                  ? const Icon(Icons.person, size: 16)
+                                  : null,
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDate(message['created_at']),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isOwnMessage ? Colors.white70 : AppColorSchemes.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ),
-              if (isOwnMessage) ...[
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: message['sender']['profile_picture'] != null
-                      ? NetworkImage(message['sender']['profile_picture'])
-                      : null,
-                  child: message['sender']['profile_picture'] == null
-                      ? const Icon(Icons.person, size: 16)
-                      : null,
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+        ),
+        // Mesaj gönderme alanı
+        if (_isMember || _isOwner)
+          _buildMessageInput(),
+      ],
     );
+  }
+
+  Widget _buildMessageInput() {
+    final messageController = TextEditingController();
+    bool isLoading = false;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColorSchemes.surfaceColor,
+        border: Border(
+          top: BorderSide(color: AppColorSchemes.lightBackground),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: messageController,
+              decoration: InputDecoration(
+                hintText: 'Mesajınızı yazın...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppColorSchemes.lightBackground,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              maxLines: null,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (value) async {
+                if (value.trim().isNotEmpty && !isLoading) {
+                  await _sendMessage(value.trim(), messageController);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColorSchemes.primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: isLoading ? null : () async {
+                if (messageController.text.trim().isNotEmpty) {
+                  await _sendMessage(messageController.text.trim(), messageController);
+                }
+              },
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.send, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendMessage(String message, TextEditingController controller) async {
+    setState(() {
+      // Loading state'i burada yönetilebilir
+    });
+
+    try {
+      await _groupService.sendGroupMessage(widget.groupId, message);
+      controller.clear();
+      _loadGroupData(); // Mesajları yeniden yükle
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mesaj gönderilemedi: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildMembersTab() {
@@ -826,17 +890,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  void _showChatDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _ChatDialog(
-        groupId: widget.groupId,
-        groupService: _groupService,
-        messages: _messages,
-        onMessageSent: _loadGroupData,
-      ),
-    );
-  }
 
   void _showGroupSettings() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -991,125 +1044,6 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
   }
 }
 
-class _ChatDialog extends StatefulWidget {
-  final int groupId;
-  final GroupService groupService;
-  final List<dynamic> messages;
-  final VoidCallback onMessageSent;
-
-  const _ChatDialog({
-    required this.groupId,
-    required this.groupService,
-    required this.messages,
-    required this.onMessageSent,
-  });
-
-  @override
-  State<_ChatDialog> createState() => _ChatDialogState();
-}
-
-class _ChatDialogState extends State<_ChatDialog> {
-  final _messageController = TextEditingController();
-  bool _loading = false;
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Text(
-              'Grup Mesajları',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: widget.messages.length,
-                itemBuilder: (context, index) {
-                  final message = widget.messages[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColorSchemes.lightBackground,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          message['sender']['username'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(message['content']),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Mesajınızı yazın...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _loading ? null : _sendMessage,
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-
-    setState(() => _loading = true);
-    try {
-      await widget.groupService.sendGroupMessage(
-        widget.groupId,
-        _messageController.text.trim(),
-      );
-      _messageController.clear();
-      widget.onMessageSent();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hata: $e')),
-      );
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-}
 
 class _JoinRequestsDialog extends StatelessWidget {
   final int groupId;
