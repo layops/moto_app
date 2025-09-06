@@ -7,6 +7,7 @@ import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/group/group_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
+import 'members_page.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final int groupId;
@@ -97,26 +98,29 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.groupData['name'] ?? 'Grup Detayları'),
-        backgroundColor: AppColorSchemes.surfaceColor,
-        foregroundColor: AppColorSchemes.textPrimary,
+        title: const Text(
+          'Group Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         actions: [
           if (_isOwner || _isModerator)
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => _showGroupSettings(),
             ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : _error != null
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Hata: $_error'),
+                      Text('Hata: $_error', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                       ElevatedButton(
                         onPressed: _loadGroupData,
                         child: const Text('Tekrar Dene'),
@@ -125,32 +129,472 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 )
               : SingleChildScrollView(
-                  padding: ThemeConstants.paddingLarge,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Grup başlık bölümü
-                      _buildGroupHeader(),
-                      const SizedBox(height: 24),
+                      _buildModernGroupHeader(),
+                      const SizedBox(height: 32),
 
-                      // Katılım talepleri (sadece owner/moderator için)
-                      if (_joinRequests.isNotEmpty) ...[
-                        _buildJoinRequestsSection(),
-                        const SizedBox(height: 24),
-                      ],
+                      // About bölümü
+                      _buildAboutSection(),
+                      const SizedBox(height: 32),
 
-                      // Grup aksiyon butonları
-                      _buildActionButtons(),
-                      const SizedBox(height: 24),
+                      // Members bölümü
+                      _buildMembersSection(),
+                      const SizedBox(height: 32),
 
-                      // Grup içeriği bölümleri
-                      const Text('Grup İçeriği',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      _buildContentTabs(),
+                      // Shared Media bölümü
+                      _buildSharedMediaSection(),
+                      const SizedBox(height: 100), // Alt butonlar için boşluk
                     ],
                   ),
                 ),
+      bottomNavigationBar: _buildBottomActionButtons(),
+    );
+  }
+
+  Widget _buildModernGroupHeader() {
+    final groupName = widget.groupData['name'] ?? 'Grup Adı';
+    final memberCount = widget.groupData['member_count'] ?? 0;
+    final profilePictureUrl = widget.groupData['profile_picture_url'];
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // Grup logosu - ortalanmış
+          Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColorSchemes.primaryColor,
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3),
+              ),
+              child: profilePictureUrl != null
+                  ? ClipOval(
+                      child: Image.network(
+                        profilePictureUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildDefaultLogo(),
+                      ),
+                    )
+                  : _buildDefaultLogo(),
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Grup adı - ortalanmış
+          Center(
+            child: Text(
+              groupName,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Üye sayısı - ortalanmış
+          Center(
+            child: Text(
+              '$memberCount members',
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultLogo() {
+    return Center(
+      child: Icon(
+        Icons.motorcycle,
+        size: 60,
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    final description = widget.groupData['description'] ?? '';
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'About',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            description.isNotEmpty 
+                ? description 
+                : 'No description available.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMembersSection() {
+    final members = widget.groupData['members'] as List<dynamic>? ?? [];
+    final owner = widget.groupData['owner'];
+    
+    // Grup sahibini üyeler listesinden çıkar
+    final filteredMembers = members.where((member) => 
+      member['id'] != owner['id']
+    ).toList();
+    
+    // İlk 6 üyeyi göster
+    final displayMembers = [
+      owner,
+      ...filteredMembers.take(5),
+    ];
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => _navigateToMembers(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Members',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...displayMembers.map((member) => _buildModernMemberItem(member)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernMemberItem(Map<String, dynamic> member) {
+    final isOwner = member['id'] == widget.groupData['owner']['id'];
+    final role = isOwner ? 'Admin' : 'Member';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundImage: member['profile_picture'] != null
+                ? NetworkImage(member['profile_picture'])
+                : null,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            child: member['profile_picture'] == null
+                ? Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface)
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member['username'] ?? 'Unknown',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  role,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSharedMediaSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Shared Media',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Örnek medya grid'i - gerçek uygulamada grup postlarından resimler alınabilir
+          _buildMediaGrid(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMediaGrid() {
+    // Gerçek grup postlarından resimler alınacak
+    final mediaItems = <String>[];
+    
+    if (mediaItems.isEmpty) {
+      return Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.photo_library_outlined,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                size: 32,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No shared media yet',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: mediaItems.length,
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surface,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              mediaItems[index],
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Theme.of(context).colorScheme.surface,
+                child: Icon(
+                  Icons.image,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomActionButtons() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.2), width: 1),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Grup mesajları butonu
+            Container(
+              width: double.infinity,
+              height: 50,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColorSchemes.secondaryColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextButton.icon(
+                onPressed: _navigateToGroupChat,
+                icon: Icon(
+                  Icons.chat_bubble_outline,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+                label: Text(
+                  'Group Messages',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            
+            // Alt butonlar
+            Row(
+              children: [
+                // Leave Group butonu
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextButton(
+                      onPressed: _isMember ? _leaveGroup : null,
+                      child: Text(
+                        'Leave Group',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onError,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Invite Members butonu
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColorSchemes.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextButton(
+                      onPressed: _inviteMembers,
+                      child: Text(
+                        'Invite Members',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _leaveGroup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          'Leave Group',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        content: Text(
+          'Are you sure you want to leave this group?',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Leave group logic here
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Left group successfully')),
+              );
+            },
+            child: Text('Leave', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _inviteMembers() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invite members feature coming soon!')),
+    );
+  }
+
+  void _navigateToMembers() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MembersPage(
+          groupData: widget.groupData,
+          isOwner: _isOwner,
+          isModerator: _isModerator,
+          authService: widget.authService,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToGroupChat() {
+    // Grup mesajları sayfasına yönlendirme
+    // Bu sayfa henüz oluşturulmadı, şimdilik bir snackbar gösterelim
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Group chat feature coming soon!')),
     );
   }
 
@@ -488,137 +932,205 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildMessagesTab() {
-    return Column(
-      children: [
-        // Mesajlar listesi
-        Expanded(
-          child: _messages.isEmpty
-              ? _buildPlaceholderContent('Henüz mesaj yok')
-              : ListView.builder(
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    final message = _messages[index];
-                    final isOwnMessage = false; // Geçici olarak false, gerçek uygulamada token'dan user ID alınabilir
-                    
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
-                        children: [
-                          if (!isOwnMessage) ...[
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundImage: message['sender']['profile_picture'] != null
-                                  ? NetworkImage(message['sender']['profile_picture'])
-                                  : null,
-                              child: message['sender']['profile_picture'] == null
-                                  ? const Icon(Icons.person, size: 16)
-                                  : null,
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: isOwnMessage ? AppColorSchemes.primaryColor : AppColorSchemes.lightBackground,
-                                borderRadius: BorderRadius.circular(20),
+    return Container(
+      color: const Color(0xFF1A1A1A), // Koyu tema arka plan
+      child: Column(
+        children: [
+          // Mesajlar listesi
+          Expanded(
+            child: _messages.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Henüz mesaj yok',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'İlk mesajı siz gönderin!',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      final isOwnMessage = false; // Geçici olarak false, gerçek uygulamada token'dan user ID alınabilir
+                      
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          mainAxisAlignment: isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (!isOwnMessage) ...[
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundImage: message['sender']['profile_picture'] != null
+                                    ? NetworkImage(message['sender']['profile_picture'])
+                                    : null,
+                                backgroundColor: Colors.grey[700],
+                                child: message['sender']['profile_picture'] == null
+                                    ? const Icon(Icons.person, size: 18, color: Colors.white)
+                                    : null,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (!isOwnMessage)
+                              const SizedBox(width: 8),
+                            ],
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isOwnMessage 
+                                      ? const Color(0xFF6B46C1) // Mor renk
+                                      : const Color(0xFFEC4899), // Pembe renk
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (!isOwnMessage)
+                                      Text(
+                                        message['sender']['username'],
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 2),
                                     Text(
-                                      message['sender']['username'],
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColorSchemes.textSecondary,
+                                      message['content'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
                                       ),
                                     ),
-                                  Text(
-                                    message['content'],
-                                    style: TextStyle(
-                                      color: isOwnMessage ? Colors.white : AppColorSchemes.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatDate(message['created_at']),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isOwnMessage ? Colors.white70 : AppColorSchemes.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          if (isOwnMessage) ...[
-                            const SizedBox(width: 8),
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundImage: message['sender']['profile_picture'] != null
-                                  ? NetworkImage(message['sender']['profile_picture'])
-                                  : null,
-                              child: message['sender']['profile_picture'] == null
-                                  ? const Icon(Icons.person, size: 16)
-                                  : null,
-                            ),
+                            if (isOwnMessage) ...[
+                              const SizedBox(width: 8),
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundImage: message['sender']['profile_picture'] != null
+                                    ? NetworkImage(message['sender']['profile_picture'])
+                                    : null,
+                                backgroundColor: Colors.grey[700],
+                                child: message['sender']['profile_picture'] == null
+                                    ? const Icon(Icons.person, size: 18, color: Colors.white)
+                                    : null,
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                    );
-                  },
-                ),
-        ),
-        // Mesaj gönderme alanı
-        if (_isMember || _isOwner)
-          _buildMessageInput(),
-      ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // Mesaj gönderme alanı
+          if (_isMember || _isOwner)
+            _buildModernMessageInput(),
+        ],
+      ),
     );
   }
 
-  Widget _buildMessageInput() {
+  Widget _buildModernMessageInput() {
     final messageController = TextEditingController();
     bool isLoading = false;
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColorSchemes.surfaceColor,
+      decoration: const BoxDecoration(
+        color: Color(0xFF2A2A2A), // Koyu gri arka plan
         border: Border(
-          top: BorderSide(color: AppColorSchemes.lightBackground),
+          top: BorderSide(color: Color(0xFF3A3A3A), width: 1),
         ),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: TextField(
-              controller: messageController,
-              decoration: InputDecoration(
-                hintText: 'Mesajınızı yazın...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppColorSchemes.lightBackground,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          // Medya butonları
+          Row(
+            children: [
+              IconButton(
+                onPressed: () {
+                  // Galeri açma işlevi
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Galeri özelliği yakında eklenecek!')),
+                  );
+                },
+                icon: const Icon(Icons.photo_library, color: Colors.grey),
               ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (value) async {
-                if (value.trim().isNotEmpty && !isLoading) {
-                  await _sendMessage(value.trim(), messageController);
-                }
-              },
+              IconButton(
+                onPressed: () {
+                  // Konum paylaşma işlevi
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Konum paylaşma özelliği yakında eklenecek!')),
+                  );
+                },
+                icon: const Icon(Icons.location_on, color: Colors.grey),
+              ),
+              IconButton(
+                onPressed: () {
+                  // Sesli mesaj işlevi
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sesli mesaj özelliği yakında eklenecek!')),
+                  );
+                },
+                icon: const Icon(Icons.mic, color: Colors.grey),
+              ),
+            ],
+          ),
+          // Mesaj input alanı
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A3A3A),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: TextField(
+                controller: messageController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Mesajınızı yazın...',
+                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                maxLines: null,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (value) async {
+                  if (value.trim().isNotEmpty && !isLoading) {
+                    await _sendMessage(value.trim(), messageController);
+                  }
+                },
+              ),
             ),
           ),
           const SizedBox(width: 8),
+          // Gönder butonu
           Container(
-            decoration: BoxDecoration(
-              color: AppColorSchemes.primaryColor,
+            decoration: const BoxDecoration(
+              color: Color(0xFF6B46C1), // Mor renk
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -668,14 +1180,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final moderators = widget.groupData['moderators'] as List<dynamic>? ?? [];
     final owner = widget.groupData['owner'];
     
+    // Grup sahibini üyeler listesinden çıkar
+    final filteredMembers = members.where((member) => 
+      member['id'] != owner['id']
+    ).toList();
+    
     return ListView(
       children: [
         // Grup sahibi
         _buildMemberItem(owner, 'Sahip'),
         // Moderatörler
         ...moderators.map((moderator) => _buildMemberItem(moderator, 'Moderatör')),
-        // Üyeler
-        ...members.map((member) => _buildMemberItem(member, 'Üye')),
+        // Üyeler (grup sahibi hariç)
+        ...filteredMembers.map((member) => _buildMemberItem(member, 'Üye')),
       ],
     );
   }

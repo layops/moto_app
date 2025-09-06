@@ -294,4 +294,46 @@ class GroupService {
       throw Exception('Post silinemedi: ${response.statusCode}');
     }
   }
+
+  // --- GRUP ÜYELERİ ---
+
+  /// Grup üyelerini getir
+  Future<List<dynamic>> getGroupMembers(int groupId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.get(
+      'groups/$groupId/members/',
+      options: _authOptions(token),
+    );
+    
+    return response.data as List<dynamic>;
+  }
+
+  /// Grup üyesini kaldır
+  Future<void> removeGroupMember(int groupId, int userId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.delete(
+      'groups/$groupId/members/$userId/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 204) {
+      throw Exception('Üye kaldırılamadı: ${response.statusCode}');
+    }
+  }
+
+  /// Üyeyi moderator yap
+  Future<void> makeModerator(int groupId, int userId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/$groupId/members/$userId/make-moderator/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Moderator yapılamadı: ${response.statusCode}');
+    }
+  }
 }
