@@ -24,4 +24,4 @@ class GroupMessageSerializer(serializers.ModelSerializer):
             'id', 'group', 'group_name', 'sender', 'content', 'message_type',
             'file_url', 'reply_to', 'reply_to_content', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'sender']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'sender', 'group']
