@@ -189,6 +189,7 @@ SUPABASE_GROUPS_BUCKET = "groups_profile_pictures"
 SUPABASE_POSTS_BUCKET = "group_posts_images"
 SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
 
+
 if DEBUG:
     import logging
     logging.basicConfig(level=logging.DEBUG)
