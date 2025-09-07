@@ -103,3 +103,42 @@ class SupabaseStorage:
                 logger.info(f"Dosya silindi: {file_path}")
         except Exception as e:
             logger.warning(f"Dosya silinemedi: {str(e)}")
+
+    def upload_group_message_media(self, media_file, group_id, message_id):
+        """Grup mesaj medyasını Supabase'e yükle"""
+        try:
+            # Dosya uzantısını al
+            file_extension = media_file.name.split('.')[-1].lower()
+            
+            # Dosya adını oluştur
+            file_name = f"group_{group_id}_message_{message_id}_{uuid.uuid4()}.{file_extension}"
+            
+            # Dosyayı yükle
+            result = self.client.storage.from_('group-messages').upload(
+                file_name,
+                media_file,
+                file_options={"content-type": media_file.content_type}
+            )
+            
+            if result:
+                # Public URL'i al
+                public_url = self.client.storage.from_('group-messages').get_public_url(file_name)
+                logger.info(f"Grup mesaj medyası yüklendi: {public_url}")
+                return public_url
+            else:
+                raise Exception("Dosya yükleme başarısız")
+                
+        except Exception as e:
+            logger.error(f"Grup mesaj medyası yükleme hatası: {str(e)}")
+            raise e
+
+    def delete_group_message_media(self, media_url):
+        """Grup mesaj medyasını Supabase'den sil"""
+        try:
+            bucket = 'group-messages'
+            if f"/{bucket}/" in media_url:
+                file_path = media_url.split(f"/{bucket}/")[-1]
+                self.client.storage.from_(bucket).remove([file_path])
+                logger.info(f"Grup mesaj medyası silindi: {file_path}")
+        except Exception as e:
+            logger.warning(f"Grup mesaj medyası silinemedi: {str(e)}")

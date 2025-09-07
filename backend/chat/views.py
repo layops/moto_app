@@ -1,12 +1,18 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from .models import GroupMessage
 from .serializers import GroupMessageSerializer
+from users.services.supabase_service import SupabaseStorage
+import logging
+
+logger = logging.getLogger(__name__)
 
 class GroupMessageViewSet(viewsets.ModelViewSet):
     serializer_class = GroupMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         group_pk = self.kwargs.get('group_pk')
@@ -26,7 +32,24 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Bu grubun üyesi değilsiniz.")
         
-        serializer.save(sender=self.request.user, group=group)
+        # Medya dosyasını al
+        media_file = self.request.FILES.get('media')
+        
+        # Mesajı oluştur
+        message = serializer.save(sender=self.request.user, group=group)
+        
+        # Eğer medya dosyası varsa Supabase'e yükle
+        if media_file:
+            try:
+                storage = SupabaseStorage()
+                file_url = storage.upload_group_message_media(media_file, group.id, message.id)
+                message.file_url = file_url
+                message.message_type = 'image'  # Şimdilik sadece resim desteği
+                message.save()
+                logger.info(f"Grup mesaj medyası Supabase'e yüklendi: {file_url}")
+            except Exception as e:
+                logger.error(f"Grup mesaj medyası Supabase'e yükleme hatası: {str(e)}")
+                # Medya yükleme hatası olsa bile mesaj kaydedilir
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

@@ -6,8 +6,8 @@ import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/group/group_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/widgets/post/post_item.dart';
-import 'members_page.dart';
 import 'group_messages_page.dart';
+import 'group_settings_page.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final int groupId;
@@ -137,19 +137,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  void _navigateToMembers() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MembersPage(
-          groupData: widget.groupData,
-          isOwner: _isOwner,
-          isModerator: _isModerator,
-          authService: widget.authService,
-        ),
-      ),
-    );
-  }
 
   void _inviteMembers() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -182,10 +169,32 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  void _showGroupSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Grup ayarları yakında eklenecek!')),
+  void _showGroupSettings() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GroupSettingsPage(
+          groupId: widget.groupId,
+          groupData: widget.groupData,
+          authService: widget.authService,
+        ),
+      ),
     );
+
+    // Eğer grup silindi ise önceki sayfaya dön
+    if (result == 'deleted') {
+      Navigator.pop(context, 'deleted');
+      return;
+    }
+
+    // Eğer ayarlar güncellendi ise sayfayı yenile
+    if (result == true) {
+      // Burada grup verilerini yeniden yükleyebiliriz
+      // Şimdilik sadece bir mesaj gösterelim
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Grup ayarları güncellendi')),
+      );
+    }
   }
 
   @override
@@ -238,9 +247,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                       _buildAboutSection(),
                       const SizedBox(height: 32),
 
-                      // Members bölümü
-                      _buildMembersSection(),
-                      const SizedBox(height: 32),
 
                       // Posts bölümü
                       _buildPostsSection(),
@@ -434,116 +440,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     );
   }
 
-  Widget _buildMembersSection() {
-    final members = List<Map<String, dynamic>>.from(widget.groupData['members'] ?? []);
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => _navigateToMembers(),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Members',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Üye listesi
-          _buildMembersList(members),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMembersList(List<Map<String, dynamic>> members) {
-    if (members.isEmpty) {
-      return Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: Center(
-          child: Text(
-            'No members yet',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: members.take(3).map((member) => _buildModernMemberItem(member)).toList(),
-    );
-  }
-
-  Widget _buildModernMemberItem(Map<String, dynamic> member) {
-    final username = member['username'] ?? 'Unknown';
-    final isOwner = member['username'] == widget.groupData['owner']?['username'];
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            child: Icon(
-              Icons.person,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  username,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  isOwner ? 'Owner' : 'Member',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPostsSection() {
     return Container(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../core/theme/color_schemes.dart';
 import '../../services/group/group_service.dart';
 import '../../services/auth/auth_service.dart';
@@ -27,6 +29,8 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
   final FocusNode _messageFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   late GroupService _groupService;
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -80,13 +84,31 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+      });
+    }
+  }
+
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
-    if (content.isEmpty) return;
+    if (content.isEmpty && _selectedImage == null) return;
 
     try {
-      await _groupService.sendGroupMessage(widget.groupId, content);
+      await _groupService.sendGroupMessage(
+        widget.groupId, 
+        content,
+        messageType: _selectedImage != null ? 'image' : 'text',
+        mediaFile: _selectedImage,
+      );
+      
       _messageController.clear();
+      setState(() {
+        _selectedImage = null;
+      });
       await _loadMessages(); // Mesajları yeniden yükle
       
       // Yeni mesaj gönderildikten sonra en alta kaydır
@@ -177,6 +199,57 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
                           ),
           ),
           
+          // Seçilen resim önizlemesi
+          if (_selectedImage != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        _selectedImage!,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Resim seçildi',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedImage = null;
+                      });
+                    },
+                    icon: Icon(
+                      Icons.close,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Mesaj gönderme alanı
           Container(
             padding: const EdgeInsets.all(16),
@@ -188,6 +261,13 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  onPressed: _pickImage,
+                  icon: Icon(
+                    Icons.image,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -302,15 +382,39 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
                       ),
                     ),
                   if (!isOwnMessage) const SizedBox(height: 4),
-                  Text(
-                    message['content'] ?? '',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isOwnMessage 
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
+                  
+                  // Medya gösterimi
+                  if (message['message_type'] == 'image' && message['file_url'] != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          message['file_url'],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 200,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            height: 200,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.error),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  
+                  // Mesaj içeriği (sadece text mesajlar için)
+                  if (message['content'] != null && message['content'].toString().isNotEmpty)
+                    Text(
+                      message['content'] ?? '',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isOwnMessage 
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(message['created_at']),
