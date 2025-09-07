@@ -93,7 +93,9 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
             if not serializer.is_valid():
                 logger.error(f"Serializer errors: {serializer.errors}")
             
+            logger.info(f"Post oluşturuluyor - Author: {self.request.user.username} (ID: {self.request.user.id})")
             post = serializer.save(author=self.request.user, group=group, **post_data)
+            logger.info(f"Post oluşturuldu - ID: {post.id}, Author: {post.author.username}")
             
             # Eğer resim varsa sadece Supabase'e yükle
             if image_file:

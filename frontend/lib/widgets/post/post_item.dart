@@ -29,9 +29,18 @@ class PostItem extends StatelessWidget {
     print('PostItem - Author username: ${authorData['username']}');
     print('PostItem - Author id: ${authorData['id']}');
 
-    final username = authorData['username']?.toString() ??
-        post['username']?.toString() ??
-        'Bilinmeyen';
+    // Username'i daha güvenli şekilde al
+    String username = 'Bilinmeyen';
+    
+    if (authorData.isNotEmpty && authorData['username'] != null) {
+      username = authorData['username'].toString();
+      print('PostItem - Username authorData\'dan alındı: $username');
+    } else if (post['username'] != null) {
+      username = post['username'].toString();
+      print('PostItem - Username post\'tan alındı: $username');
+    } else {
+      print('PostItem - Username bulunamadı, varsayılan kullanılıyor');
+    }
         
     print('PostItem - Final username: $username');
 
@@ -91,7 +100,7 @@ class PostItem extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    displayName,
+                    username, // Güvenli username
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 19, // Kullanıcı adı daha büyük

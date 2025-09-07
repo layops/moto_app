@@ -19,7 +19,17 @@ class PostSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created_at', 'updated_at')
 
     def create(self, validated_data):
-        return super().create(validated_data)
+        # Author alanını validated_data'dan çıkar (read_only olduğu için)
+        author = validated_data.pop('author', None)
+        post = super().create(validated_data)
+        
+        # Author'ı manuel olarak set et
+        if author:
+            post.author = author
+            post.save()
+            print(f"PostSerializer - Author manuel olarak set edildi: {author.username}")
+        
+        return post
 
     def to_representation(self, instance):
         """
