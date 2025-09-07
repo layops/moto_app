@@ -15,16 +15,17 @@ class SupabaseStorage:
         self.cover_bucket = settings.SUPABASE_COVER_BUCKET
         self.events_bucket = getattr(settings, 'SUPABASE_EVENTS_BUCKET', 'events_pictures')
         self.groups_bucket = getattr(settings, 'SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
+        self.posts_bucket = getattr(settings, 'SUPABASE_POSTS_BUCKET', 'group_posts_images')
         
         try:
             self.client = create_client(self.supabase_url, self.supabase_key)
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
 
             buckets = [b.name for b in self.client.storage.list_buckets()]
-            for bucket in [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket]:
+            for bucket in [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket, self.posts_bucket]:
                 if bucket not in buckets:
                     raise ValueError(f"Kova bulunamadı: {bucket}")
-            logger.info(f"Kovalar bulundu: {self.profile_bucket}, {self.cover_bucket}, {self.events_bucket}, {self.groups_bucket}")
+            logger.info(f"Kovalar bulundu: {self.profile_bucket}, {self.cover_bucket}, {self.events_bucket}, {self.groups_bucket}, {self.posts_bucket}")
 
         except Exception as e:
             logger.error(f"Supabase istemcisi veya kova oluşturulamadı: {str(e)}")
@@ -57,6 +58,13 @@ class SupabaseStorage:
     
     def delete_group_profile_picture(self, image_url):
         self._delete_file(image_url, self.groups_bucket)
+
+    # Grup post resimleri
+    def upload_group_post_image(self, file_obj, group_id, post_id):
+        return self._upload_file(file_obj, self.posts_bucket, f"groups/{group_id}/posts/{post_id}/")
+    
+    def delete_group_post_image(self, image_url):
+        self._delete_file(image_url, self.posts_bucket)
 
     # Ortak fonksiyonlar
     def _upload_file(self, file_obj, bucket, prefix):

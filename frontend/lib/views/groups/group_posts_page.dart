@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/theme/color_schemes.dart';
 import '../../services/group/group_service.dart';
 import '../../services/auth/auth_service.dart';
+import '../../widgets/post/post_item.dart';
 
 class GroupPostsPage extends StatefulWidget {
   final int groupId;
@@ -157,7 +158,7 @@ class _GroupPostsPageState extends State<GroupPostsPage> {
                         itemCount: _posts.length,
                         itemBuilder: (context, index) {
                           final post = _posts[index];
-                          return _buildPostCard(post);
+                          return PostItem(post: post);
                         },
                       ),
                     ),
@@ -168,146 +169,6 @@ class _GroupPostsPageState extends State<GroupPostsPage> {
     );
   }
 
-  Widget _buildPostCard(Map<String, dynamic> post) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Post başlığı - kullanıcı bilgileri
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: post['author']?['profile_picture'] != null
-                      ? NetworkImage(post['author']['profile_picture'])
-                      : null,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: post['author']?['profile_picture'] == null
-                      ? Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post['author']?['username'] ?? 'Unknown',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(post['created_at']),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (post['author']?['username'] == widget.authService.getCurrentUsername())
-                  PopupMenuButton(
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                            const SizedBox(width: 8),
-                            Text('Sil', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _deletePost(post['id']);
-                      }
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            
-            // Post içeriği
-            if (post['content'] != null && post['content'].isNotEmpty)
-              Text(
-                post['content'],
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            
-            // Post resmi
-            if (post['image'] != null)
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    post['image'],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 200,
-                      color: Theme.of(context).colorScheme.surface,
-                      child: Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            
-            const SizedBox(height: 12),
-            
-            // Post etkileşim butonları
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.favorite_border,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  onPressed: () {
-                    // Like functionality
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.comment_outlined,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  onPressed: () {
-                    // Comment functionality
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.share_outlined,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  onPressed: () {
-                    // Share functionality
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _deletePost(int postId) async {
     final confirmed = await showDialog<bool>(
@@ -343,27 +204,6 @@ class _GroupPostsPageState extends State<GroupPostsPage> {
     }
   }
 
-  String _formatTime(String? dateTime) {
-    if (dateTime == null) return '';
-    
-    try {
-      final date = DateTime.parse(dateTime);
-      final now = DateTime.now();
-      final difference = now.difference(date);
-      
-      if (difference.inDays > 0) {
-        return '${difference.inDays} gün önce';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours} saat önce';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes} dakika önce';
-      } else {
-        return 'Şimdi';
-      }
-    } catch (e) {
-      return '';
-    }
-  }
 }
 
 class _CreatePostDialog extends StatefulWidget {

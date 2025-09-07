@@ -4,6 +4,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from .models import Post
 from .serializers import PostSerializer
+from users.services.supabase_service import SupabaseStorage
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
@@ -28,7 +32,23 @@ class PostViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Bu grubun üyesi değilsiniz.")
         
-        serializer.save(author=self.request.user, group=group)
+        # Post'u önce oluştur (image_url olmadan)
+        post = serializer.save(author=self.request.user, group=group)
+        
+        # Eğer resim varsa Supabase'e yükle
+        image_file = self.request.FILES.get('image')
+        if image_file:
+            try:
+                storage = SupabaseStorage()
+                image_url = storage.upload_group_post_image(image_file, group.id, post.id)
+                post.image_url = image_url
+                post.save()
+                logger.info(f"Grup post resmi başarıyla yüklendi: {image_url}")
+            except Exception as e:
+                logger.error(f"Grup post resmi yükleme hatası: {str(e)}")
+                # Post'u sil çünkü resim yüklenemedi
+                post.delete()
+                raise
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -39,6 +59,35 @@ class PostViewSet(viewsets.ModelViewSet):
                 {'detail': 'Bu postu düzenleme yetkiniz yok.'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        # Eğer yeni resim yükleniyorsa
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                # Eski resmi sil
+                if instance.image_url:
+                    storage = SupabaseStorage()
+                    storage.delete_group_post_image(instance.image_url)
+                
+                # Yeni resmi yükle
+                storage = SupabaseStorage()
+                image_url = storage.upload_group_post_image(image_file, instance.group.id, instance.id)
+                
+                # Post'u güncelle
+                data = request.data.copy()
+                data['image_url'] = image_url
+                serializer = self.get_serializer(instance, data=data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(f"Grup post resmi güncelleme hatası: {str(e)}")
+                return Response(
+                    {'detail': 'Resim güncellenirken hata oluştu.'}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         
         return super().update(request, *args, **kwargs)
 
@@ -51,5 +100,14 @@ class PostViewSet(viewsets.ModelViewSet):
                 {'detail': 'Bu postu silme yetkiniz yok.'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        # Eğer resim varsa Supabase'den sil
+        if instance.image_url:
+            try:
+                storage = SupabaseStorage()
+                storage.delete_group_post_image(instance.image_url)
+                logger.info(f"Grup post resmi başarıyla silindi: {instance.image_url}")
+            except Exception as e:
+                logger.warning(f"Grup post resmi silinemedi: {str(e)}")
         
         return super().destroy(request, *args, **kwargs)

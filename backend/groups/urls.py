@@ -7,13 +7,11 @@ from .views import (
     GroupJoinLeaveView, GroupMemberDetailView, DiscoverGroupsView,
     GroupJoinRequestViewSet
 )
-from group_posts.views import PostViewSet
 from chat.views import GroupMessageViewSet
 
 # Router for ViewSets
 router = DefaultRouter()
 router.register(r'join-requests', GroupJoinRequestViewSet, basename='group-join-request')
-router.register(r'posts', PostViewSet, basename='group-post')
 router.register(r'messages', GroupMessageViewSet, basename='group-message')
 
 

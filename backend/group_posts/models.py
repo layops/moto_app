@@ -18,7 +18,7 @@ class Post(models.Model):
         blank=True,
     )
     content = models.TextField(blank=True)
-    image = models.ImageField(upload_to='post_images/', blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)  # Supabase URL'si için
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

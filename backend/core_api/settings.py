@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'bikes',
     'rides',
     'groups',
-    'group_posts',
     'posts',
     'events',
     'media',
@@ -187,6 +186,7 @@ SUPABASE_BUCKET = "profile_pictures"
 SUPABASE_COVER_BUCKET = "cover_pictures"
 SUPABASE_EVENTS_BUCKET = "events_pictures"
 SUPABASE_GROUPS_BUCKET = "groups_profile_pictures"
+SUPABASE_POSTS_BUCKET = "group_posts_images"
 SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
 
 if DEBUG:
