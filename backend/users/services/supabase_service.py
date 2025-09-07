@@ -108,10 +108,10 @@ class SupabaseStorage:
         """Grup mesaj medyasını Supabase'e yükle"""
         try:
             # Dosya uzantısını al
-            file_extension = media_file.name.split('.')[-1].lower()
+            file_extension = os.path.splitext(media_file.name)[1]
             
             # Dosya adını oluştur - grup mesajları için ayrı klasör yapısı
-            file_name = f"messages/group_{group_id}/message_{message_id}_{uuid.uuid4()}.{file_extension}"
+            unique_filename = f"messages/group_{group_id}/message_{message_id}_{uuid.uuid4()}{file_extension}"
             
             # Dosya boyutunu kontrol et
             media_file.seek(0, 2)  # Dosyanın sonuna git
@@ -119,29 +119,29 @@ class SupabaseStorage:
             media_file.seek(0)  # Dosyanın başına dön
             
             logger.info(f"Dosya boyutu: {file_size} bytes")
+            logger.info(f"Dosya adı: {media_file.name}")
+            logger.info(f"Content type: {media_file.content_type}")
+            logger.info(f"Unique filename: {unique_filename}")
             
             if file_size == 0:
                 raise Exception("Dosya boş")
             
-            # Dosyayı yükle - mevcut group_posts_images bucket'ını kullan
-            result = self.client.storage.from_('group_posts_images').upload(
-                file_name,
-                media_file,
-                file_options={
-                    "content-type": media_file.content_type,
-                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
-                }
+            # Dosya türü kontrolü
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            if media_file.content_type not in allowed_types:
+                raise ValueError("Geçersiz dosya formatı")
+            
+            # Dosyayı yükle - _upload_file metoduna benzer şekilde
+            self.client.storage.from_(self.groups_bucket).upload(
+                unique_filename,
+                media_file.read(),
+                {"content-type": media_file.content_type}
             )
             
-            logger.info(f"Upload result: {result}")
-            
-            if result:
-                # Public URL'i al
-                public_url = self.client.storage.from_('group_posts_images').get_public_url(file_name)
-                logger.info(f"Grup mesaj medyası yüklendi: {public_url}")
-                return public_url
-            else:
-                raise Exception("Dosya yükleme başarısız")
+            # Public URL'i oluştur
+            public_url = f"{self.supabase_url}/storage/v1/object/public/{self.groups_bucket}/{unique_filename}"
+            logger.info(f"Grup mesaj medyası yüklendi: {public_url}")
+            return public_url
                 
         except Exception as e:
             logger.error(f"Grup mesaj medyası yükleme hatası: {str(e)}")
@@ -150,7 +150,7 @@ class SupabaseStorage:
     def delete_group_message_media(self, media_url):
         """Grup mesaj medyasını Supabase'den sil"""
         try:
-            bucket = 'group_posts_images'
+            bucket = self.groups_bucket
             if f"/{bucket}/" in media_url:
                 file_path = media_url.split(f"/{bucket}/")[-1]
                 self.client.storage.from_(bucket).remove([file_path])

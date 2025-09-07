@@ -42,6 +42,16 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
         if media_file:
             try:
                 logger.info(f"Medya dosyası alındı: {media_file.name}, boyut: {media_file.size}")
+                logger.info(f"Content type: {media_file.content_type}")
+                logger.info(f"Charset: {getattr(media_file, 'charset', 'None')}")
+                
+                # Dosya stream'ini kontrol et
+                media_file.seek(0)
+                file_content = media_file.read()
+                logger.info(f"Dosya içeriği boyutu: {len(file_content)} bytes")
+                
+                # Dosya stream'ini başa al
+                media_file.seek(0)
                 
                 storage = SupabaseStorage()
                 file_url = storage.upload_group_message_media(media_file, group.id, message.id)
@@ -74,5 +84,14 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
                 {'detail': 'Bu mesajı silme yetkiniz yok.'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        # Eğer medya dosyası varsa Supabase'den sil
+        if instance.file_url:
+            try:
+                storage = SupabaseStorage()
+                storage.delete_group_message_media(instance.file_url)
+                logger.info(f"Grup mesaj medyası başarıyla silindi: {instance.file_url}")
+            except Exception as e:
+                logger.warning(f"Grup mesaj medyası silinemedi: {str(e)}")
         
         return super().destroy(request, *args, **kwargs)

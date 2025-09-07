@@ -193,6 +193,14 @@ class GroupService {
         if (replyTo != null) 'reply_to': replyTo,
       });
       
+      // Dosya boyutunu kontrol et
+      final fileSize = await mediaFile.length();
+      print('Gönderilecek dosya boyutu: $fileSize bytes');
+      
+      if (fileSize == 0) {
+        throw Exception('Dosya boş');
+      }
+      
       formData.files.add(MapEntry(
         'media',
         await MultipartFile.fromFile(

@@ -85,11 +85,27 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1080,
+      imageQuality: 85,
+    );
     if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
+      final file = File(image.path);
+      final fileSize = await file.length();
+      print('Seçilen dosya boyutu: $fileSize bytes');
+      print('Dosya yolu: ${image.path}');
+      
+      if (fileSize > 0) {
+        setState(() {
+          _selectedImage = file;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Seçilen dosya boş veya okunamıyor')),
+        );
+      }
     }
   }
 
