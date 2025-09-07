@@ -184,6 +184,9 @@ class GroupService {
     
     if (mediaFile != null) {
       // Medya dosyası ile mesaj gönder
+      print('Medya dosyası gönderiliyor: ${mediaFile.path}');
+      print('Dosya boyutu: ${await mediaFile.length()} bytes');
+      
       FormData formData = FormData.fromMap({
         'content': content,
         'message_type': messageType ?? 'image',

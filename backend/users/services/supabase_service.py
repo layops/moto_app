@@ -110,19 +110,34 @@ class SupabaseStorage:
             # Dosya uzantısını al
             file_extension = media_file.name.split('.')[-1].lower()
             
-            # Dosya adını oluştur
-            file_name = f"group_{group_id}_message_{message_id}_{uuid.uuid4()}.{file_extension}"
+            # Dosya adını oluştur - grup mesajları için ayrı klasör yapısı
+            file_name = f"messages/group_{group_id}/message_{message_id}_{uuid.uuid4()}.{file_extension}"
             
-            # Dosyayı yükle
-            result = self.client.storage.from_('group-messages').upload(
+            # Dosya boyutunu kontrol et
+            media_file.seek(0, 2)  # Dosyanın sonuna git
+            file_size = media_file.tell()  # Dosya boyutunu al
+            media_file.seek(0)  # Dosyanın başına dön
+            
+            logger.info(f"Dosya boyutu: {file_size} bytes")
+            
+            if file_size == 0:
+                raise Exception("Dosya boş")
+            
+            # Dosyayı yükle - mevcut group_posts_images bucket'ını kullan
+            result = self.client.storage.from_('group_posts_images').upload(
                 file_name,
                 media_file,
-                file_options={"content-type": media_file.content_type}
+                file_options={
+                    "content-type": media_file.content_type,
+                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                }
             )
+            
+            logger.info(f"Upload result: {result}")
             
             if result:
                 # Public URL'i al
-                public_url = self.client.storage.from_('group-messages').get_public_url(file_name)
+                public_url = self.client.storage.from_('group_posts_images').get_public_url(file_name)
                 logger.info(f"Grup mesaj medyası yüklendi: {public_url}")
                 return public_url
             else:
@@ -135,7 +150,7 @@ class SupabaseStorage:
     def delete_group_message_media(self, media_url):
         """Grup mesaj medyasını Supabase'den sil"""
         try:
-            bucket = 'group-messages'
+            bucket = 'group_posts_images'
             if f"/{bucket}/" in media_url:
                 file_path = media_url.split(f"/{bucket}/")[-1]
                 self.client.storage.from_(bucket).remove([file_path])

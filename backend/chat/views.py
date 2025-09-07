@@ -41,6 +41,8 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
         # Eğer medya dosyası varsa Supabase'e yükle
         if media_file:
             try:
+                logger.info(f"Medya dosyası alındı: {media_file.name}, boyut: {media_file.size}")
+                
                 storage = SupabaseStorage()
                 file_url = storage.upload_group_message_media(media_file, group.id, message.id)
                 message.file_url = file_url
