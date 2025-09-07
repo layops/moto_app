@@ -5,6 +5,7 @@ import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/group/group_service.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
+import 'package:motoapp_frontend/widgets/post/post_item.dart';
 import 'members_page.dart';
 import 'group_messages_page.dart';
 
@@ -73,6 +74,26 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       });
     } catch (e) {
       print('Postlar yüklenemedi: $e');
+    }
+  }
+
+  Future<void> _deletePost(int postId) async {
+    try {
+      await _groupService.deleteGroupPost(widget.groupId, postId);
+      setState(() {
+        _posts.removeWhere((post) => post['id'] == postId);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post silindi')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Post silinemedi: $e')),
+        );
+      }
     }
   }
 
@@ -578,100 +599,33 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       );
     }
 
-    return Column(
-      children: _posts.take(3).map((post) => _buildPostCard(post)).toList(),
+    return FutureBuilder<String?>(
+      future: widget.authService.getCurrentUsername(),
+      builder: (context, snapshot) {
+        final currentUser = snapshot.data;
+        if (currentUser == null) {
+          return Column(
+            children: _posts.take(3).map((post) => PostItem(post: post)).toList(),
+          );
+        }
+
+        return Column(
+          children: _posts.take(3).map((post) {
+            final isPostAuthor = post['author']?['username'] == currentUser;
+            final isGroupOwner = widget.groupData['owner']?['username'] == currentUser;
+            final canDelete = isPostAuthor || isGroupOwner;
+            
+            return PostItem(
+              post: post,
+              canDelete: canDelete,
+              onDelete: canDelete ? () => _deletePost(post['id']) : null,
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
-  Widget _buildPostCard(Map<String, dynamic> post) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Post başlığı - kullanıcı bilgileri
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: post['author']?['profile_picture'] != null
-                      ? NetworkImage(post['author']['profile_picture'])
-                      : null,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: post['author']?['profile_picture'] == null
-                      ? Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface, size: 16)
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post['author']?['username'] ?? 'Unknown',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(post['created_at']),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Post içeriği
-            if (post['content'] != null && post['content'].isNotEmpty)
-              Text(
-                post['content'],
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            
-            // Post resmi
-            if (post['image'] != null)
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    post['image'],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 150,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 150,
-                      color: Theme.of(context).colorScheme.surface,
-                      child: Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 
   String _formatTime(String? dateTime) {
     if (dateTime == null) return '';

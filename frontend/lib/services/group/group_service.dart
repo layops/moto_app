@@ -327,7 +327,7 @@ class GroupService {
     final token = await _authService.getToken();
     
     final response = await _dio.delete(
-      'posts/groups/$groupId/posts/$postId/',
+      'posts/$postId/',
       options: _authOptions(token),
     );
     

@@ -24,6 +24,8 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
   bool _loading = true;
   String? _error;
   final TextEditingController _messageController = TextEditingController();
+  final FocusNode _messageFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   late GroupService _groupService;
 
   @override
@@ -31,11 +33,18 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
     super.initState();
     _groupService = GroupService(authService: widget.authService);
     _loadMessages();
+    
+    // Focus'u biraz gecikmeyle aç
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _messageFocusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _messageFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -52,6 +61,17 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
         _messages = List<Map<String, dynamic>>.from(messages);
         _loading = false;
       });
+      
+      // Mesajlar yüklendikten sonra en alta kaydır
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0.0, // reverse: true olduğu için 0.0 en alt
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     } catch (e) {
       setState(() {
         _error = 'Hata: $e';
@@ -67,7 +87,16 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
     try {
       await _groupService.sendGroupMessage(widget.groupId, content);
       _messageController.clear();
-      _loadMessages(); // Mesajları yeniden yükle
+      await _loadMessages(); // Mesajları yeniden yükle
+      
+      // Yeni mesaj gönderildikten sonra en alta kaydır
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0.0, // reverse: true olduğu için 0.0 en alt
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Mesaj gönderilemedi: $e')),
@@ -135,10 +164,14 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
                             ),
                           )
                         : ListView.builder(
+                            controller: _scrollController,
+                            reverse: true, // En yeni mesajlar aşağıda
                             padding: const EdgeInsets.all(16),
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
-                              final message = _messages[index];
+                              // Mesajları ters sırala (en yeni en son)
+                              final reversedIndex = _messages.length - 1 - index;
+                              final message = _messages[reversedIndex];
                               return _buildMessageBubble(message);
                             },
                           ),
@@ -158,18 +191,38 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    focusNode: _messageFocusNode,
                     decoration: InputDecoration(
                       hintText: 'Mesajınızı yazın...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
                       filled: true,
                       fillColor: Theme.of(context).colorScheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     maxLines: null,
+                    textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
+                    onTap: () {
+                      _messageFocusNode.requestFocus();
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -195,7 +248,11 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
   }
 
   Widget _buildMessageBubble(Map<String, dynamic> message) {
-    final isOwnMessage = message['sender']?['username'] == widget.authService.getCurrentUsername();
+    return FutureBuilder<String?>(
+      future: widget.authService.getCurrentUsername(),
+      builder: (context, snapshot) {
+        final currentUsername = snapshot.data;
+        final isOwnMessage = message['sender']?['username'] == currentUsername;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -284,6 +341,8 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
           ],
         ],
       ),
+    );
+      },
     );
   }
 

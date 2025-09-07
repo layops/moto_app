@@ -158,7 +158,25 @@ class _GroupPostsPageState extends State<GroupPostsPage> {
                         itemCount: _posts.length,
                         itemBuilder: (context, index) {
                           final post = _posts[index];
-                          return PostItem(post: post);
+                          return FutureBuilder<String?>(
+                            future: widget.authService.getCurrentUsername(),
+                            builder: (context, snapshot) {
+                              final currentUser = snapshot.data;
+                              if (currentUser == null) {
+                                return PostItem(post: post);
+                              }
+                              
+                              final isPostAuthor = post['author']?['username'] == currentUser;
+                              final isGroupOwner = widget.groupData['owner']?['username'] == currentUser;
+                              final canDelete = isPostAuthor || isGroupOwner;
+                              
+                              return PostItem(
+                                post: post,
+                                canDelete: canDelete,
+                                onDelete: canDelete ? () => _deletePost(post['id']) : null,
+                              );
+                            },
+                          );
                         },
                       ),
                     ),

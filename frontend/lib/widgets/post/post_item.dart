@@ -3,7 +3,15 @@ import '../../views/profile/profile_page.dart';
 
 class PostItem extends StatelessWidget {
   final dynamic post;
-  const PostItem({super.key, required this.post});
+  final VoidCallback? onDelete;
+  final bool canDelete;
+  
+  const PostItem({
+    super.key, 
+    required this.post,
+    this.onDelete,
+    this.canDelete = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +141,32 @@ class PostItem extends StatelessWidget {
                 ),
                 Text(post['comments']?.toString() ?? '0'),
                 const Spacer(),
+                if (canDelete && onDelete != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 22, color: Colors.red),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Postu Sil'),
+                          content: const Text('Bu postu silmek istediğinizden emin misiniz?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('İptal'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                onDelete!();
+                              },
+                              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 IconButton(
                   icon: const Icon(Icons.share, size: 22),
                   onPressed: () {},
