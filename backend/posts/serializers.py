@@ -8,6 +8,8 @@ from groups.models import Group
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)  # Nested serializer ile detaylı user bilgisi
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
+    image = serializers.ImageField(required=False, write_only=True)  # Sadece yazma için, okuma için değil
+    content = serializers.CharField(required=True, allow_blank=False)  # Content zorunlu ve boş olamaz
 
     class Meta:
         model = Post

@@ -71,6 +71,10 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         group_pk = self.kwargs.get('group_pk')
         group = get_object_or_404(Group, pk=group_pk)
 
+        logger.info(f"Post oluşturma isteği - Grup: {group_pk}, Kullanıcı: {self.request.user.username}")
+        logger.info(f"Request data: {self.request.data}")
+        logger.info(f"Request files: {list(self.request.FILES.keys())}")
+
         if self.request.user in group.members.all() or self.request.user == group.owner:
             # Resim dosyasını al
             image_file = self.request.FILES.get('image')
@@ -79,6 +83,11 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
             post_data = serializer.validated_data.copy()
             if 'image' in post_data:
                 del post_data['image']  # Resmi local media'ya kaydetme
+            
+            logger.info(f"Post data: {post_data}")
+            logger.info(f"Serializer is valid: {serializer.is_valid()}")
+            if not serializer.is_valid():
+                logger.error(f"Serializer errors: {serializer.errors}")
             
             post = serializer.save(author=self.request.user, group=group, **post_data)
             

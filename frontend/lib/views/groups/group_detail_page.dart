@@ -582,7 +582,7 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
   bool get _canPost {
     final hasText = _contentController.text.trim().isNotEmpty;
     final hasImage = _selectedImage != null;
-    final canPost = hasText || hasImage;
+    final canPost = hasText; // Content zorunlu, resim opsiyonel
     
     // Debug için
     print('Group Detail Post validation - Text: $hasText, Image: $hasImage, CanPost: $canPost');
