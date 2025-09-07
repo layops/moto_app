@@ -61,7 +61,12 @@ class SupabaseStorage:
 
     # Grup post resimleri
     def upload_group_post_image(self, file_obj, group_id, post_id):
-        return self._upload_file(file_obj, self.posts_bucket, f"groups/{group_id}/posts/{post_id}/")
+        if group_id is None:
+            # Genel post için
+            return self._upload_file(file_obj, self.posts_bucket, f"general/posts/{post_id}/")
+        else:
+            # Grup post için
+            return self._upload_file(file_obj, self.posts_bucket, f"groups/{group_id}/posts/{post_id}/")
     
     def delete_group_post_image(self, image_url):
         self._delete_file(image_url, self.posts_bucket)

@@ -20,11 +20,10 @@ class Post(models.Model):
         verbose_name="Yazar"
     )
     content = models.TextField(verbose_name="Gönderi İçeriği")
-    image = models.ImageField(
-        upload_to='posts/',
-        null=True,
+    image_url = models.URLField(
         blank=True,
-        verbose_name="Görsel"
+        null=True,
+        verbose_name="Görsel URL"
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
