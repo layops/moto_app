@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/group/group_service.dart';
@@ -8,6 +9,7 @@ import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/widgets/post/post_item.dart';
 import 'group_messages_page.dart';
 import 'group_settings_page.dart';
+import 'members_page.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final int groupId;
@@ -30,6 +32,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   late bool _isMember;
   late bool _isOwner;
   late bool _isModerator;
+  String? _currentUsername;
   List<dynamic> _posts = [];
   bool _loading = false;
   String? _error;
@@ -48,8 +51,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
   Future<void> _checkUserStatus() async {
     try {
-      final currentUsername = await widget.authService.getCurrentUsername();
-      if (currentUsername == null) return;
+      _currentUsername = await widget.authService.getCurrentUsername();
+      if (_currentUsername == null) return;
 
       final groupOwner = widget.groupData['owner']?['username'];
       final groupMembers = List<Map<String, dynamic>>.from(
@@ -57,8 +60,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       );
 
       setState(() {
-        _isOwner = currentUsername == groupOwner;
-        _isMember = groupMembers.any((member) => member['username'] == currentUsername);
+        _isOwner = _currentUsername == groupOwner;
+        _isMember = groupMembers.any((member) => member['username'] == _currentUsername);
         _isModerator = false; // Şimdilik moderator özelliği yok
       });
     } catch (e) {
@@ -69,6 +72,21 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   Future<void> _loadPosts() async {
     try {
       final posts = await _groupService.getGroupPosts(widget.groupId);
+      print('Yüklenen postlar: ${posts.length}');
+      for (int i = 0; i < posts.length; i++) {
+        final post = posts[i];
+        print('Post $i:');
+        print('  - ID: ${post['id']}');
+        print('  - Content: ${post['content']}');
+        print('  - Author: ${post['author']}');
+        if (post['author'] is Map) {
+          final author = post['author'] as Map<String, dynamic>;
+          print('  - Author username: ${author['username']}');
+          print('  - Author ID: ${author['id']}');
+        }
+        print('  - Image URL: ${post['image_url']}');
+        print('  ---');
+      }
       setState(() {
         _posts = posts;
       });
@@ -335,13 +353,29 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ),
           const SizedBox(height: 8),
           
-          // Üye sayısı - ortalanmış
+          // Üye sayısı - ortalanmış ve tıklanabilir
           Center(
-            child: Text(
-              '$memberCount members',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MembersPage(
+                      groupData: widget.groupData,
+                      isOwner: widget.groupData['owner'] == _currentUsername,
+                      isModerator: false, // Şimdilik false, gerekirse eklenebilir
+                      authService: Provider.of<AuthService>(context, listen: false),
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                '$memberCount members',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ),

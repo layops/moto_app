@@ -64,7 +64,11 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         group = get_object_or_404(Group, pk=group_pk)
 
         if self.request.user in group.members.all() or self.request.user == group.owner:
-            return Post.objects.filter(group=group).order_by('-created_at')
+            posts = Post.objects.filter(group=group).order_by('-created_at')
+            logger.info(f"Grup {group_pk} için {posts.count()} post bulundu")
+            for post in posts:
+                logger.info(f"Post {post.id}: Author={post.author.username}, Content={post.content[:50]}...")
+            return posts
         raise PermissionDenied("Bu grubun gönderilerini görüntüleme izniniz yok.")
 
     def perform_create(self, serializer):

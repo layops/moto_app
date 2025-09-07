@@ -15,13 +15,21 @@ class PostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Debug log'ları
+    print('PostItem - Post data: $post');
+    print('PostItem - Author: ${post['author']}');
+    
     final authorData = post['author'] is Map<String, dynamic>
         ? post['author'] as Map<String, dynamic>
         : {};
 
+    print('PostItem - Author data: $authorData');
+
     final username = authorData['username']?.toString() ??
         post['username']?.toString() ??
         'Bilinmeyen';
+        
+    print('PostItem - Username: $username');
 
     final profilePhoto = authorData['profile_photo_url']?.toString() ??
         authorData['profile_picture']?.toString() ??

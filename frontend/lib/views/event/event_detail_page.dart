@@ -165,17 +165,46 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       const SizedBox(height: 16),
 
                       // Katılımcılar listesi
-                      const Text(
-                        'Katılımcılar',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => _EventParticipantsPage(
+                                event: widget.event,
+                                participants: _participants,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Katılımcılar',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  '${_participants.length}',
+                                  style: const TextStyle(
+                                      fontSize: 16, color: Colors.grey),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward_ios,
+                                    size: 16, color: Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       _participants.isEmpty
                           ? const Text('Henüz katılımcı yok')
                           : Column(
-                              children: _participants
-                                  .map((user) => ListTile(
+                              children: _participants.take(3).map((user) => ListTile(
                                         leading: CircleAvatar(
                                           backgroundImage:
                                               user['profile_picture'] != null
@@ -191,9 +220,17 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                         subtitle: user['email'] != null
                                             ? Text(user['email'])
                                             : null,
-                                      ))
-                                  .toList(),
+                                      )).toList(),
                             ),
+                      if (_participants.length > 3)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            've ${_participants.length - 3} kişi daha...',
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.grey),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -307,6 +344,147 @@ class _MiniMapPreview extends StatelessWidget {
             showMarker: true,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EventParticipantsPage extends StatelessWidget {
+  final Map<String, dynamic> event;
+  final List<dynamic> participants;
+
+  const _EventParticipantsPage({
+    required this.event,
+    required this.participants,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Katılımcılar',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // Etkinlik bilgileri
+          Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Text(
+                  event['title']?.toString() ?? 'Etkinlik',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${participants.length} katılımcı',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Katılımcılar listesi
+          Expanded(
+            child: participants.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Henüz katılımcı yok',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: participants.length,
+                    itemBuilder: (context, index) {
+                      final participant = participants[index];
+                      return _buildParticipantItem(context, participant);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParticipantItem(BuildContext context, Map<String, dynamic> participant) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundImage: participant['profile_picture'] != null
+                ? NetworkImage(participant['profile_picture'])
+                : null,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            child: participant['profile_picture'] == null
+                ? Icon(
+                    Icons.person,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  )
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  participant['username'] ?? 'Bilinmiyor',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                if (participant['email'] != null)
+                  Text(
+                    participant['email'],
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

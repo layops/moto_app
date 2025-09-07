@@ -30,6 +30,12 @@ class PostSerializer(serializers.ModelSerializer):
         if self.context.get('only_content'):
             return representation.get('content')
         
+        # Debug log'ları
+        print(f"PostSerializer - Post {instance.id}:")
+        print(f"  - Author: {instance.author}")
+        print(f"  - Author username: {instance.author.username}")
+        print(f"  - Representation author: {representation.get('author')}")
+        
         # Eğer image_url varsa, image alanını None yap (frontend'de karışıklık olmasın)
         if instance.image_url:
             representation['image'] = None
