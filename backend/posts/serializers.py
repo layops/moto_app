@@ -27,4 +27,9 @@ class PostSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         if self.context.get('only_content'):
             return representation.get('content')
+        
+        # Eğer image_url varsa, image alanını None yap (frontend'de karışıklık olmasın)
+        if instance.image_url:
+            representation['image'] = None
+        
         return representation

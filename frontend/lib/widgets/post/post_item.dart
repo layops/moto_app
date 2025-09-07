@@ -32,7 +32,7 @@ class PostItem extends StatelessWidget {
         authorData['first_name']?.toString() ??
         username;
 
-    final imageUrl = post['image']?.toString();
+    final imageUrl = post['image_url']?.toString() ?? post['image']?.toString();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

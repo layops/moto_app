@@ -26,11 +26,17 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
         return context
 
     def perform_create(self, serializer):
-        # Post'u oluştur (resim backend'e kayıt olur)
-        post = serializer.save(author=self.request.user, group=None)
-        
-        # Eğer resim varsa Supabase'e de yükle
+        # Resim dosyasını al
         image_file = self.request.FILES.get('image')
+        
+        # Post'u oluştur (resim olmadan)
+        post_data = serializer.validated_data.copy()
+        if 'image' in post_data:
+            del post_data['image']  # Resmi local media'ya kaydetme
+        
+        post = serializer.save(author=self.request.user, group=None, **post_data)
+        
+        # Eğer resim varsa sadece Supabase'e yükle
         if image_file:
             try:
                 storage = SupabaseStorage()
@@ -40,7 +46,6 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
                 logger.info(f"Genel post resmi Supabase'e yüklendi: {image_url}")
             except Exception as e:
                 logger.error(f"Genel post resmi Supabase'e yükleme hatası: {str(e)}")
-                # Backend'de zaten kayıtlı, sadece Supabase hatası
 
 # Grup postlarını yönetir
 class GroupPostListCreateView(generics.ListCreateAPIView):
@@ -67,11 +72,17 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         group = get_object_or_404(Group, pk=group_pk)
 
         if self.request.user in group.members.all() or self.request.user == group.owner:
-            # Post'u oluştur (resim backend'e kayıt olur)
-            post = serializer.save(author=self.request.user, group=group)
-            
-            # Eğer resim varsa Supabase'e de yükle
+            # Resim dosyasını al
             image_file = self.request.FILES.get('image')
+            
+            # Post'u oluştur (resim olmadan)
+            post_data = serializer.validated_data.copy()
+            if 'image' in post_data:
+                del post_data['image']  # Resmi local media'ya kaydetme
+            
+            post = serializer.save(author=self.request.user, group=group, **post_data)
+            
+            # Eğer resim varsa sadece Supabase'e yükle
             if image_file:
                 try:
                     storage = SupabaseStorage()
@@ -81,7 +92,6 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
                     logger.info(f"Grup post resmi Supabase'e yüklendi: {image_url}")
                 except Exception as e:
                     logger.error(f"Grup post resmi Supabase'e yükleme hatası: {str(e)}")
-                    # Backend'de zaten kayıtlı, sadece Supabase hatası
         else:
             raise PermissionDenied("Bu gruba gönderi oluşturma izniniz yok.")
 
