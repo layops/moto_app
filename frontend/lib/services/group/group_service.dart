@@ -238,7 +238,7 @@ class GroupService {
     final token = await _authService.getToken();
     
     final response = await _dio.get(
-      'groups/$groupId/posts/',
+      'posts/groups/$groupId/posts/',
       options: _authOptions(token),
     );
     
@@ -264,7 +264,7 @@ class GroupService {
     }
     
     final response = await _dio.post(
-      'groups/$groupId/posts/',
+      'posts/groups/$groupId/posts/',
       data: formData,
       options: Options(
         headers: {
@@ -305,7 +305,7 @@ class GroupService {
     }
     
     final response = await _dio.patch(
-      'groups/$groupId/posts/$postId/',
+      'posts/groups/$groupId/posts/$postId/',
       data: formData,
       options: Options(
         headers: {
@@ -327,7 +327,7 @@ class GroupService {
     final token = await _authService.getToken();
     
     final response = await _dio.delete(
-      'groups/$groupId/posts/$postId/',
+      'posts/groups/$groupId/posts/$postId/',
       options: _authOptions(token),
     );
     

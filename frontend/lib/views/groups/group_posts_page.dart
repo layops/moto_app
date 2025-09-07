@@ -221,9 +221,34 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
+  void initState() {
+    super.initState();
+    _contentController.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _contentController.removeListener(_onTextChanged);
     _contentController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      // TextField değiştiğinde UI'yi güncelle
+    });
+  }
+
+  bool get _canPost {
+    final hasText = _contentController.text.trim().isNotEmpty;
+    final hasImage = _selectedImage != null;
+    final canPost = hasText || hasImage;
+    
+    // Debug için
+    print('Post validation - Text: $hasText, Image: $hasImage, CanPost: $canPost');
+    print('Text content: "${_contentController.text.trim()}"');
+    
+    return canPost;
   }
 
   Future<void> _pickImage() async {
@@ -245,6 +270,11 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
           children: [
             TextField(
               controller: _contentController,
+              onChanged: (value) {
+                setState(() {
+                  // TextField değiştiğinde UI'yi güncelle
+                });
+              },
               decoration: const InputDecoration(
                 hintText: 'Ne düşünüyorsunuz?',
                 border: OutlineInputBorder(),
@@ -305,7 +335,7 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
           child: const Text('İptal'),
         ),
         ElevatedButton(
-          onPressed: _contentController.text.trim().isNotEmpty || _selectedImage != null
+          onPressed: _canPost
               ? () {
                   Navigator.pop(context, {
                     'content': _contentController.text.trim(),

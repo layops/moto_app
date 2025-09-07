@@ -300,7 +300,8 @@ class UserPostsView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
 
-        posts = Post.objects.filter(author=user)
+        # Sadece genel post'ları getir (grup post'ları hariç)
+        posts = Post.objects.filter(author=user, group__isnull=True)
         serializer = PostSerializer(posts, many=True, context={'request': request})
         return Response(serializer.data)
 
