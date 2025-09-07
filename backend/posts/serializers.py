@@ -34,10 +34,28 @@ class PostSerializer(serializers.ModelSerializer):
         print(f"PostSerializer - Post {instance.id}:")
         print(f"  - Author: {instance.author}")
         print(f"  - Author username: {instance.author.username}")
+        print(f"  - Author ID: {instance.author.id}")
         print(f"  - Representation author: {representation.get('author')}")
+        if representation.get('author'):
+            author_data = representation.get('author')
+            print(f"  - Author data type: {type(author_data)}")
+            if isinstance(author_data, dict):
+                print(f"  - Author username in data: {author_data.get('username')}")
+                print(f"  - Author ID in data: {author_data.get('id')}")
         
         # Eğer image_url varsa, image alanını None yap (frontend'de karışıklık olmasın)
         if instance.image_url:
             representation['image'] = None
+        
+        # Author verisini manuel olarak kontrol et
+        if not representation.get('author') or not representation['author'].get('username'):
+            print(f"PostSerializer - Author verisi eksik, manuel olarak ekleniyor")
+            representation['author'] = {
+                'id': instance.author.id,
+                'username': instance.author.username,
+                'email': instance.author.email,
+                'profile_photo_url': None,  # Şimdilik None
+            }
+            print(f"PostSerializer - Manuel author verisi: {representation['author']}")
         
         return representation

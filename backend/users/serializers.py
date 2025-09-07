@@ -112,6 +112,16 @@ class UserSerializer(serializers.ModelSerializer):
             return f"{base_url}{media_url}{obj.cover_picture}"
         return None
 
+    def to_representation(self, instance):
+        """
+        UserSerializer için debug log'ları
+        """
+        representation = super().to_representation(instance)
+        print(f"UserSerializer - User {instance.id}:")
+        print(f"  - Username: {instance.username}")
+        print(f"  - Representation: {representation}")
+        return representation
+
     def validate_website(self, value):
         if value and value.strip():
             url_pattern = re.compile(

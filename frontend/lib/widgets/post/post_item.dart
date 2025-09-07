@@ -18,18 +18,22 @@ class PostItem extends StatelessWidget {
     // Debug log'ları
     print('PostItem - Post data: $post');
     print('PostItem - Author: ${post['author']}');
+    print('PostItem - Author type: ${post['author'].runtimeType}');
     
     final authorData = post['author'] is Map<String, dynamic>
         ? post['author'] as Map<String, dynamic>
         : {};
 
     print('PostItem - Author data: $authorData');
+    print('PostItem - Author data keys: ${authorData.keys.toList()}');
+    print('PostItem - Author username: ${authorData['username']}');
+    print('PostItem - Author id: ${authorData['id']}');
 
     final username = authorData['username']?.toString() ??
         post['username']?.toString() ??
         'Bilinmeyen';
         
-    print('PostItem - Username: $username');
+    print('PostItem - Final username: $username');
 
     final profilePhoto = authorData['profile_photo_url']?.toString() ??
         authorData['profile_picture']?.toString() ??
