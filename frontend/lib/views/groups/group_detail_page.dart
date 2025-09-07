@@ -291,8 +291,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         height: 120,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF2D5A27), // Koyu yeşil
-                            border: Border.all(color: Colors.white, width: 3),
+                            color: Theme.of(context).colorScheme.primary,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.surface, 
+                              width: 3,
+                            ),
                         ),
                         child: profilePictureUrl != null
                             ? ClipOval(
@@ -393,7 +396,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         child: Icon(
           Icons.group,
           size: 60,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
     );
@@ -423,13 +426,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: Colors.white),
+            Icon(icon, size: 16, color: Theme.of(context).colorScheme.onPrimary),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

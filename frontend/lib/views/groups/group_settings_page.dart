@@ -205,8 +205,11 @@ class _GroupSettingsPageState extends State<GroupSettingsPage> {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF2D5A27),
-                  border: Border.all(color: Colors.white, width: 3),
+                  color: Theme.of(context).colorScheme.primary,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.surface, 
+                    width: 3,
+                  ),
                 ),
                 child: _selectedImage != null
                     ? ClipOval(
@@ -235,11 +238,14 @@ class _GroupSettingsPageState extends State<GroupSettingsPage> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface, 
+                        width: 2,
+                      ),
                     ),
                     child: Icon(
                       Icons.camera_alt,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       size: 20,
                     ),
                   ),
@@ -269,7 +275,7 @@ class _GroupSettingsPageState extends State<GroupSettingsPage> {
         child: Icon(
           Icons.group,
           size: 60,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
     );
@@ -355,7 +361,7 @@ class _GroupSettingsPageState extends State<GroupSettingsPage> {
                 label: const Text('Grubu Sil'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
               ),
             ],

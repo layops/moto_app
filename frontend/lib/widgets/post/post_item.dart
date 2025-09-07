@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../views/profile/profile_page.dart';
+import '../../core/theme/color_schemes.dart';
 
 class PostItem extends StatelessWidget {
   final dynamic post;
@@ -57,10 +58,10 @@ class PostItem extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.grey, width: 0.3),
-          bottom: BorderSide(color: Colors.grey, width: 0.3),
+          top: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3), width: 0.3),
+          bottom: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3), width: 0.3),
         ),
       ),
       child: Column(
@@ -101,10 +102,10 @@ class PostItem extends StatelessWidget {
                 Expanded(
                   child: Text(
                     username, // Güvenli username
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 19, // Kullanıcı adı daha büyük
-                      color: Colors.black87, // Daha belirgin renk
+                      color: Theme.of(context).colorScheme.onSurface, // Theme rengi
                     ),
                   ),
                 ),
@@ -119,10 +120,10 @@ class PostItem extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 14),
               child: Text(
                 post['content'].toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15, // Metin boyutu büyütüldü
                   fontWeight: FontWeight.w600,
-                  color: Color.fromARGB(171, 17, 17, 17),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                   height: 1.5,
                 ),
               ),
@@ -139,8 +140,11 @@ class PostItem extends StatelessWidget {
                 height: 220,
                 errorBuilder: (context, error, stackTrace) => Container(
                   height: 220,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.error),
+                  color: Theme.of(context).colorScheme.surface,
+                  child: Icon(
+                    Icons.error,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
                 ),
               ),
             ),
@@ -151,37 +155,80 @@ class PostItem extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.favorite_border, size: 22),
+                  icon: Icon(
+                    Icons.favorite_border, 
+                    size: 22,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   onPressed: () {},
                 ),
-                Text(post['likes']?.toString() ?? '0'),
+                Text(
+                  post['likes']?.toString() ?? '0',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(width: 20),
                 IconButton(
-                  icon: const Icon(Icons.comment_outlined, size: 22),
+                  icon: Icon(
+                    Icons.comment_outlined, 
+                    size: 22,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   onPressed: () {},
                 ),
-                Text(post['comments']?.toString() ?? '0'),
+                Text(
+                  post['comments']?.toString() ?? '0',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 const Spacer(),
                 if (canDelete && onDelete != null)
                   IconButton(
-                    icon: const Icon(Icons.delete, size: 22, color: Colors.red),
+                    icon: Icon(
+                      Icons.delete, 
+                      size: 22, 
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Postu Sil'),
-                          content: const Text('Bu postu silmek istediğinizden emin misiniz?'),
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          title: Text(
+                            'Postu Sil',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          content: Text(
+                            'Bu postu silmek istediğinizden emin misiniz?',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('İptal'),
+                              child: Text(
+                                'İptal',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
                             ),
                             TextButton(
                               onPressed: () {
                                 Navigator.pop(context);
                                 onDelete!();
                               },
-                              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+                              child: Text(
+                                'Sil', 
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -189,7 +236,11 @@ class PostItem extends StatelessWidget {
                     },
                   ),
                 IconButton(
-                  icon: const Icon(Icons.share, size: 22),
+                  icon: Icon(
+                    Icons.share, 
+                    size: 22,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   onPressed: () {},
                 ),
               ],

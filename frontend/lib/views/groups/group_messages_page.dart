@@ -412,8 +412,11 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
                           height: 200,
                           errorBuilder: (context, error, stackTrace) => Container(
                             height: 200,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.error),
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Icon(
+                              Icons.error,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            ),
                           ),
                         ),
                       ),

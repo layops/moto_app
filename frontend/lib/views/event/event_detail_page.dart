@@ -129,12 +129,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today,
-                              size: 16, color: Colors.grey),
+                          Icon(Icons.calendar_today,
+                              size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           const SizedBox(width: 8),
                           Text(formatDate(widget.event['start_time']),
-                              style: const TextStyle(
-                                  fontSize: 14, color: Colors.grey)),
+                              style: TextStyle(
+                                  fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -189,12 +189,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
                               children: [
                                 Text(
                                   '${_participants.length}',
-                                  style: const TextStyle(
-                                      fontSize: 16, color: Colors.grey),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                                 ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.arrow_forward_ios,
-                                    size: 16, color: Colors.grey),
+                                Icon(Icons.arrow_forward_ios,
+                                    size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                               ],
                             ),
                           ],
@@ -227,8 +227,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             've ${_participants.length - 3} kişi daha...',
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.grey),
+                            style: TextStyle(
+                                fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
                         ),
                     ],
@@ -299,15 +299,15 @@ class _DetailLocationTextState extends State<_DetailLocationText> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+        Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         const SizedBox(width: 8),
         Expanded(
           child: _loading
-              ? const Text('Konum yükleniyor...',
-                  style: TextStyle(fontSize: 14, color: Colors.grey))
+              ? Text('Konum yükleniyor...',
+                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))
               : Text(
                   _displayName ?? '-',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                 ),
         ),
       ],
