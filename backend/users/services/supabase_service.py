@@ -77,6 +77,18 @@ class SupabaseStorage:
             file_extension = os.path.splitext(file_obj.name)[1]
             unique_filename = f"{prefix}{uuid.uuid4()}{file_extension}"
             
+            # Dosya boyutunu kontrol et
+            file_obj.seek(0, 2)  # Dosyanın sonuna git
+            file_size = file_obj.tell()  # Dosya boyutunu al
+            file_obj.seek(0)  # Dosyanın başına dön
+            
+            logger.info(f"Upload dosya boyutu: {file_size} bytes")
+            logger.info(f"Upload dosya adı: {file_obj.name}")
+            logger.info(f"Upload content type: {file_obj.content_type}")
+            
+            if file_size == 0:
+                raise Exception("Dosya boş")
+            
             allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
             if file_obj.content_type not in allowed_types:
                 raise ValueError("Geçersiz dosya formatı")

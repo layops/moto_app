@@ -300,6 +300,14 @@ class GroupService {
     });
     
     if (image != null) {
+      // Dosya boyutunu kontrol et
+      final fileSize = await image.length();
+      print('Gönderilecek post resmi boyutu: $fileSize bytes');
+      
+      if (fileSize == 0) {
+        throw Exception('Dosya boş');
+      }
+      
       formData.files.add(MapEntry(
         'image',
         await MultipartFile.fromFile(

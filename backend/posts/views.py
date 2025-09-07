@@ -85,6 +85,17 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
             # Eğer resim varsa sadece Supabase'e yükle
             if image_file:
                 try:
+                    logger.info(f"Post resmi alındı: {image_file.name}, boyut: {image_file.size}")
+                    logger.info(f"Content type: {image_file.content_type}")
+                    
+                    # Dosya stream'ini kontrol et
+                    image_file.seek(0)
+                    file_content = image_file.read()
+                    logger.info(f"Post resmi içeriği boyutu: {len(file_content)} bytes")
+                    
+                    # Dosya stream'ini başa al
+                    image_file.seek(0)
+                    
                     storage = SupabaseStorage()
                     image_url = storage.upload_group_post_image(image_file, group.id, post.id)
                     post.image_url = image_url
