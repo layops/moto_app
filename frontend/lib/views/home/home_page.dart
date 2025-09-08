@@ -6,6 +6,7 @@ import '../post/create_post_page.dart';
 import '../../widgets/navigations/navigation_items.dart';
 import '../notifications/notifications_page.dart';
 import '../search/search_page.dart';
+import '../leaderboard/leaderboard_page.dart';
 import '../../widgets/common/modern_fab.dart';
 
 class HomePage extends StatefulWidget {
@@ -119,6 +120,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _onLeaderboardPressed() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LeaderboardPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,6 +136,11 @@ class _HomePageState extends State<HomePage> {
           height: 50,
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.leaderboard),
+          onPressed: _onLeaderboardPressed,
+          tooltip: 'Liderlik Tablosu',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
