@@ -81,12 +81,13 @@ if DATABASE_URL:
     
     # Connection pooling ve performans ayarları
     if 'postgresql' in DATABASE_URL:
+        # Render.com için optimize edilmiş ayarlar
         db_config.update({
             'CONN_MAX_AGE': 600,  # 10 dakika connection pooling
             'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'connect_timeout': 10,
-                'options': '-c default_transaction_isolation=read committed'
+                'sslmode': 'require',  # Render.com için SSL gerekli
             }
         })
     
