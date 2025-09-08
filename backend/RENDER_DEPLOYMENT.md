@@ -27,8 +27,8 @@ Render.com'da aşağıdaki environment variables'ları ayarlayın:
 
 ## Build Settings
 
-- **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-- **Start Command**: `gunicorn core_api.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+- **Build Command**: `pip install -r requirements.txt && python manage.py migrate --noinput`
+- **Start Command**: `python manage.py collectstatic --noinput && python manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); User.objects.create_superuser('superuser','superuser@spiride.com','326598') if not User.objects.filter(username='superuser').exists() else print('Superuser already exists')" && uvicorn core_api.asgi:application --host 0.0.0.0 --port $PORT --workers 2`
 
 ## Services Needed
 
