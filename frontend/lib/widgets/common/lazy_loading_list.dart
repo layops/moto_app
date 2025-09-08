@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../core/theme/color_schemes.dart';
 
 class LazyLoadingList<T> extends StatefulWidget {
   final Future<List<T>> Function(int page, int pageSize) dataFetcher;

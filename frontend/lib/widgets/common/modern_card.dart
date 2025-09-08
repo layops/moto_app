@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../core/theme/color_schemes.dart';
+import '../../core/theme/color_schemes.dart';
 
 class ModernCard extends StatelessWidget {
   final Widget child;

@@ -122,6 +122,15 @@ class ServiceLocator {
   static Future<void> reset() async {
     try {
       await _instance._localStorage.clearAuthData();
+      await _instance._localStorage.clearMemoryCache();
+      
+      // Cache'leri temizle
+      _instance._apiClient.clearCache();
+      _instance._authService.clearCache();
+      _instance._postService.clearCache();
+      _instance._userService.clearCache();
+      _instance._notificationService.clearCache();
+      
       _isInitialized = false;
     } catch (e, stackTrace) {
       throw ServiceLocatorError('Failed to reset services', e, stackTrace);

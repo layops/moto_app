@@ -4,20 +4,61 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
   late final SharedPreferences _prefs;
+  
+  // Memory cache için
+  final Map<String, dynamic> _memoryCache = {};
+  static const Duration _cacheExpiry = Duration(minutes: 10);
+  final Map<String, DateTime> _cacheTimestamps = {};
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  Future<bool> setBool(String key, bool value) async =>
-      await _prefs.setBool(key, value);
-  bool? getBool(String key) => _prefs.getBool(key);
+  Future<bool> setBool(String key, bool value) async {
+    _memoryCache[key] = value;
+    _cacheTimestamps[key] = DateTime.now();
+    return await _prefs.setBool(key, value);
+  }
+  
+  bool? getBool(String key) {
+    // Memory cache kontrolü
+    if (_isCacheValid(key) && _memoryCache.containsKey(key)) {
+      return _memoryCache[key] as bool?;
+    }
+    
+    final value = _prefs.getBool(key);
+    if (value != null) {
+      _memoryCache[key] = value;
+      _cacheTimestamps[key] = DateTime.now();
+    }
+    return value;
+  }
 
-  Future<bool> setString(String key, String value) async =>
-      await _prefs.setString(key, value);
-  String? getString(String key) => _prefs.getString(key);
+  Future<bool> setString(String key, String value) async {
+    _memoryCache[key] = value;
+    _cacheTimestamps[key] = DateTime.now();
+    return await _prefs.setString(key, value);
+  }
+  
+  String? getString(String key) {
+    // Memory cache kontrolü
+    if (_isCacheValid(key) && _memoryCache.containsKey(key)) {
+      return _memoryCache[key] as String?;
+    }
+    
+    final value = _prefs.getString(key);
+    if (value != null) {
+      _memoryCache[key] = value;
+      _cacheTimestamps[key] = DateTime.now();
+    }
+    return value;
+  }
 
-  Future<bool> remove(String key) async => await _prefs.remove(key);
+  Future<bool> remove(String key) async {
+    _memoryCache.remove(key);
+    _cacheTimestamps.remove(key);
+    return await _prefs.remove(key);
+  }
 
   // TOKEN
   Future<bool> setAuthToken(String token) async =>
@@ -43,10 +84,28 @@ class LocalStorage {
   Future<bool> clearRememberedUsername() async =>
       await remove('rememberedUsername');
 
-  Future<void> clearAll() async => await _prefs.clear();
+  Future<void> clearAll() async {
+    _memoryCache.clear();
+    _cacheTimestamps.clear();
+    await _prefs.clear();
+  }
+  
   Future<void> clearAuthData() async {
     await removeAuthToken();
     await removeCurrentUsername();
+  }
+  
+  // Cache helper methods
+  bool _isCacheValid(String key) {
+    final timestamp = _cacheTimestamps[key];
+    if (timestamp == null) return false;
+    
+    return DateTime.now().difference(timestamp) < _cacheExpiry;
+  }
+  
+  void clearMemoryCache() {
+    _memoryCache.clear();
+    _cacheTimestamps.clear();
   }
 
   static const String _profileDataKey = 'profile_data';

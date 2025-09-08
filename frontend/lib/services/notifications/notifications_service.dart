@@ -184,6 +184,12 @@ class NotificationsService {
     }
   }
 
+  /// Cache'i temizler
+  void clearCache() {
+    // NotificationsService için özel cache yok, sadece placeholder
+    // Gelecekte bildirim cache'i eklenebilir
+  }
+
   /// Servisi temizler
   void dispose() {
     disconnectWebSocket();

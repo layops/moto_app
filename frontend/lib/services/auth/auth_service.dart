@@ -158,4 +158,10 @@ class AuthService {
   void dispose() {
     _authStateController.close();
   }
+  
+  // Cache temizleme metodu
+  void clearCache() {
+    // AuthService için özel cache yok, sadece placeholder
+    // Gelecekte auth cache'i eklenebilir
+  }
 }

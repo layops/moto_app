@@ -5,6 +5,12 @@ import '../service_locator.dart';
 
 class ChatService {
   final String _baseUrl = '$kBaseUrl/api';
+  
+  // Cache için
+  final Map<String, List<PrivateMessage>> _messagesCache = {};
+  final Map<String, List<Conversation>> _conversationsCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheDuration = Duration(minutes: 2);
 
   Future<String?> _getToken() async {
     return await ServiceLocator.token.getToken();
@@ -12,6 +18,13 @@ class ChatService {
 
   /// Özel mesajları getir
   Future<List<PrivateMessage>> getPrivateMessages() async {
+    const cacheKey = 'private_messages';
+    
+    // Cache kontrolü
+    if (_isCacheValid(cacheKey) && _messagesCache.containsKey(cacheKey)) {
+      return _messagesCache[cacheKey]!;
+    }
+    
     final token = await _getToken();
     if (token == null) {
       throw Exception('Token bulunamadı');
@@ -28,9 +41,15 @@ class ChatService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data as List)
+        final messages = (data as List)
             .map((json) => PrivateMessage.fromJson(json))
             .toList();
+            
+        // Cache'e kaydet
+        _messagesCache[cacheKey] = messages;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+        
+        return messages;
       } else {
         throw Exception('Mesajlar alınamadı: ${response.statusCode}');
       }
@@ -41,6 +60,13 @@ class ChatService {
 
   /// Konuşma listesini getir (son mesajlar ile birlikte)
   Future<List<Conversation>> getConversations() async {
+    const cacheKey = 'conversations';
+    
+    // Cache kontrolü
+    if (_isCacheValid(cacheKey) && _conversationsCache.containsKey(cacheKey)) {
+      return _conversationsCache[cacheKey]!;
+    }
+    
     final token = await _getToken();
     if (token == null) {
       throw Exception('Token bulunamadı');
@@ -57,9 +83,15 @@ class ChatService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data as List)
+        final conversations = (data as List)
             .map((json) => Conversation.fromJson(json))
             .toList();
+            
+        // Cache'e kaydet
+        _conversationsCache[cacheKey] = conversations;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+        
+        return conversations;
       } else {
         throw Exception('Konuşmalar alınamadı: ${response.statusCode}');
       }
@@ -70,6 +102,13 @@ class ChatService {
 
   /// Belirli bir kullanıcı ile konuşmayı getir
   Future<List<PrivateMessage>> getConversationWithUser(int userId) async {
+    final cacheKey = 'conversation_$userId';
+    
+    // Cache kontrolü
+    if (_isCacheValid(cacheKey) && _messagesCache.containsKey(cacheKey)) {
+      return _messagesCache[cacheKey]!;
+    }
+    
     final token = await _getToken();
     if (token == null) {
       throw Exception('Token bulunamadı');
@@ -86,9 +125,15 @@ class ChatService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data as List)
+        final messages = (data as List)
             .map((json) => PrivateMessage.fromJson(json))
             .toList();
+            
+        // Cache'e kaydet
+        _messagesCache[cacheKey] = messages;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+        
+        return messages;
       } else {
         throw Exception('Konuşma alınamadı: ${response.statusCode}');
       }
@@ -122,7 +167,12 @@ class ChatService {
 
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        return PrivateMessage.fromJson(data);
+        final newMessage = PrivateMessage.fromJson(data);
+        
+        // Cache'i temizle
+        _clearMessageCache();
+        
+        return newMessage;
       } else {
         throw Exception('Mesaj gönderilemedi: ${response.statusCode}');
       }
@@ -157,6 +207,14 @@ class ChatService {
 
   /// Kullanıcıları ara
   Future<List<User>> searchUsers(String query) async {
+    final cacheKey = 'search_users_$query';
+    
+    // Cache kontrolü (kısa süreli cache)
+    if (_isCacheValid(cacheKey) && _messagesCache.containsKey(cacheKey)) {
+      // Bu durumda User listesi için ayrı cache kullanmak daha iyi olur
+      // Şimdilik cache'lemiyoruz çünkü arama sonuçları sık değişebilir
+    }
+    
     final token = await _getToken();
     if (token == null) {
       throw Exception('Token bulunamadı');
@@ -182,6 +240,24 @@ class ChatService {
     } catch (e) {
       throw Exception('Kullanıcılar aranırken hata: $e');
     }
+  }
+  
+  // Cache helper methods
+  bool _isCacheValid(String cacheKey) {
+    final timestamp = _cacheTimestamps[cacheKey];
+    if (timestamp == null) return false;
+    
+    return DateTime.now().difference(timestamp) < _cacheDuration;
+  }
+  
+  void _clearMessageCache() {
+    _messagesCache.clear();
+    _conversationsCache.clear();
+    _cacheTimestamps.clear();
+  }
+  
+  void clearCache() {
+    _clearMessageCache();
   }
 }
 
