@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'home_posts_list.dart';
 import '../../services/service_locator.dart';
 import '../post/create_post_page.dart';
-import '../../widgets/navigations/main_wrapper.dart';
 import '../../widgets/navigations/navigation_items.dart';
 import '../notifications/notifications_page.dart';
 

@@ -15,7 +15,7 @@ class ApiClient {
   ApiClient(this._storage)
       : _tokenService = TokenService(_storage),
         _dio = Dio() {
-    _dio.options.baseUrl = kBaseUrl;
+    _dio.options.baseUrl = '$kBaseUrl/api/';
     _dio.options.connectTimeout = const Duration(seconds: 60);
     _dio.options.receiveTimeout = const Duration(seconds: 60);
 
