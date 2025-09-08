@@ -1,13 +1,17 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
-from .models import GroupMessage
-from .serializers import GroupMessageSerializer
+from django.db.models import Q, Max
+from django.contrib.auth import get_user_model
+from .models import GroupMessage, PrivateMessage
+from .serializers import GroupMessageSerializer, PrivateMessageSerializer
 from users.services.supabase_service import SupabaseStorage
 import logging
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 class GroupMessageViewSet(viewsets.ModelViewSet):
     serializer_class = GroupMessageSerializer
@@ -95,3 +99,78 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
                 logger.warning(f"Grup mesaj medyası silinemedi: {str(e)}")
         
         return super().destroy(request, *args, **kwargs)
+
+
+class PrivateMessageViewSet(viewsets.ModelViewSet):
+    serializer_class = PrivateMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return PrivateMessage.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).order_by('-timestamp')
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+    @action(detail=True, methods=['patch'])
+    def mark_read(self, request, pk=None):
+        message = self.get_object()
+        if message.receiver == request.user:
+            message.mark_as_read()
+            return Response({'status': 'message marked as read'})
+        return Response(
+            {'detail': 'Bu mesajı okundu olarak işaretleme yetkiniz yok.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+
+class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        
+        # Kullanıcının katıldığı konuşmaları getir
+        conversations = PrivateMessage.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).values('sender', 'receiver').distinct()
+        
+        conversation_list = []
+        
+        for conv in conversations:
+            sender_id = conv['sender']
+            receiver_id = conv['receiver']
+            
+            # Diğer kullanıcıyı belirle
+            other_user_id = receiver_id if sender_id == user.id else sender_id
+            other_user = get_object_or_404(User, id=other_user_id)
+            
+            # Son mesajı getir
+            last_message = PrivateMessage.objects.filter(
+                Q(sender=user, receiver=other_user) | 
+                Q(sender=other_user, receiver=user)
+            ).order_by('-timestamp').first()
+            
+            # Okunmamış mesaj sayısını getir
+            unread_count = PrivateMessage.objects.filter(
+                sender=other_user,
+                receiver=user,
+                is_read=False
+            ).count()
+            
+            conversation_list.append({
+                'other_user': {
+                    'id': other_user.id,
+                    'username': other_user.username,
+                    'first_name': other_user.first_name,
+                    'last_name': other_user.last_name,
+                    'profile_picture': getattr(other_user, 'profile_picture', None),
+                },
+                'last_message': PrivateMessageSerializer(last_message).data if last_message else None,
+                'unread_count': unread_count,
+                'is_online': False,  # TODO: Online durumu için WebSocket implementasyonu
+            })
+        
+        return Response(conversation_list)

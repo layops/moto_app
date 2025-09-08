@@ -8,6 +8,9 @@ import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/home/home_page.dart';
+import 'package:motoapp_frontend/views/map/map_page.dart';
+import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/views/settings/settings_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
@@ -41,9 +44,11 @@ class AppConfig extends StatelessWidget {
                       LoginPage(authService: ServiceLocator.auth),
                   '/home': (context) => MainWrapper(
                         pages: [
-                          const HomePage(),
-                          const GroupsPage(),
-                          // ProfilePage artık TokenService üzerinden username alacak
+                          const HomePage(),           // Index 0 - Home
+                          const MapPage(allowSelection: true), // Index 1 - Map
+                          const GroupsPage(),         // Index 2 - Groups  
+                          const EventsPage(),         // Index 3 - Events
+                          const MessagesPage(),       // Index 4 - Messages
                           FutureBuilder<String?>(
                             future: ServiceLocator.token.getUsernameFromToken(),
                             builder: (context, snapshot) {
@@ -53,10 +58,9 @@ class AppConfig extends StatelessWidget {
                                     child: CircularProgressIndicator());
                               }
                               final username = snapshot.data ?? 'Kullanıcı';
-                              return ProfilePage(username: username);
+                              return ProfilePage(username: username); // Index 5 - Profile
                             },
                           ),
-                          const SettingsPage(),
                         ],
                         navItems: NavigationItems.items,
                       ),

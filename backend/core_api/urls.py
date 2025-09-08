@@ -49,6 +49,7 @@ urlpatterns = [
     path('api/posts/', include('posts.urls')),  # DÜZELTME: Bu satırı olduğu gibi bırakın
     path('api/notifications/', include('notifications.urls')),
     path('api/gamification/', include('gamification.urls')),
+    path('api/chat/', include('chat.urls')),
 
     # Swagger / Redoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

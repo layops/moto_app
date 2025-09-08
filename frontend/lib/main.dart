@@ -10,7 +10,7 @@ import 'package:motoapp_frontend/core/theme/light_theme.dart';
 import 'package:motoapp_frontend/core/theme/dark_theme.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
-import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 import 'package:motoapp_frontend/config/supabase_config.dart';
 
@@ -18,6 +18,7 @@ import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
 import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/views/notifications/notifications_page.dart';
 
@@ -193,16 +194,27 @@ class _MotoAppState extends State<MotoApp> {
   }
 
   Widget _buildMainWrapper() {
-    print('MainWrapper oluşturuluyor - MapPage allowSelection: true ile');
+    // ProfilePage için güvenli username kontrolü
+    final profileUsername = _currentUsername ?? '';
+    
+    // Sayfaları navigation items ile aynı sırada tanımla
     final List<Widget> pages = [
-      const HomePage(),
-      const MapPage(allowSelection: true),
-      const GroupsPage(),
-      const EventsPage(),
-      ProfilePage(username: _currentUsername),
+      const HomePage(),           // Index 0 - Home
+      const MapPage(allowSelection: true), // Index 1 - Map
+      const GroupsPage(),         // Index 2 - Groups  
+      const EventsPage(),         // Index 3 - Events
+      const MessagesPage(),       // Index 4 - Messages
+      ProfilePage(username: profileUsername), // Index 5 - Profile
     ];
 
-    return MainWrapper(
+    // Debug için sayfa listesini kontrol et
+    print('=== SAYFA LİSTESİ ===');
+    for (int i = 0; i < pages.length; i++) {
+      print('Index $i: ${pages[i].runtimeType}');
+    }
+    print('====================');
+
+    return MainWrapperNew(
       pages: pages,
       navItems: NavigationItems.items,
     );

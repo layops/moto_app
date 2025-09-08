@@ -205,13 +205,24 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return;
     }
 
-    // Eğer ayarlar güncellendi ise sayfayı yenile
+    // Eğer ayarlar güncellendi ise grup verilerini yeniden yükle
     if (result == true) {
-      // Burada grup verilerini yeniden yükleyebiliriz
-      // Şimdilik sadece bir mesaj gösterelim
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Grup ayarları güncellendi')),
-      );
+      try {
+        final updatedGroupData = await _groupService.getGroupDetails(widget.groupId);
+        setState(() {
+          // widget.groupData'yi güncelle
+          widget.groupData.clear();
+          widget.groupData.addAll(updatedGroupData);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Grup ayarları güncellendi')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Grup verileri yenilenemedi: $e')),
+        );
+      }
     }
   }
 
@@ -471,6 +482,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
               height: 1.5,
             ),
+            textAlign: TextAlign.left,
           ),
         ],
       ),

@@ -24,13 +24,30 @@ class _MainWrapperState extends State<MainWrapper> {
     super.initState();
     _currentIndex = 0;
 
-    // Hata ayıklama için uzunlukları kontrol et
-    debugPrint('MainWrapper: NAV ITEMS COUNT: ${widget.navItems.length}');
-    debugPrint('MainWrapper: PAGES COUNT: ${widget.pages.length}');
+    // Debug için navigation yapısını göster
+    print("=== NAVIGATION INIT ===");
+    print("NavItems sayısı: ${widget.navItems.length}");
+    print("Pages sayısı: ${widget.pages.length}");
+    
+    for (int i = 0; i < widget.navItems.length; i++) {
+      print("NavItem $i: ${widget.navItems[i].label}");
+    }
+    
+    for (int i = 0; i < widget.pages.length; i++) {
+      print("Page $i: ${widget.pages[i].runtimeType}");
+    }
+    print("======================");
 
-    // Uzunluklar eşit değilse uyarı ver
+    // Uzunluklar eşit değilse uyarı ver ve güvenli indeks ayarla
     if (widget.navItems.length != widget.pages.length) {
       debugPrint('UYARI: NavItems ve Pages listeleri aynı uzunlukta değil!');
+      debugPrint('NavItems: ${widget.navItems.length}, Pages: ${widget.pages.length}');
+      
+      // Güvenli indeks ayarla
+      if (_currentIndex >= widget.pages.length) {
+        _currentIndex = widget.pages.length - 1;
+        debugPrint('Güvenli indeks ayarlandı: $_currentIndex');
+      }
     }
   }
 
@@ -38,12 +55,23 @@ class _MainWrapperState extends State<MainWrapper> {
     // Geçersiz indeks kontrolü ekleyin
     if (index < 0 || index >= widget.pages.length) {
       debugPrint("HATA: Geçersiz indeks: $index");
+      debugPrint("Geçerli indeks aralığı: 0-${widget.pages.length - 1}");
       return;
     }
 
-    // Hangi sayfaya gidildiğini debug konsolunda göster
-    debugPrint("TIKLANAN BUTON: ${widget.navItems[index].label}");
-    debugPrint("AÇILACAK SAYFA: ${widget.pages[index].runtimeType}");
+    // NavItems ve Pages listelerinin uzunluklarını kontrol et
+    if (index >= widget.navItems.length) {
+      debugPrint("HATA: NavItems listesinde geçersiz indeks: $index");
+      debugPrint("NavItems uzunluğu: ${widget.navItems.length}");
+      return;
+    }
+
+    // Debug için hangi butona tıklandığını ve hangi sayfanın açılacağını göster
+    print("=== NAVIGATION DEBUG ===");
+    print("Tıklanan buton index: $index");
+    print("Tıklanan buton: ${widget.navItems[index].label}");
+    print("Açılacak sayfa: ${widget.pages[index].runtimeType}");
+    print("========================");
 
     setState(() => _currentIndex = index);
   }

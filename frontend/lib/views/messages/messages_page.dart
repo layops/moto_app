@@ -1,37 +1,344 @@
 import 'package:flutter/material.dart';
+import '../../services/chat/chat_service.dart';
 
-class MessagesPage extends StatelessWidget {
+class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
 
   @override
+  State<MessagesPage> createState() => _MessagesPageState();
+}
+
+class _MessagesPageState extends State<MessagesPage> {
+  final ChatService _chatService = ChatService();
+  List<Conversation> _conversations = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConversations();
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      final conversations = await _chatService.getConversations();
+      setState(() {
+        _conversations = conversations;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      body: ListView.builder(
-        itemCount: 15,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-            child: ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.person),
-              ),
-              title: Text('User ${index + 1}'),
-              subtitle: const Text('Last message preview...'),
-              trailing: const Text('12:30 PM'),
-              onTap: () {
-                // Mesaj detayına git
-              },
-            ),
-          );
-        },
+      appBar: AppBar(
+        title: const Text('Mesajlar'),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              _showSearchDialog();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadConversations,
+          ),
+        ],
       ),
+      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'messages_fab',
-        child: const Icon(Icons.message),
         onPressed: () {
-          // Yeni mesaj oluştur
+          _showNewMessageDialog();
+        },
+        child: const Icon(Icons.message),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Hata',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.red[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadConversations,
+              child: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_conversations.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadConversations,
+      child: ListView.builder(
+        itemCount: _conversations.length,
+        itemBuilder: (context, index) {
+          final conversation = _conversations[index];
+          return _buildConversationTile(conversation);
         },
       ),
     );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.message_outlined,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Henüz mesajınız yok',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Yeni bir konuşma başlatın',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConversationTile(Conversation conversation) {
+    final theme = Theme.of(context);
+    final hasUnread = conversation.unreadCount > 0;
+    final lastMessage = conversation.lastMessage;
+    
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey[200]!,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              child: conversation.otherUser.profilePicture != null
+                  ? ClipOval(
+                      child: Image.network(
+                        conversation.otherUser.profilePicture!,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.person,
+                            color: theme.colorScheme.primary,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
+                      Icons.person,
+                      color: theme.colorScheme.primary,
+                    ),
+            ),
+            if (conversation.isOnline)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        title: Text(
+          conversation.otherUser.displayName,
+          style: TextStyle(
+            fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          lastMessage?.message ?? 'Henüz mesaj yok',
+          style: TextStyle(
+            color: hasUnread 
+                ? theme.colorScheme.onSurface 
+                : theme.colorScheme.onSurface.withOpacity(0.6),
+            fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (lastMessage != null)
+              Text(
+                _formatTime(lastMessage.timestamp),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: hasUnread 
+                      ? theme.colorScheme.primary 
+                      : theme.colorScheme.onSurface.withOpacity(0.5),
+                  fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            if (hasUnread) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  conversation.unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        onTap: () {
+          _openConversation(conversation);
+        },
+      ),
+    );
+  }
+
+  void _openConversation(Conversation conversation) {
+    // Konuşma detay sayfasına git
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${conversation.otherUser.displayName} konuşması açılıyor...'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+    // TODO: Chat detail sayfasına yönlendir
+  }
+
+  void _showNewMessageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Mesaj'),
+        content: const Text('Kullanıcı arama özelliği yakında eklenecek!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kullanıcı Ara'),
+        content: const Text('Kullanıcı arama özelliği yakında eklenecek!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} gün önce';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} saat önce';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} dakika önce';
+    } else {
+      return 'Şimdi';
+    }
   }
 }

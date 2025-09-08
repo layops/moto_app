@@ -352,6 +352,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    
+    // Debug mesajı
+    print('ProfilePage build() çağrıldı!');
 
     if (_isLoading) return _buildLoading();
     if (_errorMessage != null) return Scaffold(body: _buildError());

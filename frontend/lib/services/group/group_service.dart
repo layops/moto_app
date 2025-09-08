@@ -27,6 +27,13 @@ class GroupService {
     return response.data as List<dynamic>;
   }
 
+  /// Grup detaylarını getir
+  Future<Map<String, dynamic>> getGroupDetails(int groupId) async {
+    final token = await _authService.getToken();
+    final response = await _dio.get('groups/$groupId/', options: _authOptions(token));
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<void> createGroup(String name, String description, {File? profilePicture}) async {
     final token = await _authService.getToken();
     
@@ -436,13 +443,21 @@ class GroupService {
   Future<void> updateGroup(int groupId, String name, String description) async {
     final token = await _authService.getToken();
     
+    // FormData oluştur
+    FormData formData = FormData.fromMap({
+      'name': name,
+      'description': description,
+    });
+    
     final response = await _dio.patch(
       'groups/$groupId/',
-      data: {
-        'name': name,
-        'description': description,
-      },
-      options: _authOptions(token),
+      data: formData,
+      options: Options(
+        headers: {
+          'Authorization': 'Token $token',
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
     );
     
     if (response.statusCode != 200) {

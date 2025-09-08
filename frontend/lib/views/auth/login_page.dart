@@ -9,12 +9,13 @@ import 'package:motoapp_frontend/views/auth/widgets/auth_logo.dart';
 import 'package:motoapp_frontend/views/auth/widgets/auth_text_field.dart';
 import 'package:motoapp_frontend/views/auth/widgets/password_field.dart';
 import 'package:motoapp_frontend/views/auth/widgets/social_button.dart';
-import 'package:motoapp_frontend/widgets/navigations/main_wrapper.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
 import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -51,11 +52,12 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final pages = [
-          const HomePage(),
-          const MapPage(),
-          const GroupsPage(),
-          const EventsPage(),
-          ProfilePage(username: username),
+          const HomePage(),           // Index 0 - Home
+          const MapPage(allowSelection: true), // Index 1 - Map
+          const GroupsPage(),         // Index 2 - Groups  
+          const EventsPage(),         // Index 3 - Events
+          const MessagesPage(),       // Index 4 - Messages
+          ProfilePage(username: username), // Index 5 - Profile
         ];
 
         // Başarılı girişten sonra ana sayfaya yönlendirme ve tüm geçmiş rotaları temizleme
@@ -63,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => MainWrapper(
+              builder: (context) => MainWrapperNew(
                 pages: pages,
                 navItems: NavigationItems.items,
               ),
