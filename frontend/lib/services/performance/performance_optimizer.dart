@@ -64,9 +64,9 @@ class PerformanceOptimizer {
       }
       
       // Isolate'te garbage collection
-      Isolate.current.pause();
+      final pauseToken = Isolate.current.pause();
       Future.delayed(const Duration(milliseconds: 100), () {
-        Isolate.current.resume();
+        Isolate.current.resume(pauseToken);
       });
       
     } catch (e) {

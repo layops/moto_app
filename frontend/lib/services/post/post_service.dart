@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config.dart';
 import '../service_locator.dart';
+import '../http/api_client.dart';
 
 class PostService {
   // ServiceLocator'dan ApiClient kullan

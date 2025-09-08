@@ -103,7 +103,7 @@ class LocalStorage {
     return DateTime.now().difference(timestamp) < _cacheExpiry;
   }
   
-  void clearMemoryCache() {
+  Future<void> clearMemoryCache() async {
     _memoryCache.clear();
     _cacheTimestamps.clear();
   }
