@@ -9,7 +9,7 @@ class PostService {
   PostService({Dio? dio})
       : _dio = dio ??
             Dio(BaseOptions(
-              baseUrl: kBaseUrl,
+              baseUrl: '$kBaseUrl/api/',
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
               followRedirects: true,

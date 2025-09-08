@@ -7,7 +7,7 @@ import '../../config.dart';
 import '../service_locator.dart';
 
 class NotificationsService {
-  final String _restApiBaseUrl = kBaseUrl;
+  final String _restApiBaseUrl = '$kBaseUrl/api';
   final String _wsApiUrl =
       kBaseUrl.replaceFirst('https', 'ws') + 'ws/notifications/';
 

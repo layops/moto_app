@@ -11,7 +11,7 @@ class UserService {
   /// Kullanıcı detaylarını getir (ID ile)
   Future<Map<String, dynamic>> fetchUser(int userId) async {
     try {
-      final response = await _apiClient.get('/users/$userId');
+      final response = await _apiClient.get('users/$userId');
       if (response.statusCode == 200) {
         return response.data as Map<String, dynamic>;
       }

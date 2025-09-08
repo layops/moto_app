@@ -4,7 +4,7 @@ import '../../config.dart';
 import '../service_locator.dart';
 
 class ChatService {
-  final String _baseUrl = kBaseUrl;
+  final String _baseUrl = '$kBaseUrl/api';
 
   Future<String?> _getToken() async {
     return await ServiceLocator.token.getToken();
@@ -19,7 +19,7 @@ class ChatService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/chat/private-messages/'),
+        Uri.parse('$_baseUrl/chat/private-messages/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ class ChatService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/chat/conversations/'),
+        Uri.parse('$_baseUrl/chat/conversations/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ class ChatService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/chat/private-messages/$userId/'),
+        Uri.parse('$_baseUrl/chat/private-messages/$userId/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ class ChatService {
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/chat/private-messages/'),
+        Uri.parse('$_baseUrl/chat/private-messages/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ class ChatService {
 
     try {
       final response = await http.patch(
-        Uri.parse('$_baseUrl/api/chat/private-messages/$messageId/mark-read/'),
+        Uri.parse('$_baseUrl/chat/private-messages/$messageId/mark-read/'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ class ChatService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/users/search/?q=$query'),
+        Uri.parse('$_baseUrl/users/search/?q=$query'),
         headers: {
           'Authorization': 'Token $token',
           'Content-Type': 'application/json',

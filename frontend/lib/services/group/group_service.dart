@@ -10,7 +10,7 @@ class GroupService {
   GroupService({Dio? dio, required AuthService authService})
       : _dio = dio ??
             Dio(BaseOptions(
-              baseUrl: kBaseUrl,
+              baseUrl: '$kBaseUrl/api/',
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
             )),

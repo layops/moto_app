@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../auth/auth_service.dart';
+import '../../config.dart';
 
 class EventService {
   final AuthService authService;
@@ -18,7 +19,7 @@ class EventService {
       }
       
       final response = await _dio.get(
-        'https://spiride.onrender.com/api/events/',
+        '$kBaseUrl/api/events/',
         options: Options(
           headers: {
             'Authorization': 'Token $token',
@@ -58,7 +59,7 @@ class EventService {
       }
       
       final response = await _dio.get(
-        'https://spiride.onrender.com/api/events/',
+        '$kBaseUrl/api/events/',
         queryParameters: {'group': groupId},
         options: Options(
           headers: {
@@ -135,7 +136,7 @@ class EventService {
       }
 
       final response = await _dio.post(
-        'https://spiride.onrender.com/api/events/',
+        '$kBaseUrl/api/events/',
         data: formData,
         options: Options(
           headers: {
@@ -166,7 +167,7 @@ class EventService {
     try {
       final token = await authService.getToken();
       final response = await _dio.post(
-        'https://spiride.onrender.com/api/events/$eventId/join/',
+        '$kBaseUrl/api/events/$eventId/join/',
         options: Options(
           headers: {
             'Authorization': 'Token $token',
@@ -183,7 +184,7 @@ class EventService {
     try {
       final token = await authService.getToken();
       final response = await _dio.get(
-        'https://spiride.onrender.com/api/events/$eventId/participants/',
+        '$kBaseUrl/api/events/$eventId/participants/',
         options: Options(headers: {'Authorization': 'Token $token'}),
       );
       return response.data;
@@ -196,7 +197,7 @@ class EventService {
     try {
       final token = await authService.getToken();
       final response = await _dio.post(
-        'https://spiride.onrender.com/api/events/$eventId/leave/',
+        '$kBaseUrl/api/events/$eventId/leave/',
         options: Options(
           headers: {
             'Authorization': 'Token $token',
