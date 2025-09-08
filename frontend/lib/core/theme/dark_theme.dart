@@ -25,5 +25,10 @@ class DarkTheme {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: AppColorSchemes.primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 6.0,
+        ),
       );
 }

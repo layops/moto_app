@@ -36,12 +36,12 @@ class ModernCard extends StatelessWidget {
         boxShadow: showShadow
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: theme.colorScheme.shadow.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: theme.colorScheme.shadow.withOpacity(0.02),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -93,15 +93,15 @@ class GlassCard extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(opacity),
+        color: Theme.of(context).colorScheme.surface.withOpacity(opacity),
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),

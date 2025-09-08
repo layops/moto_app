@@ -130,7 +130,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               label: Text(
                 category['label']!,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[700],
+                  color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   fontSize: 14.sp,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -144,7 +144,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   _fetchLeaderboardData();
                 }
               },
-              backgroundColor: Colors.grey[200],
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
               selectedColor: Theme.of(context).primaryColor,
               checkmarkColor: Colors.white,
             ),

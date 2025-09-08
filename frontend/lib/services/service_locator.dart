@@ -10,6 +10,7 @@ import 'follow/follow_service.dart';
 import 'post/post_service.dart';
 import 'event/event_service.dart'; // Yeni eklenen import
 import 'notifications/notifications_service.dart';
+import 'search/search_service.dart';
 import '../config/supabase_config.dart';
 
 class ServiceLocator {
@@ -32,6 +33,7 @@ class ServiceLocator {
   late final PostService _postService;
   late final EventService _eventService; // Yeni eklenen service
   late final NotificationsService _notificationService;
+  late final SearchService _searchService;
   late final supabase_client.SupabaseClient _supabaseClient;
 
   // Private constructor
@@ -107,6 +109,9 @@ class ServiceLocator {
       // 10. Initialize notification service
       instance._notificationService = NotificationsService();
 
+      // 11. Initialize search service
+      instance._searchService = SearchService(instance._localStorage);
+
       _isInitialized = true;
     } catch (e, stackTrace) {
       _isInitialized = false;
@@ -148,6 +153,7 @@ class ServiceLocator {
   static EventService get event => _instance._eventService; // Yeni getter
   static NotificationsService get notification =>
       _instance._notificationService;
+  static SearchService get search => _instance._searchService;
   static LocalStorage get storage => _instance._localStorage;
 
   // Supabase helper

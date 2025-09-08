@@ -76,20 +76,32 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Widget _buildErrorWidget() {
+    final theme = Theme.of(context);
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(
+              Icons.error_outline, 
+              size: 64, 
+              color: theme.colorScheme.error,
+            ),
             const SizedBox(height: 16),
-            Text(_error!,
-                style: const TextStyle(color: Colors.red, fontSize: 18),
-                textAlign: TextAlign.center),
+            Text(
+              _error!,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
-                onPressed: _loadGroups, child: const Text('Tekrar Dene')),
+              onPressed: _loadGroups, 
+              child: const Text('Tekrar Dene'),
+            ),
             if (_error!.contains('oturum') || _error!.contains('giriş'))
               ElevatedButton(
                 onPressed: () {
@@ -108,17 +120,31 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.group_add, size: 64, color: Colors.grey),
+          Icon(
+            Icons.group_add, 
+            size: 64, 
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
+          ),
           const SizedBox(height: 16),
-          const Text('Henüz hiç grubunuz yok',
-              style: TextStyle(fontSize: 18, color: Colors.grey)),
+          Text(
+            'Henüz hiç grubunuz yok',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('İlk grubunuzu oluşturarak başlayın!',
-              style: TextStyle(color: Colors.grey)),
+          Text(
+            'İlk grubunuzu oluşturarak başlayın!',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
@@ -144,9 +170,6 @@ class _GroupsPageState extends State<GroupsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gruplar'),
-        backgroundColor: AppColorSchemes.surfaceColor,
-        foregroundColor: AppColorSchemes.textPrimary,
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -179,9 +202,13 @@ class _GroupsPageState extends State<GroupsPage> {
                           groups: _discoverGroups,
                           authService: _authService,
                           isMyGroupsSection: false,
-                          emptyStateWidget: const Center(
-                            child: Text('Keşfedilecek grup bulunamadı',
-                                style: TextStyle(color: Colors.grey)),
+                          emptyStateWidget: Center(
+                            child: Text(
+                              'Keşfedilecek grup bulunamadı',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -191,8 +218,6 @@ class _GroupsPageState extends State<GroupsPage> {
       floatingActionButton: FloatingActionButton(
         // Benzersiz heroTag eklendi
         heroTag: 'groups_fab',
-        backgroundColor: AppColorSchemes.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
           Navigator.push(
             context,
@@ -204,6 +229,7 @@ class _GroupsPageState extends State<GroupsPage> {
             ),
           );
         },
+        child: const Icon(Icons.add),
       ),
     );
   }

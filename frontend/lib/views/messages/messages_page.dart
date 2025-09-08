@@ -75,6 +75,8 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget _buildBody() {
+    final theme = Theme.of(context);
+    
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -89,24 +91,22 @@ class _MessagesPageState extends State<MessagesPage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[300],
+              color: theme.colorScheme.error.withOpacity(0.7),
             ),
             const SizedBox(height: 16),
             Text(
               'Hata',
-              style: TextStyle(
-                fontSize: 18,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.error,
                 fontWeight: FontWeight.bold,
-                color: Colors.red[700],
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red[600],
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 16),
@@ -136,6 +136,8 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -143,23 +145,21 @@ class _MessagesPageState extends State<MessagesPage> {
           Icon(
             Icons.message_outlined,
             size: 80,
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurface.withOpacity(0.4),
           ),
           const SizedBox(height: 16),
           Text(
             'Henüz mesajınız yok',
-            style: TextStyle(
-              fontSize: 18,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Yeni bir konuşma başlatın',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
         ],
@@ -176,7 +176,7 @@ class _MessagesPageState extends State<MessagesPage> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey[200]!,
+            color: theme.colorScheme.outline.withOpacity(0.3),
             width: 0.5,
           ),
         ),
@@ -216,9 +216,9 @@ class _MessagesPageState extends State<MessagesPage> {
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: Colors.green,
+                    color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: theme.colorScheme.surface, width: 2),
                   ),
                 ),
               ),
@@ -267,8 +267,8 @@ class _MessagesPageState extends State<MessagesPage> {
                 ),
                 child: Text(
                   conversation.unreadCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),

@@ -179,7 +179,7 @@ class _EventsPageState extends State<EventsPage> {
                                 Icon(
                                   Icons.error_outline,
                                   size: 64,
-                                  color: Colors.red.shade300,
+                                  color: Theme.of(context).colorScheme.error.withOpacity(0.7),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(

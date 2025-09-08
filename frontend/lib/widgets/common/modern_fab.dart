@@ -55,32 +55,15 @@ class ModernFAB extends StatelessWidget {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppColorSchemes.primaryGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColorSchemes.primaryColor.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        child: Icon(
-          icon,
-          size: 28,
-        ),
+    return FloatingActionButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      backgroundColor: AppColorSchemes.primaryColor,
+      foregroundColor: Colors.white,
+      elevation: 6.0,
+      child: Icon(
+        icon,
+        size: 28,
       ),
     );
   }

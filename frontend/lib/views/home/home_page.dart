@@ -5,6 +5,7 @@ import '../../services/service_locator.dart';
 import '../post/create_post_page.dart';
 import '../../widgets/navigations/navigation_items.dart';
 import '../notifications/notifications_page.dart';
+import '../search/search_page.dart';
 import '../../widgets/common/modern_fab.dart';
 
 class HomePage extends StatefulWidget {
@@ -111,6 +112,13 @@ class _HomePageState extends State<HomePage> {
     _fetchUnreadNotifications();
   }
 
+  void _onSearchPressed() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +130,11 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _onSearchPressed,
+            tooltip: 'Arama',
+          ),
+          IconButton(
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_none),
@@ -131,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       padding: const EdgeInsets.all(1),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       constraints: const BoxConstraints(
@@ -140,8 +153,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Text(
                         unreadNotificationsCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onError,
                           fontSize: 8,
                         ),
                         textAlign: TextAlign.center,

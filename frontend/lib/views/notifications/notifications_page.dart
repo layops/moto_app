@@ -195,7 +195,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               icon: const Icon(Icons.done_all, size: 18),
               label: const Text('Tümünü Okundu'),
               style: TextButton.styleFrom(
-                foregroundColor: unreadCount > 0 ? Colors.white : Colors.grey[400],
+                foregroundColor: unreadCount > 0 ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               ),
             ),
           IconButton(
