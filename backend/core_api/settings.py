@@ -76,14 +76,31 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    # PostgreSQL için optimize edilmiş ayarlar
+    db_config = dj_database_url.config(default=DATABASE_URL)
+    
+    # Connection pooling ve performans ayarları
+    if 'postgresql' in DATABASE_URL:
+        db_config.update({
+            'CONN_MAX_AGE': 600,  # 10 dakika connection pooling
+            'CONN_HEALTH_CHECKS': True,
+            'OPTIONS': {
+                'connect_timeout': 10,
+                'options': '-c default_transaction_isolation=read committed'
+            }
+        })
+    
     DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL)
+        'default': db_config
     }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20,
+            }
         }
     }
 
@@ -224,10 +241,16 @@ CACHE_TIMEOUTS = {
     'notifications': 60,  # 1 minute
 }
 
-# Database query optimization
-DATABASES['default']['OPTIONS'] = {
-    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-}
+# Database query optimization - ayarlar yukarıda tanımlandı
+
+# Django ORM optimizasyonları
+if not DEBUG:
+    # Production'da query logging'i kapat
+    LOGGING['loggers']['django.db.backends'] = {
+        'level': 'WARNING',
+        'handlers': ['console'],
+        'propagate': False,
+    }
 
 # Static files optimization
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
