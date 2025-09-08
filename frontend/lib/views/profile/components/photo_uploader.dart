@@ -100,12 +100,35 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
               : 'Kapak fotoğrafı başarıyla güncellendi',
           isError: false,
         );
+        
+        // Başarılı yükleme sonrası dialog'u kapat
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } else {
+        _showMessage(
+          widget.type == PhotoType.profile
+              ? 'Profil fotoğrafı yükleme hatası: ${response.statusCode}'
+              : 'Kapak fotoğrafı yükleme hatası: ${response.statusCode}',
+        );
       }
     } catch (e) {
+      String errorMessage = 'Bilinmeyen bir hata oluştu';
+      
+      if (e.toString().contains('Oturum süresi doldu')) {
+        errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
+      } else if (e.toString().contains('Dosya boyutu')) {
+        errorMessage = 'Dosya boyutu çok büyük. Lütfen daha küçük bir resim seçin.';
+      } else if (e.toString().contains('Geçersiz dosya formatı')) {
+        errorMessage = 'Desteklenmeyen dosya formatı. JPEG, PNG, GIF veya WebP kullanın.';
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin.';
+      }
+      
       _showMessage(
         widget.type == PhotoType.profile
-            ? 'Profil fotoğrafı yükleme hatası: $e'
-            : 'Kapak fotoğrafı yükleme hatası: $e',
+            ? 'Profil fotoğrafı yükleme hatası: $errorMessage'
+            : 'Kapak fotoğrafı yükleme hatası: $errorMessage',
       );
     } finally {
       if (mounted) {

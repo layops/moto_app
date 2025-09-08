@@ -8,8 +8,6 @@ import 'components/profile_header.dart';
 import 'components/profile_tab_bar.dart';
 import 'tabs/posts_tab.dart';
 import 'tabs/media_tab.dart';
-import 'tabs/followers_tab.dart';
-import 'tabs/following_tab.dart';
 import 'edit/edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -27,8 +25,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _profileData;
   List<dynamic>? _posts;
   List<dynamic>? _media;
-  List<dynamic>? _followers;
-  List<dynamic>? _following;
   String? _currentUsername;
   bool _isLoading = true;
   String? _errorMessage;
@@ -81,27 +77,30 @@ class _ProfilePageState extends State<ProfilePage> {
       final currentUsername = await ServiceLocator.user.getCurrentUsername();
       final isCurrentUser = _currentUsername == currentUsername;
 
+      // Önce profil verilerini yükle
+      final profileData = await _loadProfileData();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _profileData = profileData;
+        _isCurrentUser = isCurrentUser;
+        _followerCount = profileData?['followers_count'] ?? 0;
+        _isFollowing = profileData?['is_following'] ?? false;
+        _isLoading = false;
+      });
+
+      // Sonra diğer verileri paralel olarak yükle
       final results = await Future.wait([
-        _loadProfileData(),
         _loadPosts(),
         _loadMedia(),
-        _loadFollowers(),
-        _loadFollowing(),
       ]);
 
       if (!mounted) return;
 
       setState(() {
-        _profileData = results[0] as Map<String, dynamic>?;
-        _posts = results[1] as List<dynamic>? ?? [];
-        _media = results[2] as List<dynamic>? ?? [];
-        _followers = results[3] as List<dynamic>? ?? [];
-        _following = results[4] as List<dynamic>? ?? [];
-        _isCurrentUser = isCurrentUser;
-        _isLoading = false;
-        _followerCount = _followers?.length ?? 0;
-        _isFollowing =
-            _followers?.any((f) => f['username'] == currentUsername) == true;
+        _posts = results[0] as List<dynamic>? ?? [];
+        _media = results[1] as List<dynamic>? ?? [];
       });
     } catch (e) {
       if (mounted) {
@@ -141,23 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<List<dynamic>> _loadFollowers() async {
-    try {
-      return await ServiceLocator.user.getFollowers(_currentUsername!);
-    } catch (e) {
-      debugPrint('Takipçiler yüklenirken hata: $e');
-      return [];
-    }
-  }
-
-  Future<List<dynamic>> _loadFollowing() async {
-    try {
-      return await ServiceLocator.user.getFollowing(_currentUsername!);
-    } catch (e) {
-      debugPrint('Takip edilenler yüklenirken hata: $e');
-      return [];
-    }
-  }
 
   void _signOut(BuildContext context) async {
     try {
@@ -396,12 +378,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 coverFile: _coverFile, // Yeni eklenen
                 coverUrl: _profileData?['cover_photo'],
                 followerCount: _followerCount,
-                followingCount: _following?.length ?? 0,
+                followingCount: _profileData?['following_count'] ?? 0,
                 username: _currentUsername!,
                 displayName: _profileData?['display_name'] ?? _currentUsername!,
                 bio: _profileData?['bio'] ?? '',
-                joinDate: _profileData?['date_joined'] != null
-                    ? '${DateTime.parse(_profileData!['date_joined']).year} yılında katıldı'
+                joinDate: _profileData?['join_date'] != null
+                    ? '${_profileData!['join_date']} tarihinde katıldı'
                     : '',
                 website: _profileData?['website'] ?? '',
                 isVerified: _profileData?['is_verified'] ?? false,
@@ -430,8 +412,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     Tab(text: 'Yanıtlar'),
                     Tab(text: 'Medya'),
                     Tab(text: 'Beğeniler'),
-                    Tab(text: 'Takipçiler'),
-                    Tab(text: 'Takip Edilenler'),
                   ],
                 ),
               ),
@@ -450,8 +430,6 @@ class _ProfilePageState extends State<ProfilePage> {
               MediaTab(media: _media ?? []),
               Center(
                   child: Text('Beğeniler', style: theme.textTheme.bodyLarge)),
-              FollowersTab(followers: _followers ?? []),
-              FollowingTab(following: _following ?? []),
             ],
           ),
         ),

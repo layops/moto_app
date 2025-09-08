@@ -49,11 +49,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       try {
         final updatedData = {
-          'display_name': _displayNameController.text,
-          'bio': _bioController.text,
-          'motorcycle_model': _motorcycleModelController.text,
-          'location': _locationController.text,
-          'website': _websiteController.text,
+          'display_name': _displayNameController.text.trim(),
+          'bio': _bioController.text.trim(),
+          'motorcycle_model': _motorcycleModelController.text.trim(),
+          'location': _locationController.text.trim(),
+          'website': _websiteController.text.trim(),
         };
 
         final response =
@@ -107,6 +107,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return null;
   }
 
+  String? _validateWebsite(String? value) {
+    if (value == null || value.isEmpty) return null;
+    
+    final urlPattern = RegExp(
+      r'^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$',
+      caseSensitive: false,
+    );
+    
+    if (!urlPattern.hasMatch(value)) {
+      return 'Geçerli bir URL girin (örn: https://example.com)';
+    }
+    return null;
+  }
+
+  String? _validateBio(String? value) {
+    if (value == null || value.isEmpty) return null;
+    if (value.length > 160) {
+      return 'Bio 160 karakterden uzun olamaz';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,10 +177,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               TextFormField(
                 controller: _bioController,
                 maxLines: 3,
+                maxLength: 160,
                 decoration: const InputDecoration(
                   hintText: 'Kendinizden bahsedin',
                   border: OutlineInputBorder(),
+                  counterText: '',
                 ),
+                validator: _validateBio,
               ),
               const SizedBox(height: 16),
               const Text(
@@ -198,6 +223,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   hintText: 'Web siteniz veya sosyal medya linki',
                   border: OutlineInputBorder(),
                 ),
+                validator: _validateWebsite,
               ),
               const SizedBox(height: 24),
               SizedBox(

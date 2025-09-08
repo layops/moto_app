@@ -61,6 +61,8 @@ class UserSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(source='first_name', required=False, allow_blank=True)
     profile_photo_url = serializers.SerializerMethodField()
     cover_photo_url = serializers.SerializerMethodField()
+    join_date = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -69,7 +71,7 @@ class UserSerializer(serializers.ModelSerializer):
             'cover_picture', 'cover_photo_url',
             'followers_count', 'following_count', 'display_name',
             'bio', 'motorcycle_model', 'location', 'website',
-            'phone_number', 'address'
+            'phone_number', 'address', 'join_date', 'is_following'
         ]
         extra_kwargs = {
             'username': {'read_only': True},
@@ -111,6 +113,21 @@ class UserSerializer(serializers.ModelSerializer):
             media_url = getattr(settings, 'MEDIA_URL', '/media/')
             return f"{base_url}{media_url}{obj.cover_picture}"
         return None
+
+    def get_join_date(self, obj):
+        """
+        Kullanıcının katılım tarihini döner
+        """
+        return obj.date_joined.strftime('%B %Y')
+
+    def get_is_following(self, obj):
+        """
+        Mevcut kullanıcının bu kullanıcıyı takip edip etmediğini döner
+        """
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(id=obj.id).exists()
+        return False
 
     def to_representation(self, instance):
         """
