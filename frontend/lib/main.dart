@@ -18,6 +18,7 @@ import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
 import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/leaderboard/leaderboard_page.dart';
 import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/views/notifications/notifications_page.dart';
@@ -203,8 +204,9 @@ class _MotoAppState extends State<MotoApp> {
       const MapPage(allowSelection: true), // Index 1 - Map
       const GroupsPage(),         // Index 2 - Groups  
       const EventsPage(),         // Index 3 - Events
-      const MessagesPage(),       // Index 4 - Messages
-      ProfilePage(username: profileUsername), // Index 5 - Profile
+      const LeaderboardPage(),    // Index 4 - Leaderboard
+      const MessagesPage(),       // Index 5 - Messages
+      ProfilePage(username: profileUsername), // Index 6 - Profile
     ];
 
     // Debug için sayfa listesini kontrol et
