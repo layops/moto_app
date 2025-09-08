@@ -76,23 +76,13 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    # PostgreSQL için optimize edilmiş ayarlar
-    db_config = dj_database_url.config(default=DATABASE_URL)
-    
-    # Connection pooling ve performans ayarları
-    if 'postgresql' in DATABASE_URL:
-        # Render.com için optimize edilmiş ayarlar
-        db_config.update({
-            'CONN_MAX_AGE': 600,  # 10 dakika connection pooling
-            'CONN_HEALTH_CHECKS': True,
-            'OPTIONS': {
-                'connect_timeout': 10,
-                'sslmode': 'require',  # Render.com için SSL gerekli
-            }
-        })
-    
+    # Render.com PostgreSQL için basit ve güvenilir ayarlar
     DATABASES = {
-        'default': db_config
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
     DATABASES = {
@@ -244,14 +234,7 @@ CACHE_TIMEOUTS = {
 
 # Database query optimization - ayarlar yukarıda tanımlandı
 
-# Django ORM optimizasyonları
-if not DEBUG:
-    # Production'da query logging'i kapat
-    LOGGING['loggers']['django.db.backends'] = {
-        'level': 'WARNING',
-        'handlers': ['console'],
-        'propagate': False,
-    }
+# Django ORM optimizasyonları - production'da query logging kapatılır
 
 # Static files optimization
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
