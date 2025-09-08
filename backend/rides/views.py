@@ -4,6 +4,8 @@ from rest_framework import viewsets, status, permissions # permissions ekledik
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+import requests
 
 from .models import Ride, RideRequest # <-- RideRequest'i import edin
 from .serializers import RideSerializer, RideRequestSerializer # <-- RideRequestSerializer'ı import edin
@@ -231,3 +233,127 @@ class RideViewSet(viewsets.ModelViewSet):
         user_requests = RideRequest.objects.filter(requester=request.user).order_by('-created_at')
         serializer = RideRequestSerializer(user_requests, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete_ride(self, request, pk=None):
+        """
+        Yolculuğu tamamla ve puan/başarım ver
+        URL: /api/rides/<ride_id>/complete_ride/
+        Body: {
+            "distance": 150,  # km
+            "max_speed": 95,  # km/h
+            "duration": 120   # dakika
+        }
+        """
+        ride = get_object_or_404(Ride, pk=pk)
+        user = request.user
+        
+        # Sadece yolculuk sahibi tamamlayabilir
+        if ride.owner != user:
+            return Response(
+                {"detail": "Sadece yolculuk sahibi yolculuğu tamamlayabilir."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Yolculuk zaten tamamlanmış mı kontrol et
+        if hasattr(ride, 'completed_at') and ride.completed_at:
+            return Response(
+                {"detail": "Bu yolculuk zaten tamamlanmış."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Yolculuk verilerini al
+        distance = request.data.get('distance', 0)
+        max_speed = request.data.get('max_speed', 0)
+        duration = request.data.get('duration', 0)
+        
+        # Yolculuğu tamamla
+        ride.end_time = timezone.now()
+        ride.save()
+        
+        # Puan ve başarım sistemi
+        self._award_points_and_achievements(user, distance, max_speed, duration)
+        
+        serializer = self.get_serializer(ride)
+        return Response(
+            {
+                "detail": "Yolculuk başarıyla tamamlandı! Puanlarınız ve başarımlarınız güncellendi.",
+                "ride": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    def _award_points_and_achievements(self, user, distance, max_speed, duration):
+        """Kullanıcıya puan ve başarım ver"""
+        from gamification.models import Score
+        from gamification.views import UpdateAchievementProgressView
+        
+        # Temel yolculuk puanı (mesafe bazlı)
+        base_points = max(10, int(distance * 0.5))  # En az 10 puan, km başına 0.5 puan
+        
+        # Hız bonusu
+        if max_speed > 100:
+            speed_bonus = int((max_speed - 100) * 0.2)
+            base_points += speed_bonus
+        
+        # Süre bonusu (çok hızlı tamamlama)
+        if duration < 60:  # 1 saatten az
+            time_bonus = 20
+            base_points += time_bonus
+        
+        # Puan ver
+        Score.objects.create(
+            user=user,
+            points=base_points,
+            activity_name=f"Ride completed: {distance}km, {max_speed}km/h"
+        )
+        
+        # Başarım ilerlemelerini güncelle
+        self._update_achievement_progress(user, distance, max_speed)
+    
+    def _update_achievement_progress(self, user, distance, max_speed):
+        """Başarım ilerlemelerini güncelle"""
+        from gamification.models import Achievement, UserAchievement
+        
+        # Yolculuk sayısı başarımı
+        ride_count_achievements = Achievement.objects.filter(
+            achievement_type='ride_count',
+            is_active=True
+        )
+        for achievement in ride_count_achievements:
+            user_achievement, created = UserAchievement.objects.get_or_create(
+                user=user,
+                achievement=achievement,
+                defaults={'progress': 0}
+            )
+            user_achievement.progress += 1
+            user_achievement.save()
+        
+        # Mesafe başarımı
+        distance_achievements = Achievement.objects.filter(
+            achievement_type='distance',
+            is_active=True
+        )
+        for achievement in distance_achievements:
+            user_achievement, created = UserAchievement.objects.get_or_create(
+                user=user,
+                achievement=achievement,
+                defaults={'progress': 0}
+            )
+            user_achievement.progress += distance
+            user_achievement.save()
+        
+        # Hız başarımı
+        speed_achievements = Achievement.objects.filter(
+            achievement_type='speed',
+            is_active=True
+        )
+        for achievement in speed_achievements:
+            user_achievement, created = UserAchievement.objects.get_or_create(
+                user=user,
+                achievement=achievement,
+                defaults={'progress': 0}
+            )
+            # Hız için maksimum değeri güncelle
+            user_achievement.progress = max(user_achievement.progress, max_speed)
+            user_achievement.save()

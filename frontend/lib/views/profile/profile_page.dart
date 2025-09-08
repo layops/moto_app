@@ -8,6 +8,8 @@ import 'components/profile_header.dart';
 import 'components/profile_tab_bar.dart';
 import 'tabs/posts_tab.dart';
 import 'tabs/media_tab.dart';
+import 'tabs/achievements_tab.dart';
+import 'tabs/info_tab.dart';
 import 'edit/edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -344,21 +346,59 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       key: _scaffoldKey,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(_currentUsername!),
-        backgroundColor: colorScheme.surface,
+        title: Text(
+          _currentUsername!,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                colorScheme.surface.withOpacity(0.95),
+                colorScheme.surface.withOpacity(0.8),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.7, 1.0],
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-              icon: const Icon(Icons.refresh),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.refresh_rounded),
               onPressed: _loadProfile,
-              tooltip: 'Yenile'),
+              tooltip: 'Yenile',
+            ),
+          ),
           if (_isCurrentUser)
-            IconButton(
-                icon: const Icon(Icons.edit),
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.edit_rounded),
                 onPressed: _openEditProfile,
-                tooltip: 'Profili Düzenle'),
+                tooltip: 'Profili Düzenle',
+                color: colorScheme.primary,
+              ),
+            ),
         ],
       ),
       drawer: _isCurrentUser
@@ -367,73 +407,180 @@ class _ProfilePageState extends State<ProfilePage> {
               profileData: _profileData ?? {},
             )
           : null,
-      body: DefaultTabController(
-        length: 6,
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverToBoxAdapter(
-              child: ProfileHeader(
-                avatarFile: _avatarFile,
-                avatarUrl: _profileData?['profile_photo'],
-                coverFile: _coverFile, // Yeni eklenen
-                coverUrl: _profileData?['cover_photo'],
-                followerCount: _followerCount,
-                followingCount: _profileData?['following_count'] ?? 0,
-                username: _currentUsername!,
-                displayName: _profileData?['display_name'] ?? _currentUsername!,
-                bio: _profileData?['bio'] ?? '',
-                joinDate: _profileData?['join_date'] != null
-                    ? '${_profileData!['join_date']} tarihinde katıldı'
-                    : '',
-                website: _profileData?['website'] ?? '',
-                isVerified: _profileData?['is_verified'] ?? false,
-                isCurrentUser: _isCurrentUser,
-                isFollowing: _isFollowing,
-                isFollowLoading: _isFollowLoading,
-                onEditAvatar: _isCurrentUser
-                    ? _showAvatarUploadDialog
-                    : null, // Callback güncellendi
-                onEditCover: _isCurrentUser
-                    ? _showCoverUploadDialog
-                    : null, // Yeni eklenen
-                onFollow: _isCurrentUser ? null : _toggleFollow,
-              ),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: ProfileTabBarDelegate(
-                TabBar(
-                  isScrollable: true,
-                  indicatorColor: colorScheme.primary,
-                  labelColor: colorScheme.primary,
-                  unselectedLabelColor: colorScheme.onSurface.withOpacity(0.5),
-                  tabs: const [
-                    Tab(text: 'Gönderiler'),
-                    Tab(text: 'Yanıtlar'),
-                    Tab(text: 'Medya'),
-                    Tab(text: 'Beğeniler'),
-                  ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.3),
+            ],
+          ),
+        ),
+        child: DefaultTabController(
+          length: 5,
+          child: CustomScrollView(
+            slivers: [
+              // Profile Header
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 100), // AppBar için boşluk
+                  child: ProfileHeader(
+                    avatarFile: _avatarFile,
+                    avatarUrl: _profileData?['profile_photo'],
+                    coverFile: _coverFile,
+                    coverUrl: _profileData?['cover_photo'],
+                    followerCount: _followerCount,
+                    followingCount: _profileData?['following_count'] ?? 0,
+                    username: _currentUsername!,
+                    displayName: _profileData?['display_name'] ?? _currentUsername!,
+                    bio: _profileData?['bio'] ?? '',
+                    joinDate: _profileData?['join_date'] != null
+                        ? '${_profileData!['join_date']} tarihinde katıldı'
+                        : '',
+                    website: _profileData?['website'] ?? '',
+                    isVerified: _profileData?['is_verified'] ?? false,
+                    isCurrentUser: _isCurrentUser,
+                    isFollowing: _isFollowing,
+                    isFollowLoading: _isFollowLoading,
+                    onEditAvatar: _isCurrentUser
+                        ? _showAvatarUploadDialog
+                        : null,
+                    onEditCover: _isCurrentUser
+                        ? _showCoverUploadDialog
+                        : null,
+                    onFollow: _isCurrentUser ? null : _toggleFollow,
+                  ),
                 ),
               ),
-            ),
-          ],
-          body: TabBarView(
-            children: [
-              PostsTab(
-                posts: _posts ?? [],
-                username: _currentUsername!,
-                avatarUrl: _profileData?['profile_photo'],
-                displayName: _profileData?['display_name'],
-                error: _postsError,
+              // Tab Bar
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _TabBarDelegate(
+                  TabBar(
+                    isScrollable: true,
+                    indicatorColor: colorScheme.primary,
+                    indicatorWeight: 3,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelColor: colorScheme.primary,
+                    unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    tabs: const [
+                      Tab(text: 'Gönderiler'),
+                      Tab(text: 'Yanıtlar'),
+                      Tab(text: 'Medya'),
+                      Tab(text: 'Başarımlar'),
+                      Tab(text: 'Bilgi'),
+                    ],
+                  ),
+                ),
               ),
-              Center(child: Text('Yanıtlar', style: theme.textTheme.bodyLarge)),
-              MediaTab(media: _media ?? []),
-              Center(
-                  child: Text('Beğeniler', style: theme.textTheme.bodyLarge)),
+              // Tab Content
+              SliverFillRemaining(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: TabBarView(
+                    children: [
+                      PostsTab(
+                        posts: _posts ?? [],
+                        username: _currentUsername!,
+                        avatarUrl: _profileData?['profile_photo'],
+                        displayName: _profileData?['display_name'],
+                        error: _postsError,
+                      ),
+                      Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.reply_outlined,
+                                size: 48,
+                                color: colorScheme.onSurface.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Yanıtlar',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Henüz yanıt yok',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      MediaTab(media: _media ?? []),
+                      AchievementsTab(achievements: null), // Backend'den gelecek
+                      InfoTab(profileData: _profileData),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
   }
 }

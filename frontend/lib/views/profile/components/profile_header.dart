@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../followers_page.dart';
+import '../following_page.dart';
 
 class ProfileHeader extends StatelessWidget {
   final File? avatarFile;
@@ -61,54 +63,99 @@ class ProfileHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Cover Image
-        ClipRRect(
-          borderRadius:
-              const BorderRadius.vertical(bottom: Radius.circular(12)),
-          child: Stack(
-            children: [
-              Container(
-                height: 150,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: coverImage == null ? Colors.grey.shade300 : null,
-                  image: coverImage != null
-                      ? DecorationImage(image: coverImage, fit: BoxFit.cover)
-                      : null,
-                ),
+        Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
-              if (coverImage == null && onEditCover != null)
-                Positioned.fill(
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.add_a_photo, size: 32),
-                      color: Colors.white70,
-                      onPressed: onEditCover,
-                    ),
-                  ),
-                ),
-              if (coverImage != null && onEditCover != null)
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: onEditCover,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        shape: BoxShape.circle,
-                        border:
-                            Border.all(color: colorScheme.surface, width: 2),
-                      ),
-                      child: Icon(Icons.edit,
-                          size: 20, color: colorScheme.onPrimary),
-                    ),
-                  ),
-                ),
             ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: coverImage == null 
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colorScheme.primary.withOpacity(0.3),
+                              colorScheme.secondary.withOpacity(0.2),
+                            ],
+                          )
+                        : null,
+                    image: coverImage != null
+                        ? DecorationImage(image: coverImage, fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: coverImage == null
+                      ? Center(
+                          child: Icon(
+                            Icons.landscape_outlined,
+                            size: 48,
+                            color: colorScheme.onSurface.withOpacity(0.3),
+                          ),
+                        )
+                      : null,
+                ),
+                if (coverImage == null && onEditCover != null)
+                  Positioned.fill(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add_a_photo, size: 32),
+                          color: colorScheme.primary,
+                          onPressed: onEditCover,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (coverImage != null && onEditCover != null)
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: onEditCover,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         // Avatar & Follow
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -117,20 +164,36 @@ class ProfileHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Transform.translate(
-                offset: const Offset(0, -40),
+                offset: const Offset(0, -80),
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: avatarImage,
-                      backgroundColor: colorScheme.surface,
-                      child: avatarImage == null
-                          ? Icon(
-                              Icons.account_circle,
-                              size: 100,
-                              color: colorScheme.onSurface.withOpacity(0.3),
-                            )
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.shadow.withOpacity(0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 55,
+                        backgroundColor: colorScheme.surface,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: avatarImage,
+                          backgroundColor: colorScheme.surfaceVariant,
+                          child: avatarImage == null
+                              ? Icon(
+                                  Icons.person_outline,
+                                  size: 60,
+                                  color: colorScheme.onSurface.withOpacity(0.4),
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
                     if (onEditAvatar != null)
                       Positioned(
@@ -139,15 +202,27 @@ class ProfileHeader extends StatelessWidget {
                         child: GestureDetector(
                           onTap: onEditAvatar,
                           child: Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: colorScheme.primary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: colorScheme.surface, width: 2),
+                                color: colorScheme.surface,
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.shadow.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: Icon(Icons.edit,
-                                size: 20, color: colorScheme.onPrimary),
+                            child: Icon(
+                              Icons.edit_rounded,
+                              size: 18,
+                              color: colorScheme.onPrimary,
+                            ),
                           ),
                         ),
                       ),
@@ -158,75 +233,149 @@ class ProfileHeader extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 8),
         // Profile Info
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        Transform.translate(
+          offset: const Offset(0, -40),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface,
+                colorScheme.surfaceVariant.withOpacity(0.3),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withOpacity(0.08),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Text(displayName,
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface)),
-                  const SizedBox(width: 4),
-                  if (isVerified)
-                    const Icon(Icons.verified, color: Colors.blue, size: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              displayName,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (isVerified)
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.verified,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '@$username',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: colorScheme.onSurface.withOpacity(0.6),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text('@$username',
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: colorScheme.onSurface.withOpacity(0.7))),
               if (bio.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(bio,
-                    style:
-                        TextStyle(fontSize: 16, color: colorScheme.onSurface)),
+                const SizedBox(height: 8),
+                Text(
+                  bio,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    height: 1.3,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
               if (website.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.link,
-                        size: 18,
-                        color: colorScheme.onSurface.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Text(website,
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.blue)),
+                    Icon(
+                      Icons.link,
+                      size: 14,
+                      color: colorScheme.primary.withOpacity(0.7),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      website,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ],
               if (joinDate.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today,
-                        size: 18,
-                        color: colorScheme.onSurface.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Text(joinDate,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: colorScheme.onSurface.withOpacity(0.7))),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      joinDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
               ],
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _buildStat('Takip edilen', followingCount),
+                  _buildModernStat('Takip edilen', followingCount, colorScheme, onTap: () => _navigateToFollowing(context)),
                   const SizedBox(width: 24),
-                  _buildStat('Takipçi', followerCount),
+                  _buildModernStat('Takipçi', followerCount, colorScheme, onTap: () => _navigateToFollowers(context)),
                 ],
               ),
             ],
           ),
+        ),
         ),
       ],
     );
@@ -234,34 +383,123 @@ class ProfileHeader extends StatelessWidget {
 
   Widget _buildFollowButton(ColorScheme colorScheme) {
     if (isCurrentUser) return const SizedBox.shrink();
-    return ElevatedButton(
-      onPressed: isFollowLoading ? null : onFollow,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(100, 40),
-        backgroundColor: isFollowing ? Colors.grey : colorScheme.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: isFollowLoading
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.white),
-            )
-          : Text(isFollowing ? 'Takiptesin' : 'Takip Et'),
+      child: ElevatedButton(
+        onPressed: isFollowLoading ? null : onFollow,
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(120, 48),
+          backgroundColor: isFollowing 
+              ? colorScheme.surfaceVariant 
+              : colorScheme.primary,
+          foregroundColor: isFollowing 
+              ? colorScheme.onSurfaceVariant 
+              : colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          elevation: 0,
+        ),
+        child: isFollowLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isFollowing ? Icons.check_rounded : Icons.person_add_rounded,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isFollowing ? 'Takiptesin' : 'Takip Et',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
-  Widget _buildStat(String label, int count) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(count.toString(),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-      ],
+  Widget _buildModernStat(String label, int count, ColorScheme colorScheme, {VoidCallback? onTap}) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.05),
+                width: 0.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  count.toString(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToFollowers(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FollowersPage(username: username),
+      ),
+    );
+  }
+
+  void _navigateToFollowing(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FollowingPage(username: username),
+      ),
     );
   }
 }
