@@ -5,6 +5,7 @@ import '../../services/service_locator.dart';
 import '../post/create_post_page.dart';
 import '../../widgets/navigations/navigation_items.dart';
 import '../notifications/notifications_page.dart';
+import '../../widgets/common/modern_fab.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -159,10 +160,10 @@ class _HomePageState extends State<HomePage> {
         posts: posts,
         onRefresh: _fetchPosts,
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'home_fab',
+      floatingActionButton: ModernFAB(
         onPressed: _onPostButtonPressed,
-        child: const Icon(Icons.add),
+        icon: Icons.add,
+        tooltip: 'Yeni Gönderi Oluştur',
       ),
     );
   }

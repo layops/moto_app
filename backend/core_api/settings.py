@@ -112,7 +112,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS güvenlik ayarları
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Sadece development'ta True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://yourdomain.com",  # Production domain'inizi buraya ekleyin
+] if not DEBUG else []
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -181,16 +187,95 @@ CHANNEL_LAYERS = {
 }
 
 
-SUPABASE_URL = "https://mosiqkyyribzlvdvedet.supabase.co"
-SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lxa3l5cmliemx2ZHZlZGV0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjY0MzQ3NSwiZXhwIjoyMDcyMjE5NDc1fQ.oxEaRtYZF74vTIttVCaBhmeNaEyUAEdQHVbSWYOPTUA"
-SUPABASE_BUCKET = "profile_pictures"
-SUPABASE_COVER_BUCKET = "cover_pictures"
-SUPABASE_EVENTS_BUCKET = "events_pictures"
-SUPABASE_GROUPS_BUCKET = "groups_profile_pictures"
-SUPABASE_POSTS_BUCKET = "group_posts_images"
-SUPABASE_PROJECT_ID = "mosiqkyyribzlvdvedet"
+# Supabase Configuration - Environment variables kullan
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://mosiqkyyribzlvdvedet.supabase.co')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
+SUPABASE_COVER_BUCKET = os.environ.get('SUPABASE_COVER_BUCKET', 'cover_pictures')
+SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictures')
+SUPABASE_GROUPS_BUCKET = os.environ.get('SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
+SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_images')
+SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID', 'mosiqkyyribzlvdvedet')
 
+# Supabase service key kontrolü
+if not SUPABASE_SERVICE_KEY:
+    raise ValueError("SUPABASE_SERVICE_KEY environment variable is required!")
+
+
+# Caching Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'motoapp',
+        'TIMEOUT': 300,  # 5 minutes default
+    }
+}
+
+# Cache timeout settings
+CACHE_TIMEOUTS = {
+    'user_profile': 600,  # 10 minutes
+    'posts_list': 300,    # 5 minutes
+    'groups_list': 600,   # 10 minutes
+    'events_list': 300,   # 5 minutes
+    'notifications': 60,  # 1 minute
+}
+
+# Database query optimization
+DATABASES['default']['OPTIONS'] = {
+    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+}
+
+# Static files optimization
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files optimization
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 
 if DEBUG:
     import logging
     logging.basicConfig(level=logging.DEBUG)
+else:
+    # Production logging
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': 'logs/django.log',
+                'formatter': 'verbose',
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            },
+        },
+        'root': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['console', 'file'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
