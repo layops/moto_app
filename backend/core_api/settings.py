@@ -232,9 +232,7 @@ CACHE_TIMEOUTS = {
     'notifications': 60,  # 1 minute
 }
 
-# Database query optimization - ayarlar yukarıda tanımlandı
 
-# Django ORM optimizasyonları - production'da query logging kapatılır
 
 # Static files optimization
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

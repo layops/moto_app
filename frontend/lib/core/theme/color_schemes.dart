@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AppColorSchemes {
-  // Modern motosiklet teması - Daha sofistike renk paleti
-  static const Color primaryColor = Color(0xFFFF6B35); // Parlak turuncu (FAB için)
-  static const Color primaryLight = Color(0xFFFFB74D); // Açık turuncu
-  static const Color primaryDark = Color(0xFFBF360C); // Koyu turuncu
+  // Modern motosiklet teması - Parlak kırmızı renk paleti
+  static const Color primaryColor = Color(0xFFFF0000); // Parlak kırmızı
+  static const Color primaryLight = Color(0xFFFF4444); // Açık kırmızı
+  static const Color primaryDark = Color(0xFFCC0000); // Koyu kırmızı
   
   // İkincil renkler - Gradient için
   static const Color secondaryColor = Color(0xFF1565C0); // Koyu mavi
@@ -33,8 +33,8 @@ class AppColorSchemes {
   
   // Gradient renkleri
   static const List<Color> primaryGradient = [
-    Color(0xFFFF6B35),
-    Color(0xFFFF8C00),
+    Color(0xFFFF0000),
+    Color(0xFFFF4444),
   ];
   
   static const List<Color> secondaryGradient = [

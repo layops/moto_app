@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
+import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 
 class SocialButton extends StatelessWidget {
   final IconData icon;
@@ -19,34 +20,81 @@ class SocialButton extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        minimumSize: Size(double.infinity, 48.h),
-        // ignore: deprecated_member_use
-        foregroundColor: colors.onSurface.withOpacity(0.7),
-        // ignore: deprecated_member_use
-        side: BorderSide(color: colors.onSurface.withOpacity(0.3)),
-        shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+    // Google ve Apple için özel renkler
+    Color backgroundColor;
+    Color textColor;
+    Color iconColor;
+    Color borderColor;
+    
+    if (text.toLowerCase() == 'google') {
+      backgroundColor = Colors.white;
+      textColor = Colors.black87;
+      iconColor = const Color(0xFF4285F4); // Google mavi
+      borderColor = Colors.grey.shade300;
+    } else if (text.toLowerCase() == 'apple') {
+      backgroundColor = Colors.black;
+      textColor = Colors.white;
+      iconColor = Colors.white;
+      borderColor = Colors.grey.shade800;
+    } else {
+      backgroundColor = colors.surface;
+      textColor = colors.onSurface;
+      iconColor = colors.onSurface;
+      borderColor = colors.outline;
+    }
+
+    return Container(
+      height: 56.h,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: borderColor,
+          width: 1.5,
         ),
-        padding: EdgeInsets.symmetric(vertical: 14.h),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // ignore: deprecated_member_use
-          Icon(icon, color: colors.onSurface.withOpacity(0.7), size: 20.h),
-          SizedBox(width: 8.w),
-          Text(
-            text,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              // ignore: deprecated_member_use
-              color: colors.onSurface.withOpacity(0.7),
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: colors.shadow.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+            spreadRadius: -2,
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16.r),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon, 
+                  color: iconColor, 
+                  size: 22.h,
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  text,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16.sp,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
