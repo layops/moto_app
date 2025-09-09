@@ -5,7 +5,8 @@ class Command(BaseCommand):
     help = 'Yolculuk bazlı başarımları oluştur'
 
     def handle(self, *args, **options):
-        achievements_data = [
+        try:
+            achievements_data = [
             {
                 'name': 'İlk Yolculuk',
                 'description': 'İlk motosiklet yolculuğunuzu tamamladınız',
@@ -88,6 +89,11 @@ class Command(BaseCommand):
                     self.style.WARNING(f'Başarım zaten mevcut: {achievement.name}')
                 )
 
-        self.stdout.write(
-            self.style.SUCCESS(f'Toplam {created_count} yeni başarım oluşturuldu.')
-        )
+            self.stdout.write(
+                self.style.SUCCESS(f'Toplam {created_count} yeni başarım oluşturuldu.')
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Başarımlar oluşturulurken hata: {e}')
+            )
+            # Hata durumunda da devam et, crash etmesin

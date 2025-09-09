@@ -11,7 +11,4 @@ pip install -r requirements.txt
 echo "Running migrations..."
 python manage.py migrate --noinput
 
-echo "Creating achievements..."
-python manage.py create_achievements
-
 echo "Build completed successfully!"

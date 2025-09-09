@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'config.dart';
+import '../config.dart';
 import 'auth/token_service.dart';
 
 class GamificationService {
-  static const String _baseUrl = Config.apiBaseUrl;
+  static const String _baseUrl = kBaseUrl;
   final TokenService _tokenService;
 
   GamificationService(this._tokenService);

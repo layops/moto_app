@@ -285,7 +285,6 @@ class RideViewSet(viewsets.ModelViewSet):
     def _award_points_and_achievements(self, user, distance, max_speed, duration):
         """Kullanıcıya puan ve başarım ver"""
         from gamification.models import Score
-        from gamification.views import UpdateAchievementProgressView
         
         # Temel yolculuk puanı (mesafe bazlı)
         base_points = max(10, int(distance * 0.5))  # En az 10 puan, km başına 0.5 puan
