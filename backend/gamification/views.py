@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Sum, Count, Q
 from django.contrib.auth import get_user_model
 from .models import Score, Achievement, UserAchievement
@@ -14,6 +14,7 @@ User = get_user_model()
 
 class UserLeaderboardView(APIView):
     """Genişletilmiş liderlik tablosu - hem puan hem başarım bilgileri"""
+    permission_classes = [AllowAny]
     
     def get(self, request):
         # Top 20 kullanıcıyı getir

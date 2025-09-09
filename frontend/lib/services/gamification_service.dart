@@ -12,7 +12,7 @@ class GamificationService {
   Future<List<dynamic>> getLeaderboard() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/gamification/leaderboard/users/'),
+        Uri.parse('$_baseUrl/api/gamification/leaderboard/users/'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -33,7 +33,7 @@ class GamificationService {
     try {
       final token = await _getToken();
       final response = await http.get(
-        Uri.parse('$_baseUrl/gamification/achievements/'),
+        Uri.parse('$_baseUrl/api/gamification/achievements/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -55,7 +55,7 @@ class GamificationService {
     try {
       final token = await _getToken();
       final response = await http.get(
-        Uri.parse('$_baseUrl/gamification/score-summary/'),
+        Uri.parse('$_baseUrl/api/gamification/score-summary/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -79,7 +79,7 @@ class GamificationService {
     try {
       final token = await _getToken();
       final response = await http.post(
-        Uri.parse('$_baseUrl/gamification/achievements/update-progress/'),
+        Uri.parse('$_baseUrl/api/gamification/achievements/update-progress/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
