@@ -56,6 +56,21 @@ class UserAchievementsView(APIView):
         total_achievements = Achievement.objects.filter(is_active=True).count()
         print(f"DEBUG: Total active achievements: {total_achievements}")
         
+        # Eğer hiç achievement yoksa, oluştur
+        if total_achievements == 0:
+            print("DEBUG: No achievements found, creating default achievements...")
+            try:
+                from django.core.management import call_command
+                call_command('create_achievements', verbosity=2)
+                total_achievements = Achievement.objects.filter(is_active=True).count()
+                print(f"DEBUG: Created {total_achievements} achievements")
+            except Exception as e:
+                print(f"DEBUG: Error creating achievements: {e}")
+                # Manuel olarak achievements oluştur
+                self._create_default_achievements()
+                total_achievements = Achievement.objects.filter(is_active=True).count()
+                print(f"DEBUG: Manually created {total_achievements} achievements")
+        
         # Kullanıcının tüm başarımlarını getir (kazanılan ve kazanılmayan)
         user_achievements = UserAchievement.objects.filter(user=user).select_related('achievement')
         
@@ -78,6 +93,81 @@ class UserAchievementsView(APIView):
                 user=user,
                 achievement=achievement,
                 defaults={'progress': 0}
+            )
+    
+    def _create_default_achievements(self):
+        """Varsayılan başarımları manuel olarak oluştur"""
+        achievements_data = [
+            {
+                'name': 'İlk Yolculuk',
+                'description': 'İlk motosiklet yolculuğunuzu tamamladınız',
+                'icon': 'two_wheeler',
+                'achievement_type': 'ride_count',
+                'target_value': 1,
+                'points': 10,
+            },
+            {
+                'name': 'Yolcu',
+                'description': '10 yolculuk tamamladınız',
+                'icon': 'directions_bike',
+                'achievement_type': 'ride_count',
+                'target_value': 10,
+                'points': 25,
+            },
+            {
+                'name': 'Deneyimli Sürücü',
+                'description': '50 yolculuk tamamladınız',
+                'icon': 'motorcycle',
+                'achievement_type': 'ride_count',
+                'target_value': 50,
+                'points': 50,
+            },
+            {
+                'name': 'Usta Sürücü',
+                'description': '100 yolculuk tamamladınız',
+                'icon': 'speed',
+                'achievement_type': 'ride_count',
+                'target_value': 100,
+                'points': 100,
+            },
+            {
+                'name': 'Mesafe Avcısı',
+                'description': '1000 km yol katettiniz',
+                'icon': 'straighten',
+                'achievement_type': 'distance',
+                'target_value': 1000,
+                'points': 75,
+            },
+            {
+                'name': 'Hız Tutkunu',
+                'description': '120 km/h hıza ulaştınız',
+                'icon': 'flash_on',
+                'achievement_type': 'speed',
+                'target_value': 120,
+                'points': 60,
+            },
+            {
+                'name': 'Günlük Sürücü',
+                'description': '7 gün üst üste yolculuk yaptınız',
+                'icon': 'calendar_today',
+                'achievement_type': 'streak',
+                'target_value': 7,
+                'points': 40,
+            },
+            {
+                'name': 'Gece Sürücüsü',
+                'description': '10 gece yolculuğu tamamladınız',
+                'icon': 'nightlight_round',
+                'achievement_type': 'special',
+                'target_value': 10,
+                'points': 35,
+            },
+        ]
+        
+        for achievement_data in achievements_data:
+            Achievement.objects.get_or_create(
+                name=achievement_data['name'],
+                defaults=achievement_data
             )
 
 class UserScoreSummaryView(APIView):

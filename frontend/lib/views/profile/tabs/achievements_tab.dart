@@ -107,9 +107,12 @@ class AchievementsTab extends StatelessWidget {
 
     // Backend'den gelen veriyi frontend formatına çevir
     print('DEBUG: Achievements data: $achievements');
+    print('DEBUG: Achievements data type: ${achievements.runtimeType}');
+    print('DEBUG: Achievements data length: ${achievements?.length ?? 0}');
     List<dynamic> achievementsList;
     if (achievements != null && achievements!.isNotEmpty) {
       print('DEBUG: Using backend achievements data');
+      print('DEBUG: First achievement: ${achievements!.first}');
       achievementsList = achievements!.map((achievement) {
         final achievementData = achievement['achievement'];
         return {
