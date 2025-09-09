@@ -114,24 +114,22 @@ class AchievementsTab extends StatelessWidget {
       print('DEBUG: Using backend achievements data');
       print('DEBUG: First achievement: ${achievements!.first}');
       achievementsList = achievements!.map((achievement) {
-        final achievementData = achievement['achievement'];
         return {
           'id': achievement['id'],
-          'title': achievementData['name'],
-          'description': achievementData['description'],
-          'icon': _getIconFromString(achievementData['icon']),
-          'isUnlocked': achievement['is_unlocked'],
-          'unlockedDate': achievement['unlocked_at'] != null 
-              ? _formatDate(achievement['unlocked_at']) 
-              : null,
-          'points': achievementData['points'],
-          'progress': achievement['progress'],
-          'target': achievementData['target_value'],
+          'title': achievement['name'],
+          'description': achievement['description'],
+          'icon': _getIconFromString(achievement['icon']),
+          'isUnlocked': false, // Şimdilik hepsi kilitli
+          'unlockedDate': null,
+          'points': achievement['points'],
+          'progress': 0, // Şimdilik 0
+          'target': achievement['target_value'],
         };
       }).toList();
     } else {
-      print('DEBUG: Using sample achievements data');
-      achievementsList = sampleAchievements;
+      print('DEBUG: No achievements data from backend, showing empty list');
+      print('DEBUG: Achievements is null or empty: ${achievements == null || achievements!.isEmpty}');
+      achievementsList = [];
     }
 
     return SingleChildScrollView(
@@ -214,11 +212,40 @@ class AchievementsTab extends StatelessWidget {
           const SizedBox(height: 24),
           
           // Başarımlar listesi
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: achievementsList.length,
-            itemBuilder: (context, index) {
+          if (achievementsList.isEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.emoji_events_outlined,
+                    size: 64,
+                    color: colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Henüz başarım bulunmuyor',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Yolculuk yaparak başarımlar kazanabilirsiniz',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: achievementsList.length,
+              itemBuilder: (context, index) {
                 final achievement = achievementsList[index];
                 final isUnlocked = achievement['isUnlocked'] as bool;
                 
@@ -370,7 +397,7 @@ class AchievementsTab extends StatelessWidget {
                 );
               },
             ),
-        ],
+          ],
       ),
     );
   }
