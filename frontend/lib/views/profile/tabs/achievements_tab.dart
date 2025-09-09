@@ -398,6 +398,7 @@ class AchievementsTab extends StatelessWidget {
               },
             ),
           ],
+        ],
       ),
     );
   }

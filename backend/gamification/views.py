@@ -56,18 +56,20 @@ class UserAchievementsView(APIView):
         
         # Eğer hiç achievement yoksa, oluştur
         if total_achievements == 0:
-            print("DEBUG: No achievements found, creating default achievements...")
-            try:
-                from django.core.management import call_command
-                call_command('create_achievements', verbosity=2)
-                total_achievements = Achievement.objects.filter(is_active=True).count()
-                print(f"DEBUG: Created {total_achievements} achievements")
-            except Exception as e:
-                print(f"DEBUG: Error creating achievements: {e}")
-                # Manuel olarak achievements oluştur
-                self._create_default_achievements()
-                total_achievements = Achievement.objects.filter(is_active=True).count()
-                print(f"DEBUG: Manually created {total_achievements} achievements")
+            print("DEBUG: No achievements found, creating test achievement...")
+            # Test için basit bir achievement oluştur
+            test_achievement = Achievement.objects.create(
+                name='Test Başarım',
+                description='Bu bir test başarımıdır',
+                icon='emoji_events',
+                achievement_type='special',
+                target_value=1,
+                points=10,
+                is_active=True
+            )
+            print(f"DEBUG: Created test achievement: {test_achievement.name}")
+            total_achievements = Achievement.objects.filter(is_active=True).count()
+            print(f"DEBUG: Total achievements now: {total_achievements}")
         
         # Tüm aktif başarımları getir (kullanıcı bazlı değil, genel)
         achievements = Achievement.objects.filter(is_active=True)
