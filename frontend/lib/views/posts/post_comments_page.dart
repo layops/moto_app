@@ -31,6 +31,9 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('PostCommentsPage initState - Post ID: ${widget.postId}');
+    debugPrint('  - Post content: ${widget.postContent}');
+    debugPrint('  - Author username: ${widget.authorUsername}');
     _loadComments();
   }
 
@@ -42,18 +45,23 @@ class _PostCommentsPageState extends State<PostCommentsPage> {
   }
 
   Future<void> _loadComments() async {
+    debugPrint('_loadComments called for post ${widget.postId}');
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
 
+      debugPrint('  - Calling ServiceLocator.posts.getPostComments');
       final comments = await ServiceLocator.posts.getPostComments(widget.postId);
+      debugPrint('  - Received ${comments.length} comments');
+      
       setState(() {
         _comments = comments;
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('  - Error loading comments: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;

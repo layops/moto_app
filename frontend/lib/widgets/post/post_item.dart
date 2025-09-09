@@ -43,7 +43,9 @@ class _PostItemState extends State<PostItem> {
     
     // Debug için log ekle
     debugPrint('PostItem initState - Post ID: ${widget.post['id']}');
+    debugPrint('  - Raw post data: ${widget.post}');
     debugPrint('  - likes_count: ${widget.post['likes_count']}');
+    debugPrint('  - likes: ${widget.post['likes']}');
     debugPrint('  - is_liked: ${widget.post['is_liked']}');
     debugPrint('  - Final _likeCount: $_likeCount');
     debugPrint('  - Final _isLiked: $_isLiked');
@@ -373,6 +375,10 @@ class _PostItemState extends State<PostItem> {
       // API çağrısı yap
       final result = await ServiceLocator.posts.toggleLike(postId);
       
+      debugPrint('Like toggle result: $result');
+      debugPrint('  - is_liked: ${result['is_liked']}');
+      debugPrint('  - likes_count: ${result['likes_count']}');
+      
       // API'den gelen gerçek değerleri güncelle
       if (mounted) {
         setState(() {
@@ -380,6 +386,8 @@ class _PostItemState extends State<PostItem> {
           _likeCount = result['likes_count'] ?? _likeCount;
           _isLikeLoading = false;
         });
+        
+        debugPrint('Updated state: _isLiked=$_isLiked, _likeCount=$_likeCount');
       }
     } catch (e) {
       // Hata durumunda optimistic update'i geri al
@@ -407,19 +415,30 @@ class _PostItemState extends State<PostItem> {
   }
 
   void _handleComment(int postId) {
-    if (_isCommentLoading) return;
+    debugPrint('_handleComment called for post $postId');
+    debugPrint('  - _isCommentLoading: $_isCommentLoading');
+    debugPrint('  - widget.onComment: ${widget.onComment != null}');
+    
+    if (_isCommentLoading) {
+      debugPrint('  - Comment loading, returning early');
+      return;
+    }
     
     HapticFeedback.lightImpact();
     
     if (widget.onComment != null) {
+      debugPrint('  - Calling widget.onComment callback');
       widget.onComment!(postId);
     } else {
+      debugPrint('  - Navigating to comments page');
       // Yorum sayfasına git
       _navigateToComments(postId);
     }
   }
   
   void _navigateToComments(int postId) {
+    debugPrint('_navigateToComments called for post $postId');
+    
     final authorData = widget.post['author'] is Map<String, dynamic>
         ? widget.post['author'] as Map<String, dynamic>
         : {};
@@ -433,16 +452,25 @@ class _PostItemState extends State<PostItem> {
     
     final postContent = widget.post['content']?.toString() ?? '';
     
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PostCommentsPage(
-          postId: postId,
-          postContent: postContent,
-          authorUsername: username,
+    debugPrint('  - Username: $username');
+    debugPrint('  - Post content: $postContent');
+    debugPrint('  - Navigating to PostCommentsPage');
+    
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostCommentsPage(
+            postId: postId,
+            postContent: postContent,
+            authorUsername: username,
+          ),
         ),
-      ),
-    );
+      );
+      debugPrint('  - Navigation successful');
+    } catch (e) {
+      debugPrint('  - Navigation error: $e');
+    }
   }
 
   void _handleShare(int postId) {

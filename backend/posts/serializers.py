@@ -34,14 +34,25 @@ class PostSerializer(serializers.ModelSerializer):
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
+        print(f"PostSerializer - Post {obj.id}: get_is_liked called")
+        print(f"  - Request exists: {request is not None}")
+        print(f"  - User authenticated: {request and request.user.is_authenticated}")
+        print(f"  - User: {request.user.username if request and request.user.is_authenticated else 'None'}")
+        
         if request and request.user.is_authenticated:
             try:
-                is_liked = PostLike.objects.filter(post=obj, user=request.user).exists()
-                print(f"PostSerializer - Post {obj.id}: is_liked = {is_liked} for user {request.user.username}")
-                return is_liked
+                # Önce PostLike tablosunda bu post için kaç beğeni var kontrol et
+                total_likes = PostLike.objects.filter(post=obj).count()
+                user_like = PostLike.objects.filter(post=obj, user=request.user).exists()
+                
+                print(f"  - Total likes for post {obj.id}: {total_likes}")
+                print(f"  - User {request.user.username} liked: {user_like}")
+                
+                return user_like
             except Exception as e:
                 print(f"PostSerializer - Post {obj.id}: Error checking is_liked: {e}")
-                # Model henüz oluşturulmamışsa False döndür
+                import traceback
+                traceback.print_exc()
                 return False
         print(f"PostSerializer - Post {obj.id}: User not authenticated, is_liked = False")
         return False

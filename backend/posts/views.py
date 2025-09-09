@@ -212,11 +212,15 @@ class PostLikeToggleView(APIView):
             user=request.user
         ).first()
         
+        print(f"PostLikeToggleView - Post {post_id}, User {request.user.username}")
+        print(f"  - Existing like: {existing_like is not None}")
+        
         if existing_like:
             # Beğeni varsa sil
             existing_like.delete()
             is_liked = False
             logger.info(f"Beğeni silindi - Post: {post_id}, User: {request.user.username}")
+            print(f"  - Beğeni silindi")
         else:
             # Beğeni yoksa ekle
             PostLike.objects.create(
@@ -225,9 +229,13 @@ class PostLikeToggleView(APIView):
             )
             is_liked = True
             logger.info(f"Beğeni eklendi - Post: {post_id}, User: {request.user.username}")
+            print(f"  - Beğeni eklendi")
         
         # Güncel beğeni sayısını al
         likes_count = PostLike.objects.filter(post=post).count()
+        
+        print(f"  - Final likes_count: {likes_count}")
+        print(f"  - Final is_liked: {is_liked}")
         
         logger.info(f"Post {post_id} beğeni sayısı: {likes_count}, is_liked: {is_liked}")
         
