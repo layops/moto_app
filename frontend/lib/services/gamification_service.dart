@@ -32,6 +32,7 @@ class GamificationService {
   Future<List<dynamic>> getUserAchievements() async {
     try {
       final token = await _getToken();
+      print('DEBUG: Token for achievements: ${token?.substring(0, 20)}...');
       final response = await http.get(
         Uri.parse('$_baseUrl/api/gamification/achievements/'),
         headers: {

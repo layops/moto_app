@@ -131,7 +131,7 @@ class AchievementsTab extends StatelessWidget {
       achievementsList = sampleAchievements;
     }
 
-    return Container(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,10 +211,11 @@ class AchievementsTab extends StatelessWidget {
           const SizedBox(height: 24),
           
           // Başarımlar listesi
-          Expanded(
-            child: ListView.builder(
-              itemCount: achievementsList.length,
-              itemBuilder: (context, index) {
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: achievementsList.length,
+            itemBuilder: (context, index) {
                 final achievement = achievementsList[index];
                 final isUnlocked = achievement['isUnlocked'] as bool;
                 
@@ -366,7 +367,6 @@ class AchievementsTab extends StatelessWidget {
                 );
               },
             ),
-          ),
         ],
       ),
     );

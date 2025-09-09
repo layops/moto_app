@@ -67,6 +67,7 @@ class UserAchievementsView(APIView):
         
         print(f"DEBUG: Found {user_achievements.count()} user achievements")
         serializer = UserAchievementSerializer(user_achievements, many=True)
+        print(f"DEBUG: Serialized data: {serializer.data}")
         return Response(serializer.data)
     
     def _create_user_achievements(self, user):
