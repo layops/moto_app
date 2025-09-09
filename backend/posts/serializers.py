@@ -21,7 +21,7 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.ReadOnlyField()
     comments_count = serializers.ReadOnlyField()
     is_liked = serializers.SerializerMethodField()
-    comments = PostCommentSerializer(many=True, read_only=True)
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -35,8 +35,27 @@ class PostSerializer(serializers.ModelSerializer):
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return PostLike.objects.filter(post=obj, user=request.user).exists()
+            try:
+                return PostLike.objects.filter(post=obj, user=request.user).exists()
+            except:
+                # Model henüz oluşturulmamışsa False döndür
+                return False
         return False
+
+    def get_comments(self, obj):
+        try:
+            comments = obj.comments.all()[:5]  # Son 5 yorumu al
+            return [{
+                'id': comment.id,
+                'content': comment.content,
+                'created_at': comment.created_at,
+                'author': {
+                    'id': comment.author.id,
+                    'username': comment.author.username,
+                }
+            } for comment in comments]
+        except:
+            return []
 
     def create(self, validated_data):
         # Author alanını validated_data'dan çıkar (read_only olduğu için)

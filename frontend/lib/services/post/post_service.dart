@@ -165,4 +165,116 @@ class PostService {
   void clearCache() {
     _clearPostsCache();
   }
+
+  // Like/Unlike post
+  Future<Map<String, dynamic>> toggleLike(int postId) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
+
+    try {
+      final response = await _apiClient.post('posts/$postId/like/', {});
+      
+      if (response.statusCode == 200) {
+        // Cache'i temizle
+        _clearPostsCache();
+        return response.data;
+      } else {
+        throw Exception('Beğeni işlemi başarısız: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('Post bulunamadı');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        throw Exception('Beğeni işlemi sırasında hata oluştu: ${e.message}');
+      }
+    }
+  }
+
+  // Get post comments
+  Future<List<dynamic>> getPostComments(int postId) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
+
+    try {
+      final response = await _apiClient.get('posts/$postId/comments/');
+      
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception('Yorumlar alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('Post bulunamadı');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        throw Exception('Yorumlar alınırken hata oluştu: ${e.message}');
+      }
+    }
+  }
+
+  // Create comment
+  Future<Map<String, dynamic>> createComment(int postId, String content) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
+
+    try {
+      final response = await _apiClient.post(
+        'posts/$postId/comments/',
+        {'content': content},
+      );
+      
+      if (response.statusCode == 201) {
+        // Cache'i temizle
+        _clearPostsCache();
+        return response.data;
+      } else {
+        throw Exception('Yorum oluşturulamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('Post bulunamadı');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        throw Exception('Yorum oluşturulurken hata oluştu: ${e.message}');
+      }
+    }
+  }
+
+  // Delete comment
+  Future<void> deleteComment(int postId, int commentId) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Lütfen giriş yapın.');
+    }
+
+    try {
+      final response = await _apiClient.delete('posts/$postId/comments/$commentId/');
+      
+      if (response.statusCode == 204) {
+        // Cache'i temizle
+        _clearPostsCache();
+      } else {
+        throw Exception('Yorum silinemedi: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw Exception('Yorum bulunamadı');
+      } else if (e.type == DioExceptionType.connectionTimeout) {
+        throw Exception('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
+      } else {
+        throw Exception('Yorum silinirken hata oluştu: ${e.message}');
+      }
+    }
+  }
 }

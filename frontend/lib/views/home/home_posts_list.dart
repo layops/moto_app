@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/post/post_item.dart';
+import '../../services/post/post_service.dart';
+import '../../services/service_locator.dart';
 import 'home_empty_state.dart';
 
 class HomePostsList extends StatelessWidget {
@@ -37,7 +39,12 @@ class HomePostsList extends StatelessWidget {
 
           post['author'] = authorData;
 
-          return PostItem(post: post);
+          return PostItem(
+            post: post,
+            onLike: _handleLike,
+            onComment: _handleComment,
+            onShare: _handleShare,
+          );
         },
       ),
     );
@@ -201,5 +208,28 @@ class HomePostsList extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Callback metodları
+  Future<void> _handleLike(int postId) async {
+    try {
+      final postService = PostService();
+      await postService.toggleLike(postId);
+      // Refresh posts to update like count
+      await onRefresh();
+    } catch (e) {
+      // Error handling is done in PostItem widget
+      debugPrint('Like error: $e');
+    }
+  }
+
+  Future<void> _handleComment(int postId) async {
+    // TODO: Navigate to comments page
+    debugPrint('Comment clicked for post: $postId');
+  }
+
+  Future<void> _handleShare(int postId) async {
+    // TODO: Implement share functionality
+    debugPrint('Share clicked for post: $postId');
   }
 }

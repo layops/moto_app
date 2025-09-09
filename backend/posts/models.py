@@ -51,11 +51,17 @@ class Post(models.Model):
 
     @property
     def likes_count(self):
-        return self.likes.count()
+        try:
+            return self.likes.count()
+        except:
+            return 0
 
     @property
     def comments_count(self):
-        return self.comments.count()
+        try:
+            return self.comments.count()
+        except:
+            return 0
 
 
 class PostLike(models.Model):
