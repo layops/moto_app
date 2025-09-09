@@ -27,6 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _profileData;
   List<dynamic>? _posts;
   List<dynamic>? _media;
+  List<dynamic>? _achievements;
   String? _currentUsername;
   bool _isLoading = true;
   String? _errorMessage;
@@ -96,6 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final results = await Future.wait([
         _loadPosts(),
         _loadMedia(),
+        _loadAchievements(),
       ]);
 
       if (!mounted) return;
@@ -103,6 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _posts = results[0] as List<dynamic>? ?? [];
         _media = results[1] as List<dynamic>? ?? [];
+        _achievements = results[2] as List<dynamic>? ?? [];
       });
     } catch (e) {
       if (mounted) {
@@ -142,6 +145,16 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<List<dynamic>> _loadAchievements() async {
+    try {
+      final achievements = await ServiceLocator.gamification.getUserAchievements();
+      debugPrint('DEBUG: Loaded achievements: $achievements');
+      return achievements;
+    } catch (e) {
+      debugPrint('Başarımlar yüklenirken hata: $e');
+      return [];
+    }
+  }
 
   void _signOut(BuildContext context) async {
     try {
@@ -531,7 +544,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       MediaTab(media: _media ?? []),
-                      AchievementsTab(achievements: null), // Backend'den gelecek
+                      AchievementsTab(achievements: _achievements),
                       InfoTab(profileData: _profileData),
                     ],
                   ),

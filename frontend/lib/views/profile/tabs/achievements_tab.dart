@@ -105,7 +105,31 @@ class AchievementsTab extends StatelessWidget {
       },
     ];
 
-    final achievementsList = achievements ?? sampleAchievements;
+    // Backend'den gelen veriyi frontend formatına çevir
+    print('DEBUG: Achievements data: $achievements');
+    List<dynamic> achievementsList;
+    if (achievements != null && achievements!.isNotEmpty) {
+      print('DEBUG: Using backend achievements data');
+      achievementsList = achievements!.map((achievement) {
+        final achievementData = achievement['achievement'];
+        return {
+          'id': achievement['id'],
+          'title': achievementData['name'],
+          'description': achievementData['description'],
+          'icon': _getIconFromString(achievementData['icon']),
+          'isUnlocked': achievement['is_unlocked'],
+          'unlockedDate': achievement['unlocked_at'] != null 
+              ? _formatDate(achievement['unlocked_at']) 
+              : null,
+          'points': achievementData['points'],
+          'progress': achievement['progress'],
+          'target': achievementData['target_value'],
+        };
+      }).toList();
+    } else {
+      print('DEBUG: Using sample achievements data');
+      achievementsList = sampleAchievements;
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -346,5 +370,39 @@ class AchievementsTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getIconFromString(String iconName) {
+    switch (iconName) {
+      case 'two_wheeler':
+        return Icons.two_wheeler;
+      case 'directions_bike':
+        return Icons.directions_bike;
+      case 'motorcycle':
+        return Icons.motorcycle;
+      case 'speed':
+        return Icons.speed;
+      case 'straighten':
+        return Icons.straighten;
+      case 'flash_on':
+        return Icons.flash_on;
+      case 'calendar_today':
+        return Icons.calendar_today;
+      case 'nightlight_round':
+        return Icons.nightlight_round;
+      case 'emoji_events':
+        return Icons.emoji_events;
+      default:
+        return Icons.emoji_events;
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (e) {
+      return dateString;
+    }
   }
 }

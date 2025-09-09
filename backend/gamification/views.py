@@ -52,14 +52,20 @@ class UserAchievementsView(APIView):
     def get(self, request):
         user = request.user
         
+        # Debug: Toplam achievement sayısını kontrol et
+        total_achievements = Achievement.objects.filter(is_active=True).count()
+        print(f"DEBUG: Total active achievements: {total_achievements}")
+        
         # Kullanıcının tüm başarımlarını getir (kazanılan ve kazanılmayan)
         user_achievements = UserAchievement.objects.filter(user=user).select_related('achievement')
         
         # Eğer kullanıcının hiç başarımı yoksa, tüm aktif başarımları oluştur
         if not user_achievements.exists():
+            print(f"DEBUG: No user achievements found for user {user.username}, creating...")
             self._create_user_achievements(user)
             user_achievements = UserAchievement.objects.filter(user=user).select_related('achievement')
         
+        print(f"DEBUG: Found {user_achievements.count()} user achievements")
         serializer = UserAchievementSerializer(user_achievements, many=True)
         return Response(serializer.data)
     
