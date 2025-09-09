@@ -226,45 +226,214 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  Widget _buildLoadingState() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.3),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Grup bilgileri yükleniyor...',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.3),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: colorScheme.error.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Grup Bilgileri Yüklenemedi',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _error = null;
+                    _loading = true;
+                  });
+                  _checkUserStatus();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: const Text(
+                  'Tekrar Dene',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.groupData['name'] ?? 'Grup',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface),
-            onPressed: () => _showGroupSettings(),
+          Container(
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.settings_rounded,
+                color: colorScheme.primary,
+              ),
+              onPressed: () => _showGroupSettings(),
+            ),
           ),
         ],
       ),
       body: _loading
-          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
+          ? _buildLoadingState()
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Hata: $_error', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _error = null;
-                            _loading = true;
-                          });
-                          _checkUserStatus();
-                        },
-                        child: const Text('Tekrar Dene'),
-                      ),
-                    ],
-                  ),
-                )
+              ? _buildErrorState()
               : SingleChildScrollView(
                   child: Column(
                     children: [
@@ -287,12 +456,39 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildModernGroupHeader() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final groupName = widget.groupData['name'] ?? 'Grup Adı';
     final memberCount = widget.groupData['member_count'] ?? 0;
     final profilePictureUrl = widget.groupData['profile_picture_url'];
     
     return Container(
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.surface,
+              colorScheme.surfaceVariant.withOpacity(0.3),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
         child: Column(
             children: [
                 // Grup logosu
@@ -302,11 +498,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                         height: 120,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: colorScheme.primary,
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.surface, 
-                              width: 3,
+                              color: colorScheme.surface, 
+                              width: 4,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.shadow.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                         ),
                         child: profilePictureUrl != null
                             ? ClipOval(
@@ -322,32 +525,34 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                 const SizedBox(height: 24),
                 
                             // Butonlar - yan yana
-                            Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.center,
                                 children: [
                                     _buildActionButton(
-                                        icon: Icons.chat_bubble_outline,
-                                        label: 'Message',
+                                        icon: Icons.chat_bubble_outline_rounded,
+                                        label: 'Mesaj',
                                         onTap: _navigateToGroupChat,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: colorScheme.primary,
                                     ),
                                     _buildActionButton(
-                                        icon: Icons.post_add,
-                                        label: 'Post',
+                                        icon: Icons.post_add_rounded,
+                                        label: 'Gönderi',
                                         onTap: _createPost,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: colorScheme.primary,
                                     ),
                                     _buildActionButton(
-                                        icon: Icons.person_add,
-                                        label: 'Invite',
+                                        icon: Icons.person_add_rounded,
+                                        label: 'Davet',
                                         onTap: _inviteMembers,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: colorScheme.primary,
                                     ),
                                     _buildActionButton(
-                                        icon: Icons.exit_to_app,
-                                        label: 'Leave',
+                                        icon: Icons.exit_to_app_rounded,
+                                        label: 'Ayrıl',
                                         onTap: _isMember ? _leaveGroup : null,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: colorScheme.error,
                                     ),
                                 ],
                             ),
@@ -357,15 +562,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           Center(
             child: Text(
               groupName,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           
           // Üye sayısı - ortalanmış ve tıklanabilir
           Center(
@@ -383,12 +587,22 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                   ),
                 );
               },
-              child: Text(
-                '$memberCount members',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                  decoration: TextDecoration.underline,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: colorScheme.primary.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  '$memberCount üye',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -419,16 +633,19 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     required VoidCallback? onTap,
     required Color color,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withOpacity(0.2),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -437,15 +654,23 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: Theme.of(context).colorScheme.onPrimary),
+            Icon(
+              icon, 
+              size: 16, 
+              color: color == colorScheme.error 
+                  ? colorScheme.onError 
+                  : colorScheme.onPrimary,
+            ),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
+                  color: color == colorScheme.error 
+                      ? colorScheme.onError 
+                      : colorScheme.onPrimary,
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -457,30 +682,54 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildAboutSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final description = widget.groupData['description'] ?? '';
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surface,
+            colorScheme.surfaceVariant.withOpacity(0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'About',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+            'Hakkında',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             description.isNotEmpty 
                 ? description 
-                : 'No description available.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-              height: 1.5,
+                : 'Henüz açıklama eklenmemiş.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.7),
+              height: 1.4,
             ),
             textAlign: TextAlign.left,
           ),
@@ -491,17 +740,43 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
 
 
   Widget _buildPostsSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surface,
+            colorScheme.surfaceVariant.withOpacity(0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Posts',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+            'Gönderiler',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -513,29 +788,49 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildPostsList() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     if (_posts.isEmpty) {
       return Container(
-        height: 100,
+        height: 120,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.post_add,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                size: 32,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.post_add_outlined,
+                  color: colorScheme.primary.withOpacity(0.7),
+                  size: 32,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
-                'No posts yet',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  fontSize: 14,
+                'Henüz gönderi yok',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'İlk gönderiyi sen paylaş!',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
             ],

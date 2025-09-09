@@ -129,6 +129,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
       appBar: AppBar(
         title: Image.asset(
@@ -136,47 +139,101 @@ class _HomePageState extends State<HomePage> {
           height: 50,
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.leaderboard),
-          onPressed: _onLeaderboardPressed,
-          tooltip: 'Liderlik Tablosu',
+        elevation: 0,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.leaderboard_rounded,
+              color: colorScheme.primary,
+            ),
+            onPressed: _onLeaderboardPressed,
+            tooltip: 'Liderlik Tablosu',
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _onSearchPressed,
-            tooltip: 'Arama',
-          ),
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_none),
-                if (unreadNotificationsCount > 0)
-                  Positioned(
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(1),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
-                      child: Text(
-                        unreadNotificationsCount.toString(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onError,
-                          fontSize: 8,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-              ],
+          Container(
+            margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-            onPressed: _onNotificationPressed,
+            child: IconButton(
+              icon: Icon(
+                Icons.search_rounded,
+                color: colorScheme.primary,
+              ),
+              onPressed: _onSearchPressed,
+              tooltip: 'Arama',
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: IconButton(
+              icon: Stack(
+                children: [
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    color: colorScheme.primary,
+                  ),
+                  if (unreadNotificationsCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: colorScheme.error,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount.toString(),
+                          style: TextStyle(
+                            color: colorScheme.onError,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                ],
+              ),
+              onPressed: _onNotificationPressed,
+            ),
           ),
         ],
       ),

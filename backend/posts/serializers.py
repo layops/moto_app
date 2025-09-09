@@ -1,22 +1,42 @@
 # posts/serializers.py
 
 from rest_framework import serializers
-from .models import Post
+from .models import Post, PostLike, PostComment
 from users.serializers import UserSerializer
 from groups.models import Group
+
+class PostCommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = PostComment
+        fields = ['id', 'author', 'content', 'created_at', 'updated_at']
+        read_only_fields = ('id', 'author', 'created_at', 'updated_at')
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)  # Nested serializer ile detaylı user bilgisi
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
     image = serializers.ImageField(required=False, write_only=True)  # Sadece yazma için, okuma için değil
     content = serializers.CharField(required=True, allow_blank=False)  # Content zorunlu ve boş olamaz
+    likes_count = serializers.ReadOnlyField()
+    comments_count = serializers.ReadOnlyField()
+    is_liked = serializers.SerializerMethodField()
+    comments = PostCommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
         fields = [
-            'id', 'group', 'author', 'content', 'image', 'image_url', 'created_at', 'updated_at'
+            'id', 'group', 'author', 'content', 'image', 'image_url', 
+            'created_at', 'updated_at', 'likes_count', 'comments_count', 
+            'is_liked', 'comments'
         ]
         read_only_fields = ('id', 'author', 'created_at', 'updated_at')
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return PostLike.objects.filter(post=obj, user=request.user).exists()
+        return False
 
     def create(self, validated_data):
         # Author alanını validated_data'dan çıkar (read_only olduğu için)

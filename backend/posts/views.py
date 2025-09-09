@@ -2,8 +2,9 @@
 
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from .models import Post
-from .serializers import PostSerializer
+from rest_framework.views import APIView
+from .models import Post, PostLike, PostComment
+from .serializers import PostSerializer, PostCommentSerializer
 from groups.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -190,4 +191,89 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             except Exception as e:
                 logger.warning(f"Post resmi silinemedi: {str(e)}")
         
+        instance.delete()
+
+
+# Like API'leri
+class PostLikeToggleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        
+        # Post'a erişim kontrolü
+        if post.group:
+            if request.user not in post.group.members.all() and request.user != post.group.owner:
+                raise PermissionDenied("Bu gönderiyi beğenme izniniz yok.")
+        
+        like, created = PostLike.objects.get_or_create(
+            post=post,
+            user=request.user
+        )
+        
+        if not created:
+            like.delete()
+            is_liked = False
+        else:
+            is_liked = True
+        
+        likes_count = post.likes_count
+        
+        return Response({
+            'is_liked': is_liked,
+            'likes_count': likes_count
+        })
+
+
+# Comment API'leri
+class PostCommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = PostCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs['post_id']
+        post = get_object_or_404(Post, id=post_id)
+        
+        # Post'a erişim kontrolü
+        if post.group:
+            if self.request.user not in post.group.members.all() and self.request.user != post.group.owner:
+                raise PermissionDenied("Bu gönderinin yorumlarını görüntüleme izniniz yok.")
+        
+        return PostComment.objects.filter(post=post).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['post_id']
+        post = get_object_or_404(Post, id=post_id)
+        
+        # Post'a erişim kontrolü
+        if post.group:
+            if self.request.user not in post.group.members.all() and self.request.user != post.group.owner:
+                raise PermissionDenied("Bu gönderiye yorum yapma izniniz yok.")
+        
+        serializer.save(author=self.request.user, post=post)
+
+
+class PostCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PostCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        post_id = self.kwargs['post_id']
+        post = get_object_or_404(Post, id=post_id)
+        
+        # Post'a erişim kontrolü
+        if post.group:
+            if self.request.user not in post.group.members.all() and self.request.user != post.group.owner:
+                raise PermissionDenied("Bu gönderinin yorumlarını görüntüleme izniniz yok.")
+        
+        return PostComment.objects.filter(post=post)
+
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied("Bu yorumu düzenleme izniniz yok.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            raise PermissionDenied("Bu yorumu silme izniniz yok.")
         instance.delete()
