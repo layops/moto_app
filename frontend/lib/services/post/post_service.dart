@@ -82,6 +82,13 @@ class PostService {
       if (response.statusCode == 200) {
         final posts = response.data as List<dynamic>;
         
+        // Debug için gelen postları yazdır
+        print('PostService - Fetched ${posts.length} posts');
+        for (int i = 0; i < posts.length && i < 3; i++) {
+          final post = posts[i] as Map<String, dynamic>;
+          print('PostService - Post ${post['id']}: likes_count=${post['likes_count']}, is_liked=${post['is_liked']}');
+        }
+        
         // Cache'e kaydet
         _postsCache[cacheKey] = posts;
         _cacheTimestamps[cacheKey] = DateTime.now();

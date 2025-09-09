@@ -36,10 +36,14 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             try:
-                return PostLike.objects.filter(post=obj, user=request.user).exists()
-            except:
+                is_liked = PostLike.objects.filter(post=obj, user=request.user).exists()
+                print(f"PostSerializer - Post {obj.id}: is_liked = {is_liked} for user {request.user.username}")
+                return is_liked
+            except Exception as e:
+                print(f"PostSerializer - Post {obj.id}: Error checking is_liked: {e}")
                 # Model henüz oluşturulmamışsa False döndür
                 return False
+        print(f"PostSerializer - Post {obj.id}: User not authenticated, is_liked = False")
         return False
 
     def get_comments(self, obj):

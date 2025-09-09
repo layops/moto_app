@@ -37,8 +37,16 @@ class _PostItemState extends State<PostItem> {
   @override
   void initState() {
     super.initState();
-    _likeCount = widget.post['likes'] ?? 0;
+    // Backend'den gelen doğru alan adlarını kullan
+    _likeCount = widget.post['likes_count'] ?? widget.post['likes'] ?? 0;
     _isLiked = widget.post['is_liked'] ?? false;
+    
+    // Debug için log ekle
+    debugPrint('PostItem initState - Post ID: ${widget.post['id']}');
+    debugPrint('  - likes_count: ${widget.post['likes_count']}');
+    debugPrint('  - is_liked: ${widget.post['is_liked']}');
+    debugPrint('  - Final _likeCount: $_likeCount');
+    debugPrint('  - Final _isLiked: $_isLiked');
   }
 
   @override
