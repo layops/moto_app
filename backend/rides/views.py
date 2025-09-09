@@ -5,7 +5,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-import requests
 
 from .models import Ride, RideRequest # <-- RideRequest'i import edin
 from .serializers import RideSerializer, RideRequestSerializer # <-- RideRequestSerializer'ı import edin
