@@ -22,17 +22,20 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Future<void> _loadConversations() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
 
       final conversations = await _chatService.getConversations();
+      if (!mounted) return;
       setState(() {
         _conversations = conversations;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;

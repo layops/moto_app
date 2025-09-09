@@ -212,7 +212,6 @@ class ApiClient {
           queryParameters: queryParameters, options: options);
       
       stopwatch.stop();
-      PerformanceMonitor.recordRequestTime(path, stopwatch.elapsed);
       
       if (kDebugMode) {
         debugPrint('GET Response: ${response.statusCode} (${stopwatch.elapsedMilliseconds}ms)');
@@ -220,7 +219,6 @@ class ApiClient {
       return response;
     } on DioException catch (e) {
       stopwatch.stop();
-      PerformanceMonitor.recordRequestTime(path, stopwatch.elapsed);
       
       if (kDebugMode) {
         debugPrint('GET Error: ${e.message} (${stopwatch.elapsedMilliseconds}ms)');

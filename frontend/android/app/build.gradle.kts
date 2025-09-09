@@ -13,6 +13,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    
+    // Suppress Java version warnings
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.addAll(listOf("-Xlint:-options"))
+    }
 
     kotlinOptions {
         jvmTarget = "17"
@@ -24,11 +29,31 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Performance optimizations
+        multiDexEnabled = true
+        
+        // Graphics optimizations
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
+        
+        // Proguard optimizations
+        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
     buildTypes {
+        debug {
+            // Debug optimizations
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
             signingConfig = signingConfigs.getByName("debug")
+            // Release optimizations
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

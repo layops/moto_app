@@ -8,6 +8,20 @@ buildscript {
     }
 }
 
+// Java version configuration for all projects
+allprojects {
+    tasks.withType<JavaCompile> {
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
+        options.compilerArgs.addAll(listOf("-Xlint:-options"))
+    }
+    
+    // Configure all Java compilation tasks
+    tasks.withType<org.gradle.api.tasks.compile.JavaCompile> {
+        options.compilerArgs.addAll(listOf("-Xlint:-options"))
+    }
+}
+
 allprojects {
     repositories {
         google()

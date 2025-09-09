@@ -206,18 +206,30 @@ class PostLikeToggleView(APIView):
             if request.user not in post.group.members.all() and request.user != post.group.owner:
                 raise PermissionDenied("Bu gönderiyi beğenme izniniz yok.")
         
-        like, created = PostLike.objects.get_or_create(
+        # Mevcut beğeni durumunu kontrol et
+        existing_like = PostLike.objects.filter(
             post=post,
             user=request.user
-        )
+        ).first()
         
-        if not created:
-            like.delete()
+        if existing_like:
+            # Beğeni varsa sil
+            existing_like.delete()
             is_liked = False
+            logger.info(f"Beğeni silindi - Post: {post_id}, User: {request.user.username}")
         else:
+            # Beğeni yoksa ekle
+            PostLike.objects.create(
+                post=post,
+                user=request.user
+            )
             is_liked = True
+            logger.info(f"Beğeni eklendi - Post: {post_id}, User: {request.user.username}")
         
-        likes_count = post.likes_count
+        # Güncel beğeni sayısını al
+        likes_count = PostLike.objects.filter(post=post).count()
+        
+        logger.info(f"Post {post_id} beğeni sayısı: {likes_count}, is_liked: {is_liked}")
         
         return Response({
             'is_liked': is_liked,

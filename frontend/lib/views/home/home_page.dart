@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'home_posts_list.dart';
 import '../../services/service_locator.dart';
+import '../../services/performance/performance_optimizer.dart';
 import '../post/create_post_page.dart';
 import '../../widgets/navigations/navigation_items.dart';
 import '../notifications/notifications_page.dart';
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchPosts() async {
+    if (!mounted) return;
     setState(() {
       loading = true;
       error = null;
@@ -44,31 +46,52 @@ class _HomePageState extends State<HomePage> {
         // Debug için gelen postları yazdır
         print('Fetched posts: $fetchedPosts');
 
-        // Process posts to get user details for author IDs
-        final updatedPosts = await Future.wait(fetchedPosts.map((post) async {
-          if (post['author'] is int) {
-            final userDetails = await _fetchUserDetails(post['author']);
-            return {
-              ...post,
-              'author': userDetails,
-            };
-          }
-          return post;
-        }));
+        // Process posts to get user details for author IDs - Optimized for performance
+        final updatedPosts = await _processPostsWithUserDetails(fetchedPosts);
 
+        if (!mounted) return;
         setState(() {
           posts = updatedPosts;
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         error = e.toString();
       });
     } finally {
+      if (!mounted) return;
       setState(() {
         loading = false;
       });
     }
+  }
+
+  /// Optimized method to process posts with user details using PerformanceOptimizer
+  Future<List<dynamic>> _processPostsWithUserDetails(List<dynamic> fetchedPosts) async {
+    return await PerformanceOptimizer.runInBackground(
+      () => PerformanceOptimizer.processBatch(
+        fetchedPosts,
+        (post) async {
+          if (post['author'] is int) {
+            try {
+              final userDetails = await _fetchUserDetails(post['author']);
+              return {
+                ...post,
+                'author': userDetails,
+              };
+            } catch (e) {
+              // Fallback to original post if user details fetch fails
+              return post;
+            }
+          }
+          return post;
+        },
+        batchSize: 3, // Reduced batch size for better performance
+        delayBetweenBatches: const Duration(milliseconds: 5),
+      ),
+      debugLabel: 'Process Posts with User Details',
+    );
   }
 
   Future<Map<String, dynamic>> _fetchUserDetails(int userId) async {
@@ -86,6 +109,7 @@ class _HomePageState extends State<HomePage> {
           await ServiceLocator.notification.getNotifications();
       final unreadCount =
           notifications.where((n) => n['is_read'] == false).length;
+      if (!mounted) return;
       setState(() {
         unreadNotificationsCount = unreadCount;
       });

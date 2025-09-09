@@ -752,15 +752,22 @@ extension MapRoute on _MapPageState {
   void _startLocationTracking() {
     _positionStream = Geolocator.getPositionStream(
       locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // 10 metre değişiklikte güncelle
+        accuracy: LocationAccuracy.medium, // Reduced for better performance
+        distanceFilter: 25, // Increased to reduce frequency
+        timeLimit: const Duration(seconds: 20), // Add timeout
       ),
-    ).listen((Position position) {
-      if (!_isNavigating || _routePoints.isEmpty) return;
+    ).listen(
+      (Position position) {
+        if (!_isNavigating || _routePoints.isEmpty) return;
 
-      final currentLocation = LatLng(position.latitude, position.longitude);
-      _updateNavigationProgress(currentLocation);
-    });
+        final currentLocation = LatLng(position.latitude, position.longitude);
+        _updateNavigationProgress(currentLocation);
+      },
+      onError: (error) {
+        debugPrint('Location tracking error: $error');
+        // Continue navigation even if location tracking fails
+      },
+    );
   }
 
   void _updateNavigationProgress(LatLng currentLocation) {

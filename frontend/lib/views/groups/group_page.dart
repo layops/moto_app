@@ -33,6 +33,7 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Future<void> _loadGroups() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -55,6 +56,7 @@ class _GroupsPageState extends State<GroupsPage> {
 
       if (myGroupsResponse.statusCode == 200 &&
           discoverGroupsResponse.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           _myGroups =
               myGroupsResponse.data is List ? myGroupsResponse.data : [];
@@ -67,10 +69,13 @@ class _GroupsPageState extends State<GroupsPage> {
             'HTTP ${myGroupsResponse.statusCode} - Gruplar yüklenirken bir sorun oluştu.');
       }
     } on DioException catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.response?.data['message'] ?? e.toString());
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.toString());
     } finally {
+      if (!mounted) return;
       setState(() => _loading = false);
     }
   }

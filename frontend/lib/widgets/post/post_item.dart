@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../views/profile/profile_page.dart';
+import '../../views/posts/post_comments_page.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../services/service_locator.dart';
 
 class PostItem extends StatefulWidget {
   final dynamic post;
@@ -29,6 +31,8 @@ class _PostItemState extends State<PostItem> {
   bool _isLiked = false;
   int _likeCount = 0;
   bool _isLoading = false;
+  bool _isLikeLoading = false;
+  bool _isCommentLoading = false;
 
   @override
   void initState() {
@@ -254,14 +258,16 @@ class _PostItemState extends State<PostItem> {
             icon: _isLiked ? Icons.favorite : Icons.favorite_border,
             label: _likeCount.toString(),
             color: _isLiked ? Colors.red : colorScheme.onSurface.withOpacity(0.7),
-            onTap: () => _handleLike(postId),
+            onTap: _isLikeLoading ? null : () => _handleLike(postId),
+            isLoading: _isLikeLoading,
           ),
           const SizedBox(width: 24),
           _buildActionButton(
             icon: Icons.comment_outlined,
-            label: (widget.post['comments'] ?? 0).toString(),
+            label: (widget.post['comments_count'] ?? widget.post['comments'] ?? 0).toString(),
             color: colorScheme.onSurface.withOpacity(0.7),
-            onTap: () => _handleComment(postId),
+            onTap: _isCommentLoading ? null : () => _handleComment(postId),
+            isLoading: _isCommentLoading,
           ),
           const SizedBox(width: 24),
           _buildActionButton(
@@ -279,17 +285,28 @@ class _PostItemState extends State<PostItem> {
     required IconData icon,
     required String label,
     required Color color,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    bool isLoading = false,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: color),
+            if (isLoading)
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              )
+            else
+              Icon(icon, size: 20, color: color),
             const SizedBox(width: 6),
             Text(
               label,
@@ -327,46 +344,97 @@ class _PostItemState extends State<PostItem> {
     }
   }
 
-  void _handleLike(int postId) {
-    if (_isLoading) return;
+  void _handleLike(int postId) async {
+    if (_isLikeLoading) return;
     
+    // Mevcut durumu sakla (rollback için)
+    final previousIsLiked = _isLiked;
+    final previousLikeCount = _likeCount;
+    
+    // Optimistic update
     setState(() {
-      _isLoading = true;
+      _isLikeLoading = true;
       _isLiked = !_isLiked;
-      _likeCount += _isLiked ? 1 : -1;
+      _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
     });
 
     // Haptic feedback
     HapticFeedback.lightImpact();
 
+    try {
+      // API çağrısı yap
+      final result = await ServiceLocator.posts.toggleLike(postId);
+      
+      // API'den gelen gerçek değerleri güncelle
+      if (mounted) {
+        setState(() {
+          _isLiked = result['is_liked'] ?? _isLiked;
+          _likeCount = result['likes_count'] ?? _likeCount;
+          _isLikeLoading = false;
+        });
+      }
+    } catch (e) {
+      // Hata durumunda optimistic update'i geri al
+      if (mounted) {
+        setState(() {
+          _isLiked = previousIsLiked;
+          _likeCount = previousLikeCount;
+          _isLikeLoading = false;
+        });
+        
+        // Hata mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Beğeni işlemi başarısız: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+
     // Callback'i çağır
     if (widget.onLike != null) {
       widget.onLike!(postId);
     }
-
-    // Loading state'i sıfırla
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
   }
 
   void _handleComment(int postId) {
+    if (_isCommentLoading) return;
+    
     HapticFeedback.lightImpact();
+    
     if (widget.onComment != null) {
       widget.onComment!(postId);
     } else {
-      // Varsayılan davranış - yorum sayfasına git
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Yorum özelliği yakında eklenecek'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
+      // Yorum sayfasına git
+      _navigateToComments(postId);
     }
+  }
+  
+  void _navigateToComments(int postId) {
+    final authorData = widget.post['author'] is Map<String, dynamic>
+        ? widget.post['author'] as Map<String, dynamic>
+        : {};
+    
+    String username = 'Bilinmeyen';
+    if (authorData.isNotEmpty && authorData['username'] != null) {
+      username = authorData['username'].toString();
+    } else if (widget.post['username'] != null) {
+      username = widget.post['username'].toString();
+    }
+    
+    final postContent = widget.post['content']?.toString() ?? '';
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PostCommentsPage(
+          postId: postId,
+          postContent: postContent,
+          authorUsername: username,
+        ),
+      ),
+    );
   }
 
   void _handleShare(int postId) {

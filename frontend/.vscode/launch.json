@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MotoApp Debug",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--dart-define=FLUTTER_WEB_USE_SKIA=true",
+                "--dart-define=FLUTTER_WEB_AUTO_DETECT=true"
+            ],
+            "env": {
+                "FLUTTER_WEB_USE_SKIA": "true"
+            },
+            "console": "debugConsole",
+            "cwd": "${workspaceFolder}",
+            "dartSdkPath": null,
+            "flutterSdkPath": null,
+            "toolArgs": [
+                "--verbose"
+            ]
+        },
+        {
+            "name": "MotoApp Release",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--release",
+                "--dart-define=FLUTTER_WEB_USE_SKIA=true"
+            ],
+            "console": "debugConsole",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

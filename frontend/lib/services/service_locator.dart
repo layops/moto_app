@@ -155,6 +155,7 @@ class ServiceLocator {
   static ProfileService get profile => _instance._profileService;
   static FollowService get follow => _instance._followService;
   static PostService get post => _instance._postService;
+  static PostService get posts => _instance._postService; // Alias for convenience
   static EventService get event => _instance._eventService; // Yeni getter
   static NotificationsService get notification =>
       _instance._notificationService;

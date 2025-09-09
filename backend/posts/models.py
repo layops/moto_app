@@ -52,8 +52,10 @@ class Post(models.Model):
     @property
     def likes_count(self):
         try:
+            # Related manager üzerinden say
             return self.likes.count()
-        except:
+        except Exception as e:
+            # Hata durumunda 0 döndür
             return 0
 
     @property

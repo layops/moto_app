@@ -38,12 +38,13 @@ class LocationService {
     }
   }
 
-  /// Konum stream'i başlat
+  /// Konum stream'i başlat - Optimized for performance
   Stream<Position> getLocationStream() {
     return Geolocator.getPositionStream(
       locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // 10 metre değişiklikte güncelle
+        accuracy: LocationAccuracy.medium, // Reduced accuracy for better performance
+        distanceFilter: 50, // Increased to 50 metres to reduce updates
+        timeLimit: const Duration(seconds: 15), // Add timeout
       ),
     );
   }
