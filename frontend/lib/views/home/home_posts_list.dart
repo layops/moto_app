@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/post/post_item.dart';
 import '../../services/post/post_service.dart';
 import '../../services/service_locator.dart';
+import '../../views/posts/post_comments_page.dart';
 import 'home_empty_state.dart';
 
 class HomePostsList extends StatelessWidget {
@@ -41,7 +42,6 @@ class HomePostsList extends StatelessWidget {
 
           return PostItem(
             post: post,
-            onLike: _handleLike,
             onComment: _handleComment,
             onShare: _handleShare,
           );
@@ -211,21 +211,58 @@ class HomePostsList extends StatelessWidget {
   }
 
   // Callback metodları
-  Future<void> _handleLike(int postId) async {
-    try {
-      final postService = PostService();
-      await postService.toggleLike(postId);
-      // Refresh posts to update like count
-      await onRefresh();
-    } catch (e) {
-      // Error handling is done in PostItem widget
-      debugPrint('Like error: $e');
-    }
-  }
 
   Future<void> _handleComment(int postId) async {
-    // TODO: Navigate to comments page
     debugPrint('Comment clicked for post: $postId');
+    // Yorum sayfasına yönlendir
+    _navigateToComments(postId);
+  }
+  
+  void _navigateToComments(int postId) {
+    // Post verilerini bul
+    final post = posts.firstWhere(
+      (p) => p['id'] == postId,
+      orElse: () => {},
+    );
+    
+    if (post.isEmpty) {
+      debugPrint('Post not found for ID: $postId');
+      return;
+    }
+    
+    final authorData = post['author'] is Map<String, dynamic>
+        ? post['author'] as Map<String, dynamic>
+        : {};
+    
+    String username = 'Bilinmeyen';
+    if (authorData.isNotEmpty && authorData['username'] != null) {
+      username = authorData['username'].toString();
+    } else if (post['username'] != null) {
+      username = post['username'].toString();
+    }
+    
+    final postContent = post['content']?.toString() ?? '';
+    
+    debugPrint('Navigating to comments for post $postId');
+    debugPrint('  - Username: $username');
+    debugPrint('  - Post content: $postContent');
+    
+    // Navigator context'ini al
+    final context = ServiceLocator.navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostCommentsPage(
+            postId: postId,
+            postContent: postContent,
+            authorUsername: username,
+          ),
+        ),
+      );
+    } else {
+      debugPrint('Navigator context not available');
+    }
   }
 
   Future<void> _handleShare(int postId) async {

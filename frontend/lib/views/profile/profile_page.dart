@@ -209,11 +209,11 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
           type: PhotoType.profile, // <-- type eklendi
-          networkImageUrl: _profileData?['profile_photo'],
+          networkImageUrl: _profileData?['profile_photo_url'] ?? _profileData?['profile_picture'],
           onImageSelected: (File image) => setState(() => _avatarFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {
             setState(() {
-              _profileData?['profile_photo'] = updatedUser['profile_photo'];
+              _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'] ?? updatedUser['profile_picture'];
               _avatarFile = null;
             });
             ScaffoldMessenger.of(context).showSnackBar(
@@ -240,11 +240,11 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Kapak Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
           type: PhotoType.cover, // <-- type eklendi
-          networkImageUrl: _profileData?['cover_photo'],
+          networkImageUrl: _profileData?['cover_photo_url'] ?? _profileData?['cover_picture'],
           onImageSelected: (File image) => setState(() => _coverFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) {
             setState(() {
-              _profileData?['cover_photo'] = updatedUser['cover_photo'];
+              _profileData?['cover_photo_url'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
               _coverFile = null;
             });
             ScaffoldMessenger.of(context).showSnackBar(
@@ -441,9 +441,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   margin: const EdgeInsets.only(top: 100), // AppBar için boşluk
                   child: ProfileHeader(
                     avatarFile: _avatarFile,
-                    avatarUrl: _profileData?['profile_photo'],
+                    avatarUrl: _profileData?['profile_photo_url'] ?? _profileData?['profile_picture'],
                     coverFile: _coverFile,
-                    coverUrl: _profileData?['cover_photo'],
+                    coverUrl: _profileData?['cover_photo_url'] ?? _profileData?['cover_picture'],
                     followerCount: _followerCount,
                     followingCount: _profileData?['following_count'] ?? 0,
                     username: _currentUsername!,

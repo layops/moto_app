@@ -357,15 +357,12 @@ class _PostItemState extends State<PostItem> {
   void _handleLike(int postId) async {
     if (_isLikeLoading) return;
     
-    // Mevcut durumu sakla (rollback için)
-    final previousIsLiked = _isLiked;
-    final previousLikeCount = _likeCount;
+    debugPrint('_handleLike called for post $postId');
+    debugPrint('  - Current state: _isLiked=$_isLiked, _likeCount=$_likeCount');
     
-    // Optimistic update
+    // Loading state'i başlat
     setState(() {
       _isLikeLoading = true;
-      _isLiked = !_isLiked;
-      _likeCount = _isLiked ? _likeCount + 1 : _likeCount - 1;
     });
 
     // Haptic feedback
@@ -390,11 +387,10 @@ class _PostItemState extends State<PostItem> {
         debugPrint('Updated state: _isLiked=$_isLiked, _likeCount=$_likeCount');
       }
     } catch (e) {
-      // Hata durumunda optimistic update'i geri al
+      debugPrint('Like toggle error: $e');
+      // Hata durumunda loading state'i sıfırla
       if (mounted) {
         setState(() {
-          _isLiked = previousIsLiked;
-          _likeCount = previousLikeCount;
           _isLikeLoading = false;
         });
         
