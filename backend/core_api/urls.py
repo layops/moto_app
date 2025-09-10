@@ -7,6 +7,11 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.http import HttpResponse
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenBlacklistView,
+)
 from .views import api_root
 
 # Swagger / Redoc için
@@ -37,6 +42,11 @@ urlpatterns = [
 
     # Admin paneli
     path('admin/', admin.site.urls),
+
+    # JWT Token endpoints
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
 
     # Users app
     path('api/users/', include('users.urls')),

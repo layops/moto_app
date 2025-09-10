@@ -31,7 +31,7 @@ class AuthService {
       print('🔑 AuthService - Token data: $tokenData');
       
       if (tokenData != null) {
-        final userData = {
+        final userData = {q
           'id': tokenData['user_id'] ?? tokenData['id'],
           'username': tokenData['username'],
           'email': tokenData['email'],
@@ -77,22 +77,22 @@ class AuthService {
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
-      print('🔑 AuthService - Login başlatılıyor: $username');
-      final response = await _apiClient.post('users/login/', {
+      print('🔑 AuthService - JWT Login başlatılıyor: $username');
+      final response = await _apiClient.post('token/', {
         'username': username,
         'password': password,
       });
 
-      print('🔑 AuthService - Login response: ${response.statusCode}');
-      print('🔑 AuthService - Login data: ${response.data}');
+      print('🔑 AuthService - JWT Login response: ${response.statusCode}');
+      print('🔑 AuthService - JWT Login data: ${response.data}');
 
-      final token = _extractToken(response);
+      final accessToken = _extractAccessToken(response);
       final refreshToken = _extractRefreshToken(response);
-      print('🔑 AuthService - Extracted token: ${token.isNotEmpty ? "Token mevcut (${token.substring(0, 10)}...)" : "Token boş"}');
+      print('🔑 AuthService - Extracted access token: ${accessToken.isNotEmpty ? "Token mevcut (${accessToken.substring(0, 10)}...)" : "Token boş"}');
       print('🔑 AuthService - Extracted refresh token: ${refreshToken.isNotEmpty ? "Refresh token mevcut" : "Refresh token boş"}');
       
-      if (token.isNotEmpty) {
-        await _tokenService.saveAuthData(token, username, refreshToken: refreshToken);
+      if (accessToken.isNotEmpty) {
+        await _tokenService.saveAuthData(accessToken, username, refreshToken: refreshToken);
         await _storage.setCurrentUsername(username);
 
         await saveRememberMe(rememberMe);
@@ -104,9 +104,9 @@ class AuthService {
 
         // Auth state güncelle
         _authStateController.add(true);
-        print('🔑 AuthService - Login başarılı, auth state güncellendi');
+        print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
       } else {
-        print('❌ AuthService - Token boş, login başarısız');
+        print('❌ AuthService - Access token boş, login başarısız');
       }
       return response;
     } on DioException catch (e) {
@@ -144,11 +144,62 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    try {
+      // JWT token'ı blacklist'e ekle
+      final refreshToken = await _tokenService.getRefreshToken();
+      if (refreshToken != null) {
+        await _apiClient.post('token/blacklist/', {
+          'refresh': refreshToken,
+        });
+      }
+    } catch (e) {
+      print('❌ AuthService - Logout sırasında token blacklist hatası: $e');
+    }
+    
     await clearAllUserData();
     ServiceLocator.navigatorKey.currentState?.pushNamedAndRemoveUntil(
       '/login',
       (route) => false,
     );
+  }
+
+  Future<bool> refreshToken() async {
+    try {
+      final refreshToken = await _tokenService.getRefreshToken();
+      if (refreshToken == null) {
+        print('❌ AuthService - Refresh token bulunamadı');
+        return false;
+      }
+
+      print('🔑 AuthService - Token yenileniyor...');
+      final response = await _apiClient.post('token/refresh/', {
+        'refresh': refreshToken,
+      });
+
+      if (response.statusCode == 200) {
+        final newAccessToken = _extractAccessToken(response);
+        final newRefreshToken = _extractRefreshToken(response);
+        
+        if (newAccessToken.isNotEmpty) {
+          final username = await getCurrentUsername();
+          if (username != null) {
+            await _tokenService.saveAuthData(
+              newAccessToken, 
+              username, 
+              refreshToken: newRefreshToken.isNotEmpty ? newRefreshToken : refreshToken
+            );
+            print('🔑 AuthService - Token başarıyla yenilendi');
+            return true;
+          }
+        }
+      }
+      
+      print('❌ AuthService - Token yenileme başarısız');
+      return false;
+    } catch (e) {
+      print('❌ AuthService - Token yenileme hatası: $e');
+      return false;
+    }
   }
 
   Future<bool> isLoggedIn() async => await _tokenService.hasToken();
@@ -175,26 +226,28 @@ class AuthService {
   Future<void> clearRememberedUsername() async =>
       await _storage.clearRememberedUsername();
 
-  String _extractToken(Response response) {
+  String _extractAccessToken(Response response) {
     try {
       final data = response.data;
       if (data is Map<String, dynamic>) {
-        return data['token'] ??
+        return data['access'] ??
             data['access_token'] ??
             data['accessToken'] ??
+            data['token'] ??
             '';
       } else if (data is String) {
         final jsonData = jsonDecode(data);
         if (jsonData is Map<String, dynamic>) {
-          return jsonData['token'] ??
+          return jsonData['access'] ??
               jsonData['access_token'] ??
               jsonData['accessToken'] ??
+              jsonData['token'] ??
               '';
         }
       }
       return '';
     } catch (e) {
-      debugPrint('Token alınırken hata: $e');
+      debugPrint('Access token alınırken hata: $e');
       return '';
     }
   }

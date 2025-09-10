@@ -36,8 +36,8 @@ class ApiClient {
     // Token interceptor
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // Login ve register endpoint'lerinde token ekleme
-        if (options.path.contains('users/login') ||
+        // JWT token endpoint'lerinde token ekleme
+        if (options.path.contains('token/') ||
             options.path.contains('users/register')) {
           return handler.next(options);
         }
@@ -131,7 +131,7 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  // Token yenileme metodu
+  // JWT Token yenileme metodu
   Future<void> _refreshToken() async {
     try {
       final refreshToken = await _tokenService.getRefreshToken();
@@ -139,33 +139,33 @@ class ApiClient {
         throw Exception('Refresh token bulunamadı');
       }
 
-      debugPrint('Token yenileme işlemi başlatıldı');
+      debugPrint('JWT Token yenileme işlemi başlatıldı');
 
-      // Token yenileme endpoint'ini çağır
-      final response = await _dio.post('users/refresh-token/', data: {
+      // JWT token yenileme endpoint'ini çağır
+      final response = await _dio.post('token/refresh/', data: {
         'refresh': refreshToken,
       });
 
       if (response.statusCode == 200) {
-        final newToken = response.data['token'];
+        final newAccessToken = response.data['access'];
         final newRefreshToken = response.data['refresh'];
         
-        if (newToken != null) {
+        if (newAccessToken != null) {
           // Yeni token'ı kaydet
           await _tokenService.saveAuthData(
-            newToken, 
+            newAccessToken, 
             await _tokenService.getCurrentUsername() ?? '', 
-            refreshToken: newRefreshToken
+            refreshToken: newRefreshToken ?? refreshToken
           );
-          debugPrint('Token başarıyla yenilendi');
+          debugPrint('JWT Token başarıyla yenilendi');
         } else {
-          throw Exception('Yeni token alınamadı');
+          throw Exception('Yeni access token alınamadı');
         }
       } else {
-        throw Exception('Token yenileme başarısız: ${response.statusCode}');
+        throw Exception('JWT Token yenileme başarısız: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Token yenileme hatası: $e');
+      debugPrint('JWT Token yenileme hatası: $e');
       rethrow;
     }
   }
