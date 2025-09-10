@@ -170,6 +170,60 @@ def clear_search_cache(request):
         }, status=500)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def debug_search_index(request):
+    """
+    SearchIndex tablosundaki verileri debug et
+    """
+    try:
+        from .models import SearchIndex
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        
+        # SearchIndex'teki tüm kullanıcıları getir
+        search_indexes = SearchIndex.objects.filter(user_id__isnull=False)
+        
+        debug_data = {
+            'search_index_count': search_indexes.count(),
+            'search_indexes': [],
+            'users_in_db': [],
+        }
+        
+        # SearchIndex verilerini listele
+        for idx in search_indexes:
+            debug_data['search_indexes'].append({
+                'id': idx.id,
+                'user_id': idx.user_id,
+                'username': idx.username,
+                'first_name': idx.first_name,
+                'last_name': idx.last_name,
+                'email': idx.email,
+                'full_name': idx.full_name,
+                'search_vector': idx.search_vector,
+            })
+        
+        # Gerçek User tablosundaki verileri listele
+        users = User.objects.all()
+        for user in users:
+            debug_data['users_in_db'].append({
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+            })
+        
+        return Response(debug_data)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Debug hatası: {str(e)}'
+        }, status=500)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def sync_search_index(request):
