@@ -3,6 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.db.models import Q
+from django.views.decorators.cache import never_cache
+from django.utils.decorators import method_decorator
 
 from django.contrib.auth import get_user_model
 from groups.models import Group
@@ -12,14 +14,13 @@ from users.serializers import UserSerializer
 User = get_user_model()
 
 
+@method_decorator(never_cache, name='dispatch')
 class UserSearchView(generics.ListAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Her seferinde fresh queryset al
-        queryset = User.objects.all()
+        # Her seferinde fresh queryset al - cache'i bypass et
         query = self.request.query_params.get('q', None)
         
         print(f"🔍 UserSearchView - Query: '{query}'")
@@ -60,7 +61,8 @@ class UserSearchView(generics.ListAPIView):
             
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
             # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
-            search_results = User.objects.filter(
+            # Cache'i bypass etmek için fresh queryset kullan
+            search_results = User.objects.all().filter(
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query) |
@@ -82,13 +84,13 @@ class UserSearchView(generics.ListAPIView):
             return User.objects.none()  # Boş sorgu için hiç sonuç döndürme
 
 
+@method_decorator(never_cache, name='dispatch')
 class GroupSearchView(generics.ListAPIView):
-    queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Her seferinde fresh queryset al - cache'i bypass et
         query = self.request.query_params.get('q', None)
         
         print(f"🔍 GroupSearchView - Query: '{query}'")
@@ -98,8 +100,8 @@ class GroupSearchView(generics.ListAPIView):
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
             
-            # Sadece aktif grupları ara
-            search_results = queryset.filter(
+            # Sadece aktif grupları ara - cache'i bypass et
+            search_results = Group.objects.all().filter(
                 Q(name__icontains=query) |
                 Q(description__icontains=query)
             ).distinct().order_by('name')
@@ -116,7 +118,7 @@ class GroupSearchView(generics.ListAPIView):
             return search_results[:50]
         else:
             print(f"❌ GroupSearchView - Query too short or empty")
-            return queryset.none()  # Boş sorgu için hiç sonuç döndürme
+            return Group.objects.none()  # Boş sorgu için hiç sonuç döndürme
 
 
 @api_view(['GET'])
