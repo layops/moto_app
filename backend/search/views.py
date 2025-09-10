@@ -10,8 +10,36 @@ from django.contrib.auth import get_user_model
 from groups.models import Group
 from groups.serializers import GroupSerializer
 from users.serializers import UserSerializer
+from .hash_search import hash_search_engine
 
 User = get_user_model()
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_users(request):
+    """
+    Kullanıcı arama endpoint'i - Hash tablosu kullanarak
+    """
+    query = request.query_params.get('q', None)
+    
+    print(f"🔍 search_users - Query: '{query}'")
+    print(f"🔍 search_users - Request user: {request.user}")
+    
+    if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
+        # Hash tablosu kullanarak arama yap
+        results = hash_search_engine.search_users(query)
+        
+        print(f"✅ search_users - Hash tablosu ile {len(results)} kullanıcı bulundu")
+        
+        # İlk 5 sonucu log'la
+        for i, user in enumerate(results[:5]):
+            print(f"   {i+1}. {user['username']} - {user['first_name']} {user['last_name']} - {user['email']}")
+        
+        return Response(results)
+    else:
+        print(f"❌ search_users - Query too short or empty")
+        return Response([])  # Boş sorgu için hiç sonuç döndürme
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -20,68 +48,35 @@ class UserSearchView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Her seferinde fresh queryset al - cache'i bypass et
-        query = self.request.query_params.get('q', None)
+        # Bu view artık kullanılmıyor, search_users function'ı kullanılıyor
+        return User.objects.none()
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_groups(request):
+    """
+    Grup arama endpoint'i - Hash tablosu kullanarak
+    """
+    query = request.query_params.get('q', None)
+    
+    print(f"🔍 search_groups - Query: '{query}'")
+    print(f"🔍 search_groups - Request user: {request.user}")
+    
+    if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
+        # Hash tablosu kullanarak arama yap
+        results = hash_search_engine.search_groups(query)
         
-        print(f"🔍 UserSearchView - Query: '{query}'")
-        print(f"🔍 UserSearchView - Request user: {self.request.user}")
-        print(f"🔍 UserSearchView - Total users in DB: {User.objects.count()}")
-        print(f"🔍 UserSearchView - All query params: {dict(self.request.query_params)}")
+        print(f"✅ search_groups - Hash tablosu ile {len(results)} grup bulundu")
         
-        if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-            query = query.strip()
-            
-            # Tüm kullanıcıları listele (debug için)
-            all_users = User.objects.all()
-            print(f"🔍 UserSearchView - All users in DB:")
-            for user in all_users:
-                print(f"   - ID: {user.id}, Username: '{user.username}', First: '{user.first_name}', Last: '{user.last_name}', Email: '{user.email}'")
-            
-            # Arama kriterlerini ayrı ayrı test et ve log'la
-            username_matches = User.objects.filter(username__icontains=query)
-            first_name_matches = User.objects.filter(first_name__icontains=query)
-            last_name_matches = User.objects.filter(last_name__icontains=query)
-            email_matches = User.objects.filter(email__icontains=query)
-            
-            print(f"🔍 UserSearchView - Username matches for '{query}': {username_matches.count()}")
-            for user in username_matches:
-                print(f"   - {user.username}")
-            
-            print(f"🔍 UserSearchView - First name matches for '{query}': {first_name_matches.count()}")
-            for user in first_name_matches:
-                print(f"   - {user.first_name}")
-            
-            print(f"🔍 UserSearchView - Last name matches for '{query}': {last_name_matches.count()}")
-            for user in last_name_matches:
-                print(f"   - {user.last_name}")
-            
-            print(f"🔍 UserSearchView - Email matches for '{query}': {email_matches.count()}")
-            for user in email_matches:
-                print(f"   - {user.email}")
-            
-            # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
-            # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
-            # Cache'i bypass etmek için fresh queryset kullan
-            search_results = User.objects.all().filter(
-                Q(username__icontains=query) |
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query) |
-                Q(email__icontains=query)
-            ).distinct().order_by('username')
-            
-            count = search_results.count()
-            print(f"✅ UserSearchView - Found {count} users for query '{query}'")
-            
-            # İlk 5 sonucu log'la
-            results_list = list(search_results[:5])
-            for i, user in enumerate(results_list):
-                print(f"   {i+1}. {user.username} - {user.first_name} {user.last_name} - {user.email}")
-            
-            # Sonuçları sınırla (performans için)
-            return search_results[:50]
-        else:
-            print(f"❌ UserSearchView - Query too short or empty")
-            return User.objects.none()  # Boş sorgu için hiç sonuç döndürme
+        # İlk 5 sonucu log'la
+        for i, group in enumerate(results[:5]):
+            print(f"   {i+1}. {group['name']} - {group['description']}")
+        
+        return Response(results)
+    else:
+        print(f"❌ search_groups - Query too short or empty")
+        return Response([])  # Boş sorgu için hiç sonuç döndürme
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -90,35 +85,8 @@ class GroupSearchView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Her seferinde fresh queryset al - cache'i bypass et
-        query = self.request.query_params.get('q', None)
-        
-        print(f"🔍 GroupSearchView - Query: '{query}'")
-        print(f"🔍 GroupSearchView - Request user: {self.request.user}")
-        print(f"🔍 GroupSearchView - Total groups in DB: {Group.objects.count()}")
-        
-        if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-            query = query.strip()
-            
-            # Sadece aktif grupları ara - cache'i bypass et
-            search_results = Group.objects.all().filter(
-                Q(name__icontains=query) |
-                Q(description__icontains=query)
-            ).distinct().order_by('name')
-            
-            count = search_results.count()
-            print(f"✅ GroupSearchView - Found {count} groups for query '{query}'")
-            
-            # İlk 5 sonucu log'la
-            results_list = list(search_results[:5])
-            for i, group in enumerate(results_list):
-                print(f"   {i+1}. {group.name} - {group.description}")
-            
-            # Sonuçları sınırla (performans için)
-            return search_results[:50]
-        else:
-            print(f"❌ GroupSearchView - Query too short or empty")
-            return Group.objects.none()  # Boş sorgu için hiç sonuç döndürme
+        # Bu view artık kullanılmıyor, search_groups function'ı kullanılıyor
+        return Group.objects.none()
 
 
 @api_view(['GET'])
@@ -167,3 +135,22 @@ def get_available_groups(request):
         'total_count': Group.objects.count(),
         'message': 'Arama için kullanabileceğiniz grup adları'
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def clear_search_cache(request):
+    """
+    Hash tablosu cache'ini temizle
+    """
+    try:
+        hash_search_engine.clear_cache()
+        return Response({
+            'success': True,
+            'message': 'Arama cache\'i başarıyla temizlendi'
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Cache temizleme hatası: {str(e)}'
+        }, status=500)
