@@ -32,6 +32,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   String? _errorMessage;
   int? _currentUserId;
   Set<int> _readMessageIds = {}; // Okunan mesaj ID'lerini tut
+  bool _hasMarkedAsRead = false; // İlk yüklemede okundu işaretleme kontrolü
 
   @override
   void initState() {
@@ -108,12 +109,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         setState(() {
           for (final message in unreadMessages) {
             _readMessageIds.add(message.id);
-            // Mesajın isRead durumunu da güncelle
-            final messageIndex = _messages.indexWhere((m) => m.id == message.id);
-            if (messageIndex != -1) {
-              // PrivateMessage immutable olduğu için yeni bir instance oluşturmamız gerekiyor
-              // Bu durumda sadece _readMessageIds kullanarak UI'da kontrol ediyoruz
-            }
           }
         });
         
@@ -153,8 +148,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         });
         _scrollToBottom();
         
-        // Mesajlar yüklendikten sonra okundu olarak işaretle
-        _markMessagesAsRead();
+        // Mesajlar yüklendikten sonra okundu olarak işaretle (sadece ilk yüklemede)
+        if (!_hasMarkedAsRead) {
+          _markMessagesAsRead();
+          _hasMarkedAsRead = true;
+        }
       }
     } catch (e) {
       print('❌ ChatDetail - Error loading messages: $e');

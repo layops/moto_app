@@ -400,11 +400,11 @@ class _MessagesPageState extends State<MessagesPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
-              title: const Text('Konuşmayı Sil', style: TextStyle(color: Colors.red)),
+              leading: const Icon(Icons.visibility_off_rounded, color: Colors.orange),
+              title: const Text('Konuşmayı Gizle', style: TextStyle(color: Colors.orange)),
               onTap: () {
                 Navigator.pop(context);
-                _deleteConversation(conversation);
+                _hideConversation(conversation);
               },
             ),
           ],
@@ -413,11 +413,11 @@ class _MessagesPageState extends State<MessagesPage> {
     );
   }
 
-  Future<void> _deleteConversation(Conversation conversation) async {
-    final confirmed = await _showDeleteConversationDialog(conversation.otherUser.displayName);
+  Future<void> _hideConversation(Conversation conversation) async {
+    final confirmed = await _showHideConversationDialog(conversation.otherUser.displayName);
     if (confirmed == true) {
       try {
-        await _chatService.deleteConversation(conversation.otherUser.id);
+        await _chatService.hideConversation(conversation.otherUser.id);
         
         if (mounted) {
           setState(() {
@@ -429,7 +429,7 @@ class _MessagesPageState extends State<MessagesPage> {
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${conversation.otherUser.displayName} ile olan konuşma silindi'),
+              content: Text('${conversation.otherUser.displayName} ile olan konuşma gizlendi'),
               backgroundColor: Colors.green,
             ),
           );
@@ -437,7 +437,7 @@ class _MessagesPageState extends State<MessagesPage> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Konuşma silinemedi: $e'),
+            content: Text('Konuşma gizlenemedi: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -445,12 +445,12 @@ class _MessagesPageState extends State<MessagesPage> {
     }
   }
 
-  Future<bool?> _showDeleteConversationDialog(String userName) async {
+  Future<bool?> _showHideConversationDialog(String userName) async {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Konuşmayı Sil'),
-        content: Text('$userName ile olan tüm konuşmanızı silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz. Karşı taraf konuşmayı görmeye devam edecek.'),
+        title: const Text('Konuşmayı Gizle'),
+        content: Text('$userName ile olan konuşmanızı gizlemek istediğinizden emin misiniz?\n\nKonuşma sadece sizin listenizden gizlenecek. Mesajlar silinmeyecek ve karşı taraf konuşmayı görmeye devam edecek.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -458,8 +458,8 @@ class _MessagesPageState extends State<MessagesPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sil'),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Gizle'),
           ),
         ],
       ),

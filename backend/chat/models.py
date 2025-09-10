@@ -79,3 +79,28 @@ class GroupMessage(models.Model):
     
     def __str__(self):
         return f"{self.sender.username} in {self.group.name}: {self.content[:50]}..."
+
+
+class HiddenConversation(models.Model):
+    """Gizlenen konuşmalar modeli"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='hidden_conversations',
+        verbose_name="Kullanıcı"
+    )
+    other_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='hidden_by_conversations',
+        verbose_name="Gizlenen Kullanıcı"
+    )
+    hidden_at = models.DateTimeField(auto_now_add=True, verbose_name="Gizlenme Tarihi")
+    
+    class Meta:
+        unique_together = ['user', 'other_user']
+        verbose_name = "Gizlenen Konuşma"
+        verbose_name_plural = "Gizlenen Konuşmalar"
+    
+    def __str__(self):
+        return f"{self.user.username} hid conversation with {self.other_user.username}"

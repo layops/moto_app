@@ -291,35 +291,35 @@ class ChatService {
     }
   }
 
-  /// Tüm konuşmayı sil (sadece kendi tarafından)
-  Future<void> deleteConversation(int userId) async {
+  /// Konuşmayı gizle (mesajları silme, sadece gizle)
+  Future<void> hideConversation(int userId) async {
     final token = await _getToken();
     if (token == null) {
       throw Exception('Token bulunamadı');
     }
 
     try {
-      print('🗑️ ChatService - Deleting conversation with user $userId');
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/chat/private-messages/conversation/$userId/'),
+      print('👁️ ChatService - Hiding conversation with user $userId');
+      final response = await http.post(
+        Uri.parse('$_baseUrl/chat/private-messages/conversation/$userId/hide/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
-      print('🗑️ ChatService - Delete conversation response: ${response.statusCode} - ${response.body}');
+      print('👁️ ChatService - Hide conversation response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         // Cache'i temizle
         _clearMessageCache();
-        print('🗑️ ChatService - Conversation deleted successfully');
+        print('👁️ ChatService - Conversation hidden successfully');
       } else {
-        throw Exception('Konuşma silinemedi: ${response.statusCode}');
+        throw Exception('Konuşma gizlenemedi: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ ChatService - Error deleting conversation: $e');
-      throw Exception('Konuşma silinirken hata: $e');
+      print('❌ ChatService - Error hiding conversation: $e');
+      throw Exception('Konuşma gizlenirken hata: $e');
     }
   }
 
