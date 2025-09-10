@@ -18,21 +18,29 @@ class UserSearchView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Her seferinde fresh queryset al
+        queryset = User.objects.all()
         query = self.request.query_params.get('q', None)
         
         print(f"🔍 UserSearchView - Query: '{query}'")
         print(f"🔍 UserSearchView - Request user: {self.request.user}")
         print(f"🔍 UserSearchView - Total users in DB: {User.objects.count()}")
+        print(f"🔍 UserSearchView - All query params: {dict(self.request.query_params)}")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
             
+            # Tüm kullanıcıları listele (debug için)
+            all_users = User.objects.all()
+            print(f"🔍 UserSearchView - All users in DB:")
+            for user in all_users:
+                print(f"   - ID: {user.id}, Username: '{user.username}', First: '{user.first_name}', Last: '{user.last_name}', Email: '{user.email}'")
+            
             # Arama kriterlerini ayrı ayrı test et ve log'la
-            username_matches = queryset.filter(username__icontains=query)
-            first_name_matches = queryset.filter(first_name__icontains=query)
-            last_name_matches = queryset.filter(last_name__icontains=query)
-            email_matches = queryset.filter(email__icontains=query)
+            username_matches = User.objects.filter(username__icontains=query)
+            first_name_matches = User.objects.filter(first_name__icontains=query)
+            last_name_matches = User.objects.filter(last_name__icontains=query)
+            email_matches = User.objects.filter(email__icontains=query)
             
             print(f"🔍 UserSearchView - Username matches for '{query}': {username_matches.count()}")
             for user in username_matches:
@@ -52,7 +60,7 @@ class UserSearchView(generics.ListAPIView):
             
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
             # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
-            search_results = queryset.filter(
+            search_results = User.objects.filter(
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query) |
@@ -71,7 +79,7 @@ class UserSearchView(generics.ListAPIView):
             return search_results[:50]
         else:
             print(f"❌ UserSearchView - Query too short or empty")
-            return queryset.none()  # Boş sorgu için hiç sonuç döndürme
+            return User.objects.none()  # Boş sorgu için hiç sonuç döndürme
 
 
 class GroupSearchView(generics.ListAPIView):
