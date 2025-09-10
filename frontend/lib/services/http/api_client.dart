@@ -85,8 +85,9 @@ class ApiClient {
       onError: (DioException err, ErrorInterceptorHandler handler) async {
         if (err.response?.statusCode == 401 ||
             err.response?.statusCode == 403) {
-          // Token geçersiz veya süresi dolmuşsa, logout yap
-          await ServiceLocator.auth.logout();
+          // Token geçersiz veya süresi dolmuşsa, sadece log yaz
+          debugPrint('API Error - 401/403: Token geçersiz veya süresi dolmuş');
+          // Otomatik logout yapma, kullanıcı manuel olarak logout yapabilir
         }
         handler.next(err);
       },
@@ -133,20 +134,35 @@ class ApiClient {
   // Token yenileme metodu
   Future<void> _refreshToken() async {
     try {
-      final username = await _tokenService.getCurrentUsername();
-      if (username == null) {
-        throw Exception('Kullanıcı adı bulunamadı');
+      final refreshToken = await _tokenService.getRefreshToken();
+      if (refreshToken == null) {
+        throw Exception('Refresh token bulunamadı');
       }
 
-      // Burada token yenileme endpoint'inizi kullanmanız gerekir
-      // Örnek: /users/refresh-token/
       debugPrint('Token yenileme işlemi başlatıldı');
 
-      // Şimdilik mevcut token'ı tekrar kullanıyoruz
-      // Gerçek uygulamada token refresh endpoint'ini çağırmanız gerekir
-      final currentToken = await _tokenService.getToken();
-      if (currentToken == null) {
-        throw Exception('Mevcut token bulunamadı');
+      // Token yenileme endpoint'ini çağır
+      final response = await _dio.post('users/refresh-token/', data: {
+        'refresh': refreshToken,
+      });
+
+      if (response.statusCode == 200) {
+        final newToken = response.data['token'];
+        final newRefreshToken = response.data['refresh'];
+        
+        if (newToken != null) {
+          // Yeni token'ı kaydet
+          await _tokenService.saveAuthData(
+            newToken, 
+            await _tokenService.getCurrentUsername() ?? '', 
+            refreshToken: newRefreshToken
+          );
+          debugPrint('Token başarıyla yenilendi');
+        } else {
+          throw Exception('Yeni token alınamadı');
+        }
+      } else {
+        throw Exception('Token yenileme başarısız: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Token yenileme hatası: $e');

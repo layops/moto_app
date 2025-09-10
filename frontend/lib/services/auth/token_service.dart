@@ -7,14 +7,22 @@ class TokenService {
 
   TokenService(this._storage);
 
-  Future<void> saveAuthData(String token, String username) async {
+  Future<void> saveAuthData(String token, String username, {String? refreshToken}) async {
     await _storage.setAuthToken(token);
     await _storage.setCurrentUsername(username);
+    if (refreshToken != null) {
+      await _storage.setString('refresh_token', refreshToken);
+    }
   }
 
   Future<void> deleteAuthData() async {
     await _storage.removeAuthToken();
     await _storage.removeCurrentUsername();
+    await _storage.remove('refresh_token');
+  }
+
+  Future<String?> getRefreshToken() async {
+    return _storage.getString('refresh_token');
   }
 
   Future<bool> hasToken() async {

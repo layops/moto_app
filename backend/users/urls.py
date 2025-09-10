@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     UserRegisterView,
     UserLoginView,
+    TokenRefreshView,
     ProfileImageUploadView,
     CoverImageUploadView, # Yeni eklendi
     FollowToggleView,
@@ -20,6 +21,7 @@ urlpatterns = [
     # Register / Login
     path('register/', UserRegisterView.as_view(), name='user-register'),
     path('login/', UserLoginView.as_view(), name='user-login'),
+    path('refresh-token/', TokenRefreshView.as_view(), name='token-refresh'),
 
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),

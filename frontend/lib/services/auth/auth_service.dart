@@ -87,10 +87,12 @@ class AuthService {
       print('🔑 AuthService - Login data: ${response.data}');
 
       final token = _extractToken(response);
+      final refreshToken = _extractRefreshToken(response);
       print('🔑 AuthService - Extracted token: ${token.isNotEmpty ? "Token mevcut (${token.substring(0, 10)}...)" : "Token boş"}');
+      print('🔑 AuthService - Extracted refresh token: ${refreshToken.isNotEmpty ? "Refresh token mevcut" : "Refresh token boş"}');
       
       if (token.isNotEmpty) {
-        await _tokenService.saveAuthData(token, username);
+        await _tokenService.saveAuthData(token, username, refreshToken: refreshToken);
         await _storage.setCurrentUsername(username);
 
         await saveRememberMe(rememberMe);
@@ -193,6 +195,30 @@ class AuthService {
       return '';
     } catch (e) {
       debugPrint('Token alınırken hata: $e');
+      return '';
+    }
+  }
+
+  String _extractRefreshToken(Response response) {
+    try {
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data['refresh'] ??
+            data['refresh_token'] ??
+            data['refreshToken'] ??
+            '';
+      } else if (data is String) {
+        final jsonData = jsonDecode(data);
+        if (jsonData is Map<String, dynamic>) {
+          return jsonData['refresh'] ??
+              jsonData['refresh_token'] ??
+              jsonData['refreshToken'] ??
+              '';
+        }
+      }
+      return '';
+    } catch (e) {
+      debugPrint('Refresh token alınırken hata: $e');
       return '';
     }
   }
