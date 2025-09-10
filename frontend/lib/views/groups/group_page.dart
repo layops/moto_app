@@ -87,6 +87,23 @@ class _GroupsPageState extends State<GroupsPage> {
     await _loadGroups();
   }
 
+  // Gruba katıldıktan sonra özel yenileme fonksiyonu
+  Future<void> _refreshAfterJoin() async {
+    // Kısa bir bekleme ekleyerek API'nin güncellenmesini sağla
+    await Future.delayed(const Duration(milliseconds: 300));
+    await _loadGroups();
+  }
+
+  // Gruba katıldıktan sonra optimistik güncelleme
+  void _moveGroupToMyGroups(dynamic group) {
+    setState(() {
+      // Grubu discover listesinden çıkar
+      _discoverGroups.removeWhere((g) => g['id'] == group['id']);
+      // Grubu my groups listesine ekle
+      _myGroups.add(group);
+    });
+  }
+
   Widget _buildErrorWidget() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -469,6 +486,8 @@ class _GroupsPageState extends State<GroupsPage> {
                           groups: _discoverGroups,
                           authService: _authService,
                           isMyGroupsSection: false,
+                          onJoinSuccess: _refreshAfterJoin, // Gruba katıldıktan sonra listeyi yenile
+                          onGroupJoined: _moveGroupToMyGroups, // Grubu hemen taşı
                           emptyStateWidget: Center(
                             child: Text(
                               'Keşfedilecek grup bulunamadı',

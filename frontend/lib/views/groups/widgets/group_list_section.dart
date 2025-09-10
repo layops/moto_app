@@ -12,6 +12,8 @@ class GroupListSection extends StatelessWidget {
   final bool isMyGroupsSection;
   final Widget? emptyStateWidget;
   final AuthService authService;
+  final VoidCallback? onJoinSuccess;
+  final Function(dynamic group)? onGroupJoined;
 
   const GroupListSection({
     super.key,
@@ -20,6 +22,8 @@ class GroupListSection extends StatelessWidget {
     required this.authService,
     this.isMyGroupsSection = false,
     this.emptyStateWidget,
+    this.onJoinSuccess,
+    this.onGroupJoined,
   });
 
   @override
@@ -58,6 +62,8 @@ class GroupListSection extends StatelessWidget {
                       group: group,
                       isMyGroup: isMyGroupsSection,
                       authService: authService,
+                      onJoinSuccess: onJoinSuccess,
+                      onGroupJoined: onGroupJoined,
                     ))
                 .toList(),
           ),

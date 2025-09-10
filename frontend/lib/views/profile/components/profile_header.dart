@@ -22,6 +22,7 @@ class ProfileHeader extends StatelessWidget {
   final VoidCallback? onEditAvatar;
   final VoidCallback? onEditCover;
   final VoidCallback? onFollow;
+  final VoidCallback? onMessage;
 
   const ProfileHeader({
     super.key,
@@ -43,6 +44,7 @@ class ProfileHeader extends StatelessWidget {
     this.onEditAvatar,
     this.onEditCover,
     this.onFollow,
+    this.onMessage,
   });
 
   ImageProvider<Object>? _getImage(File? file, String? url) {
@@ -229,7 +231,13 @@ class ProfileHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              _buildFollowButton(colorScheme),
+              Row(
+                children: [
+                  if (!isCurrentUser) _buildMessageButton(colorScheme),
+                  if (!isCurrentUser) const SizedBox(width: 12),
+                  _buildFollowButton(colorScheme),
+                ],
+              ),
             ],
           ),
         ),
@@ -378,6 +386,38 @@ class ProfileHeader extends StatelessWidget {
         ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMessageButton(ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: onMessage,
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          backgroundColor: colorScheme.surfaceVariant,
+          foregroundColor: colorScheme.onSurfaceVariant,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          padding: const EdgeInsets.all(12),
+          elevation: 0,
+        ),
+        child: Icon(
+          Icons.message_rounded,
+          size: 20,
+        ),
+      ),
     );
   }
 

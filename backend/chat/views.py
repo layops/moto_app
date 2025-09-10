@@ -125,6 +125,27 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
             status=status.HTTP_403_FORBIDDEN
         )
 
+    @action(detail=False, methods=['get'], url_path='with-user/(?P<user_id>[^/.]+)')
+    def with_user(self, request, user_id=None):
+        """Belirli bir kullanıcı ile olan konuşmayı getir"""
+        try:
+            other_user = get_object_or_404(User, id=user_id)
+            user = request.user
+            
+            # İki kullanıcı arasındaki mesajları getir
+            messages = PrivateMessage.objects.filter(
+                Q(sender=user, receiver=other_user) | 
+                Q(sender=other_user, receiver=user)
+            ).order_by('timestamp')
+            
+            serializer = self.get_serializer(messages, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {'detail': f'Konuşma alınırken hata: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/chat/chat_service.dart';
+import '../../widgets/new_message_dialog.dart';
+import 'chat_detail_page.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
@@ -28,13 +30,20 @@ class _MessagesPageState extends State<MessagesPage> {
         _errorMessage = null;
       });
 
+      print('📱 MessagesPage - Loading conversations...');
       final conversations = await _chatService.getConversations();
+      print('📱 MessagesPage - Loaded ${conversations.length} conversations');
+      for (var conv in conversations) {
+        print('   - ${conv.otherUser.displayName} (${conv.otherUser.username})');
+      }
+      
       if (!mounted) return;
       setState(() {
         _conversations = conversations;
         _isLoading = false;
       });
     } catch (e) {
+      print('❌ MessagesPage - Error loading conversations: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
@@ -288,28 +297,30 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   void _openConversation(Conversation conversation) {
-    // Konuşma detay sayfasına git
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${conversation.otherUser.displayName} konuşması açılıyor...'),
-        duration: const Duration(seconds: 1),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatDetailPage(otherUser: conversation.otherUser),
       ),
     );
-    // TODO: Chat detail sayfasına yönlendir
   }
 
   void _showNewMessageDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Mesaj'),
-        content: const Text('Kullanıcı arama özelliği yakında eklenecek!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
-          ),
-        ],
+      builder: (context) => NewMessageDialog(
+        onUserSelected: (user) {
+          Navigator.of(context).pop();
+          _startConversationWithUser(user);
+        },
+      ),
+    );
+  }
+
+  void _startConversationWithUser(User user) {
+    // Chat detail sayfasına yönlendir
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatDetailPage(otherUser: user),
       ),
     );
   }

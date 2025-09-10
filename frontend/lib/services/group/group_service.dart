@@ -106,8 +106,9 @@ class GroupService {
   Future<void> joinGroup(int groupId) async {
     final token = await _authService.getToken();
     
-    final response = await _dio.post(
-      'groups/$groupId/join/',
+    final response = await _dio.patch(
+      'groups/$groupId/join-leave/',
+      data: {'action': 'join'},
       options: _authOptions(token),
     );
     

@@ -73,13 +73,19 @@ class ChatService {
     }
 
     try {
+      final url = '$_baseUrl/chat/conversations/';
+      print('💬 ChatService - Loading conversations from: $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/chat/conversations/'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
+
+      print('💬 ChatService - Conversations response status: ${response.statusCode}');
+      print('💬 ChatService - Conversations response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -87,15 +93,21 @@ class ChatService {
             .map((json) => Conversation.fromJson(json))
             .toList();
             
+        print('💬 ChatService - Parsed ${conversations.length} conversations');
+        for (var conv in conversations) {
+          print('   - ${conv.otherUser.displayName} (${conv.otherUser.username})');
+        }
+            
         // Cache'e kaydet
         _conversationsCache[cacheKey] = conversations;
         _cacheTimestamps[cacheKey] = DateTime.now();
         
         return conversations;
       } else {
-        throw Exception('Konuşmalar alınamadı: ${response.statusCode}');
+        throw Exception('Konuşmalar alınamadı: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('❌ ChatService - Conversations error: $e');
       throw Exception('Konuşmalar alınırken hata: $e');
     }
   }
@@ -116,7 +128,7 @@ class ChatService {
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/chat/private-messages/$userId/'),
+        Uri.parse('$_baseUrl/chat/private-messages/with-user/$userId/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -221,23 +233,33 @@ class ChatService {
     }
 
     try {
+      final url = '$_baseUrl/search/users/?q=$query';
+      print('🔍 ChatService - Searching users at: $url');
+      print('🔍 ChatService - Query: "$query"');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/users/search/?q=$query'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
+      print('🔍 ChatService - Response status: ${response.statusCode}');
+      print('🔍 ChatService - Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data as List)
+        final users = (data as List)
             .map((json) => User.fromJson(json))
             .toList();
+        print('🔍 ChatService - Parsed ${users.length} users');
+        return users;
       } else {
-        throw Exception('Kullanıcılar aranamadı: ${response.statusCode}');
+        throw Exception('Kullanıcılar aranamadı: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('❌ ChatService - Search error: $e');
       throw Exception('Kullanıcılar aranırken hata: $e');
     }
   }

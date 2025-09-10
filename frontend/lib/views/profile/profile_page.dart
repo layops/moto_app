@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
+import 'package:motoapp_frontend/services/chat/chat_service.dart';
+import 'package:motoapp_frontend/views/messages/chat_detail_page.dart';
 import 'components/photo_uploader.dart';
 import 'components/profile_drawer.dart';
 import 'components/profile_header.dart';
@@ -200,6 +202,26 @@ class _ProfilePageState extends State<ProfilePage> {
     } finally {
       if (mounted) setState(() => _isFollowLoading = false);
     }
+  }
+
+  void _openMessageDialog() {
+    if (_currentUsername == null || _profileData == null) return;
+    
+    // User objesi oluştur
+    final user = User(
+      id: _profileData!['id'],
+      username: _currentUsername!,
+      firstName: _profileData!['first_name'],
+      lastName: _profileData!['last_name'],
+      profilePicture: _profileData!['profile_picture'],
+    );
+    
+    // Chat detail sayfasına git
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatDetailPage(otherUser: user),
+      ),
+    );
   }
 
   void _showAvatarUploadDialog() {
@@ -464,6 +486,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? _showCoverUploadDialog
                         : null,
                     onFollow: _isCurrentUser ? null : _toggleFollow,
+                    onMessage: _isCurrentUser ? null : _openMessageDialog,
                   ),
                 ),
               ),

@@ -4,41 +4,100 @@ import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
+import 'package:motoapp_frontend/services/group/group_service.dart';
 import '../group_detail_page.dart';
 
-class GroupCard extends StatelessWidget {
+class GroupCard extends StatefulWidget {
   final dynamic group;
   final bool isMyGroup;
   final AuthService authService;
+  final VoidCallback? onJoinSuccess;
+  final Function(dynamic group)? onGroupJoined;
 
   const GroupCard({
     super.key,
     required this.group,
     required this.isMyGroup,
     required this.authService,
+    this.onJoinSuccess,
+    this.onGroupJoined,
   });
 
   @override
+  State<GroupCard> createState() => _GroupCardState();
+}
+
+class _GroupCardState extends State<GroupCard> {
+  bool _isJoining = false;
+
+  Future<void> _joinGroup() async {
+    if (_isJoining) return;
+    
+    setState(() {
+      _isJoining = true;
+    });
+
+    try {
+      final groupService = GroupService(authService: widget.authService);
+      final groupId = (widget.group['id'] is int)
+          ? widget.group['id'] as int
+          : int.tryParse(widget.group['id'].toString()) ?? 0;
+      
+      await groupService.joinGroup(groupId);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gruba başarıyla katıldınız!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Grubu hemen taşı (optimistik güncelleme)
+        widget.onGroupJoined?.call(widget.group);
+        
+        // Callback'i çağır (backend'den güncel veriyi çek)
+        widget.onJoinSuccess?.call();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gruba katılırken hata oluştu: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isJoining = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (group is! Map<String, dynamic>) {
+    if (widget.group is! Map<String, dynamic>) {
       return const Card(
         child: ListTile(title: Text('Geçersiz grup verisi')),
       );
     }
 
-    final groupId = (group['id'] is int)
-        ? group['id'] as int
-        : int.tryParse(group['id'].toString()) ?? 0;
-    final groupName = group['name']?.toString() ?? 'Grup';
-    final description = group['description']?.toString() ?? 'Açıklama yok';
-    final profilePictureUrl = group['profile_picture_url']?.toString();
-    final memberCount = group['members']?.length?.toString() ?? '0';
-    final createdDate = group['created_at']?.toString() ?? '';
+    final groupId = (widget.group['id'] is int)
+        ? widget.group['id'] as int
+        : int.tryParse(widget.group['id'].toString()) ?? 0;
+    final groupName = widget.group['name']?.toString() ?? 'Grup';
+    final description = widget.group['description']?.toString() ?? 'Açıklama yok';
+    final profilePictureUrl = widget.group['profile_picture_url']?.toString();
+    final memberCount = widget.group['members']?.length?.toString() ?? '0';
+    final createdDate = widget.group['created_at']?.toString() ?? '';
     
     // Debug için grup verilerini yazdır
     print('Group Card - Group ID: $groupId');
     print('Group Card - Profile Picture URL: $profilePictureUrl');
-    print('Group Card - Group Data: $group');
+    print('Group Card - Group Data: ${widget.group}');
 
     return InkWell(
       onTap: () {
@@ -47,8 +106,8 @@ class GroupCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => GroupDetailPage(
               groupId: groupId, 
-              groupData: group,
-              authService: authService,
+              groupData: widget.group,
+              authService: widget.authService,
             ),
           ),
         );
@@ -132,9 +191,9 @@ class GroupCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (!isMyGroup)
+                  if (!widget.isMyGroup)
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: _isJoining ? null : _joinGroup,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColorSchemes.primaryColor,
                         foregroundColor: Colors.white,
@@ -145,7 +204,16 @@ class GroupCard extends StatelessWidget {
                               ThemeConstants.borderRadiusMedium),
                         ),
                       ),
-                      child: const Text('Katıl'),
+                      child: _isJoining
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Katıl'),
                     ),
                 ],
               ),
