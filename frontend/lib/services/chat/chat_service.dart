@@ -172,7 +172,7 @@ class ChatService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'receiver': receiverId,
+          'receiver_id': receiverId,
           'message': message,
         }),
       );

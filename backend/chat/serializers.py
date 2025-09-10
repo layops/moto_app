@@ -5,13 +5,23 @@ from users.serializers import UserSerializer
 class PrivateMessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True)
+    receiver_id = serializers.IntegerField(write_only=True)
     
     class Meta:
         model = PrivateMessage
         fields = [
-            'id', 'sender', 'receiver', 'message', 'timestamp', 'is_read'
+            'id', 'sender', 'receiver', 'receiver_id', 'message', 'timestamp', 'is_read'
         ]
         read_only_fields = ['id', 'timestamp', 'sender']
+    
+    def create(self, validated_data):
+        # receiver_id'yi receiver field'ına çevir
+        receiver_id = validated_data.pop('receiver_id')
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        receiver = User.objects.get(id=receiver_id)
+        validated_data['receiver'] = receiver
+        return super().create(validated_data)
 
 class GroupMessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
