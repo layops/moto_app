@@ -18,10 +18,12 @@ class UserSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-        print(f"UserSearchView - Query: '{query}'")
+        print(f"🔍 UserSearchView - Query alındı: '{query}'")
+        print(f"🔍 UserSearchView - Query uzunluğu: {len(query) if query else 0}")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
+            print(f"🔍 UserSearchView - İşlenen query: '{query}'")
             
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
             # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
@@ -32,10 +34,19 @@ class UserSearchView(generics.ListAPIView):
                 Q(email__icontains=query)
             ).distinct().order_by('username')
             
-            print(f"UserSearchView - Found {search_results.count()} users")
+            count = search_results.count()
+            print(f"✅ UserSearchView - {count} kullanıcı bulundu")
+            
+            # İlk 5 sonucu log'la
+            results_list = list(search_results[:5])
+            for i, user in enumerate(results_list):
+                print(f"   {i+1}. {user.username} - {user.first_name} {user.last_name} - {user.email}")
+            
             # Sonuçları sınırla (performans için)
             return search_results[:50]
-        return queryset.none()  # Boş sorgu için hiç sonuç döndürme
+        else:
+            print(f"❌ UserSearchView - Query çok kısa veya boş, boş sonuç döndürülüyor")
+            return queryset.none()  # Boş sorgu için hiç sonuç döndürme
 
 
 class GroupSearchView(generics.ListAPIView):
@@ -46,10 +57,12 @@ class GroupSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-        print(f"GroupSearchView - Query: '{query}'")
+        print(f"🔍 GroupSearchView - Query alındı: '{query}'")
+        print(f"🔍 GroupSearchView - Query uzunluğu: {len(query) if query else 0}")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
+            print(f"🔍 GroupSearchView - İşlenen query: '{query}'")
             
             # Sadece aktif grupları ara
             search_results = queryset.filter(
@@ -57,7 +70,16 @@ class GroupSearchView(generics.ListAPIView):
                 Q(description__icontains=query)
             ).distinct().order_by('name')
             
-            print(f"GroupSearchView - Found {search_results.count()} groups")
+            count = search_results.count()
+            print(f"✅ GroupSearchView - {count} grup bulundu")
+            
+            # İlk 5 sonucu log'la
+            results_list = list(search_results[:5])
+            for i, group in enumerate(results_list):
+                print(f"   {i+1}. {group.name} - {group.description}")
+            
             # Sonuçları sınırla (performans için)
             return search_results[:50]
-        return queryset.none()  # Boş sorgu için hiç sonuç döndürme
+        else:
+            print(f"❌ GroupSearchView - Query çok kısa veya boş, boş sonuç döndürülüyor")
+            return queryset.none()  # Boş sorgu için hiç sonuç döndürme
