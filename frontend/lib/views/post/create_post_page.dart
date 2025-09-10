@@ -68,12 +68,18 @@ class _CreatePostPageState extends State<CreatePostPage> {
         groupPk: widget.groupPk,
       );
 
-      if (widget.onPostCreated != null) widget.onPostCreated!();
+      // Callback'leri çağır
+      if (widget.onPostCreated != null) {
+        print('CreatePostPage - onPostCreated callback çağrılıyor');
+        widget.onPostCreated!();
+      }
       if (widget.onProfileRefresh != null) {
+        print('CreatePostPage - onProfileRefresh callback çağrılıyor');
         widget.onProfileRefresh!(); // Profili yenile
       }
 
       // ignore: use_build_context_synchronously
+      print('CreatePostPage - Navigator.pop ile true döndürülüyor');
       Navigator.pop(context, true); // Success result döndür
     } catch (e) {
       setState(() {

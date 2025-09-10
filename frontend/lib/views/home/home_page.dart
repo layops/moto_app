@@ -33,40 +33,68 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchPosts() async {
-    if (!mounted) return;
+    print('HomePage - _fetchPosts başlatıldı');
+    if (!mounted) {
+      print('HomePage - Widget mounted değil, _fetchPosts iptal edildi');
+      return;
+    }
+    
     setState(() {
       loading = true;
       error = null;
     });
+    print('HomePage - Loading state true yapıldı');
 
     try {
       final token = await ServiceLocator.token.getToken();
+      print('HomePage - Token alındı: ${token != null ? "Token mevcut" : "Token yok"}');
+      
       if (token != null) {
+        print('HomePage - PostService.fetchPosts çağrılıyor...');
         final fetchedPosts = await ServiceLocator.post.fetchPosts(token);
+        print('HomePage - fetchPosts tamamlandı, ${fetchedPosts.length} post alındı');
 
         // Debug için gelen postları yazdır (sadece debug modda)
         if (kDebugMode) {
-          print('Fetched posts: $fetchedPosts');
+          print('HomePage - Fetched posts count: ${fetchedPosts.length}');
+          for (int i = 0; i < fetchedPosts.length && i < 2; i++) {
+            final post = fetchedPosts[i] as Map<String, dynamic>;
+            final content = post['content']?.toString() ?? '';
+            final contentPreview = content.length > 15 ? '${content.substring(0, 15)}...' : content;
+            print('HomePage - Post ${post['id']}: "$contentPreview"');
+          }
         }
 
         // Process posts to get user details for author IDs - Optimized for performance
+        print('HomePage - Post processing başlatılıyor...');
         final updatedPosts = await _processPostsWithUserDetails(fetchedPosts);
+        print('HomePage - Post processing tamamlandı, ${updatedPosts.length} post işlendi');
 
-        if (!mounted) return;
+        if (!mounted) {
+          print('HomePage - Widget mounted değil, state güncelleme iptal edildi');
+          return;
+        }
+        
         setState(() {
           posts = updatedPosts;
         });
+        print('HomePage - State güncellendi, posts sayısı: ${posts.length}');
       }
     } catch (e) {
+      print('HomePage - _fetchPosts hatası: $e');
       if (!mounted) return;
       setState(() {
         error = e.toString();
       });
     } finally {
-      if (!mounted) return;
+      if (!mounted) {
+        print('HomePage - Widget mounted değil, loading state güncelleme iptal edildi');
+        return;
+      }
       setState(() {
         loading = false;
       });
+      print('HomePage - Loading state false yapıldı');
     }
   }
 
@@ -122,13 +150,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onPostButtonPressed() async {
+    print('HomePage - _onPostButtonPressed başlatıldı');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreatePostPage()),
     );
+    print('HomePage - Navigator.pop result: $result');
 
+    // Gönderi oluşturulduysa anasayfayı yenile
     if (result == true) {
-      _fetchPosts();
+      print('HomePage - Gönderi oluşturuldu, anasayfa yenileniyor...');
+      
+      // Önce cache'i manuel olarak temizle
+      ServiceLocator.post.clearCache();
+      print('HomePage - Cache manuel olarak temizlendi');
+      
+      // Sonra postları yeniden yükle
+      await _fetchPosts();
+      print('HomePage - _fetchPosts tamamlandı');
+      
+      // Bildirimleri de yenile
+      _fetchUnreadNotifications();
+      print('HomePage - _fetchUnreadNotifications tamamlandı');
+    } else {
+      print('HomePage - Gönderi oluşturulmadı veya iptal edildi');
     }
   }
 

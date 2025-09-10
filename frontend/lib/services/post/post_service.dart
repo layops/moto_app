@@ -87,13 +87,20 @@ class PostService {
     final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';
     final cacheKey = 'posts_${groupPk ?? 'all'}';
 
+    print('PostService - fetchPosts başlatıldı, endpoint: $endpoint');
+    print('PostService - Cache key: $cacheKey');
+
     // Cache kontrolü
     if (_isCacheValid(cacheKey)) {
+      print('PostService - Cache geçerli, cache\'den döndürülüyor');
       return _postsCache[cacheKey]!;
     }
 
+    print('PostService - Cache geçersiz veya yok, API\'den çekiliyor');
+
     try {
       final response = await _apiClient.get(endpoint);
+      print('PostService - API response alındı, status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final posts = response.data as List<dynamic>;
@@ -102,18 +109,23 @@ class PostService {
         print('PostService - Fetched ${posts.length} posts');
         for (int i = 0; i < posts.length && i < 3; i++) {
           final post = posts[i] as Map<String, dynamic>;
-          print('PostService - Post ${post['id']}: likes_count=${post['likes_count']}, is_liked=${post['is_liked']}');
+          final content = post['content']?.toString() ?? '';
+          final contentPreview = content.length > 20 ? '${content.substring(0, 20)}...' : content;
+          print('PostService - Post ${post['id']}: content="$contentPreview", author=${post['author']?['username']}');
         }
         
         // Cache'e kaydet
         _postsCache[cacheKey] = posts;
         _cacheTimestamps[cacheKey] = DateTime.now();
+        print('PostService - Posts cache\'e kaydedildi');
         
         return posts;
       } else {
+        print('PostService - API error: ${response.statusCode}');
         throw Exception('Postlar alınamadı: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('PostService - DioException: ${e.message}');
       if (e.response?.statusCode == 404) {
         throw Exception('API endpointi bulunamadı: $kBaseUrl/$endpoint');
       } else if (e.type == DioExceptionType.connectionTimeout) {
@@ -181,8 +193,10 @@ class PostService {
   }
   
   void _clearPostsCache() {
+    print('PostService - Cache temizleniyor...');
     _postsCache.clear();
     _cacheTimestamps.clear();
+    print('PostService - Cache temizlendi');
   }
   
   void clearCache() {
