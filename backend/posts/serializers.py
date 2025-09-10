@@ -73,15 +73,23 @@ class PostSerializer(serializers.ModelSerializer):
             return []
 
     def create(self, validated_data):
+        print(f"PostSerializer.create çağrıldı - validated_data: {validated_data}")
+        
         # Author alanını validated_data'dan çıkar (read_only olduğu için)
         author = validated_data.pop('author', None)
+        print(f"PostSerializer.create - Author: {author}")
+        
+        # Post'u oluştur
         post = super().create(validated_data)
+        print(f"PostSerializer.create - Post oluşturuldu: {post.id}")
         
         # Author'ı manuel olarak set et
         if author:
             post.author = author
             post.save()
-            print(f"PostSerializer - Author manuel olarak set edildi: {author.username}")
+            print(f"PostSerializer - Author manuel olarak set edildi: {author.username} (ID: {author.id})")
+        else:
+            print(f"PostSerializer - Author bulunamadı! Post author_id: {post.author_id}")
         
         return post
 

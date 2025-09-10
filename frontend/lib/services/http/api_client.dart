@@ -43,6 +43,9 @@ class ApiClient {
         }
 
         final token = await _tokenService.getToken();
+        debugPrint('API Request - Path: ${options.path}');
+        debugPrint('API Request - Token: ${token != null ? "Token mevcut (${token.substring(0, 10)}...)" : "Token yok"}');
+        
         if (token != null) {
           // Token süresi kontrolü (5 dakika toleranslı)
           if (await _tokenService.isTokenExpired()) {
@@ -68,7 +71,10 @@ class ApiClient {
           final newToken = await _tokenService.getToken();
           if (newToken != null) {
             options.headers['Authorization'] = 'Token $newToken';
+            debugPrint('API Request - Authorization header eklendi: Token ${newToken.substring(0, 10)}...');
           }
+        } else {
+          debugPrint('API Request - Token bulunamadı, istek token olmadan gönderiliyor');
         }
         return handler.next(options);
       },

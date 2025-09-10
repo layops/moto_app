@@ -28,7 +28,12 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         # Kullanıcı authentication kontrolü
+        logger.info(f"perform_create çağrıldı - User: {self.request.user}")
+        logger.info(f"User authenticated: {self.request.user.is_authenticated}")
+        logger.info(f"User ID: {getattr(self.request.user, 'id', 'NO_ID')}")
+        
         if not self.request.user or not self.request.user.is_authenticated:
+            logger.error("Kullanıcı kimlik doğrulaması başarısız")
             raise PermissionDenied("Kullanıcı kimlik doğrulaması gerekli.")
         
         # Resim dosyasını al
@@ -46,10 +51,12 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
         
         logger.info(f"Genel post oluşturuluyor - User: {self.request.user.username} (ID: {self.request.user.id})")
         logger.info(f"Content: {content[:100]}...")
+        logger.info(f"Post data: {post_data}")
         
         try:
-            post = serializer.save(author=self.request.user, group=None, **post_data)
-            logger.info(f"Genel post başarıyla oluşturuldu - ID: {post.id}")
+            # Author'ı explicit olarak set et
+            post = serializer.save(author=self.request.user, group=None)
+            logger.info(f"Genel post başarıyla oluşturuldu - ID: {post.id}, Author ID: {post.author.id}")
         except Exception as e:
             logger.error(f"Genel post oluşturma hatası: {str(e)}")
             raise serializers.ValidationError(f"Post oluşturulamadı: {str(e)}")
