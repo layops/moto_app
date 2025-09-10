@@ -12,7 +12,8 @@ from .views import (
     UserPostsView,
     UserMediaView,
     UserEventsView,
-    UserLogoutView
+    UserLogoutView,
+    create_test_users  # Geçici test endpoint'i
 )
 
 urlpatterns = [
@@ -44,4 +45,7 @@ urlpatterns = [
     
     #Users Logout
     path('logout/', UserLogoutView.as_view(), name='user-logout'),
+    
+    # Geçici test endpoint'i
+    path('create-test-users/', create_test_users, name='create-test-users'),
 ]
