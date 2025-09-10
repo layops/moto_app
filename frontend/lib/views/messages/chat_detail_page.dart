@@ -5,10 +5,12 @@ import '../../widgets/new_message_dialog.dart';
 
 class ChatDetailPage extends StatefulWidget {
   final User otherUser;
+  final VoidCallback? onMessageSent;
 
   const ChatDetailPage({
     super.key,
     required this.otherUser,
+    this.onMessageSent,
   });
 
   @override
@@ -25,12 +27,20 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   bool _isSending = false;
   String? _errorMessage;
   int? _currentUserId;
+  Set<int> _readMessageIds = {}; // Okunan mesaj ID'lerini tut
 
   @override
   void initState() {
     super.initState();
     _getCurrentUserId();
     _loadMessages();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sayfa açıldığında mesajları okundu olarak işaretle
+    _markMessagesAsRead();
   }
 
   Future<void> _getCurrentUserId() async {
@@ -46,6 +56,42 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       }
     } catch (e) {
       print('❌ ChatDetail - Error getting current user ID: $e');
+    }
+  }
+
+  Future<void> _markMessagesAsRead() async {
+    if (_currentUserId == null) return;
+    
+    try {
+      // Sadece diğer kullanıcıdan gelen okunmamış mesajları işaretle
+      final unreadMessages = _messages.where((message) => 
+        message.sender.id == widget.otherUser.id && 
+        message.receiver.id == _currentUserId && 
+        !message.isRead
+      ).toList();
+      
+      print('📖 ChatDetail - Marking ${unreadMessages.length} messages as read');
+      
+      // Her okunmamış mesajı işaretle
+      for (final message in unreadMessages) {
+        try {
+          await _chatService.markMessageAsRead(message.id);
+          print('📖 ChatDetail - Marked message ${message.id} as read');
+        } catch (e) {
+          print('❌ ChatDetail - Error marking message ${message.id} as read: $e');
+        }
+      }
+      
+      // Local state'i güncelle
+      if (mounted) {
+        setState(() {
+          for (final message in unreadMessages) {
+            _readMessageIds.add(message.id);
+          }
+        });
+      }
+    } catch (e) {
+      print('❌ ChatDetail - Error marking messages as read: $e');
     }
   }
 
@@ -73,6 +119,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           _isLoading = false;
         });
         _scrollToBottom();
+        
+        // Mesajlar yüklendikten sonra okundu olarak işaretle
+        _markMessagesAsRead();
       }
     } catch (e) {
       print('❌ ChatDetail - Error loading messages: $e');
@@ -107,6 +156,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           _isSending = false;
         });
         _scrollToBottom();
+        
+        // MessagesPage'e mesaj gönderildiğini bildir
+        widget.onMessageSent?.call();
       }
     } catch (e) {
       print('❌ ChatDetail - Error sending message: $e');
@@ -289,38 +341,59 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        return _buildMessageBubble(message);
+        final isFirstInGroup = index == 0 || 
+            _messages[index - 1].sender.id != message.sender.id ||
+            message.timestamp.difference(_messages[index - 1].timestamp).inMinutes >= 5;
+        final isLastInGroup = index == _messages.length - 1 ||
+            _messages[index + 1].sender.id != message.sender.id ||
+            _messages[index + 1].timestamp.difference(message.timestamp).inMinutes >= 5;
+        
+        return _buildMessageBubble(message, isFirstInGroup, isLastInGroup);
       },
     );
   }
 
-  Widget _buildMessageBubble(PrivateMessage message) {
+  bool _isMessageRead(PrivateMessage message) {
+    return message.isRead || _readMessageIds.contains(message.id);
+  }
+
+
+  Widget _buildMessageBubble(PrivateMessage message, bool isFirstInGroup, bool isLastInGroup) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isMe = _currentUserId != null && message.sender.id == _currentUserId;
+    final isRead = _isMessageRead(message);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(
+        bottom: isLastInGroup ? 12 : 2, // Grup içinde daha az boşluk
+      ),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.primary.withOpacity(0.1),
-              backgroundImage: widget.otherUser.profilePicture != null
-                  ? NetworkImage(widget.otherUser.profilePicture!)
-                  : null,
-              child: widget.otherUser.profilePicture == null
-                  ? Icon(
-                      Icons.person_rounded,
-                      size: 16,
-                      color: colorScheme.primary,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 8),
+            // Sadece grup başında avatar göster
+            if (isFirstInGroup) ...[
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: colorScheme.primary.withOpacity(0.1),
+                backgroundImage: widget.otherUser.profilePicture != null
+                    ? NetworkImage(widget.otherUser.profilePicture!)
+                    : null,
+                child: widget.otherUser.profilePicture == null
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 8),
+            ] else ...[
+              // Avatar yerine boşluk bırak
+              const SizedBox(width: 40),
+            ],
           ],
           Flexible(
             child: Container(
@@ -330,8 +403,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     ? colorScheme.primary 
                     : colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(20).copyWith(
-                  bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
-                  bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
+                  topLeft: isMe 
+                      ? (isFirstInGroup ? const Radius.circular(20) : const Radius.circular(4))
+                      : (isFirstInGroup ? const Radius.circular(20) : const Radius.circular(4)),
+                  topRight: isMe 
+                      ? (isFirstInGroup ? const Radius.circular(20) : const Radius.circular(4))
+                      : (isFirstInGroup ? const Radius.circular(20) : const Radius.circular(4)),
+                  bottomLeft: isMe 
+                      ? (isLastInGroup ? const Radius.circular(20) : const Radius.circular(4))
+                      : (isLastInGroup ? const Radius.circular(20) : const Radius.circular(4)),
+                  bottomRight: isMe 
+                      ? (isLastInGroup ? const Radius.circular(20) : const Radius.circular(4))
+                      : (isLastInGroup ? const Radius.circular(20) : const Radius.circular(4)),
                 ),
               ),
               child: Column(

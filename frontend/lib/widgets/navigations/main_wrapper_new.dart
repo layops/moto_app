@@ -1,15 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'bottom_nav_item.dart';
+import 'package:motoapp_frontend/services/chat/chat_service.dart';
+import 'package:motoapp_frontend/services/service_locator.dart';
 
 class MainWrapperNew extends StatefulWidget {
   final List<Widget> pages;
   final List<BottomNavItem> navItems;
+  final VoidCallback? onUnreadCountChanged;
 
   const MainWrapperNew({
     super.key,
     required this.pages,
     required this.navItems,
+    this.onUnreadCountChanged,
   });
 
   @override
@@ -18,10 +22,14 @@ class MainWrapperNew extends StatefulWidget {
 
 class _MainWrapperNewState extends State<MainWrapperNew> {
   int _currentIndex = 0;
+  int _unreadMessageCount = 0;
+  late ChatService _chatService;
 
   @override
   void initState() {
     super.initState();
+    _chatService = ServiceLocator.chat;
+    _loadUnreadMessageCount();
     
     // Debug için navigation yapısını göster (sadece debug modda)
     if (kDebugMode) {
@@ -40,6 +48,24 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
     }
   }
 
+  Future<void> _loadUnreadMessageCount() async {
+    try {
+      final conversations = await _chatService.getConversations();
+      final totalUnread = conversations.fold<int>(0, (sum, conv) => sum + conv.unreadCount);
+      
+      if (mounted) {
+        setState(() {
+          _unreadMessageCount = totalUnread;
+        });
+      }
+      
+      // Parent widget'a bildir
+      widget.onUnreadCountChanged?.call();
+    } catch (e) {
+      print('❌ MainWrapper - Error loading unread message count: $e');
+    }
+  }
+
   void _onTabSelected(int index) {
     if (kDebugMode) {
       print("=== YENİ NAVIGATION DEBUG ===");
@@ -52,6 +78,11 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
     setState(() {
       _currentIndex = index;
     });
+    
+    // Messages sayfasına geçildiğinde okunmamış sayısını yenile
+    if (index == 4) { // Messages index
+      _loadUnreadMessageCount();
+    }
   }
 
   @override
@@ -65,9 +96,46 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
         currentIndex: _currentIndex,
         onTap: _onTabSelected,
         type: BottomNavigationBarType.fixed,
-        items: widget.navItems.map((item) {
+        items: widget.navItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          
+          // Messages tab için badge ekle
+          Widget icon = Icon(item.icon);
+          if (index == 4 && _unreadMessageCount > 0) { // Messages index
+            icon = Stack(
+              children: [
+                Icon(item.icon),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _unreadMessageCount > 99 ? '99+' : _unreadMessageCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          
           return BottomNavigationBarItem(
-            icon: Icon(item.icon),
+            icon: icon,
             label: item.label,
           );
         }).toList(),

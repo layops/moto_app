@@ -141,6 +141,9 @@ class ChatService {
             .map((json) => PrivateMessage.fromJson(json))
             .toList();
             
+        // Mesajları timestamp'e göre sırala
+        messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+            
         // Cache'e kaydet
         _messagesCache[cacheKey] = messages;
         _cacheTimestamps[cacheKey] = DateTime.now();
@@ -184,6 +187,9 @@ class ChatService {
         // Cache'i temizle
         _clearMessageCache();
         
+        // Conversations cache'ini de temizle ki yeni konuşma listeye eklensin
+        _conversationsCache.clear();
+        
         return newMessage;
       } else {
         throw Exception('Mesaj gönderilemedi: ${response.statusCode}');
@@ -201,6 +207,7 @@ class ChatService {
     }
 
     try {
+      print('📖 ChatService - Marking message $messageId as read');
       final response = await http.patch(
         Uri.parse('$_baseUrl/chat/private-messages/$messageId/mark-read/'),
         headers: {
@@ -209,10 +216,13 @@ class ChatService {
         },
       );
 
+      print('📖 ChatService - Mark read response: ${response.statusCode} - ${response.body}');
+
       if (response.statusCode != 200) {
         throw Exception('Mesaj okundu olarak işaretlenemedi: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ ChatService - Error marking message as read: $e');
       throw Exception('Mesaj işaretlenirken hata: $e');
     }
   }

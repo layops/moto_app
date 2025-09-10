@@ -193,6 +193,11 @@ class _MotoAppState extends State<MotoApp> {
     );
   }
 
+  void _onUnreadCountChanged() {
+    // Bu fonksiyon MainWrapperNew'den çağrılacak
+    // Şimdilik boş bırakıyoruz, gelecekte gerekirse burada işlem yapabiliriz
+  }
+
   Widget _buildMainWrapper() {
     // ProfilePage için güvenli username kontrolü
     final profileUsername = _currentUsername ?? '';
@@ -203,7 +208,7 @@ class _MotoAppState extends State<MotoApp> {
       const MapPage(allowSelection: true), // Index 1 - Map
       const GroupsPage(),         // Index 2 - Groups  
       const EventsPage(),         // Index 3 - Events
-      const MessagesPage(),       // Index 4 - Messages
+      MessagesPage(onUnreadCountChanged: _onUnreadCountChanged), // Index 4 - Messages
       ProfilePage(username: profileUsername), // Index 5 - Profile
     ];
 
@@ -217,6 +222,7 @@ class _MotoAppState extends State<MotoApp> {
     return MainWrapperNew(
       pages: pages,
       navItems: NavigationItems.items,
+      onUnreadCountChanged: _onUnreadCountChanged,
     );
   }
 }

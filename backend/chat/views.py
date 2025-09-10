@@ -112,13 +112,34 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
         ).order_by('-timestamp')
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        message = serializer.save(sender=self.request.user)
+        
+        # Mesaj alıcısına bildirim oluştur
+        try:
+            from notifications.models import Notification
+            Notification.objects.create(
+                user=message.receiver,
+                notification_type='message',
+                message=f"{message.sender.first_name or message.sender.username} size mesaj gönderdi",
+                data={
+                    'message_id': message.id,
+                    'sender_id': message.sender.id,
+                    'sender_username': message.sender.username,
+                }
+            )
+            logger.info(f"Message notification created for user {message.receiver.id}")
+        except Exception as e:
+            logger.error(f"Error creating message notification: {e}")
 
     @action(detail=True, methods=['patch'])
     def mark_read(self, request, pk=None):
         message = self.get_object()
+        logger.info(f"Mark read request for message {pk} from user {request.user.id}")
+        logger.info(f"Message receiver: {message.receiver.id}, sender: {message.sender.id}")
+        
         if message.receiver == request.user:
             message.mark_as_read()
+            logger.info(f"Message {pk} marked as read successfully")
             return Response({'status': 'message marked as read'})
         return Response(
             {'detail': 'Bu mesajı okundu olarak işaretleme yetkiniz yok.'},

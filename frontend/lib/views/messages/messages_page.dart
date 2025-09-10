@@ -4,7 +4,9 @@ import '../../widgets/new_message_dialog.dart';
 import 'chat_detail_page.dart';
 
 class MessagesPage extends StatefulWidget {
-  const MessagesPage({super.key});
+  final VoidCallback? onUnreadCountChanged;
+  
+  const MessagesPage({super.key, this.onUnreadCountChanged});
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
@@ -19,6 +21,13 @@ class _MessagesPageState extends State<MessagesPage> {
   @override
   void initState() {
     super.initState();
+    _loadConversations();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sayfa her açıldığında conversations listesini yenile
     _loadConversations();
   }
 
@@ -42,6 +51,9 @@ class _MessagesPageState extends State<MessagesPage> {
         _conversations = conversations;
         _isLoading = false;
       });
+      
+      // Bottom navigation'ı güncelle
+      widget.onUnreadCountChanged?.call();
     } catch (e) {
       print('❌ MessagesPage - Error loading conversations: $e');
       if (!mounted) return;
@@ -299,7 +311,13 @@ class _MessagesPageState extends State<MessagesPage> {
   void _openConversation(Conversation conversation) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ChatDetailPage(otherUser: conversation.otherUser),
+        builder: (context) => ChatDetailPage(
+          otherUser: conversation.otherUser,
+          onMessageSent: () {
+            // Mesaj gönderildiğinde conversations listesini yenile
+            _loadConversations();
+          },
+        ),
       ),
     );
   }
@@ -320,7 +338,13 @@ class _MessagesPageState extends State<MessagesPage> {
     // Chat detail sayfasına yönlendir
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ChatDetailPage(otherUser: user),
+        builder: (context) => ChatDetailPage(
+          otherUser: user,
+          onMessageSent: () {
+            // Mesaj gönderildiğinde conversations listesini yenile
+            _loadConversations();
+          },
+        ),
       ),
     );
   }
