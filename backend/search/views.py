@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from groups.models import Group
 from groups.serializers import GroupSerializer
 from users.serializers import UserSerializer
-from .hash_search import hash_search_engine
+from .pg_trgm_search import pg_trgm_search_engine
 
 User = get_user_model()
 
@@ -19,22 +19,29 @@ User = get_user_model()
 @permission_classes([IsAuthenticated])
 def search_users(request):
     """
-    Kullanıcı arama endpoint'i - Hash tablosu kullanarak
+    Kullanıcı arama endpoint'i - pg_trgm extension kullanarak
     """
     query = request.query_params.get('q', None)
+    limit = int(request.query_params.get('limit', 20))
+    similarity_threshold = float(request.query_params.get('threshold', 0.3))
     
-    print(f"🔍 search_users - Query: '{query}'")
+    print(f"🔍 search_users - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
     print(f"🔍 search_users - Request user: {request.user}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-        # Hash tablosu kullanarak arama yap
-        results = hash_search_engine.search_users(query)
+        # pg_trgm extension kullanarak arama yap
+        results = pg_trgm_search_engine.search_users(
+            query=query,
+            limit=limit,
+            similarity_threshold=similarity_threshold
+        )
         
-        print(f"✅ search_users - Hash tablosu ile {len(results)} kullanıcı bulundu")
+        print(f"✅ search_users - pg_trgm ile {len(results)} kullanıcı bulundu")
         
         # İlk 5 sonucu log'la
         for i, user in enumerate(results[:5]):
-            print(f"   {i+1}. {user['username']} - {user['first_name']} {user['last_name']} - {user['email']}")
+            similarity = user.get('similarity_score', 0)
+            print(f"   {i+1}. {user['username']} - {user['first_name']} {user['last_name']} - {user['email']} (similarity: {similarity:.3f})")
         
         return Response(results)
     else:
@@ -56,22 +63,29 @@ class UserSearchView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def search_groups(request):
     """
-    Grup arama endpoint'i - Hash tablosu kullanarak
+    Grup arama endpoint'i - pg_trgm extension kullanarak
     """
     query = request.query_params.get('q', None)
+    limit = int(request.query_params.get('limit', 20))
+    similarity_threshold = float(request.query_params.get('threshold', 0.3))
     
-    print(f"🔍 search_groups - Query: '{query}'")
+    print(f"🔍 search_groups - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
     print(f"🔍 search_groups - Request user: {request.user}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-        # Hash tablosu kullanarak arama yap
-        results = hash_search_engine.search_groups(query)
+        # pg_trgm extension kullanarak arama yap
+        results = pg_trgm_search_engine.search_groups(
+            query=query,
+            limit=limit,
+            similarity_threshold=similarity_threshold
+        )
         
-        print(f"✅ search_groups - Hash tablosu ile {len(results)} grup bulundu")
+        print(f"✅ search_groups - pg_trgm ile {len(results)} grup bulundu")
         
         # İlk 5 sonucu log'la
         for i, group in enumerate(results[:5]):
-            print(f"   {i+1}. {group['name']} - {group['description']}")
+            similarity = group.get('similarity_score', 0)
+            print(f"   {i+1}. {group['name']} - {group['description']} (similarity: {similarity:.3f})")
         
         return Response(results)
     else:
@@ -141,16 +155,35 @@ def get_available_groups(request):
 @permission_classes([IsAuthenticated])
 def clear_search_cache(request):
     """
-    Hash tablosu cache'ini temizle
+    pg_trgm search index cache'ini temizle
     """
     try:
-        hash_search_engine.clear_cache()
+        pg_trgm_search_engine.clear_cache()
         return Response({
             'success': True,
-            'message': 'Arama cache\'i başarıyla temizlendi'
+            'message': 'Arama cache\'i başarıyla temizlendi ve yeniden oluşturuldu'
         })
     except Exception as e:
         return Response({
             'success': False,
             'message': f'Cache temizleme hatası: {str(e)}'
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def sync_search_index(request):
+    """
+    Search index'i zorla senkronize et
+    """
+    try:
+        pg_trgm_search_engine.force_sync()
+        return Response({
+            'success': True,
+            'message': 'Search index başarıyla senkronize edildi'
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Senkronizasyon hatası: {str(e)}'
         }, status=500)
