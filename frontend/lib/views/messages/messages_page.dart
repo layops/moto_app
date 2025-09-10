@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/chat/chat_service.dart';
 import '../../widgets/new_message_dialog.dart';
 import 'chat_detail_page.dart';
+import 'message_search_page.dart';
 
 class MessagesPage extends StatefulWidget {
   final VoidCallback? onUnreadCountChanged;
@@ -78,7 +79,7 @@ class _MessagesPageState extends State<MessagesPage> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              _showSearchDialog();
+              _navigateToMessageSearch();
             },
           ),
           IconButton(
@@ -317,9 +318,17 @@ class _MessagesPageState extends State<MessagesPage> {
             // Mesaj gönderildiğinde conversations listesini yenile
             _loadConversations();
           },
+          onMessagesRead: () {
+            // Mesajlar okunduğunda conversations listesini yenile
+            _loadConversations();
+          },
         ),
       ),
-    );
+    ).then((_) {
+      // ChatDetailPage'den geri döndüğünde conversations listesini yenile
+      // Bu sayede okunmamış mesaj sayıları güncellenir
+      _loadConversations();
+    });
   }
 
   void _showNewMessageDialog() {
@@ -344,23 +353,22 @@ class _MessagesPageState extends State<MessagesPage> {
             // Mesaj gönderildiğinde conversations listesini yenile
             _loadConversations();
           },
+          onMessagesRead: () {
+            // Mesajlar okunduğunda conversations listesini yenile
+            _loadConversations();
+          },
         ),
       ),
-    );
+    ).then((_) {
+      // ChatDetailPage'den geri döndüğünde conversations listesini yenile
+      _loadConversations();
+    });
   }
 
-  void _showSearchDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kullanıcı Ara'),
-        content: const Text('Kullanıcı arama özelliği yakında eklenecek!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
-          ),
-        ],
+  void _navigateToMessageSearch() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const MessageSearchPage(),
       ),
     );
   }

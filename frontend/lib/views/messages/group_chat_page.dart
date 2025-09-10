@@ -1,37 +1,36 @@
 import 'package:flutter/material.dart';
-import '../../services/chat/chat_service.dart';
+import '../../services/chat/group_chat_service.dart';
 import '../../services/service_locator.dart';
-import '../../widgets/new_message_dialog.dart';
 import '../../widgets/message_bubble.dart';
 import '../../widgets/message_input.dart';
 
-class ChatDetailPage extends StatefulWidget {
-  final User otherUser;
+class GroupChatPage extends StatefulWidget {
+  final int groupId;
+  final String groupName;
   final VoidCallback? onMessageSent;
-  final VoidCallback? onMessagesRead;
 
-  const ChatDetailPage({
+  const GroupChatPage({
     super.key,
-    required this.otherUser,
+    required this.groupId,
+    required this.groupName,
     this.onMessageSent,
-    this.onMessagesRead,
   });
 
   @override
-  State<ChatDetailPage> createState() => _ChatDetailPageState();
+  State<GroupChatPage> createState() => _GroupChatPageState();
 }
 
-class _ChatDetailPageState extends State<ChatDetailPage> {
-  final ChatService _chatService = ChatService();
+class _GroupChatPageState extends State<GroupChatPage> {
+  final GroupChatService _groupChatService = GroupChatService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
-  List<PrivateMessage> _messages = [];
+  List<GroupMessage> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
   String? _errorMessage;
   int? _currentUserId;
-  Set<int> _readMessageIds = {}; // Okunan mesaj ID'lerini tut
+  GroupMessage? _replyingTo;
 
   @override
   void initState() {
@@ -42,16 +41,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Future<void> _initializePage() async {
     await _getCurrentUserId();
     await _loadMessages();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Sayfa açıldığında mesajları okundu olarak işaretle
-    // _currentUserId set edildikten sonra çağır
-    if (_currentUserId != null) {
-      _markMessagesAsRead();
-    }
   }
 
   Future<void> _getCurrentUserId() async {
@@ -66,58 +55,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         }
       }
     } catch (e) {
-      print('❌ ChatDetail - Error getting current user ID: $e');
-    }
-  }
-
-  Future<void> _markMessagesAsRead() async {
-    if (_currentUserId == null) {
-      print('❌ ChatDetail - Current user ID is null, cannot mark messages as read');
-      return;
-    }
-    
-    try {
-      print('📖 ChatDetail - Current user ID: $_currentUserId');
-      print('📖 ChatDetail - Other user ID: ${widget.otherUser.id}');
-      print('📖 ChatDetail - Total messages: ${_messages.length}');
-      
-      // Sadece diğer kullanıcıdan gelen okunmamış mesajları işaretle
-      final unreadMessages = _messages.where((message) => 
-        message.sender.id == widget.otherUser.id && 
-        message.receiver.id == _currentUserId && 
-        !message.isRead
-      ).toList();
-      
-      print('📖 ChatDetail - Found ${unreadMessages.length} unread messages to mark as read');
-      for (final message in unreadMessages) {
-        print('   - Message ${message.id}: sender=${message.sender.id}, receiver=${message.receiver.id}, isRead=${message.isRead}');
-      }
-      
-      // Her okunmamış mesajı işaretle
-      for (final message in unreadMessages) {
-        try {
-          await _chatService.markMessageAsRead(message.id);
-          print('📖 ChatDetail - Marked message ${message.id} as read');
-        } catch (e) {
-          print('❌ ChatDetail - Error marking message ${message.id} as read: $e');
-        }
-      }
-      
-      // Local state'i güncelle
-      if (mounted) {
-        setState(() {
-          for (final message in unreadMessages) {
-            _readMessageIds.add(message.id);
-          }
-        });
-        
-        // Parent widget'a mesajların okunduğunu bildir
-        if (unreadMessages.isNotEmpty) {
-          widget.onMessagesRead?.call();
-        }
-      }
-    } catch (e) {
-      print('❌ ChatDetail - Error marking messages as read: $e');
+      print('❌ GroupChat - Error getting current user ID: $e');
     }
   }
 
@@ -135,9 +73,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         _errorMessage = null;
       });
 
-      print('💬 ChatDetail - Loading messages with user: ${widget.otherUser.username}');
-      final messages = await _chatService.getConversationWithUser(widget.otherUser.id);
-      print('💬 ChatDetail - Loaded ${messages.length} messages');
+      print('💬 GroupChat - Loading messages for group: ${widget.groupName}');
+      final messages = await _groupChatService.getGroupMessages(widget.groupId);
+      print('💬 GroupChat - Loaded ${messages.length} messages');
       
       if (mounted) {
         setState(() {
@@ -145,12 +83,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           _isLoading = false;
         });
         _scrollToBottom();
-        
-        // Mesajlar yüklendikten sonra okundu olarak işaretle
-        _markMessagesAsRead();
       }
     } catch (e) {
-      print('❌ ChatDetail - Error loading messages: $e');
+      print('❌ GroupChat - Error loading messages: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -167,27 +102,29 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() => _isSending = true);
 
     try {
-      print('📤 ChatDetail - Sending message: "$messageText" to ${widget.otherUser.username}');
-      final newMessage = await _chatService.sendPrivateMessage(
-        receiverId: widget.otherUser.id,
-        message: messageText,
+      print('📤 GroupChat - Sending message: "$messageText" to group ${widget.groupName}');
+      final newMessage = await _groupChatService.sendGroupMessage(
+        groupId: widget.groupId,
+        content: messageText,
+        replyToId: _replyingTo?.id.toString(),
       );
       
-      print('📤 ChatDetail - Message sent successfully');
+      print('📤 GroupChat - Message sent successfully');
       
       if (mounted) {
         setState(() {
           _messages.add(newMessage);
           _messageController.clear();
           _isSending = false;
+          _replyingTo = null;
         });
         _scrollToBottom();
         
-        // MessagesPage'e mesaj gönderildiğini bildir
+        // Parent widget'a mesaj gönderildiğini bildir
         widget.onMessageSent?.call();
       }
     } catch (e) {
-      print('❌ ChatDetail - Error sending message: $e');
+      print('❌ GroupChat - Error sending message: $e');
       if (mounted) {
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -200,23 +137,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
-  Future<void> _editMessage(PrivateMessage message) async {
-    final newContent = await _showEditDialog(message.message);
-    if (newContent != null && newContent != message.message) {
+  Future<void> _editMessage(GroupMessage message) async {
+    final newContent = await _showEditDialog(message.content);
+    if (newContent != null && newContent != message.content) {
       try {
-        final updatedMessage = await _chatService.editPrivateMessage(
+        await _groupChatService.editGroupMessage(
+          groupId: widget.groupId,
           messageId: message.id,
-          message: newContent,
+          content: newContent,
         );
-        
-        if (mounted) {
-          setState(() {
-            final index = _messages.indexWhere((m) => m.id == message.id);
-            if (index != -1) {
-              _messages[index] = updatedMessage;
-            }
-          });
-        }
+        await _loadMessages();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -228,17 +158,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
-  Future<void> _deleteMessage(PrivateMessage message) async {
+  Future<void> _deleteMessage(GroupMessage message) async {
     final confirmed = await _showDeleteDialog();
     if (confirmed == true) {
       try {
-        await _chatService.deletePrivateMessage(message.id);
-        
-        if (mounted) {
-          setState(() {
-            _messages.removeWhere((m) => m.id == message.id);
-          });
-        }
+        await _groupChatService.deleteGroupMessage(
+          groupId: widget.groupId,
+          messageId: message.id,
+        );
+        await _loadMessages();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -269,47 +197,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.primary.withOpacity(0.1),
-              backgroundImage: widget.otherUser.profilePicture != null
-                  ? NetworkImage(widget.otherUser.profilePicture!)
-                  : null,
-              child: widget.otherUser.profilePicture == null
-                  ? Icon(
-                      Icons.person_rounded,
-                      size: 16,
-                      color: colorScheme.primary,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.otherUser.displayName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    '@${widget.otherUser.username}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        title: Text(widget.groupName),
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
@@ -317,22 +205,96 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             onPressed: () {
-              // TODO: Chat options menu
+              _showGroupOptions();
             },
           ),
         ],
       ),
       body: Column(
         children: [
+          // Reply indicator
+          if (_replyingTo != null) _buildReplyIndicator(),
+          
           // Messages List
           Expanded(
             child: _buildMessagesList(),
           ),
+          
           // Message Input
           MessageInput(
             controller: _messageController,
             onSend: _sendMessage,
             isSending: _isSending,
+            replyTo: _replyingTo?.content,
+            onCancelReply: () {
+              setState(() {
+                _replyingTo = null;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyIndicator() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.5),
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outline.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.reply_rounded,
+            color: colorScheme.primary,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_replyingTo!.sender.displayName} yanıtlanıyor',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  _replyingTo!.content,
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _replyingTo = null;
+              });
+            },
+            icon: Icon(
+              Icons.close_rounded,
+              color: colorScheme.onSurface.withOpacity(0.6),
+              size: 20,
+            ),
           ),
         ],
       ),
@@ -391,7 +353,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.message_outlined,
+              Icons.group_outlined,
               size: 80,
               color: colorScheme.onSurface.withOpacity(0.4),
             ),
@@ -405,7 +367,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '${widget.otherUser.displayName} ile konuşmaya başlayın',
+              '${widget.groupName} grubunda konuşmaya başlayın',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withOpacity(0.5),
               ),
@@ -423,31 +385,25 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         final message = _messages[index];
         final isFirstInGroup = index == 0 || 
             _messages[index - 1].sender.id != message.sender.id ||
-            message.timestamp.difference(_messages[index - 1].timestamp).inMinutes >= 5;
+            message.createdAt.difference(_messages[index - 1].createdAt).inMinutes >= 5;
         final isLastInGroup = index == _messages.length - 1 ||
             _messages[index + 1].sender.id != message.sender.id ||
-            _messages[index + 1].timestamp.difference(message.timestamp).inMinutes >= 5;
+            _messages[index + 1].createdAt.difference(message.createdAt).inMinutes >= 5;
         
-        return MessageBubble(
+        return GroupMessageBubble(
           message: message,
           isMe: isMe,
           isFirstInGroup: isFirstInGroup,
           isLastInGroup: isLastInGroup,
-          isRead: _isMessageRead(message),
           onLongPress: isMe ? () => _showMessageOptions(message) : null,
         );
       },
     );
   }
 
-  bool _isMessageRead(PrivateMessage message) {
-    return message.isRead || _readMessageIds.contains(message.id);
-  }
 
 
-
-
-  void _showMessageOptions(PrivateMessage message) {
+  void _showMessageOptions(GroupMessage message) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -455,6 +411,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.reply_rounded),
+              title: const Text('Yanıtla'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _replyingTo = message;
+                });
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.edit_rounded),
               title: const Text('Düzenle'),
@@ -469,6 +435,44 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               onTap: () {
                 Navigator.pop(context);
                 _deleteMessage(message);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGroupOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.info_rounded),
+              title: const Text('Grup Bilgileri'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement group info
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.people_rounded),
+              title: const Text('Üyeler'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement group members
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_rounded),
+              title: const Text('Grup Ayarları'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement group settings
               },
             ),
           ],

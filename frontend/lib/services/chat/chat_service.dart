@@ -227,6 +227,69 @@ class ChatService {
     }
   }
 
+  /// Özel mesajı düzenle
+  Future<PrivateMessage> editPrivateMessage({
+    required int messageId,
+    required String message,
+  }) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/chat/private-messages/$messageId/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'message': message}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final updatedMessage = PrivateMessage.fromJson(data);
+        
+        // Cache'i temizle
+        _clearMessageCache();
+        
+        return updatedMessage;
+      } else {
+        throw Exception('Mesaj düzenlenemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Mesaj düzenlenirken hata: $e');
+    }
+  }
+
+  /// Özel mesajı sil
+  Future<void> deletePrivateMessage(int messageId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/chat/private-messages/$messageId/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        // Cache'i temizle
+        _clearMessageCache();
+      } else {
+        throw Exception('Mesaj silinemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Mesaj silinirken hata: $e');
+    }
+  }
+
   /// Kullanıcıları ara
   Future<List<User>> searchUsers(String query) async {
     final cacheKey = 'search_users_$query';
@@ -271,6 +334,45 @@ class ChatService {
     } catch (e) {
       print('❌ ChatService - Search error: $e');
       throw Exception('Kullanıcılar aranırken hata: $e');
+    }
+  }
+
+  /// Mesajlarda arama yap
+  Future<List<PrivateMessage>> searchMessages(String query) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final url = '$_baseUrl/chat/private-messages/search/?q=${Uri.encodeComponent(query)}';
+      print('🔍 ChatService - Searching messages at: $url');
+      print('🔍 ChatService - Query: "$query"');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('🔍 ChatService - Message search response status: ${response.statusCode}');
+      print('🔍 ChatService - Message search response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final messages = (data as List)
+            .map((json) => PrivateMessage.fromJson(json))
+            .toList();
+        print('🔍 ChatService - Parsed ${messages.length} messages');
+        return messages;
+      } else {
+        throw Exception('Mesajlar aranamadı: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('❌ ChatService - Message search error: $e');
+      throw Exception('Mesajlar aranırken hata: $e');
     }
   }
   

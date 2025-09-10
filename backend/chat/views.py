@@ -167,6 +167,33 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=['get'], url_path='search')
+    def search_messages(self, request):
+        """Mesajlarda arama yap"""
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response(
+                {'detail': 'Arama terimi gerekli'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = request.user
+            
+            # Kullanıcının gönderdiği veya aldığı mesajlarda arama yap
+            messages = PrivateMessage.objects.filter(
+                Q(sender=user) | Q(receiver=user),
+                Q(message__icontains=query)
+            ).order_by('-timestamp')
+            
+            serializer = self.get_serializer(messages, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {'detail': f'Arama sırasında hata: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
