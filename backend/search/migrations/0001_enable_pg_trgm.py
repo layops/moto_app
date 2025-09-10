@@ -8,8 +8,9 @@ class Migration(migrations.Migration):
     Bu extension trigram tabanlı arama için gerekli
     """
     
+    initial = True
+    
     dependencies = [
-        ('search', '0001_initial'),
     ]
 
     operations = [
