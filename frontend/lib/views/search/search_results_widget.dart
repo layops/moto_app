@@ -117,8 +117,15 @@ class SearchResultsWidget extends StatelessWidget {
     final firstName = user['first_name'] ?? '';
     final lastName = user['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
-    final profilePhotoUrl = user['profile_photo_url'];
+    // Backend'den gelen alan adı 'profile_picture', 'profile_photo_url' değil
+    final profilePhotoUrl = user['profile_picture'] ?? user['profile_photo_url'];
     final userId = user['id'];
+    
+    // Debug için profil fotoğrafı URL'ini log'la
+    print('🔍 SearchResultsWidget - User: $username');
+    print('   - profile_picture: ${user['profile_picture']}');
+    print('   - profile_photo_url: ${user['profile_photo_url']}');
+    print('   - Final profilePhotoUrl: $profilePhotoUrl');
     
 
     return Card(
@@ -126,15 +133,37 @@ class SearchResultsWidget extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 24,
-          backgroundImage: (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty)
-              ? NetworkImage(profilePhotoUrl)
-              : null,
-          child: (profilePhotoUrl == null || profilePhotoUrl.isEmpty)
-              ? Text(
+          child: (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty)
+              ? ClipOval(
+                  child: Image.network(
+                    profilePhotoUrl,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ SearchResultsWidget - Profil fotoğrafı yüklenemedi: $error');
+                      print('   - URL: $profilePhotoUrl');
+                      return Text(
+                        username.isNotEmpty ? username[0].toUpperCase() : '?',
+                        style: const TextStyle(fontSize: 18),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : Text(
                   username.isNotEmpty ? username[0].toUpperCase() : '?',
                   style: const TextStyle(fontSize: 18),
-                )
-              : null,
+                ),
         ),
         title: Text(
           fullName.isNotEmpty ? fullName : username,
@@ -153,8 +182,16 @@ class SearchResultsWidget extends StatelessWidget {
     final name = group['name'] ?? 'Bilinmeyen Grup';
     final description = group['description'] ?? '';
     final memberCount = group['member_count'] ?? 0;
-    final profilePictureUrl = group['profile_picture_url'];
+    // Backend'den gelen alan adı 'profile_picture', 'profile_picture_url' değil
+    final profilePictureUrl = group['profile_picture'] ?? group['profile_picture_url'];
     final groupId = group['id'];
+    
+    // Debug için grup profil fotoğrafı URL'ini log'la
+    print('🔍 SearchResultsWidget - Group: $name');
+    print('   - profile_picture: ${group['profile_picture']}');
+    print('   - profile_picture_url: ${group['profile_picture_url']}');
+    print('   - Final profilePictureUrl: $profilePictureUrl');
+    print('   - member_count: ${group['member_count']}');
     
 
     return Card(
@@ -162,12 +199,31 @@ class SearchResultsWidget extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 24,
-          backgroundImage: (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
-              ? NetworkImage(profilePictureUrl)
-              : null,
-          child: (profilePictureUrl == null || profilePictureUrl.isEmpty)
-              ? const Icon(Icons.group, size: 24)
-              : null,
+          child: (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
+              ? ClipOval(
+                  child: Image.network(
+                    profilePictureUrl,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('❌ SearchResultsWidget - Grup fotoğrafı yüklenemedi: $error');
+                      print('   - URL: $profilePictureUrl');
+                      return const Icon(Icons.group, size: 24);
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : const Icon(Icons.group, size: 24),
         ),
         title: Text(
           name,

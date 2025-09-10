@@ -110,7 +110,11 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         // GET istekleri için cache kontrolü
-        if (options.method == 'GET' && _shouldCache(options.path)) {
+        // Arama endpoint'leri için cache kullanma
+        if (options.method == 'GET' && 
+            _shouldCache(options.path) && 
+            !options.path.contains('search/users/') && 
+            !options.path.contains('search/groups/')) {
           final cachedResponse = _getCachedResponse(options.path);
           if (cachedResponse != null) {
             return handler.resolve(cachedResponse);
@@ -120,8 +124,11 @@ class ApiClient {
       },
       onResponse: (response, handler) async {
         // GET istekleri için cache'e kaydet
+        // Arama endpoint'leri için cache'e kaydetme
         if (response.requestOptions.method == 'GET' && 
-            _shouldCache(response.requestOptions.path)) {
+            _shouldCache(response.requestOptions.path) &&
+            !response.requestOptions.path.contains('search/users/') && 
+            !response.requestOptions.path.contains('search/groups/')) {
           _cacheResponse(response.requestOptions.path, response);
         }
         handler.next(response);
@@ -173,11 +180,12 @@ class ApiClient {
   // Cache helper methods
   bool _shouldCache(String path) {
     // Belirli endpoint'leri cache'le
+    // Arama endpoint'lerini cache'leme (her arama farklı olabilir)
     return path.contains('users/') || 
            path.contains('posts/') || 
            path.contains('groups/') ||
            path.contains('events/') ||
-           path.contains('search/');
+           (path.contains('search/') && !path.contains('search/users/') && !path.contains('search/groups/'));
   }
   
   Response? _getCachedResponse(String path) {
@@ -206,6 +214,19 @@ class ApiClient {
   
   void clearCacheForPath(String path) {
     _cache.remove(path);
+  }
+  
+  // Arama cache'ini temizle
+  void clearSearchCache() {
+    final keysToRemove = <String>[];
+    for (final key in _cache.keys) {
+      if (key.contains('search/')) {
+        keysToRemove.add(key);
+      }
+    }
+    for (final key in keysToRemove) {
+      _cache.remove(key);
+    }
   }
 
   // ----------------------

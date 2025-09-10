@@ -183,6 +183,11 @@ class PgTrgmSearchEngine:
                     'id': group.id,
                     'name': group.name,
                     'description': group.description or '',
+                    'profile_picture': group.profile_picture_url,  # Grup modelindeki alan adı
+                    'member_count': group.member_count,  # Property olarak tanımlı
+                    'is_public': group.is_public,
+                    'owner_id': group.owner.id,
+                    'owner_username': group.owner.username,
                     'created_at': group.created_at,
                     'is_active': group.is_active,
                     'similarity_score': float(search_item.max_similarity),
