@@ -428,6 +428,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             _messages[index + 1].sender.id != message.sender.id ||
             _messages[index + 1].timestamp.difference(message.timestamp).inMinutes >= 5;
         
+        final isMe = _currentUserId != null && message.sender.id == _currentUserId;
+        
         return MessageBubble(
           message: message,
           isMe: isMe,

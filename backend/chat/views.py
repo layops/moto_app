@@ -131,7 +131,7 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error creating message notification: {e}")
 
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=['patch'], url_path='mark-read')
     def mark_read(self, request, pk=None):
         message = self.get_object()
         logger.info(f"Mark read request for message {pk} from user {request.user.id}")
@@ -145,6 +145,24 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
             {'detail': 'Bu mesajı okundu olarak işaretleme yetkiniz yok.'},
             status=status.HTTP_403_FORBIDDEN
         )
+
+    def partial_update(self, request, pk=None):
+        """PATCH request için özel işlem"""
+        message = self.get_object()
+        
+        # Eğer sadece is_read field'ı güncelleniyorsa
+        if 'is_read' in request.data and len(request.data) == 1:
+            if message.receiver == request.user and request.data.get('is_read') is True:
+                message.mark_as_read()
+                return Response({'status': 'message marked as read'})
+            else:
+                return Response(
+                    {'detail': 'Bu mesajı okundu olarak işaretleme yetkiniz yok.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        # Normal güncelleme işlemi
+        return super().partial_update(request, pk)
 
     @action(detail=False, methods=['get'], url_path='with-user/(?P<user_id>[^/.]+)')
     def with_user(self, request, user_id=None):

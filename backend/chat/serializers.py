@@ -12,7 +12,7 @@ class PrivateMessageSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'sender', 'receiver', 'receiver_id', 'message', 'timestamp', 'is_read'
         ]
-        read_only_fields = ['id', 'timestamp', 'sender']
+        read_only_fields = ['id', 'timestamp', 'sender', 'receiver']
     
     def create(self, validated_data):
         # receiver_id'yi receiver field'ına çevir

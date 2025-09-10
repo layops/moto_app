@@ -209,11 +209,12 @@ class ChatService {
     try {
       print('📖 ChatService - Marking message $messageId as read');
       final response = await http.patch(
-        Uri.parse('$_baseUrl/chat/private-messages/$messageId/mark-read/'),
+        Uri.parse('$_baseUrl/chat/private-messages/$messageId/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode({'is_read': true}),
       );
 
       print('📖 ChatService - Mark read response: ${response.statusCode} - ${response.body}');

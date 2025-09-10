@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/chat/chat_service.dart';
+import '../services/chat/group_chat_service.dart';
 
 class MessageBubble extends StatelessWidget {
   final PrivateMessage message;
