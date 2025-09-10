@@ -35,37 +35,61 @@ class SearchResultsWidget extends StatelessWidget {
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
     String message;
+    String suggestion;
     IconData icon;
     
     switch (type) {
       case SearchResultType.users:
         message = '"$query" için kullanıcı bulunamadı';
+        suggestion = 'Farklı bir kullanıcı adı veya isim deneyin';
         icon = Icons.person_search;
         break;
       case SearchResultType.groups:
         message = '"$query" için grup bulunamadı';
+        suggestion = 'Farklı bir grup adı deneyin';
         icon = Icons.group;
         break;
     }
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 64,
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              suggestion,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '💡 İpucu: En az 2 karakter girin ve mevcut kullanıcı/grup adlarını deneyin',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
