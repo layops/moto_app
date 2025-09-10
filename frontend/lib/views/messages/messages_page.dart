@@ -221,8 +221,10 @@ class _MessagesPageState extends State<MessagesPage> {
           ),
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: GestureDetector(
+        onLongPress: () => _showConversationOptions(conversation),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Stack(
           children: [
             CircleAvatar(
@@ -317,9 +319,10 @@ class _MessagesPageState extends State<MessagesPage> {
             ],
           ],
         ),
-        onTap: () {
-          _openConversation(conversation);
-        },
+          onTap: () {
+            _openConversation(conversation);
+          },
+        ),
       ),
     );
   }
@@ -384,6 +387,81 @@ class _MessagesPageState extends State<MessagesPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const MessageSearchPage(),
+      ),
+    );
+  }
+
+  void _showConversationOptions(Conversation conversation) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+              title: const Text('Konuşmayı Sil', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteConversation(conversation);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteConversation(Conversation conversation) async {
+    final confirmed = await _showDeleteConversationDialog(conversation.otherUser.displayName);
+    if (confirmed == true) {
+      try {
+        await _chatService.deleteConversation(conversation.otherUser.id);
+        
+        if (mounted) {
+          setState(() {
+            _conversations.removeWhere((c) => c.otherUser.id == conversation.otherUser.id);
+          });
+          
+          // Bottom navigation'ı güncelle
+          widget.onUnreadCountChanged?.call();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${conversation.otherUser.displayName} ile olan konuşma silindi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Konuşma silinemedi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool?> _showDeleteConversationDialog(String userName) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konuşmayı Sil'),
+        content: Text('$userName ile olan tüm konuşmanızı silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz. Karşı taraf konuşmayı görmeye devam edecek.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
       ),
     );
   }

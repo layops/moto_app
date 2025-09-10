@@ -291,6 +291,38 @@ class ChatService {
     }
   }
 
+  /// Tüm konuşmayı sil (sadece kendi tarafından)
+  Future<void> deleteConversation(int userId) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      print('🗑️ ChatService - Deleting conversation with user $userId');
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/chat/private-messages/conversation/$userId/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('🗑️ ChatService - Delete conversation response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Cache'i temizle
+        _clearMessageCache();
+        print('🗑️ ChatService - Conversation deleted successfully');
+      } else {
+        throw Exception('Konuşma silinemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ ChatService - Error deleting conversation: $e');
+      throw Exception('Konuşma silinirken hata: $e');
+    }
+  }
+
   /// Kullanıcıları ara
   Future<List<User>> searchUsers(String query) async {
     final cacheKey = 'search_users_$query';

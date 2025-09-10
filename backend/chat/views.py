@@ -225,6 +225,43 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    @action(detail=False, methods=['delete'], url_path='conversation/(?P<user_id>[^/.]+)')
+    def delete_conversation(self, request, user_id=None):
+        """Belirli bir kullanıcı ile olan tüm konuşmayı sil (sadece kendi tarafından)"""
+        try:
+            other_user = get_object_or_404(User, id=user_id)
+            user = request.user
+            
+            # Kullanıcının gönderdiği mesajları sil
+            sent_messages = PrivateMessage.objects.filter(
+                sender=user, 
+                receiver=other_user
+            )
+            
+            # Kullanıcının aldığı mesajları sil
+            received_messages = PrivateMessage.objects.filter(
+                sender=other_user, 
+                receiver=user
+            )
+            
+            # Toplam silinecek mesaj sayısı
+            total_deleted = sent_messages.count() + received_messages.count()
+            
+            # Mesajları sil
+            sent_messages.delete()
+            received_messages.delete()
+            
+            return Response({
+                'detail': f'Konuşma başarıyla silindi. {total_deleted} mesaj silindi.',
+                'deleted_count': total_deleted
+            })
+            
+        except Exception as e:
+            return Response(
+                {'detail': f'Konuşma silinirken hata: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
