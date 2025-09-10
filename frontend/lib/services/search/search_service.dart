@@ -136,4 +136,46 @@ class SearchService {
       // Hata durumunda sessizce geç
     }
   }
+
+  /// Mevcut kullanıcıları getir (arama için referans)
+  Future<List<Map<String, dynamic>>> getAvailableUsers() async {
+    try {
+      final response = await _apiClient.get(
+        'search/available-users/',
+        useCache: true, // Bu veri cache'lenebilir
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['users'];
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Kullanıcı listesi alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw ApiExceptions.fromDioError(e);
+    } catch (e) {
+      throw Exception('Kullanıcı listesi hatası: $e');
+    }
+  }
+
+  /// Mevcut grupları getir (arama için referans)
+  Future<List<Map<String, dynamic>>> getAvailableGroups() async {
+    try {
+      final response = await _apiClient.get(
+        'search/available-groups/',
+        useCache: true, // Bu veri cache'lenebilir
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['groups'];
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Grup listesi alınamadı: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw ApiExceptions.fromDioError(e);
+    } catch (e) {
+      throw Exception('Grup listesi hatası: $e');
+    }
+  }
 }

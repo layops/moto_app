@@ -1,5 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from django.db.models import Q
 
 from django.contrib.auth import get_user_model
@@ -59,3 +61,45 @@ class GroupSearchView(generics.ListAPIView):
             return search_results[:50]
         else:
             return queryset.none()  # Boş sorgu için hiç sonuç döndürme
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_available_users(request):
+    """Mevcut kullanıcıları listeler (arama için referans)"""
+    users = User.objects.all()[:20]  # İlk 20 kullanıcı
+    user_data = []
+    for user in users:
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'full_name': f"{user.first_name} {user.last_name}".strip(),
+        })
+    
+    return Response({
+        'users': user_data,
+        'total_count': User.objects.count(),
+        'message': 'Arama için kullanabileceğiniz kullanıcı adları ve isimler'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_available_groups(request):
+    """Mevcut grupları listeler (arama için referans)"""
+    groups = Group.objects.all()[:20]  # İlk 20 grup
+    group_data = []
+    for group in groups:
+        group_data.append({
+            'id': group.id,
+            'name': group.name,
+            'description': group.description,
+        })
+    
+    return Response({
+        'groups': group_data,
+        'total_count': Group.objects.count(),
+        'message': 'Arama için kullanabileceğiniz grup adları'
+    })

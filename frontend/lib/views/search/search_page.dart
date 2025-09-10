@@ -28,12 +28,16 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   String? _error;
   List<String> _searchHistory = [];
   Timer? _searchDebounce;
+  List<Map<String, dynamic>> _availableUsers = [];
+  List<Map<String, dynamic>> _availableGroups = [];
+  bool _showSuggestions = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadSearchHistory();
+    _loadAvailableData();
     
     // Sayfa açıldığında arama kutusuna odaklan
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -58,6 +62,19 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       });
     } catch (e) {
       debugPrint('Arama geçmişi yüklenemedi: $e');
+    }
+  }
+
+  Future<void> _loadAvailableData() async {
+    try {
+      final users = await ServiceLocator.search.getAvailableUsers();
+      final groups = await ServiceLocator.search.getAvailableGroups();
+      setState(() {
+        _availableUsers = users;
+        _availableGroups = groups;
+      });
+    } catch (e) {
+      debugPrint('Mevcut veriler yüklenemedi: $e');
     }
   }
 
@@ -119,6 +136,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   void _onSearchTextChanged(String text) {
+    setState(() {
+      _showSuggestions = text.trim().isNotEmpty && text.trim().length < 2;
+    });
+    
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 500), () {
       _performSearch(text);
@@ -136,6 +157,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       _searchResults = {'users': [], 'groups': []};
       _error = null;
       _currentQuery = '';
+      _showSuggestions = false;
     });
   }
 
@@ -194,6 +216,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           if (_currentQuery.isEmpty && _searchHistory.isNotEmpty)
             _buildSearchHistory(),
           
+          // Öneriler (1 karakter yazıldığında göster)
+          if (_showSuggestions)
+            _buildSuggestions(),
+          
           // Arama sonuçları
           Expanded(
             child: _buildSearchResults(),
@@ -237,6 +263,82 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               );
             }).toList(),
           ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestions() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '💡 Arama İpuçları',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'En az 2 karakter girin. Örnek arama terimleri:',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          
+          // Kullanıcı önerileri
+          if (_availableUsers.isNotEmpty) ...[
+            const Text(
+              '👥 Kullanıcı Adları:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: _availableUsers.take(5).map((user) {
+                final username = user['username'] ?? '';
+                final fullName = user['full_name'] ?? '';
+                return ActionChip(
+                  label: Text('@$username'),
+                  onPressed: () {
+                    _searchController.text = username;
+                    _performSearch(username);
+                  },
+                  avatar: const Icon(Icons.person, size: 16),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+          ],
+          
+          // Grup önerileri
+          if (_availableGroups.isNotEmpty) ...[
+            const Text(
+              '👥 Grup Adları:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: _availableGroups.take(5).map((group) {
+                final name = group['name'] ?? '';
+                return ActionChip(
+                  label: Text(name),
+                  onPressed: () {
+                    _searchController.text = name;
+                    _performSearch(name);
+                  },
+                  avatar: const Icon(Icons.group, size: 16),
+                );
+              }).toList(),
+            ),
+          ],
+          
           const SizedBox(height: 16),
         ],
       ),
