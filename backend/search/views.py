@@ -19,7 +19,6 @@ class UserSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-        print(f"UserSearchView - Query: '{query}'")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             # Sadece aktif kullanıcıları ara
@@ -32,7 +31,6 @@ class UserSearchView(generics.ListAPIView):
                 Q(last_name__icontains=query)
             ).distinct()
             
-            print(f"UserSearchView - Found {search_results.count()} users")
             # Sonuçları sınırla (performans için)
             return search_results[:50]
         return queryset.none()  # Boş sorgu için hiç sonuç döndürme
@@ -46,7 +44,6 @@ class GroupSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
-        print(f"GroupSearchView - Query: '{query}'")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             # Sadece aktif grupları ara
@@ -55,7 +52,6 @@ class GroupSearchView(generics.ListAPIView):
                 Q(description__icontains=query)
             ).distinct()
             
-            print(f"GroupSearchView - Found {search_results.count()} groups")
             # Sonuçları sınırla (performans için)
             return search_results[:50]
         return queryset.none()  # Boş sorgu için hiç sonuç döndürme
