@@ -70,8 +70,8 @@ class ApiClient {
           // Yeni token'ı al ve header'a ekle
           final newToken = await _tokenService.getToken();
           if (newToken != null) {
-            options.headers['Authorization'] = 'Token $newToken';
-            debugPrint('API Request - Authorization header eklendi: Token ${newToken.substring(0, 10)}...');
+            options.headers['Authorization'] = 'Bearer $newToken';
+            debugPrint('API Request - Authorization header eklendi: Bearer ${newToken.substring(0, 10)}...');
           }
         } else {
           debugPrint('API Request - Token bulunamadı, istek token olmadan gönderiliyor');

@@ -77,12 +77,18 @@ class AuthService {
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
+      print('🔑 AuthService - Login başlatılıyor: $username');
       final response = await _apiClient.post('users/login/', {
         'username': username,
         'password': password,
       });
 
+      print('🔑 AuthService - Login response: ${response.statusCode}');
+      print('🔑 AuthService - Login data: ${response.data}');
+
       final token = _extractToken(response);
+      print('🔑 AuthService - Extracted token: ${token.isNotEmpty ? "Token mevcut (${token.substring(0, 10)}...)" : "Token boş"}');
+      
       if (token.isNotEmpty) {
         await _tokenService.saveAuthData(token, username);
         await _storage.setCurrentUsername(username);
@@ -96,6 +102,9 @@ class AuthService {
 
         // Auth state güncelle
         _authStateController.add(true);
+        print('🔑 AuthService - Login başarılı, auth state güncellendi');
+      } else {
+        print('❌ AuthService - Token boş, login başarısız');
       }
       return response;
     } on DioException catch (e) {
