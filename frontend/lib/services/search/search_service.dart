@@ -13,9 +13,16 @@ class SearchService {
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
       print('SearchService - Kullanıcı arama: $query');
+      
+      // Minimum 2 karakter kontrolü
+      if (query.trim().length < 2) {
+        return [];
+      }
+      
       final response = await _apiClient.get(
         'search/users/',
-        queryParameters: {'q': query},
+        queryParameters: {'q': query.trim()},
+        useCache: false, // Arama sonuçları cache'lenmemeli
       );
 
       if (response.statusCode == 200) {
@@ -27,8 +34,10 @@ class SearchService {
         throw Exception('Kullanıcı arama başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('SearchService - DioException: ${e.message}');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
+      print('SearchService - Genel hata: $e');
       throw Exception('Kullanıcı arama hatası: $e');
     }
   }
@@ -37,9 +46,16 @@ class SearchService {
   Future<List<Map<String, dynamic>>> searchGroups(String query) async {
     try {
       print('SearchService - Grup arama: $query');
+      
+      // Minimum 2 karakter kontrolü
+      if (query.trim().length < 2) {
+        return [];
+      }
+      
       final response = await _apiClient.get(
         'search/groups/',
-        queryParameters: {'q': query},
+        queryParameters: {'q': query.trim()},
+        useCache: false, // Arama sonuçları cache'lenmemeli
       );
 
       if (response.statusCode == 200) {
@@ -51,8 +67,10 @@ class SearchService {
         throw Exception('Grup arama başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('SearchService - DioException: ${e.message}');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
+      print('SearchService - Genel hata: $e');
       throw Exception('Grup arama hatası: $e');
     }
   }

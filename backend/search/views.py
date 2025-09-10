@@ -1,7 +1,6 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from unidecode import unidecode
 
 from django.contrib.auth import get_user_model
 from groups.models import Group
@@ -22,13 +21,16 @@ class UserSearchView(generics.ListAPIView):
         print(f"UserSearchView - Query: '{query}'")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
+            query = query.strip()
+            
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
             # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
             search_results = queryset.filter(
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
-                Q(last_name__icontains=query)
-            ).distinct()
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query)
+            ).distinct().order_by('username')
             
             print(f"UserSearchView - Found {search_results.count()} users")
             # Sonuçları sınırla (performans için)
@@ -47,11 +49,13 @@ class GroupSearchView(generics.ListAPIView):
         print(f"GroupSearchView - Query: '{query}'")
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
+            query = query.strip()
+            
             # Sadece aktif grupları ara
             search_results = queryset.filter(
                 Q(name__icontains=query) |
                 Q(description__icontains=query)
-            ).distinct()
+            ).distinct().order_by('name')
             
             print(f"GroupSearchView - Found {search_results.count()} groups")
             # Sonuçları sınırla (performans için)

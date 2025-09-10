@@ -66,6 +66,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       setState(() {
         _searchResults = {'users': [], 'groups': []};
         _error = null;
+        _currentQuery = '';
       });
       return;
     }
@@ -75,6 +76,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       setState(() {
         _searchResults = {'users': [], 'groups': []};
         _error = 'Arama için en az 2 karakter giriniz';
+        _currentQuery = query.trim();
       });
       return;
     }
@@ -92,25 +94,29 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       // Arama yap
       final results = await ServiceLocator.search.searchAll(_currentQuery);
       
-      setState(() {
-        _searchResults = results;
-        _isSearching = false;
-      });
-      
-      // Debug için arama sonuçlarını log'la
-      print('Arama Sonuçları:');
-      print('Kullanıcılar: ${results['users']?.length ?? 0}');
-      print('Gruplar: ${results['groups']?.length ?? 0}');
-      print('Kullanıcı verileri: ${results['users']}');
-      print('Grup verileri: ${results['groups']}');
-      
-      // Arama geçmişini yenile
-      _loadSearchHistory();
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _isSearching = false;
+        });
+        
+        // Debug için arama sonuçlarını log'la
+        print('Arama Sonuçları:');
+        print('Kullanıcılar: ${results['users']?.length ?? 0}');
+        print('Gruplar: ${results['groups']?.length ?? 0}');
+        print('Kullanıcı verileri: ${results['users']}');
+        print('Grup verileri: ${results['groups']}');
+        
+        // Arama geçmişini yenile
+        _loadSearchHistory();
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isSearching = false;
+        });
+      }
     }
   }
 

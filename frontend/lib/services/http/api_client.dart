@@ -176,7 +176,8 @@ class ApiClient {
     return path.contains('users/') || 
            path.contains('posts/') || 
            path.contains('groups/') ||
-           path.contains('events/');
+           path.contains('events/') ||
+           path.contains('search/');
   }
   
   Response? _getCachedResponse(String path) {
@@ -342,6 +343,8 @@ class ApiClient {
       } else if (path.contains('groups') && key.contains('groups')) {
         keysToRemove.add(key);
       } else if (path.contains('events') && key.contains('events')) {
+        keysToRemove.add(key);
+      } else if (path.contains('search') && key.contains('search')) {
         keysToRemove.add(key);
       }
     }
