@@ -96,6 +96,7 @@ class MotoApp extends StatefulWidget {
 
 class _MotoAppState extends State<MotoApp> {
   String? _currentUsername;
+  final GlobalKey<MainWrapperNewState> _mainWrapperKey = GlobalKey<MainWrapperNewState>();
 
   @override
   void initState() {
@@ -194,8 +195,9 @@ class _MotoAppState extends State<MotoApp> {
   }
 
   void _onUnreadCountChanged() {
-    // Bu fonksiyon MainWrapperNew'den çağrılacak
-    // Şimdilik boş bırakıyoruz, gelecekte gerekirse burada işlem yapabiliriz
+    // Bu fonksiyon MessagesPage'den çağrılacak
+    // MainWrapperNew'deki unread count'u direkt güncelle
+    _mainWrapperKey.currentState?.refreshUnreadCount();
   }
 
   Widget _buildMainWrapper() {
@@ -220,6 +222,7 @@ class _MotoAppState extends State<MotoApp> {
     print('====================');
 
     return MainWrapperNew(
+      key: _mainWrapperKey,
       pages: pages,
       navItems: NavigationItems.items,
       onUnreadCountChanged: _onUnreadCountChanged,

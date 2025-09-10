@@ -32,6 +32,13 @@ class _MessagesPageState extends State<MessagesPage> {
     _loadConversations();
   }
 
+  @override
+  void didUpdateWidget(MessagesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Widget güncellendiğinde conversations listesini yenile
+    _loadConversations();
+  }
+
   Future<void> _loadConversations() async {
     try {
       if (!mounted) return;
@@ -110,36 +117,40 @@ class _MessagesPageState extends State<MessagesPage> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: theme.colorScheme.error.withOpacity(0.7),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Hata',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: theme.colorScheme.error,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error.withOpacity(0.7),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.error.withOpacity(0.8),
+              const SizedBox(height: 16),
+              Text(
+                'Hata',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: theme.colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadConversations,
-              child: const Text('Tekrar Dene'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadConversations,
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -164,30 +175,34 @@ class _MessagesPageState extends State<MessagesPage> {
     final theme = Theme.of(context);
     
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.message_outlined,
-            size: 80,
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Henüz mesajınız yok',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-              fontWeight: FontWeight.w500,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.message_outlined,
+              size: 80,
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Yeni bir konuşma başlatın',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            const SizedBox(height: 16),
+            Text(
+              'Henüz mesajınız yok',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Yeni bir konuşma başlatın',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

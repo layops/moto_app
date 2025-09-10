@@ -17,10 +17,10 @@ class MainWrapperNew extends StatefulWidget {
   });
 
   @override
-  State<MainWrapperNew> createState() => _MainWrapperNewState();
+  State<MainWrapperNew> createState() => MainWrapperNewState();
 }
 
-class _MainWrapperNewState extends State<MainWrapperNew> {
+class MainWrapperNewState extends State<MainWrapperNew> {
   int _currentIndex = 0;
   int _unreadMessageCount = 0;
   late ChatService _chatService;
@@ -46,6 +46,20 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
       }
       print("===========================");
     }
+  }
+
+  @override
+  void didUpdateWidget(MainWrapperNew oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Parent widget'tan callback değişikliği geldiğinde unread count'u yenile
+    if (widget.onUnreadCountChanged != oldWidget.onUnreadCountChanged) {
+      _loadUnreadMessageCount();
+    }
+  }
+
+  // Public metod - dışarıdan çağrılabilir
+  void refreshUnreadCount() {
+    _loadUnreadMessageCount();
   }
 
   Future<void> _loadUnreadMessageCount() async {
@@ -79,10 +93,9 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
       _currentIndex = index;
     });
     
-    // Messages sayfasına geçildiğinde okunmamış sayısını yenile
-    if (index == 4) { // Messages index
-      _loadUnreadMessageCount();
-    }
+    // Her tab değişikliğinde unread count'u yenile
+    // Bu sayede mesajlar okunduğunda anında güncellenir
+    _loadUnreadMessageCount();
   }
 
   @override

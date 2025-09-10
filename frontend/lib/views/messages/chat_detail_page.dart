@@ -108,13 +108,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         setState(() {
           for (final message in unreadMessages) {
             _readMessageIds.add(message.id);
+            // Mesajın isRead durumunu da güncelle
+            final messageIndex = _messages.indexWhere((m) => m.id == message.id);
+            if (messageIndex != -1) {
+              // PrivateMessage immutable olduğu için yeni bir instance oluşturmamız gerekiyor
+              // Bu durumda sadece _readMessageIds kullanarak UI'da kontrol ediyoruz
+            }
           }
         });
         
         // Parent widget'a mesajların okunduğunu bildir
-        if (unreadMessages.isNotEmpty) {
-          widget.onMessagesRead?.call();
-        }
+        // Her zaman callback'i çağır ki UI güncellensin
+        widget.onMessagesRead?.call();
       }
     } catch (e) {
       print('❌ ChatDetail - Error marking messages as read: $e');
@@ -125,6 +130,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    // Sayfa kapatılırken parent widget'a bildir
+    widget.onMessagesRead?.call();
     super.dispose();
   }
 
@@ -351,66 +358,74 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64,
-              color: colorScheme.error.withOpacity(0.7),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Mesajlar yüklenemedi',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: colorScheme.error,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: colorScheme.error.withOpacity(0.7),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.error.withOpacity(0.8),
+              const SizedBox(height: 16),
+              Text(
+                'Mesajlar yüklenemedi',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadMessages,
-              child: const Text('Tekrar Dene'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadMessages,
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (_messages.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.message_outlined,
-              size: 80,
-              color: colorScheme.onSurface.withOpacity(0.4),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Henüz mesaj yok',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: FontWeight.w500,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.message_outlined,
+                size: 80,
+                color: colorScheme.onSurface.withOpacity(0.4),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${widget.otherUser.displayName} ile konuşmaya başlayın',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.5),
+              const SizedBox(height: 16),
+              Text(
+                'Henüz mesaj yok',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                '${widget.otherUser.displayName} ile konuşmaya başlayın',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

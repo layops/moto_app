@@ -148,66 +148,74 @@ class _MessageSearchPageState extends State<MessageSearchPage> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 64,
-              color: colorScheme.error.withOpacity(0.7),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Arama sırasında hata oluştu',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: colorScheme.error,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: colorScheme.error.withOpacity(0.7),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.error.withOpacity(0.8),
+              const SizedBox(height: 16),
+              Text(
+                'Arama sırasında hata oluştu',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _searchMessages(_lastQuery),
-              child: const Text('Tekrar Dene'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => _searchMessages(_lastQuery),
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (_searchResults.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: colorScheme.onSurface.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sonuç bulunamadı',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
-                fontWeight: FontWeight.w500,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: colorScheme.onSurface.withOpacity(0.3),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '"$_lastQuery" için mesaj bulunamadı',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.5),
+              const SizedBox(height: 16),
+              Text(
+                'Sonuç bulunamadı',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                '"$_lastQuery" için mesaj bulunamadı',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -227,30 +235,34 @@ class _MessageSearchPageState extends State<MessageSearchPage> {
     final colorScheme = theme.colorScheme;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_rounded,
-            size: 80,
-            color: colorScheme.onSurface.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Mesajlarda Ara',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.6),
-              fontWeight: FontWeight.w500,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_rounded,
+              size: 80,
+              color: colorScheme.onSurface.withOpacity(0.3),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Aramak istediğiniz kelimeyi yazın',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withOpacity(0.5),
+            const SizedBox(height: 16),
+            Text(
+              'Mesajlarda Ara',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              'Aramak istediğiniz kelimeyi yazın',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

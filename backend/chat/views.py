@@ -164,6 +164,19 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
         # Normal güncelleme işlemi
         return super().partial_update(request, pk)
 
+    def destroy(self, request, *args, **kwargs):
+        """Mesajı sil"""
+        message = self.get_object()
+        
+        # Sadece mesaj sahibi silebilir
+        if message.sender != request.user:
+            return Response(
+                {'detail': 'Bu mesajı silme yetkiniz yok.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=False, methods=['get'], url_path='with-user/(?P<user_id>[^/.]+)')
     def with_user(self, request, user_id=None):
         """Belirli bir kullanıcı ile olan konuşmayı getir"""
