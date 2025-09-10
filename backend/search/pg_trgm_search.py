@@ -189,7 +189,7 @@ class PgTrgmSearchEngine:
                     'owner_id': group.owner.id,
                     'owner_username': group.owner.username,
                     'created_at': group.created_at,
-                    'is_active': group.is_active,
+                    'is_active': True,  # Grup modelinde is_active alanı yok, varsayılan olarak True
                     'similarity_score': float(search_item.max_similarity),
                 }
                 results.append(group_data)
@@ -240,7 +240,7 @@ class PgTrgmSearchEngine:
                 'name': group.name,
                 'description': group.description or '',
                 'created_at': group.created_at,
-                'is_active': group.is_active,
+                'is_active': True,  # Grup modelinde is_active alanı yok, varsayılan olarak True
             }
         except Group.DoesNotExist:
             return None
