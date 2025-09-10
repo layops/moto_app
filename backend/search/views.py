@@ -21,10 +21,8 @@ class UserSearchView(generics.ListAPIView):
         query = self.request.query_params.get('q', None)
         
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-            # Sadece aktif kullanıcıları ara
-            queryset = queryset.filter(is_active=True)
-            
-            # Basit case-insensitive arama yap
+            # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
+            # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
             search_results = queryset.filter(
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
