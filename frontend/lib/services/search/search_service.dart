@@ -35,7 +35,8 @@ class SearchService {
         final List<dynamic> data = response.data;
         print('✅ SearchService - Kullanıcı arama başarılı: ${data.length} kullanıcı bulundu');
         for (int i = 0; i < data.length && i < 3; i++) {
-          print('   ${i+1}. ${data[i]}');
+          final user = data[i];
+          print('   ${i+1}. Username: "${user['username']}", First: "${user['first_name']}", Last: "${user['last_name']}", Email: "${user['email']}"');
         }
         return data.cast<Map<String, dynamic>>();
       } else {

@@ -28,6 +28,28 @@ class UserSearchView(generics.ListAPIView):
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
             
+            # Arama kriterlerini ayrı ayrı test et ve log'la
+            username_matches = queryset.filter(username__icontains=query)
+            first_name_matches = queryset.filter(first_name__icontains=query)
+            last_name_matches = queryset.filter(last_name__icontains=query)
+            email_matches = queryset.filter(email__icontains=query)
+            
+            print(f"🔍 UserSearchView - Username matches for '{query}': {username_matches.count()}")
+            for user in username_matches:
+                print(f"   - {user.username}")
+            
+            print(f"🔍 UserSearchView - First name matches for '{query}': {first_name_matches.count()}")
+            for user in first_name_matches:
+                print(f"   - {user.first_name}")
+            
+            print(f"🔍 UserSearchView - Last name matches for '{query}': {last_name_matches.count()}")
+            for user in last_name_matches:
+                print(f"   - {user.last_name}")
+            
+            print(f"🔍 UserSearchView - Email matches for '{query}': {email_matches.count()}")
+            for user in email_matches:
+                print(f"   - {user.email}")
+            
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
             # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
             search_results = queryset.filter(
