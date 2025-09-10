@@ -12,20 +12,30 @@ class SearchService {
   /// Kullanıcı arama
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
+      print('🔍 Frontend - Kullanıcı arama başlatılıyor: $query');
       final response = await _apiClient.get(
         'search/users/',
         queryParameters: {'q': query},
       );
 
+      print('🔍 Frontend - API yanıtı: ${response.statusCode}');
+      print('🔍 Frontend - API verisi: ${response.data}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
+        print('🔍 Frontend - Bulunan kullanıcı sayısı: ${data.length}');
+        for (var user in data) {
+          print('🔍 Frontend - Kullanıcı: ${user['username']} (ID: ${user['id']})');
+        }
         return data.cast<Map<String, dynamic>>();
       } else {
         throw Exception('Kullanıcı arama başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('🔍 Frontend - DioException: $e');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
+      print('🔍 Frontend - Genel hata: $e');
       throw Exception('Kullanıcı arama hatası: $e');
     }
   }

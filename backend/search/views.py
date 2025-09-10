@@ -20,14 +20,25 @@ class UserSearchView(generics.ListAPIView):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
         
+        print(f"🔍 UserSearchView - Query: '{query}'")
+        print(f"🔍 Total users in DB: {queryset.count()}")
+        
+        # TÜM kullanıcıları listele (debug için)
+        print(f"🔍 ALL USERS IN DATABASE:")
+        for user in queryset.all():
+            print(f"  - {user.username} (ID: {user.id}, Active: {user.is_active})")
+        
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             # Tüm kullanıcılarda ara (aktif olmayanlar dahil)
-            # Çünkü bazı kullanıcılar is_active=False olarak oluşturulmuş olabilir
             search_results = queryset.filter(
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query)
             ).distinct()
+            
+            print(f"🔍 Search results: {search_results.count()}")
+            for user in search_results:
+                print(f"  - {user.username} (ID: {user.id}, Active: {user.is_active})")
             
             # Sonuçları sınırla (performans için)
             return search_results[:50]
