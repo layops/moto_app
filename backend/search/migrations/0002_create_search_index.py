@@ -33,40 +33,40 @@ class Migration(migrations.Migration):
                 'db_table': 'search_index',
             },
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['username'], name='search_username_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_username_gin_idx ON search_index USING gin (username gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_username_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['first_name'], name='search_first_name_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_first_name_gin_idx ON search_index USING gin (first_name gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_first_name_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['last_name'], name='search_last_name_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_last_name_gin_idx ON search_index USING gin (last_name gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_last_name_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['full_name'], name='search_full_name_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_full_name_gin_idx ON search_index USING gin (full_name gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_full_name_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['email'], name='search_email_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_email_gin_idx ON search_index USING gin (email gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_email_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['group_name'], name='search_group_name_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_group_name_gin_idx ON search_index USING gin (group_name gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_group_name_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['group_description'], name='search_group_desc_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_group_desc_gin_idx ON search_index USING gin (group_description gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_group_desc_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['search_vector'], name='search_vector_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_vector_gin_idx ON search_index USING gin (search_vector gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_vector_gin_idx;"
         ),
-        migrations.AddIndex(
-            model_name='searchindex',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['group_search_vector'], name='search_group_vector_gin_idx'),
+        migrations.RunSQL(
+            "CREATE INDEX search_group_vector_gin_idx ON search_index USING gin (group_search_vector gin_trgm_ops);",
+            reverse_sql="DROP INDEX IF EXISTS search_group_vector_gin_idx;"
         ),
     ]

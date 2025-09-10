@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import TrigramSimilarity
 
 
@@ -29,18 +28,7 @@ class SearchIndex(models.Model):
     
     class Meta:
         db_table = 'search_index'
-        indexes = [
-            # Trigram indexleri - pg_trgm için optimize edilmiş
-            GinIndex(fields=['username'], name='search_username_gin_idx'),
-            GinIndex(fields=['first_name'], name='search_first_name_gin_idx'),
-            GinIndex(fields=['last_name'], name='search_last_name_gin_idx'),
-            GinIndex(fields=['full_name'], name='search_full_name_gin_idx'),
-            GinIndex(fields=['email'], name='search_email_gin_idx'),
-            GinIndex(fields=['group_name'], name='search_group_name_gin_idx'),
-            GinIndex(fields=['group_description'], name='search_group_desc_gin_idx'),
-            GinIndex(fields=['search_vector'], name='search_vector_gin_idx'),
-            GinIndex(fields=['group_search_vector'], name='search_group_vector_gin_idx'),
-        ]
+        # Indexler migration'da manuel olarak oluşturuluyor (gin_trgm_ops ile)
     
     def __str__(self):
         if self.user_id:
