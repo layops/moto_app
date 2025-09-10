@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/common/loading_widget.dart';
@@ -26,6 +27,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   };
   String? _error;
   List<String> _searchHistory = [];
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -44,6 +46,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     _searchController.dispose();
     _searchFocusNode.dispose();
     _tabController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -63,6 +66,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       setState(() {
         _searchResults = {'users': [], 'groups': []};
         _error = null;
+      });
+      return;
+    }
+
+    // Minimum 2 karakter kontrolü
+    if (query.trim().length < 2) {
+      setState(() {
+        _searchResults = {'users': [], 'groups': []};
+        _error = 'Arama için en az 2 karakter giriniz';
       });
       return;
     }
@@ -96,7 +108,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   void _onSearchSubmitted(String query) {
+    _searchDebounce?.cancel();
     _performSearch(query);
+  }
+
+  void _onSearchTextChanged(String text) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      _performSearch(text);
+    });
   }
 
   void _onHistoryItemTap(String query) {
@@ -159,6 +179,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               onSubmitted: _onSearchSubmitted,
               onChanged: (value) {
                 setState(() {}); // Suffix icon'u güncellemek için
+                _onSearchTextChanged(value);
               },
             ),
           ),

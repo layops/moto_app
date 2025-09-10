@@ -173,8 +173,23 @@ class _PostItemState extends State<PostItem> {
                 ],
               ),
             ),
-            if (widget.canDelete && widget.onDelete != null)
-              _buildDeleteButton(context, colorScheme),
+            if (widget.canDelete && widget.onDelete != null) ...[
+              Builder(
+                builder: (context) {
+                  print('✅ PostItem - Showing delete button for post: ${widget.post['id']}');
+                  print('✅ PostItem - canDelete: ${widget.canDelete}, onDelete: ${widget.onDelete != null}');
+                  return _buildDeleteButton(context, colorScheme);
+                },
+              ),
+            ] else ...[
+              Builder(
+                builder: (context) {
+                  print('❌ PostItem - NOT showing delete button for post: ${widget.post['id']}');
+                  print('❌ PostItem - canDelete: ${widget.canDelete}, onDelete: ${widget.onDelete != null}');
+                  return const SizedBox.shrink();
+                },
+              ),
+            ]
           ],
         ),
       ),
@@ -249,8 +264,34 @@ class _PostItemState extends State<PostItem> {
   }
 
   Widget _buildDeleteButton(BuildContext context, ColorScheme colorScheme) {
-    return IconButton(
-      onPressed: () => _showDeleteDialog(context),
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'delete') {
+          _showDeleteDialog(context);
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_outline,
+                color: colorScheme.error,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Postu Sil',
+                style: TextStyle(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
       icon: Icon(
         Icons.more_vert,
         color: colorScheme.onSurface.withOpacity(0.6),

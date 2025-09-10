@@ -55,10 +55,18 @@ class HomePostsList extends StatelessWidget {
 
           post['author'] = authorData;
 
-          return PostItem(
-            post: post,
-            onComment: _handleComment,
-            onShare: _handleShare,
+          return FutureBuilder<bool>(
+            future: _isCurrentUserPost(post),
+            builder: (context, snapshot) {
+              final canDelete = snapshot.data ?? false;
+              return PostItem(
+                post: post,
+                onComment: _handleComment,
+                onShare: _handleShare,
+                canDelete: canDelete,
+                onDelete: () => _handleDelete(post['id']),
+              );
+            },
           );
         },
       ),
@@ -370,5 +378,65 @@ class HomePostsList extends StatelessWidget {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<bool> _isCurrentUserPost(Map<String, dynamic> post) async {
+    try {
+      print('🔍 HomePostsList - _isCurrentUserPost called for post: ${post['id']}');
+      print('🔍 HomePostsList - Full post data: $post');
+      
+      final authorData = post['author'] is Map<String, dynamic>
+          ? post['author'] as Map<String, dynamic>
+          : {};
+      
+      print('🔍 HomePostsList - Author data: $authorData');
+      
+      final postAuthorId = authorData['id'];
+      final currentUser = await ServiceLocator.auth.currentUser;
+      final currentUserId = currentUser?['id'];
+      
+      print('🔍 HomePostsList - Post author ID: $postAuthorId (type: ${postAuthorId.runtimeType})');
+      print('🔍 HomePostsList - Current user ID: $currentUserId (type: ${currentUserId.runtimeType})');
+      print('🔍 HomePostsList - Current user data: $currentUser');
+      
+      // String/int karşılaştırması için dönüşüm yap
+      final postAuthorIdStr = postAuthorId?.toString();
+      final currentUserIdStr = currentUserId?.toString();
+      
+      print('🔍 HomePostsList - Post author ID (string): $postAuthorIdStr');
+      print('🔍 HomePostsList - Current user ID (string): $currentUserIdStr');
+      
+      final isCurrentUser = postAuthorIdStr == currentUserIdStr;
+      print('🔍 HomePostsList - Is current user post: $isCurrentUser');
+      
+      return isCurrentUser;
+    } catch (e) {
+      print('❌ HomePostsList - Error checking if current user post: $e');
+      return false;
+    }
+  }
+
+  Future<void> _handleDelete(int postId) async {
+    try {
+      print('HomePostsList - Deleting post: $postId');
+      await ServiceLocator.post.deletePost(postId);
+      print('HomePostsList - Post deleted successfully');
+      
+      // Anasayfayı yenile
+      await onRefresh();
+      print('HomePostsList - Home page refreshed after delete');
+    } catch (e) {
+      print('HomePostsList - Error deleting post: $e');
+      // Hata mesajını göster
+      final context = ServiceLocator.navigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Post silinemedi: ${e.toString().replaceFirst('Exception: ', '')}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 }

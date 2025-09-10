@@ -64,17 +64,22 @@ class FollowService {
     if (token == null) throw Exception('Kullanıcı girişi gerekli');
 
     try {
-      final response = await _apiClient.get(
-        'users/$username/following/',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
+      print('🔍 FollowService - getFollowing çağrıldı, username: $username');
+      final response = await _apiClient.get('users/$username/following/');
+      print('🔍 FollowService - getFollowing response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        return response.data as List<dynamic>;
+        final following = response.data as List<dynamic>;
+        print('🔍 FollowService - Takip edilen kullanıcı sayısı: ${following.length}');
+        for (var user in following) {
+          print('🔍 FollowService - Takip edilen: ${user['username']}');
+        }
+        return following;
       } else {
         throw Exception('Takip edilenler alınamadı: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('❌ FollowService - getFollowing hatası: ${e.message}');
       if (e.response?.statusCode == 404) return [];
       rethrow;
     }

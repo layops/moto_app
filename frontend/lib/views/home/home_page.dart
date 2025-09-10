@@ -50,9 +50,9 @@ class _HomePageState extends State<HomePage> {
       print('HomePage - Token alındı: ${token != null ? "Token mevcut" : "Token yok"}');
       
       if (token != null) {
-        print('HomePage - PostService.fetchPosts çağrılıyor...');
-        final fetchedPosts = await ServiceLocator.post.fetchPosts(token);
-        print('HomePage - fetchPosts tamamlandı, ${fetchedPosts.length} post alındı');
+        print('HomePage - PostService.fetchPosts çağrılıyor (following only)...');
+        final fetchedPosts = await ServiceLocator.post.fetchPosts(token, followingOnly: true);
+        print('HomePage - fetchPosts tamamlandı, ${fetchedPosts.length} takip edilen post alındı');
 
         // Debug için gelen postları yazdır (sadece debug modda)
         if (kDebugMode) {

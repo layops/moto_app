@@ -54,14 +54,27 @@ class SearchService {
   /// Genel arama (hem kullanıcı hem grup)
   Future<Map<String, List<Map<String, dynamic>>>> searchAll(String query) async {
     try {
-      final results = await Future.wait([
-        searchUsers(query),
-        searchGroups(query),
-      ]);
+      // Her iki arama işlemini ayrı ayrı yap, biri başarısız olursa diğeri etkilenmesin
+      List<Map<String, dynamic>> users = [];
+      List<Map<String, dynamic>> groups = [];
+      
+      try {
+        users = await searchUsers(query);
+      } catch (e) {
+        // Kullanıcı arama hatası, boş liste döndür
+        users = [];
+      }
+      
+      try {
+        groups = await searchGroups(query);
+      } catch (e) {
+        // Grup arama hatası, boş liste döndür
+        groups = [];
+      }
 
       return {
-        'users': results[0],
-        'groups': results[1],
+        'users': users,
+        'groups': groups,
       };
     } catch (e) {
       throw Exception('Genel arama hatası: $e');
@@ -73,17 +86,18 @@ class SearchService {
     try {
       final history = await getSearchHistory();
       
-      // Aynı sorguyu tekrar eklememek için kontrol et
-      if (!history.contains(query)) {
-        history.insert(0, query); // En başa ekle
-        
-        // Maksimum 10 arama geçmişi tut
-        if (history.length > 10) {
-          history.removeRange(10, history.length);
-        }
-        
-        await _storage.setString('search_history', history.join(','));
+      // Aynı sorguyu listeden kaldır (varsa)
+      history.remove(query);
+      
+      // En başa ekle
+      history.insert(0, query);
+      
+      // Maksimum 10 arama geçmişi tut
+      if (history.length > 10) {
+        history.removeRange(10, history.length);
       }
+      
+      await _storage.setString('search_history', history.join(','));
     } catch (e) {
       // Arama geçmişi kaydetme hatası kritik değil, sessizce geç
     }

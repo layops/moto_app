@@ -53,7 +53,7 @@ class HomeEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Henüz hiç gönderi yok',
+              'Takip ettiğiniz kullanıcıların gönderisi yok',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -62,7 +62,7 @@ class HomeEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'İlk gönderiyi sen paylaş ve topluluğa katıl!',
+              'Başka kullanıcıları takip ederek onların gönderilerini görebilirsiniz.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withOpacity(0.6),
                 height: 1.4,
@@ -83,8 +83,8 @@ class HomeEmptyState extends StatelessWidget {
               ),
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Create post sayfasına yönlendirme
-                  Navigator.pushNamed(context, '/create-post');
+                  // Arama sayfasına yönlendirme
+                  Navigator.pushNamed(context, '/search');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
@@ -95,9 +95,9 @@ class HomeEmptyState extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
-                icon: const Icon(Icons.add_rounded, size: 20),
+                icon: const Icon(Icons.search_rounded, size: 20),
                 label: const Text(
-                  'Gönderi Oluştur',
+                  'Kullanıcıları Keşfet',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,

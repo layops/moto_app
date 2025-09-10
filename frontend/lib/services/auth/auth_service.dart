@@ -19,10 +19,54 @@ class AuthService {
   Stream<bool> get authStateChanges => _authStateController.stream;
   ApiClient get apiClient => _apiClient;
   
-  // Current user bilgisi için getter
-  Map<String, dynamic>? get currentUser {
-    // Bu basit bir implementasyon, gerçek uygulamada token'dan user bilgisi alınabilir
-    return null; // Şimdilik null döndürüyoruz, token'dan user ID alınabilir
+  // Current user bilgisi için async getter
+  Future<Map<String, dynamic>?> get currentUser async {
+    // Token'dan kullanıcı bilgilerini al
+    try {
+      print('🔑 AuthService - Getting current user from token...');
+      final token = await _tokenService.getToken();
+      print('🔑 AuthService - Raw token: $token');
+      
+      final tokenData = await _tokenService.getTokenData();
+      print('🔑 AuthService - Token data: $tokenData');
+      
+      if (tokenData != null) {
+        final userData = {
+          'id': tokenData['user_id'] ?? tokenData['id'],
+          'username': tokenData['username'],
+          'email': tokenData['email'],
+        };
+        print('🔑 AuthService - Current user data: $userData');
+        return userData;
+      } else {
+        print('🔑 AuthService - No token data found, trying alternative method...');
+        
+        // Alternatif: Token'dan username al ve API'den user bilgilerini çek
+        final username = await _tokenService.getUsernameFromToken();
+        print('🔑 AuthService - Username from token: $username');
+        
+        if (username != null) {
+          // API'den user bilgilerini çek
+          try {
+            final response = await _apiClient.get('users/$username/profile/');
+            if (response.statusCode == 200) {
+              final userData = response.data;
+              print('🔑 AuthService - User data from API: $userData');
+              return {
+                'id': userData['id'],
+                'username': userData['username'],
+                'email': userData['email'],
+              };
+            }
+          } catch (e) {
+            print('❌ AuthService - Error fetching user from API: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ AuthService - Error getting current user: $e');
+    }
+    return null;
   }
 
   Future<void> initializeAuthState() async {

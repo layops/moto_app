@@ -87,10 +87,6 @@ class SearchResultsWidget extends StatelessWidget {
     final profilePhotoUrl = user['profile_photo_url'];
     final userId = user['id'];
     
-    // Debug için kullanıcı verilerini yazdır
-    print('Search Results - User ID: $userId');
-    print('Search Results - Profile Photo URL: $profilePhotoUrl');
-    print('Search Results - User Data: $user');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -115,7 +111,7 @@ class SearchResultsWidget extends StatelessWidget {
             ? Text('@$username')
             : null,
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _navigateToUserProfile(context, userId),
+        onTap: () => _navigateToUserProfile(context, user),
       ),
     );
   }
@@ -127,10 +123,6 @@ class SearchResultsWidget extends StatelessWidget {
     final profilePictureUrl = group['profile_picture_url'];
     final groupId = group['id'];
     
-    // Debug için grup verilerini yazdır
-    print('Search Results - Group ID: $groupId');
-    print('Search Results - Profile Picture URL: $profilePictureUrl');
-    print('Search Results - Group Data: $group');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -174,15 +166,24 @@ class SearchResultsWidget extends StatelessWidget {
     );
   }
 
-  void _navigateToUserProfile(BuildContext context, int userId) {
-    // userId'den username'i almak için API çağrısı yapmamız gerekiyor
-    // Şimdilik basit bir çözüm olarak userId'yi string'e çeviriyoruz
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProfilePage(username: userId.toString()),
-      ),
-    );
+  void _navigateToUserProfile(BuildContext context, Map<String, dynamic> user) {
+    final username = user['username'];
+    if (username != null && username.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfilePage(username: username),
+        ),
+      );
+    } else {
+      // Username yoksa hata mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kullanıcı bilgisi bulunamadı'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _navigateToGroupDetail(BuildContext context, Map<String, dynamic> group) {
