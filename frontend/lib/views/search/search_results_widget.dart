@@ -18,15 +18,24 @@ class SearchResultsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🔍 SearchResultsWidget - build çağrıldı');
+    print('   Type: $type');
+    print('   Query: $query');
+    print('   Results count: ${results.length}');
+    print('   Results: $results');
+    
     if (results.isEmpty) {
+      print('🔍 SearchResultsWidget - Sonuç boş, empty state gösteriliyor');
       return _buildEmptyState(context);
     }
 
+    print('🔍 SearchResultsWidget - ${results.length} sonuç gösteriliyor');
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: results.length,
       itemBuilder: (context, index) {
         final item = results[index];
+        print('   ${index + 1}. ${item}');
         return _buildResultItem(context, item);
       },
     );

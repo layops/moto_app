@@ -79,7 +79,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Future<void> _performSearch(String query) async {
+    print('🔍 SearchPage - _performSearch başlatıldı: "$query"');
+    
     if (query.trim().isEmpty) {
+      print('🔍 SearchPage - Boş query, sonuçlar temizleniyor');
       setState(() {
         _searchResults = {'users': [], 'groups': []};
         _error = null;
@@ -90,6 +93,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
     // Minimum 2 karakter kontrolü
     if (query.trim().length < 2) {
+      print('🔍 SearchPage - Query çok kısa (${query.trim().length} karakter)');
       setState(() {
         _searchResults = {'users': [], 'groups': []};
         _error = 'Arama için en az 2 karakter giriniz';
@@ -98,6 +102,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       return;
     }
 
+    print('🔍 SearchPage - Arama işlemi başlatılıyor: "${query.trim()}"');
     setState(() {
       _isSearching = true;
       _error = null;
@@ -106,21 +111,34 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
     try {
       // Arama geçmişine kaydet
+      print('🔍 SearchPage - Arama geçmişine kaydediliyor...');
       await ServiceLocator.search.saveSearchHistory(_currentQuery);
       
       // Arama yap
+      print('🔍 SearchPage - ServiceLocator.search.searchAll() çağrılıyor...');
       final results = await ServiceLocator.search.searchAll(_currentQuery);
       
+      print('🔍 SearchPage - Arama sonuçları alındı:');
+      print('   Kullanıcılar: ${results['users']?.length ?? 0}');
+      print('   Gruplar: ${results['groups']?.length ?? 0}');
+      print('   Kullanıcı verileri: ${results['users']}');
+      print('   Grup verileri: ${results['groups']}');
+      
       if (mounted) {
+        print('🔍 SearchPage - setState çağrılıyor...');
         setState(() {
           _searchResults = results;
           _isSearching = false;
         });
         
+        print('🔍 SearchPage - setState tamamlandı');
+        print('🔍 SearchPage - _searchResults güncel hali: $_searchResults');
+        
         // Arama geçmişini yenile
         _loadSearchHistory();
       }
     } catch (e) {
+      print('❌ SearchPage - Arama hatası: $e');
       if (mounted) {
         setState(() {
           _error = e.toString();
