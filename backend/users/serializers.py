@@ -67,7 +67,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'profile_picture', 'profile_photo_url',
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'profile_picture', 'profile_photo_url',
             'cover_picture', 'cover_photo_url',
             'followers_count', 'following_count', 'display_name',
             'bio', 'motorcycle_model', 'location', 'website',
@@ -139,15 +140,6 @@ class UserSerializer(serializers.ModelSerializer):
             return request.user.following.filter(id=obj.id).exists()
         return False
 
-    def to_representation(self, instance):
-        """
-        UserSerializer için debug log'ları
-        """
-        representation = super().to_representation(instance)
-        print(f"UserSerializer - User {instance.id}:")
-        print(f"  - Username: {instance.username}")
-        print(f"  - Representation: {representation}")
-        return representation
 
     def validate_website(self, value):
         if value and value.strip():
