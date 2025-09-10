@@ -47,7 +47,7 @@ class _GroupsPageState extends State<GroupsPage> {
       }
 
       final dio = _authService.apiClient.dio;
-      final headers = {'Authorization': 'Token $token'};
+      final headers = {'Authorization': 'Bearer $token'};
 
       final [myGroupsResponse, discoverGroupsResponse] = await Future.wait([
         dio.get('groups/my_groups/', options: Options(headers: headers)),

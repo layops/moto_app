@@ -97,7 +97,7 @@ class NotificationsService {
       final response = await http.get(
         uri,
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -129,7 +129,7 @@ class NotificationsService {
       final response = await http.patch(
         uri,
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -161,7 +161,7 @@ class NotificationsService {
       final response = await http.patch(
         uri,
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({

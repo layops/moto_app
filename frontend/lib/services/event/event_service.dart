@@ -22,7 +22,7 @@ class EventService {
         '$kBaseUrl/api/events/',
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
           validateStatus: (status) {
@@ -63,7 +63,7 @@ class EventService {
         queryParameters: {'group': groupId},
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
           validateStatus: (status) {
@@ -140,7 +140,7 @@ class EventService {
         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
             'Content-Type': 'multipart/form-data',
           },
         ),
@@ -170,7 +170,7 @@ class EventService {
         '$kBaseUrl/api/events/$eventId/join/',
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
           },
         ),
       );
@@ -185,7 +185,7 @@ class EventService {
       final token = await authService.getToken();
       final response = await _dio.get(
         '$kBaseUrl/api/events/$eventId/participants/',
-        options: Options(headers: {'Authorization': 'Token $token'}),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return response.data;
     } on DioException catch (e) {
@@ -200,7 +200,7 @@ class EventService {
         '$kBaseUrl/api/events/$eventId/leave/',
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
           },
         ),
       );

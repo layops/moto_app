@@ -31,7 +31,7 @@ class AuthService {
       print('🔑 AuthService - Token data: $tokenData');
       
       if (tokenData != null) {
-        final userData = {q
+        final userData = {
           'id': tokenData['user_id'] ?? tokenData['id'],
           'username': tokenData['username'],
           'email': tokenData['email'],

@@ -14,7 +14,7 @@ class ApiInterceptors extends Interceptor {
   ) async {
     final token = _storage.getAuthToken();
     if (token != null) {
-      options.headers['Authorization'] = 'Token $token';
+      options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
   }

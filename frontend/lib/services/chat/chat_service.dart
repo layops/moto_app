@@ -34,7 +34,7 @@ class ChatService {
       final response = await http.get(
         Uri.parse('$_baseUrl/chat/private-messages/'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -76,7 +76,7 @@ class ChatService {
       final response = await http.get(
         Uri.parse('$_baseUrl/chat/conversations/'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -118,7 +118,7 @@ class ChatService {
       final response = await http.get(
         Uri.parse('$_baseUrl/chat/private-messages/$userId/'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -156,7 +156,7 @@ class ChatService {
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/private-messages/'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
@@ -192,7 +192,7 @@ class ChatService {
       final response = await http.patch(
         Uri.parse('$_baseUrl/chat/private-messages/$messageId/mark-read/'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -224,7 +224,7 @@ class ChatService {
       final response = await http.get(
         Uri.parse('$_baseUrl/users/search/?q=$query'),
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );

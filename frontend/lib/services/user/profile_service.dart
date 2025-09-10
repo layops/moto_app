@@ -37,7 +37,7 @@ class ProfileService {
         'users/$username/upload-photo/',
         formData,
         options: Options(
-          headers: {'Authorization': 'Token $token'},
+          headers: {'Authorization': 'Bearer $token'},
         ),
       );
     } catch (e) {
@@ -72,7 +72,7 @@ class ProfileService {
         'users/$username/upload-cover/',
         formData,
         options: Options(
-          headers: {'Authorization': 'Token $token'},
+          headers: {'Authorization': 'Bearer $token'},
         ),
       );
     } catch (e) {
@@ -132,7 +132,7 @@ class ProfileService {
         'users/$username/profile/',
         profileData,
         options: Options(
-          headers: {'Authorization': 'Token $token'},
+          headers: {'Authorization': 'Bearer $token'},
         ),
       );
     } catch (e) {

@@ -18,7 +18,7 @@ class GroupService {
 
   Options _authOptions(String? token) {
     if (token == null) throw Exception('Token bulunamadı. Lütfen giriş yapın.');
-    return Options(headers: {'Authorization': 'Token $token'});
+    return Options(headers: {'Authorization': 'Bearer $token'});
   }
 
   Future<List<dynamic>> fetchUserGroups() async {
@@ -60,7 +60,7 @@ class GroupService {
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
         },
       ),
@@ -89,7 +89,7 @@ class GroupService {
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
         },
       ),
@@ -221,7 +221,7 @@ class GroupService {
         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Token $token',
+            'Authorization': 'Bearer $token',
             'Content-Type': 'multipart/form-data',
           },
         ),
@@ -329,7 +329,7 @@ class GroupService {
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
         },
       ),
@@ -370,7 +370,7 @@ class GroupService {
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
         },
       ),
@@ -454,7 +454,7 @@ class GroupService {
       data: formData,
       options: Options(
         headers: {
-          'Authorization': 'Token $token',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'multipart/form-data',
         },
       ),

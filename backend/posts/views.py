@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from users.services.supabase_service import SupabaseStorage
+from django.db.models import Q
 import logging
 
 logger = logging.getLogger(__name__)
@@ -334,3 +335,40 @@ class PostCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance.author != self.request.user:
             raise PermissionDenied("Bu yorumu silme izniniz yok.")
         instance.delete()
+
+
+# Takip edilen kullanıcıların postlarını getir (kendi postları dahil)
+class FollowingPostsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user = request.user
+            
+            # Takip edilen kullanıcıları al
+            following_users = user.following.all()
+            following_user_ids = list(following_users.values_list('id', flat=True))
+            
+            # Kendi ID'sini de ekle
+            following_user_ids.append(user.id)
+            
+            logger.info(f"Following posts için kullanıcı ID'leri: {following_user_ids}")
+            
+            # Takip edilen kullanıcıların postlarını getir (grup postları hariç)
+            posts = Post.objects.filter(
+                Q(author_id__in=following_user_ids) & Q(group__isnull=True)
+            ).order_by('-created_at')
+            
+            logger.info(f"Following posts: {posts.count()} post bulundu")
+            
+            # Serialize et
+            serializer = PostSerializer(posts, many=True, context={'request': request})
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Following posts hatası: {str(e)}")
+            return Response(
+                {'error': 'Takip edilen postlar alınamadı'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -5,11 +5,13 @@ from .views import (
     PostDetailView,
     PostLikeToggleView,
     PostCommentListCreateView,
-    PostCommentDetailView
+    PostCommentDetailView,
+    FollowingPostsView
 )
 
 urlpatterns = [
     path('', GeneralPostListCreateView.as_view(), name='general-post-list-create'),
+    path('following/', FollowingPostsView.as_view(), name='following-posts'),
     path('groups/<int:group_pk>/posts/', GroupPostListCreateView.as_view(), name='group-post-list-create'),
     path('<int:pk>/', PostDetailView.as_view(), name='post-detail'),
     path('<int:post_id>/like/', PostLikeToggleView.as_view(), name='post-like-toggle'),

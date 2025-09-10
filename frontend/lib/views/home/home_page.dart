@@ -46,13 +46,33 @@ class _HomePageState extends State<HomePage> {
     print('HomePage - Loading state true yapıldı');
 
     try {
-      final token = await ServiceLocator.token.getToken();
-      print('HomePage - Token alındı: ${token != null ? "Token mevcut" : "Token yok"}');
+      print('HomePage - PostService.fetchPosts çağrılıyor (following only)...');
+      final fetchedPosts = await ServiceLocator.post.fetchPosts(followingOnly: true);
+      print('HomePage - fetchPosts tamamlandı, ${fetchedPosts.length} takip edilen post alındı');
       
-      if (token != null) {
-        print('HomePage - PostService.fetchPosts çağrılıyor (following only)...');
-        final fetchedPosts = await ServiceLocator.post.fetchPosts(token, followingOnly: true);
-        print('HomePage - fetchPosts tamamlandı, ${fetchedPosts.length} takip edilen post alındı');
+      // Eğer takip edilen post yoksa, tüm postları getir
+      if (fetchedPosts.isEmpty) {
+        print('HomePage - Takip edilen post yok, tüm postlar getiriliyor...');
+        final allPosts = await ServiceLocator.post.fetchPosts(followingOnly: false);
+        print('HomePage - Tüm postlar getirildi: ${allPosts.length} post');
+        
+        // Process posts to get user details for author IDs - Optimized for performance
+        print('HomePage - Post processing başlatılıyor...');
+        final updatedPosts = await _processPostsWithUserDetails(allPosts);
+        print('HomePage - Post processing tamamlandı, ${updatedPosts.length} post işlendi');
+
+        if (!mounted) {
+          print('HomePage - Widget mounted değil, state güncelleme iptal edildi');
+          return;
+        }
+        
+        setState(() {
+          posts = updatedPosts;
+        });
+        print('HomePage - State güncellendi, posts sayısı: ${posts.length}');
+        print('HomePage - Updated posts: ${updatedPosts.map((p) => p['id']).toList()}');
+        return;
+      }
 
         // Debug için gelen postları yazdır (sadece debug modda)
         if (kDebugMode) {
@@ -70,16 +90,16 @@ class _HomePageState extends State<HomePage> {
         final updatedPosts = await _processPostsWithUserDetails(fetchedPosts);
         print('HomePage - Post processing tamamlandı, ${updatedPosts.length} post işlendi');
 
-        if (!mounted) {
-          print('HomePage - Widget mounted değil, state güncelleme iptal edildi');
-          return;
-        }
-        
-        setState(() {
-          posts = updatedPosts;
-        });
-        print('HomePage - State güncellendi, posts sayısı: ${posts.length}');
+      if (!mounted) {
+        print('HomePage - Widget mounted değil, state güncelleme iptal edildi');
+        return;
       }
+      
+      setState(() {
+        posts = updatedPosts;
+      });
+      print('HomePage - State güncellendi, posts sayısı: ${posts.length}');
+      print('HomePage - Updated posts: ${updatedPosts.map((p) => p['id']).toList()}');
     } catch (e) {
       print('HomePage - _fetchPosts hatası: $e');
       if (!mounted) return;

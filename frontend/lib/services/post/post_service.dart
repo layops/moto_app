@@ -25,10 +25,6 @@ class PostService {
     File? file,
     int? groupPk,
   }) async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('Lütfen giriş yapın.');
-    }
 
     FormData formData = FormData.fromMap({'content': content});
     if (file != null) {
@@ -83,7 +79,7 @@ class PostService {
     }
   }
 
-  Future<List<dynamic>> fetchPosts(String token, {int? groupPk, bool followingOnly = false}) async {
+  Future<List<dynamic>> fetchPosts({int? groupPk, bool followingOnly = false}) async {
     String endpoint;
     String cacheKey;
     
@@ -117,6 +113,7 @@ class PostService {
       
       final response = await _apiClient.get(urlWithTimestamp);
       print('PostService - API response alındı, status: ${response.statusCode}');
+      print('PostService - API response data type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
         final posts = response.data as List<dynamic>;
