@@ -21,6 +21,10 @@ class UserSearchView(generics.ListAPIView):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
         
+        print(f"🔍 UserSearchView - Query: '{query}'")
+        print(f"🔍 UserSearchView - Request user: {self.request.user}")
+        print(f"🔍 UserSearchView - Total users in DB: {User.objects.count()}")
+        
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
             
@@ -33,9 +37,18 @@ class UserSearchView(generics.ListAPIView):
                 Q(email__icontains=query)
             ).distinct().order_by('username')
             
+            count = search_results.count()
+            print(f"✅ UserSearchView - Found {count} users for query '{query}'")
+            
+            # İlk 5 sonucu log'la
+            results_list = list(search_results[:5])
+            for i, user in enumerate(results_list):
+                print(f"   {i+1}. {user.username} - {user.first_name} {user.last_name} - {user.email}")
+            
             # Sonuçları sınırla (performans için)
             return search_results[:50]
         else:
+            print(f"❌ UserSearchView - Query too short or empty")
             return queryset.none()  # Boş sorgu için hiç sonuç döndürme
 
 
@@ -48,6 +61,10 @@ class GroupSearchView(generics.ListAPIView):
         queryset = super().get_queryset()
         query = self.request.query_params.get('q', None)
         
+        print(f"🔍 GroupSearchView - Query: '{query}'")
+        print(f"🔍 GroupSearchView - Request user: {self.request.user}")
+        print(f"🔍 GroupSearchView - Total groups in DB: {Group.objects.count()}")
+        
         if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
             query = query.strip()
             
@@ -57,9 +74,18 @@ class GroupSearchView(generics.ListAPIView):
                 Q(description__icontains=query)
             ).distinct().order_by('name')
             
+            count = search_results.count()
+            print(f"✅ GroupSearchView - Found {count} groups for query '{query}'")
+            
+            # İlk 5 sonucu log'la
+            results_list = list(search_results[:5])
+            for i, group in enumerate(results_list):
+                print(f"   {i+1}. {group.name} - {group.description}")
+            
             # Sonuçları sınırla (performans için)
             return search_results[:50]
         else:
+            print(f"❌ GroupSearchView - Query too short or empty")
             return queryset.none()  # Boş sorgu için hiç sonuç döndürme
 
 
@@ -67,6 +93,9 @@ class GroupSearchView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def get_available_users(request):
     """Mevcut kullanıcıları listeler (arama için referans)"""
+    print(f"🔍 get_available_users - Request user: {request.user}")
+    print(f"🔍 get_available_users - Total users in DB: {User.objects.count()}")
+    
     users = User.objects.all()[:20]  # İlk 20 kullanıcı
     user_data = []
     for user in users:
@@ -77,6 +106,9 @@ def get_available_users(request):
             'last_name': user.last_name,
             'full_name': f"{user.first_name} {user.last_name}".strip(),
         })
+        print(f"   - {user.username} ({user.first_name} {user.last_name})")
+    
+    print(f"✅ get_available_users - Returning {len(user_data)} users")
     
     return Response({
         'users': user_data,
