@@ -5,6 +5,7 @@ import dj_database_url  # pyright: ignore[reportMissingImports]
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = 'https://spiride.onrender.com'
 MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 

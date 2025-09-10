@@ -71,11 +71,35 @@ class ProfileImageUploadView(APIView):
         if request.user != user:
             return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
         
-        if 'profile_picture' in request.FILES:
-            user.profile_picture = request.FILES['profile_picture']
+        if 'profile_picture' not in request.FILES:
+            return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_service import SupabaseStorage
+            
+            # Eski profil fotoğrafını sil
+            if user.profile_picture:
+                storage = SupabaseStorage()
+                storage.delete_profile_picture(user.profile_picture)
+            
+            # Yeni fotoğrafı yükle
+            storage = SupabaseStorage()
+            file_obj = request.FILES['profile_picture']
+            image_url = storage.upload_profile_picture(file_obj, user.id)
+            
+            # Kullanıcı modelini güncelle
+            user.profile_picture = image_url
             user.save()
-            return Response({'message': 'Profil fotoğrafı güncellendi'}, status=status.HTTP_200_OK)
-        return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Güncellenmiş kullanıcı bilgilerini döndür
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                'message': 'Profil fotoğrafı başarıyla güncellendi',
+                'user': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': f'Fotoğraf yükleme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CoverImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -85,11 +109,35 @@ class CoverImageUploadView(APIView):
         if request.user != user:
             return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
         
-        if 'cover_picture' in request.FILES:
-            user.cover_picture = request.FILES['cover_picture']
+        if 'cover_picture' not in request.FILES:
+            return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_service import SupabaseStorage
+            
+            # Eski kapak fotoğrafını sil
+            if user.cover_picture:
+                storage = SupabaseStorage()
+                storage.delete_cover_picture(user.cover_picture)
+            
+            # Yeni fotoğrafı yükle
+            storage = SupabaseStorage()
+            file_obj = request.FILES['cover_picture']
+            image_url = storage.upload_cover_picture(file_obj, user.id)
+            
+            # Kullanıcı modelini güncelle
+            user.cover_picture = image_url
             user.save()
-            return Response({'message': 'Kapak fotoğrafı güncellendi'}, status=status.HTTP_200_OK)
-        return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Güncellenmiş kullanıcı bilgilerini döndür
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                'message': 'Kapak fotoğrafı başarıyla güncellendi',
+                'user': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': f'Fotoğraf yükleme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]
