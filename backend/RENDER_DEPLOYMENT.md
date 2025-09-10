@@ -10,7 +10,7 @@ Render.com'da aşağıdaki environment variables'ları ayarlayın:
 - `ALLOWED_HOSTS`: your-app-name.onrender.com,localhost,127.0.0.1
 
 ### Database:
-- `DATABASE_URL`: Render.com otomatik olarak PostgreSQL service için sağlar
+- `DATABASE_URL`: Supabase PostgreSQL connection string (postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres)
 
 ### Redis:
 - `REDIS_URL`: Render.com Redis service URL'i
@@ -33,15 +33,16 @@ Render.com'da aşağıdaki environment variables'ları ayarlayın:
 ## Services Needed
 
 1. **Web Service**: Django backend
-2. **PostgreSQL Database**: Database service
-3. **Redis**: Cache ve WebSocket için
+2. **Supabase**: PostgreSQL Database + Storage + Realtime
+3. **Redis**: Cache ve WebSocket için (opsiyonel - Supabase Realtime kullanılabilir)
 
 ## Troubleshooting
 
 ### Database Connection Issues:
-- DATABASE_URL'ın doğru olduğundan emin olun
-- PostgreSQL service'in çalıştığından emin olun
-- SSL bağlantıları Render.com'da otomatik olarak yönetilir
+- DATABASE_URL'ın doğru olduğundan emin olun (Supabase connection string)
+- Supabase PostgreSQL service'in çalıştığından emin olun
+- SSL bağlantıları Supabase'de otomatik olarak yönetilir
+- Connection pooling için Supabase dashboard'unda ayarları kontrol edin
 
 ### Static Files:
 - collectstatic komutu build sırasında çalışır

@@ -76,12 +76,13 @@ ASGI_APPLICATION = 'core_api.asgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    # Render.com PostgreSQL için basit ve güvenilir ayarlar
+    # Supabase PostgreSQL için optimize edilmiş ayarlar
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            ssl_require=True,  # Supabase SSL gerektirir
         )
     }
 else:
