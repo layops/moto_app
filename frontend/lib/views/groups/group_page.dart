@@ -80,6 +80,13 @@ class _GroupsPageState extends State<GroupsPage> {
     }
   }
 
+  // Grup oluşturma sonrası özel yenileme fonksiyonu
+  Future<void> _refreshAfterGroupCreation() async {
+    // Kısa bir bekleme ekleyerek API'nin güncellenmesini sağla
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _loadGroups();
+  }
+
   Widget _buildErrorWidget() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -368,7 +375,7 @@ class _GroupsPageState extends State<GroupsPage> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => CreateGroupPage(
-                        onGroupCreated: _loadGroups,
+                        onGroupCreated: _refreshAfterGroupCreation,
                         authService: _authService,
                       ),
                     ),
@@ -483,7 +490,7 @@ class _GroupsPageState extends State<GroupsPage> {
             context,
             MaterialPageRoute(
               builder: (_) => CreateGroupPage(
-                onGroupCreated: _loadGroups,
+                onGroupCreated: _refreshAfterGroupCreation,
                 authService: _authService,
               ),
             ),

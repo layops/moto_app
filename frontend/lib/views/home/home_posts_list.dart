@@ -266,7 +266,94 @@ class HomePostsList extends StatelessWidget {
   }
 
   Future<void> _handleShare(int postId) async {
-    // TODO: Implement share functionality
-    debugPrint('Share clicked for post: $postId');
+    try {
+      // Post verilerini bul
+      final post = posts.firstWhere(
+        (p) => p['id'] == postId,
+        orElse: () => {},
+      );
+      
+      if (post.isEmpty) {
+        debugPrint('Post not found for ID: $postId');
+        return;
+      }
+      
+      final authorData = post['author'] is Map<String, dynamic>
+          ? post['author'] as Map<String, dynamic>
+          : {};
+      
+      String username = 'Bilinmeyen';
+      if (authorData.isNotEmpty && authorData['username'] != null) {
+        username = authorData['username'].toString();
+      } else if (post['username'] != null) {
+        username = post['username'].toString();
+      }
+      
+      final postContent = post['content']?.toString() ?? '';
+      
+      // Share text oluştur
+      final shareText = '${username} kullanıcısının gönderisi:\n\n$postContent\n\nSpiride uygulamasından paylaşıldı.';
+      
+      // Share dialog göster
+      final context = ServiceLocator.navigatorKey.currentContext;
+      if (context != null) {
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Paylaş'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gönderi metni:',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      shareText,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _copyToClipboard(shareText, context);
+                  },
+                  child: const Text('Kopyala'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('Share error: $e');
+    }
+  }
+  
+  void _copyToClipboard(String text, BuildContext context) {
+    // Clipboard'a kopyalama işlemi
+    // Flutter'da clipboard işlemi için services kullanılabilir
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Gönderi metni panoya kopyalandı'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 }

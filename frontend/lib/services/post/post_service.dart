@@ -53,8 +53,24 @@ class PostService {
       // Cache'i temizle
       _clearPostsCache();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
+      if (e.response?.statusCode == 400) {
+        // Bad Request - validation error
+        final errorData = e.response?.data;
+        if (errorData is Map && errorData.containsKey('detail')) {
+          throw Exception('Hata: ${errorData['detail']}');
+        } else if (errorData is Map && errorData.containsKey('message')) {
+          throw Exception('Hata: ${errorData['message']}');
+        } else {
+          throw Exception('Geçersiz veri gönderildi.');
+        }
+      } else if (e.response?.statusCode == 401) {
+        throw Exception('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      } else if (e.response?.statusCode == 403) {
+        throw Exception('Bu işlem için yetkiniz yok.');
+      } else if (e.response?.statusCode == 404) {
         throw Exception('API endpointi bulunamadı: $kBaseUrl/$endpoint');
+      } else if (e.response?.statusCode == 500) {
+        throw Exception('Sunucu hatası. Lütfen daha sonra tekrar deneyin.');
       } else if (e.type == DioExceptionType.connectionTimeout) {
         throw Exception(
             'Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');

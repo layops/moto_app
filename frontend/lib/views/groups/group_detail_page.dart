@@ -462,6 +462,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final memberCount = widget.groupData['member_count'] ?? 0;
     final profilePictureUrl = widget.groupData['profile_picture_url'];
     
+    // Debug için profil fotoğrafı URL'sini yazdır
+    print('Group Detail - Profile Picture URL: $profilePictureUrl');
+    print('Group Detail - Group Data: ${widget.groupData}');
+    
     return Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -511,14 +515,27 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                               ),
                             ],
                         ),
-                        child: profilePictureUrl != null
+                        child: (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
                             ? ClipOval(
                                 child: Image.network(
                                     profilePictureUrl,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => _buildDefaultLogo(),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      print('Image load error: $error');
+                                      return _buildDefaultLogo();
+                                    },
                                 ),
-                            )
+                              )
                             : _buildDefaultLogo(),
                     ),
                 ),

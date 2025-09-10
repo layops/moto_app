@@ -84,18 +84,23 @@ class SearchResultsWidget extends StatelessWidget {
     final firstName = user['first_name'] ?? '';
     final lastName = user['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
-    final profilePicture = user['profile_picture'];
+    final profilePhotoUrl = user['profile_photo_url'];
     final userId = user['id'];
+    
+    // Debug için kullanıcı verilerini yazdır
+    print('Search Results - User ID: $userId');
+    print('Search Results - Profile Photo URL: $profilePhotoUrl');
+    print('Search Results - User Data: $user');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
           radius: 24,
-          backgroundImage: profilePicture != null
-              ? NetworkImage(profilePicture)
+          backgroundImage: (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty)
+              ? NetworkImage(profilePhotoUrl)
               : null,
-          child: profilePicture == null
+          child: (profilePhotoUrl == null || profilePhotoUrl.isEmpty)
               ? Text(
                   username.isNotEmpty ? username[0].toUpperCase() : '?',
                   style: const TextStyle(fontSize: 18),
@@ -119,18 +124,23 @@ class SearchResultsWidget extends StatelessWidget {
     final name = group['name'] ?? 'Bilinmeyen Grup';
     final description = group['description'] ?? '';
     final memberCount = group['member_count'] ?? 0;
-    final groupImage = group['image'];
+    final profilePictureUrl = group['profile_picture_url'];
     final groupId = group['id'];
+    
+    // Debug için grup verilerini yazdır
+    print('Search Results - Group ID: $groupId');
+    print('Search Results - Profile Picture URL: $profilePictureUrl');
+    print('Search Results - Group Data: $group');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
           radius: 24,
-          backgroundImage: groupImage != null
-              ? NetworkImage(groupImage)
+          backgroundImage: (profilePictureUrl != null && profilePictureUrl.isNotEmpty)
+              ? NetworkImage(profilePictureUrl)
               : null,
-          child: groupImage == null
+          child: (profilePictureUrl == null || profilePictureUrl.isEmpty)
               ? const Icon(Icons.group, size: 24)
               : null,
         ),
@@ -159,7 +169,7 @@ class SearchResultsWidget extends StatelessWidget {
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => _navigateToGroupDetail(context, groupId),
+        onTap: () => _navigateToGroupDetail(context, group),
       ),
     );
   }
@@ -175,15 +185,14 @@ class SearchResultsWidget extends StatelessWidget {
     );
   }
 
-  void _navigateToGroupDetail(BuildContext context, int groupId) {
-    // GroupDetailPage için gerekli parametreleri sağlamamız gerekiyor
-    // Şimdilik basit bir çözüm olarak boş groupData ile oluşturuyoruz
+  void _navigateToGroupDetail(BuildContext context, Map<String, dynamic> group) {
+    // GroupDetailPage için grup verilerini geçiyoruz
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => GroupDetailPage(
-          groupId: groupId,
-          groupData: {}, // Boş data ile başlatıyoruz, sayfa kendi verilerini yükleyecek
+          groupId: group['id'],
+          groupData: group, // Arama sonuçlarından gelen grup verilerini geçiyoruz
           authService: ServiceLocator.auth,
         ),
       ),

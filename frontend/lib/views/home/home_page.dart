@@ -1,4 +1,5 @@
 // home_page.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'home_posts_list.dart';
 import '../../services/service_locator.dart';
@@ -43,8 +44,10 @@ class _HomePageState extends State<HomePage> {
       if (token != null) {
         final fetchedPosts = await ServiceLocator.post.fetchPosts(token);
 
-        // Debug için gelen postları yazdır
-        print('Fetched posts: $fetchedPosts');
+        // Debug için gelen postları yazdır (sadece debug modda)
+        if (kDebugMode) {
+          print('Fetched posts: $fetchedPosts');
+        }
 
         // Process posts to get user details for author IDs - Optimized for performance
         final updatedPosts = await _processPostsWithUserDetails(fetchedPosts);

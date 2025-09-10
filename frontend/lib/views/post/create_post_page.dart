@@ -46,6 +46,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _submit() async {
+    // Content validation
+    final content = _contentController.text.trim();
+    if (content.isEmpty) {
+      setState(() {
+        _error = 'Gönderi içeriği boş olamaz.';
+      });
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
@@ -54,7 +63,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
     try {
       final postService = Provider.of<PostService>(context, listen: false);
       await postService.createPost(
-        content: _contentController.text,
+        content: content,
         file: _selectedFile,
         groupPk: widget.groupPk,
       );
@@ -65,10 +74,20 @@ class _CreatePostPageState extends State<CreatePostPage> {
       }
 
       // ignore: use_build_context_synchronously
-      Navigator.pop(context);
+      Navigator.pop(context, true); // Success result döndür
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        // Hata mesajını daha kullanıcı dostu hale getir
+        String errorMessage = e.toString();
+        if (errorMessage.contains('INTEGRITY_ERROR')) {
+          _error = 'Veritabanı hatası: Lütfen tekrar deneyin.';
+        } else if (errorMessage.contains('Authentication')) {
+          _error = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+        } else if (errorMessage.contains('Network')) {
+          _error = 'İnternet bağlantınızı kontrol edin.';
+        } else {
+          _error = errorMessage.replaceFirst('Exception: ', '');
+        }
       });
     } finally {
       setState(() {

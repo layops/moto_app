@@ -84,6 +84,7 @@ class HomeEmptyState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () {
                   // Create post sayfasına yönlendirme
+                  Navigator.pushNamed(context, '/create-post');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,

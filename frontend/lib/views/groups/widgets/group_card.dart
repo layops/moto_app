@@ -34,6 +34,11 @@ class GroupCard extends StatelessWidget {
     final profilePictureUrl = group['profile_picture_url']?.toString();
     final memberCount = group['members']?.length?.toString() ?? '0';
     final createdDate = group['created_at']?.toString() ?? '';
+    
+    // Debug için grup verilerini yazdır
+    print('Group Card - Group ID: $groupId');
+    print('Group Card - Profile Picture URL: $profilePictureUrl');
+    print('Group Card - Group Data: $group');
 
     return InkWell(
       onTap: () {
@@ -79,7 +84,22 @@ class GroupCard extends StatelessWidget {
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
                               errorBuilder: (context, error, stackTrace) {
+                                print('Group Card Image load error: $error');
                                 return Icon(
                                   Icons.group,
                                   size: 30,

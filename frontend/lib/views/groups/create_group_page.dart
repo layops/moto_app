@@ -100,13 +100,17 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
     try {
       await _groupService.createGroup(_name, _description, profilePicture: _selectedImage);
+      
+      // Grup oluşturulduktan sonra callback'i çağır
       widget.onGroupCreated();
+      
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Grup başarıyla oluşturuldu!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
       }

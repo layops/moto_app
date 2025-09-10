@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'bottom_nav_item.dart';
 
@@ -22,27 +23,31 @@ class _MainWrapperNewState extends State<MainWrapperNew> {
   void initState() {
     super.initState();
     
-    // Debug için navigation yapısını göster
-    print("=== YENİ NAVIGATION INIT ===");
-    print("NavItems sayısı: ${widget.navItems.length}");
-    print("Pages sayısı: ${widget.pages.length}");
-    
-    for (int i = 0; i < widget.navItems.length; i++) {
-      print("NavItem $i: ${widget.navItems[i].label}");
+    // Debug için navigation yapısını göster (sadece debug modda)
+    if (kDebugMode) {
+      print("=== YENİ NAVIGATION INIT ===");
+      print("NavItems sayısı: ${widget.navItems.length}");
+      print("Pages sayısı: ${widget.pages.length}");
+      
+      for (int i = 0; i < widget.navItems.length; i++) {
+        print("NavItem $i: ${widget.navItems[i].label}");
+      }
+      
+      for (int i = 0; i < widget.pages.length; i++) {
+        print("Page $i: ${widget.pages[i].runtimeType}");
+      }
+      print("===========================");
     }
-    
-    for (int i = 0; i < widget.pages.length; i++) {
-      print("Page $i: ${widget.pages[i].runtimeType}");
-    }
-    print("===========================");
   }
 
   void _onTabSelected(int index) {
-    print("=== YENİ NAVIGATION DEBUG ===");
-    print("Tıklanan buton index: $index");
-    print("Tıklanan buton: ${widget.navItems[index].label}");
-    print("Açılacak sayfa: ${widget.pages[index].runtimeType}");
-    print("=============================");
+    if (kDebugMode) {
+      print("=== YENİ NAVIGATION DEBUG ===");
+      print("Tıklanan buton index: $index");
+      print("Tıklanan buton: ${widget.navItems[index].label}");
+      print("Açılacak sayfa: ${widget.pages[index].runtimeType}");
+      print("=============================");
+    }
 
     setState(() {
       _currentIndex = index;

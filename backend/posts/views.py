@@ -1,6 +1,6 @@
 # moto_app/backend/posts/views.py
 
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Post, PostLike, PostComment
@@ -27,6 +27,10 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
         return context
 
     def perform_create(self, serializer):
+        # Kullanıcı authentication kontrolü
+        if not self.request.user or not self.request.user.is_authenticated:
+            raise PermissionDenied("Kullanıcı kimlik doğrulaması gerekli.")
+        
         # Resim dosyasını al
         image_file = self.request.FILES.get('image')
         
@@ -35,7 +39,20 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
         if 'image' in post_data:
             del post_data['image']  # Resmi local media'ya kaydetme
         
-        post = serializer.save(author=self.request.user, group=None, **post_data)
+        # Content validation
+        content = post_data.get('content', '').strip()
+        if not content:
+            raise serializers.ValidationError("Gönderi içeriği boş olamaz.")
+        
+        logger.info(f"Genel post oluşturuluyor - User: {self.request.user.username} (ID: {self.request.user.id})")
+        logger.info(f"Content: {content[:100]}...")
+        
+        try:
+            post = serializer.save(author=self.request.user, group=None, **post_data)
+            logger.info(f"Genel post başarıyla oluşturuldu - ID: {post.id}")
+        except Exception as e:
+            logger.error(f"Genel post oluşturma hatası: {str(e)}")
+            raise serializers.ValidationError(f"Post oluşturulamadı: {str(e)}")
         
         # Eğer resim varsa sadece Supabase'e yükle
         if image_file:
@@ -73,6 +90,10 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         raise PermissionDenied("Bu grubun gönderilerini görüntüleme izniniz yok.")
 
     def perform_create(self, serializer):
+        # Kullanıcı authentication kontrolü
+        if not self.request.user or not self.request.user.is_authenticated:
+            raise PermissionDenied("Kullanıcı kimlik doğrulaması gerekli.")
+        
         group_pk = self.kwargs.get('group_pk')
         group = get_object_or_404(Group, pk=group_pk)
 
@@ -89,14 +110,23 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
             if 'image' in post_data:
                 del post_data['image']  # Resmi local media'ya kaydetme
             
+            # Content validation
+            content = post_data.get('content', '').strip()
+            if not content:
+                raise serializers.ValidationError("Gönderi içeriği boş olamaz.")
+            
             logger.info(f"Post data: {post_data}")
             logger.info(f"Serializer is valid: {serializer.is_valid()}")
             if not serializer.is_valid():
                 logger.error(f"Serializer errors: {serializer.errors}")
             
             logger.info(f"Post oluşturuluyor - Author: {self.request.user.username} (ID: {self.request.user.id})")
-            post = serializer.save(author=self.request.user, group=group, **post_data)
-            logger.info(f"Post oluşturuldu - ID: {post.id}, Author: {post.author.username}")
+            try:
+                post = serializer.save(author=self.request.user, group=group, **post_data)
+                logger.info(f"Post oluşturuldu - ID: {post.id}, Author: {post.author.username}")
+            except Exception as e:
+                logger.error(f"Grup post oluşturma hatası: {str(e)}")
+                raise serializers.ValidationError(f"Post oluşturulamadı: {str(e)}")
             
             # Eğer resim varsa sadece Supabase'e yükle
             if image_file:
