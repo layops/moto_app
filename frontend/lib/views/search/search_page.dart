@@ -97,6 +97,12 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         _isSearching = false;
       });
       
+      // Debug için arama sonuçlarını log'la
+      print('Arama Sonuçları:');
+      print('Kullanıcılar: ${results['users']?.length ?? 0}');
+      print('Gruplar: ${results['groups']?.length ?? 0}');
+      print('Kullanıcı verileri: ${results['users']}');
+      print('Grup verileri: ${results['groups']}');
       
       // Arama geçmişini yenile
       _loadSearchHistory();

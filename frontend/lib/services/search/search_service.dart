@@ -12,6 +12,7 @@ class SearchService {
   /// Kullanıcı arama
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
+      print('SearchService - Kullanıcı arama: $query');
       final response = await _apiClient.get(
         'search/users/',
         queryParameters: {'q': query},
@@ -19,6 +20,8 @@ class SearchService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
+        print('SearchService - Kullanıcı arama sonucu: ${data.length} kullanıcı');
+        print('SearchService - Kullanıcı verileri: $data');
         return data.cast<Map<String, dynamic>>();
       } else {
         throw Exception('Kullanıcı arama başarısız: ${response.statusCode}');
@@ -33,6 +36,7 @@ class SearchService {
   /// Grup arama
   Future<List<Map<String, dynamic>>> searchGroups(String query) async {
     try {
+      print('SearchService - Grup arama: $query');
       final response = await _apiClient.get(
         'search/groups/',
         queryParameters: {'q': query},
@@ -40,6 +44,8 @@ class SearchService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
+        print('SearchService - Grup arama sonucu: ${data.length} grup');
+        print('SearchService - Grup verileri: $data');
         return data.cast<Map<String, dynamic>>();
       } else {
         throw Exception('Grup arama başarısız: ${response.statusCode}');
