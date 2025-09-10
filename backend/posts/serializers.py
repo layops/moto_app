@@ -79,17 +79,20 @@ class PostSerializer(serializers.ModelSerializer):
         author = validated_data.pop('author', None)
         print(f"PostSerializer.create - Author: {author}")
         
-        # Post'u oluştur
-        post = super().create(validated_data)
-        print(f"PostSerializer.create - Post oluşturuldu: {post.id}")
+        if not author:
+            raise serializers.ValidationError("Author bilgisi bulunamadı.")
         
-        # Author'ı manuel olarak set et
-        if author:
-            post.author = author
-            post.save()
-            print(f"PostSerializer - Author manuel olarak set edildi: {author.username} (ID: {author.id})")
-        else:
-            print(f"PostSerializer - Author bulunamadı! Post author_id: {post.author_id}")
+        # Post'u author ile birlikte oluştur
+        try:
+            post = Post.objects.create(
+                content=validated_data.get('content'),
+                group=validated_data.get('group'),
+                author=author
+            )
+            print(f"PostSerializer.create - Post başarıyla oluşturuldu: {post.id}, Author ID: {post.author.id}")
+        except Exception as e:
+            print(f"PostSerializer.create - Post oluşturma hatası: {str(e)}")
+            raise serializers.ValidationError(f"Post oluşturulamadı: {str(e)}")
         
         return post
 
