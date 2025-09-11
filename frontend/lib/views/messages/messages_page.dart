@@ -221,9 +221,7 @@ class _MessagesPageState extends State<MessagesPage> {
           ),
         ),
       ),
-      child: GestureDetector(
-        onLongPress: () => _showConversationOptions(conversation),
-        child: ListTile(
+      child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Stack(
           children: [
@@ -319,10 +317,9 @@ class _MessagesPageState extends State<MessagesPage> {
             ],
           ],
         ),
-          onTap: () {
-            _openConversation(conversation);
-          },
-        ),
+        onTap: () {
+          _openConversation(conversation);
+        },
       ),
     );
   }
@@ -392,25 +389,26 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   void _showConversationOptions(Conversation conversation) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.visibility_off_rounded, color: Colors.orange),
-              title: const Text('Konuşmayı Gizle', style: TextStyle(color: Colors.orange)),
-              onTap: () {
-                Navigator.pop(context);
-                _hideConversation(conversation);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    // TODO: HiddenConversation modeli migration sonrası aktif edilecek
+    // showModalBottomSheet(
+    //   context: context,
+    //   builder: (context) => Container(
+    //     padding: const EdgeInsets.all(16),
+    //     child: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       children: [
+    //         ListTile(
+    //           leading: const Icon(Icons.visibility_off_rounded, color: Colors.orange),
+    //           title: const Text('Konuşmayı Gizle', style: TextStyle(color: Colors.orange)),
+    //           onTap: () {
+    //             Navigator.pop(context);
+    //             _hideConversation(conversation);
+    //           },
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
   }
 
   Future<void> _hideConversation(Conversation conversation) async {

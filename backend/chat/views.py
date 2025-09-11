@@ -225,36 +225,11 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['post'], url_path='conversation/(?P<user_id>[^/.]+)/hide')
-    def hide_conversation(self, request, user_id=None):
-        """Belirli bir kullanıcı ile olan konuşmayı gizle (mesajları silme)"""
-        try:
-            from .models import HiddenConversation
-            other_user = get_object_or_404(User, id=user_id)
-            user = request.user
-            
-            # Konuşmayı gizle (mesajları silme, sadece gizle)
-            hidden_conversation, created = HiddenConversation.objects.get_or_create(
-                user=user,
-                other_user=other_user
-            )
-            
-            if created:
-                return Response({
-                    'detail': f'{other_user.display_name} ile olan konuşma gizlendi.',
-                    'hidden': True
-                })
-            else:
-                return Response({
-                    'detail': 'Bu konuşma zaten gizli.',
-                    'hidden': False
-                })
-            
-        except Exception as e:
-            return Response(
-                {'detail': f'Konuşma gizlenirken hata: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    # TODO: HiddenConversation modeli migration sonrası aktif edilecek
+    # @action(detail=False, methods=['post'], url_path='conversation/(?P<user_id>[^/.]+)/hide')
+    # def hide_conversation(self, request, user_id=None):
+    #     """Belirli bir kullanıcı ile olan konuşmayı gizle (mesajları silme)"""
+    #     pass
 
 
 class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -263,17 +238,10 @@ class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request):
         user = request.user
         
-        # Gizlenen konuşmaları al
-        from .models import HiddenConversation
-        hidden_user_ids = HiddenConversation.objects.filter(
-            user=user
-        ).values_list('other_user_id', flat=True)
-        
-        # Kullanıcının katıldığı konuşmaları getir (gizlenenler hariç)
+        # Kullanıcının katıldığı konuşmaları getir
+        # TODO: HiddenConversation modeli migration sonrası aktif edilecek
         conversations = PrivateMessage.objects.filter(
             Q(sender=user) | Q(receiver=user)
-        ).exclude(
-            Q(sender_id__in=hidden_user_ids) | Q(receiver_id__in=hidden_user_ids)
         ).values('sender', 'receiver').distinct()
         
         conversation_list = []
