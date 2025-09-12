@@ -87,33 +87,12 @@ class _MapPageNewState extends State<MapPageNew> {
                           controller.onMapTap(point);
                         }
                       },
-                      // Performance optimizations
-                      maxZoom: 18.0, // Limit max zoom for better performance
-                      minZoom: 3.0,
-                      interactionOptions: const InteractionOptions(
-                        flags: InteractiveFlag.all & ~InteractiveFlag.rotate, // Disable rotation for performance
-                      ),
-                      cameraConstraint: CameraConstraint.containCenter(
-                        bounds: LatLngBounds(
-                          const LatLng(-90, -180),
-                          const LatLng(90, 180),
-                        ),
-                      ),
                     ),
                     children: [
                       TileLayer(
                         urlTemplate: mapState.isSatelliteView ? satelliteUrl : defaultMapUrl,
                         userAgentPackageName: 'com.example.frontend',
-                        maxZoom: 18, // Match MapOptions maxZoom
-                        minZoom: 3, // Match MapOptions minZoom
-                        tileSize: 256,
-                        // Performance optimizations
-                        keepBuffer: 2, // Reduce buffer for better performance
-                        panBuffer: 1, // Reduce pan buffer
-                        evictErrorTileFromCache: true, // Evict error tiles
-                        maxNativeZoom: 18, // Limit native zoom
-                        maxZoom: 18,
-                        minZoom: 3,
+                        maxZoom: 20,
                       ),
                       if (mapState.currentPosition != null)
                         MarkerLayer(

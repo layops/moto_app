@@ -1,18 +1,14 @@
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../http/api_exceptions.dart';
-import '../storage/local_storage.dart';
-import '../service_locator.dart';
 
 /// Rides API servisi
 class RidesService {
   static final RidesService _instance = RidesService._internal();
   factory RidesService() => _instance;
-  RidesService._internal() {
-    _apiClient = ApiClient(ServiceLocator.localStorage);
-  }
+  RidesService._internal();
 
-  late final ApiClient _apiClient;
+  final ApiClient _apiClient = ApiClient();
 
   /// Tüm yolculukları getir
   Future<List<Ride>> getRides({

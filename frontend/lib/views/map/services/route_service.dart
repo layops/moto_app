@@ -15,10 +15,8 @@ class RouteService {
         'router.project-osrm.org',
         '/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}',
         {
-          'overview': 'simplified', // Simplified geometry for better performance
+          'overview': 'full',
           'geometries': 'geojson',
-          'steps': 'false', // Disable turn-by-turn instructions for performance
-          'annotations': 'false', // Disable annotations for performance
         },
       );
 
@@ -26,10 +24,8 @@ class RouteService {
         uri,
         headers: {
           'User-Agent': 'MotoApp/1.0',
-          'Accept': 'application/json',
-          'Connection': 'keep-alive', // Keep connection alive for better performance
         },
-      ).timeout(const Duration(seconds: 10)); // Reduced timeout
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -9,7 +9,6 @@ from urllib.parse import parse_qs
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core_api.settings')
 django_asgi_app = get_asgi_application()
 
-
 # Özel WebSocket kimlik doğrulama middleware'i (token bazlı)
 class AuthTokenMiddleware:
     def __init__(self, app):

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -29,12 +28,6 @@ class MapController extends ChangeNotifier {
   StreamSubscription<Position>? _positionStream;
   Timer? _searchDebounce;
   late VoidCallback _searchControllerListener;
-  
-  // Performance optimizations
-  Timer? _updateThrottle;
-  LatLng? _lastUpdatePosition;
-  static const double _minUpdateDistance = 10.0; // 10 metre minimum güncelleme mesafesi
-  static const Duration _throttleDuration = Duration(milliseconds: 500);
 
   // Getters
   MapState get mapState => _mapState;
@@ -278,7 +271,6 @@ class MapController extends ChangeNotifier {
       if (!_routeState.isNavigating || _routeState.routePoints.isEmpty) return;
 
       final currentLocation = LatLng(position.latitude, position.longitude);
-      _updateLocationIfSignificant(currentLocation);
       _updateNavigationProgress(currentLocation);
     });
   }
@@ -286,16 +278,12 @@ class MapController extends ChangeNotifier {
   void _updateNavigationProgress(LatLng currentLocation) {
     if (_routeState.routePoints.isEmpty) return;
 
-    // En yakın rota noktasını bul (optimized)
+    // En yakın rota noktasını bul
     double minDistance = double.infinity;
     int nearestIndex = 0;
-    
-    // Sadece mevcut indeksin etrafındaki noktaları kontrol et
-    final startIndex = max(0, _routeState.currentRouteIndex - 5);
-    final endIndex = min(_routeState.routePoints.length, _routeState.currentRouteIndex + 10);
 
-    for (int i = startIndex; i < endIndex; i++) {
-      final distance = _calculateDistance(currentLocation, _routeState.routePoints[i]);
+    for (int i = _routeState.currentRouteIndex; i < _routeState.routePoints.length; i++) {
+      final distance = _locationService.calculateDistance(currentLocation, _routeState.routePoints[i]);
       if (distance < minDistance) {
         minDistance = distance;
         nearestIndex = i;
@@ -306,8 +294,8 @@ class MapController extends ChangeNotifier {
     if (minDistance < 50) { // 50 metre tolerans
       updateRouteState(_routeState.copyWith(currentRouteIndex: nearestIndex));
 
-      // Map'i kullanıcının konumuna odakla (throttled)
-      _throttledUpdate();
+      // Map'i kullanıcının konumuna odakla
+      _mapController.move(currentLocation, 16.0);
 
       // Hedefe yaklaştıysa navigasyonu bitir
       if (nearestIndex >= _routeState.routePoints.length - 5) {
@@ -349,48 +337,8 @@ class MapController extends ChangeNotifier {
     _searchController.dispose();
     _labelController.dispose();
     _searchDebounce?.cancel();
-    _updateThrottle?.cancel();
     _positionStream?.cancel();
     _searchService.dispose();
     super.dispose();
-  }
-  
-  /// Performans optimizasyonu için throttled update
-  void _throttledUpdate() {
-    _updateThrottle?.cancel();
-    _updateThrottle = Timer(_throttleDuration, () {
-      notifyListeners();
-    });
-  }
-  
-  /// Mesafe kontrolü ile konum güncelleme
-  void _updateLocationIfSignificant(LatLng newPosition) {
-    if (_lastUpdatePosition == null) {
-      _lastUpdatePosition = newPosition;
-      _updateMapState(_mapState.copyWith(currentPosition: newPosition));
-      return;
-    }
-    
-    final distance = _calculateDistance(_lastUpdatePosition!, newPosition);
-    if (distance >= _minUpdateDistance) {
-      _lastUpdatePosition = newPosition;
-      _updateMapState(_mapState.copyWith(currentPosition: newPosition));
-    }
-  }
-  
-  /// İki nokta arasındaki mesafeyi hesapla (metre)
-  double _calculateDistance(LatLng point1, LatLng point2) {
-    const double earthRadius = 6371000; // metre
-    final lat1Rad = point1.latitude * pi / 180;
-    final lat2Rad = point2.latitude * pi / 180;
-    final deltaLatRad = (point2.latitude - point1.latitude) * pi / 180;
-    final deltaLngRad = (point2.longitude - point1.longitude) * pi / 180;
-    
-    final a = sin(deltaLatRad / 2) * sin(deltaLatRad / 2) +
-        cos(lat1Rad) * cos(lat2Rad) *
-        sin(deltaLngRad / 2) * sin(deltaLngRad / 2);
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    
-    return earthRadius * c;
   }
 }
