@@ -51,7 +51,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'core_api.database_middleware.DatabaseFallbackMiddleware',  # Database fallback middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,7 +82,7 @@ WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
 # Geçici olarak SQLite kullanımı - Supabase bağlantı sorunu nedeniyle
-USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'true').lower() == 'true'
+USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'false').lower() == 'true'
 
 if USE_SQLITE_FALLBACK:
     print("🔄 Using SQLite fallback due to Supabase connection issues")
@@ -107,12 +106,40 @@ else:
                     conn_max_age=600,
                     conn_health_checks=True,
                     ssl_require=True,  # Supabase SSL gerektirir
+                    options={
+                        'connect_timeout': 10,
+                        'options': '-c statement_timeout=30000'
+                    }
                 )
             }
             print("✅ PostgreSQL database configured")
+            
+            # Test connection
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                print("✅ PostgreSQL connection test successful")
+                
         except Exception as e:
             print(f"❌ PostgreSQL connection failed: {e}")
-            print("🔄 Falling back to SQLite")
+            if USE_SQLITE_FALLBACK:
+                print("🔄 Falling back to SQLite")
+                DATABASES = {
+                    'default': {
+                        'ENGINE': 'django.db.backends.sqlite3',
+                        'NAME': BASE_DIR / 'db.sqlite3',
+                        'OPTIONS': {
+                            'timeout': 20,
+                        }
+                    }
+                }
+            else:
+                print("❌ PostgreSQL connection failed and fallback disabled")
+                raise e
+    else:
+        print("⚠️ No DATABASE_URL found")
+        if USE_SQLITE_FALLBACK:
+            print("🔄 Using SQLite fallback")
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.db.backends.sqlite3',
@@ -122,17 +149,9 @@ else:
                     }
                 }
             }
-    else:
-        print("⚠️ No DATABASE_URL found, using SQLite")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-                'OPTIONS': {
-                    'timeout': 20,
-                }
-            }
-        }
+        else:
+            print("❌ No DATABASE_URL and fallback disabled")
+            raise Exception("No database configuration available")
 
 AUTH_PASSWORD_VALIDATORS = [
     {
