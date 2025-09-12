@@ -234,7 +234,12 @@ class GroupJoinLeaveView(generics.UpdateAPIView):
                 return Response({'detail': 'Zaten grubun üyesisiniz.'}, status=status.HTTP_400_BAD_REQUEST)
             
             group.members.add(user)
-            return Response({'detail': 'Gruba başarıyla katıldınız.'})
+            # Grup katılım sonrası güncel grup bilgisini döndür
+            serializer = GroupSerializer(group)
+            return Response({
+                'detail': 'Gruba başarıyla katıldınız.',
+                'group': serializer.data
+            })
 
         elif action == 'leave':
             if user not in group.members.all():

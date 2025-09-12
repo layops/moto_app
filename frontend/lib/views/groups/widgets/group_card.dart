@@ -43,7 +43,7 @@ class _GroupCardState extends State<GroupCard> {
           ? widget.group['id'] as int
           : int.tryParse(widget.group['id'].toString()) ?? 0;
       
-      await groupService.joinGroup(groupId);
+      final response = await groupService.joinGroup(groupId);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -53,8 +53,14 @@ class _GroupCardState extends State<GroupCard> {
           ),
         );
         
-        // Grubu hemen taşı (optimistik güncelleme)
-        widget.onGroupJoined?.call(widget.group);
+        // Backend'den gelen güncel grup bilgisini kullan
+        final updatedGroup = response['group'];
+        if (updatedGroup != null) {
+          widget.onGroupJoined?.call(updatedGroup);
+        } else {
+          // Fallback: eski grup bilgisini kullan
+          widget.onGroupJoined?.call(widget.group);
+        }
         
         // Callback'i çağır (backend'den güncel veriyi çek)
         widget.onJoinSuccess?.call();
@@ -91,7 +97,8 @@ class _GroupCardState extends State<GroupCard> {
     final groupName = widget.group['name']?.toString() ?? 'Grup';
     final description = widget.group['description']?.toString() ?? 'Açıklama yok';
     final profilePictureUrl = widget.group['profile_picture_url']?.toString();
-    final memberCount = widget.group['members']?.length?.toString() ?? '0';
+    final memberCount = widget.group['member_count']?.toString() ?? 
+                       widget.group['members']?.length?.toString() ?? '0';
     final createdDate = widget.group['created_at']?.toString() ?? '';
     
     // Debug için grup verilerini yazdır

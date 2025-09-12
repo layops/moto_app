@@ -103,7 +103,7 @@ class GroupService {
   // --- GRUP KATILIM TALEPLERİ ---
 
   /// Gruba katıl (public gruplar için)
-  Future<void> joinGroup(int groupId) async {
+  Future<Map<String, dynamic>> joinGroup(int groupId) async {
     final token = await _authService.getToken();
     
     final response = await _dio.patch(
@@ -115,6 +115,8 @@ class GroupService {
     if (response.statusCode != 200) {
       throw Exception('Gruba katılınamadı: ${response.statusCode}');
     }
+    
+    return response.data as Map<String, dynamic>;
   }
 
   /// Grup katılım talebi gönder

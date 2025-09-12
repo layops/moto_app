@@ -90,7 +90,7 @@ class _GroupsPageState extends State<GroupsPage> {
   // Gruba katıldıktan sonra özel yenileme fonksiyonu
   Future<void> _refreshAfterJoin() async {
     // Kısa bir bekleme ekleyerek API'nin güncellenmesini sağla
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 500));
     await _loadGroups();
   }
 
@@ -99,8 +99,10 @@ class _GroupsPageState extends State<GroupsPage> {
     setState(() {
       // Grubu discover listesinden çıkar
       _discoverGroups.removeWhere((g) => g['id'] == group['id']);
-      // Grubu my groups listesine ekle
-      _myGroups.add(group);
+      // Grubu my groups listesine ekle (eğer zaten yoksa)
+      if (!_myGroups.any((g) => g['id'] == group['id'])) {
+        _myGroups.add(group);
+      }
     });
   }
 
