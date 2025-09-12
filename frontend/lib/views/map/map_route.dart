@@ -764,7 +764,6 @@ extension MapRoute on _MapPageState {
         _updateNavigationProgress(currentLocation);
       },
       onError: (error) {
-        debugPrint('Location tracking error: $error');
         // Continue navigation even if location tracking fails
       },
     );

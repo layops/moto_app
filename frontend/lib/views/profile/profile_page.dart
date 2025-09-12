@@ -123,7 +123,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.profile.getProfile(_currentUsername!);
     } catch (e) {
-      debugPrint('Profil verisi yüklenirken hata: $e');
       return null;
     }
   }
@@ -132,7 +131,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.user.getPosts(_currentUsername!);
     } catch (e) {
-      debugPrint('Gönderiler yüklenirken hata: $e');
       _postsError = 'Gönderiler yüklenirken hata oluştu';
       return [];
     }
@@ -142,7 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.user.getMedia(_currentUsername!);
     } catch (e) {
-      debugPrint('Medya yüklenirken hata: $e');
       return [];
     }
   }
@@ -150,10 +147,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<List<dynamic>> _loadAchievements() async {
     try {
       final achievements = await ServiceLocator.gamification.getUserAchievements();
-      debugPrint('DEBUG: Loaded achievements: $achievements');
       return achievements;
     } catch (e) {
-      debugPrint('Başarımlar yüklenirken hata: $e');
       return [];
     }
   }
@@ -372,8 +367,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
-    // Debug mesajı
-    print('ProfilePage build() çağrıldı!');
 
     if (_isLoading) return _buildLoading();
     if (_errorMessage != null) return Scaffold(body: _buildError());

@@ -23,7 +23,6 @@ class AuthTokenMiddleware:
             
             if auth_header.startswith('Token '):
                 token_key = auth_header[6:].strip()
-                print(f"DEBUG ASGI (HTTP): Token bulundu, başlangıç: {token_key[:5]}...")
                 
                 # Gerekli importları burada yapıyoruz
                 from rest_framework.authtoken.models import Token
@@ -37,15 +36,11 @@ class AuthTokenMiddleware:
                     
                     if user.is_active:
                         scope['user'] = user
-                        print(f"DEBUG ASGI (HTTP): Kullanıcı doğrulandı: {user.username}")
                     else:
-                        print(f"DEBUG ASGI (HTTP): Kullanıcı aktif değil: {user.username}")
                         scope['user'] = AnonymousUser()
                 except Token.DoesNotExist:
-                    print(f"DEBUG ASGI (HTTP): Token bulunamadı: {token_key[:5]}...")
                     scope['user'] = AnonymousUser()
                 except Exception as e:
-                    print(f"DEBUG ASGI (HTTP): Token doğrulama hatası: {e}")
                     scope['user'] = AnonymousUser()
         
         # WebSocket için orijinal doğrulama
@@ -63,7 +58,6 @@ class AuthTokenMiddleware:
 
             if token_key_list:
                 token_key = token_key_list[0]
-                print(f"DEBUG ASGI (WS): Token bulundu, başlangıç: {token_key[:5]}...")
 
                 try:
                     # Token nesnesini eşzamansız al
@@ -72,21 +66,19 @@ class AuthTokenMiddleware:
 
                     if user.is_active:
                         scope['user'] = user
-                        print(f"DEBUG ASGI (WS): Kullanıcı doğrulandı: {user.username}")
                     else:
-                        print(f"DEBUG ASGI (WS): Token geçerli ama kullanıcı aktif değil: {user.username}")
+                        scope['user'] = AnonymousUser()
                 except Token.DoesNotExist:
-                    print(f"DEBUG ASGI (WS): Token veritabanında bulunamadı: {token_key[:5]}...")
+                    scope['user'] = AnonymousUser()
                 except Exception as e:
-                    print(f"DEBUG ASGI (WS): Token doğrulama hatası: {e}")
+                    scope['user'] = AnonymousUser()
             else:
-                print("DEBUG ASGI (WS): Sorgu parametrelerinde 'token' bulunamadı.")
+                scope['user'] = AnonymousUser()
 
         return await self.app(scope, receive, send)
 
 
 # Ana ASGI uygulaması
-print("DEBUG: asgi.py yüklendi - HTTP ve WS Token Doğrulamalı")
 
 # WebSocket URL desenlerini import et
 import chat.routing

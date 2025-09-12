@@ -54,10 +54,8 @@ class Post(models.Model):
         try:
             # Related manager üzerinden say
             count = self.likes.count()
-            print(f"Post {self.id}: likes_count = {count}")
             return count
         except Exception as e:
-            print(f"Post {self.id}: Error calculating likes_count: {e}")
             # Hata durumunda 0 döndür
             return 0
 

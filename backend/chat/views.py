@@ -23,7 +23,7 @@ class GroupMessageViewSet(viewsets.ModelViewSet):
         if group_pk:
             from groups.models import Group
             group = get_object_or_404(Group, pk=group_pk)
-            return GroupMessage.objects.filter(group=group)
+            return GroupMessage.objects.filter(group=group).select_related('sender', 'group').order_by('-timestamp')
         return GroupMessage.objects.none()
 
     def perform_create(self, serializer):
@@ -109,7 +109,7 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return PrivateMessage.objects.filter(
             Q(sender=user) | Q(receiver=user)
-        ).order_by('-timestamp')
+        ).select_related('sender', 'receiver').order_by('-timestamp')
 
     def perform_create(self, serializer):
         message = serializer.save(sender=self.request.user)
@@ -188,7 +188,7 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
             messages = PrivateMessage.objects.filter(
                 Q(sender=user, receiver=other_user) | 
                 Q(sender=other_user, receiver=user)
-            ).order_by('timestamp')
+            ).select_related('sender', 'receiver').order_by('timestamp')
             
             serializer = self.get_serializer(messages, many=True)
             return Response(serializer.data)
@@ -215,7 +215,7 @@ class PrivateMessageViewSet(viewsets.ModelViewSet):
             messages = PrivateMessage.objects.filter(
                 Q(sender=user) | Q(receiver=user),
                 Q(message__icontains=query)
-            ).order_by('-timestamp')
+            ).select_related('sender', 'receiver').order_by('-timestamp')
             
             serializer = self.get_serializer(messages, many=True)
             return Response(serializer.data)

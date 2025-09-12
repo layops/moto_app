@@ -85,7 +85,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     } catch (e) {
-      debugPrint('Giriş yapılırken hata: $e');
       if (mounted) {
         String errorMessage =
             'An unexpected error occurred. Please try again later.';

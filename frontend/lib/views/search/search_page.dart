@@ -61,7 +61,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         _searchHistory = history;
       });
     } catch (e) {
-      debugPrint('Arama geçmişi yüklenemedi: $e');
     }
   }
 
@@ -74,7 +73,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         _availableGroups = groups;
       });
     } catch (e) {
-      debugPrint('Mevcut veriler yüklenemedi: $e');
     }
   }
 

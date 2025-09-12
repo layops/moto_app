@@ -52,11 +52,9 @@ class UserAchievementsView(APIView):
     def get(self, request):
         # Debug: Toplam achievement sayısını kontrol et
         total_achievements = Achievement.objects.filter(is_active=True).count()
-        print(f"DEBUG: Total active achievements: {total_achievements}")
         
         # Eğer hiç achievement yoksa, oluştur
         if total_achievements == 0:
-            print("DEBUG: No achievements found, creating test achievement...")
             # Test için basit bir achievement oluştur
             test_achievement = Achievement.objects.create(
                 name='Test Başarım',
@@ -67,14 +65,11 @@ class UserAchievementsView(APIView):
                 points=10,
                 is_active=True
             )
-            print(f"DEBUG: Created test achievement: {test_achievement.name}")
             total_achievements = Achievement.objects.filter(is_active=True).count()
-            print(f"DEBUG: Total achievements now: {total_achievements}")
         
         # Tüm aktif başarımları getir (kullanıcı bazlı değil, genel)
         achievements = Achievement.objects.filter(is_active=True)
         serializer = AchievementSerializer(achievements, many=True)
-        print(f"DEBUG: Serialized data: {serializer.data}")
         return Response(serializer.data)
     
     def _create_user_achievements(self, user):

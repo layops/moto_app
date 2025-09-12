@@ -81,7 +81,6 @@ class PostsTab extends StatelessWidget {
         if (authorData is Map<String, dynamic>) {
           authorMap.addAll(authorData);
         } else if (authorData != null) {
-          debugPrint('Beklenmeyen author veri türü: ${authorData.runtimeType}');
         }
 
         if (authorMap['username'] == null) {

@@ -55,7 +55,6 @@ class _GroupChatPageState extends State<GroupChatPage> {
         }
       }
     } catch (e) {
-      print('❌ GroupChat - Error getting current user ID: $e');
     }
   }
 
@@ -73,9 +72,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         _errorMessage = null;
       });
 
-      print('💬 GroupChat - Loading messages for group: ${widget.groupName}');
       final messages = await _groupChatService.getGroupMessages(widget.groupId);
-      print('💬 GroupChat - Loaded ${messages.length} messages');
       
       if (mounted) {
         setState(() {
@@ -85,7 +82,6 @@ class _GroupChatPageState extends State<GroupChatPage> {
         _scrollToBottom();
       }
     } catch (e) {
-      print('❌ GroupChat - Error loading messages: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -102,14 +98,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
     setState(() => _isSending = true);
 
     try {
-      print('📤 GroupChat - Sending message: "$messageText" to group ${widget.groupName}');
       final newMessage = await _groupChatService.sendGroupMessage(
         groupId: widget.groupId,
         content: messageText,
         replyToId: _replyingTo?.id.toString(),
       );
       
-      print('📤 GroupChat - Message sent successfully');
       
       if (mounted) {
         setState(() {
@@ -124,7 +118,6 @@ class _GroupChatPageState extends State<GroupChatPage> {
         widget.onMessageSent?.call();
       }
     } catch (e) {
-      print('❌ GroupChat - Error sending message: $e');
       if (mounted) {
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(

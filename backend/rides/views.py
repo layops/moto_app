@@ -14,7 +14,7 @@ from .serializers import (
 from .permissions import IsOwnerOrReadOnly
 
 class RideViewSet(viewsets.ModelViewSet):
-    queryset = Ride.objects.all()
+    queryset = Ride.objects.select_related('owner', 'group').prefetch_related('participants')
     serializer_class = RideSerializer
     permission_classes = [IsOwnerOrReadOnly]
 

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Genel postları yönetir (grup dışı)
 class GeneralPostListCreateView(generics.ListCreateAPIView):
-    queryset = Post.objects.filter(group__isnull=True).order_by('-created_at')
+    queryset = Post.objects.filter(group__isnull=True).select_related('author').prefetch_related('likes', 'comments__author').order_by('-created_at')
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -90,11 +90,7 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         group = get_object_or_404(Group, pk=group_pk)
 
         if self.request.user in group.members.all() or self.request.user == group.owner:
-            posts = Post.objects.filter(group=group).order_by('-created_at')
-            logger.info(f"Grup {group_pk} için {posts.count()} post bulundu")
-            for post in posts:
-                logger.info(f"Post {post.id}: Author={post.author.username}, Content={post.content[:50]}...")
-            return posts
+            return Post.objects.filter(group=group).select_related('author').prefetch_related('likes', 'comments__author').order_by('-created_at')
         raise PermissionDenied("Bu grubun gönderilerini görüntüleme izniniz yok.")
 
     def perform_create(self, serializer):
@@ -162,7 +158,7 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
 
 # Tekil postlar için görünüm
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Post.objects.all()
+    queryset = Post.objects.select_related('author', 'group').prefetch_related('likes', 'comments__author')
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -250,15 +246,12 @@ class PostLikeToggleView(APIView):
             user=request.user
         ).first()
         
-        print(f"PostLikeToggleView - Post {post_id}, User {request.user.username}")
-        print(f"  - Existing like: {existing_like is not None}")
         
         if existing_like:
             # Beğeni varsa sil
             existing_like.delete()
             is_liked = False
             logger.info(f"Beğeni silindi - Post: {post_id}, User: {request.user.username}")
-            print(f"  - Beğeni silindi")
         else:
             # Beğeni yoksa ekle
             PostLike.objects.create(
@@ -267,13 +260,10 @@ class PostLikeToggleView(APIView):
             )
             is_liked = True
             logger.info(f"Beğeni eklendi - Post: {post_id}, User: {request.user.username}")
-            print(f"  - Beğeni eklendi")
         
         # Güncel beğeni sayısını al
         likes_count = PostLike.objects.filter(post=post).count()
         
-        print(f"  - Final likes_count: {likes_count}")
-        print(f"  - Final is_liked: {is_liked}")
         
         logger.info(f"Post {post_id} beğeni sayısı: {likes_count}, is_liked: {is_liked}")
         
@@ -297,7 +287,7 @@ class PostCommentListCreateView(generics.ListCreateAPIView):
             if self.request.user not in post.group.members.all() and self.request.user != post.group.owner:
                 raise PermissionDenied("Bu gönderinin yorumlarını görüntüleme izniniz yok.")
         
-        return PostComment.objects.filter(post=post).order_by('-created_at')
+        return PostComment.objects.filter(post=post).select_related('author').select_related('author').order_by('-created_at')
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
@@ -324,7 +314,7 @@ class PostCommentDetailView(generics.RetrieveUpdateDestroyAPIView):
             if self.request.user not in post.group.members.all() and self.request.user != post.group.owner:
                 raise PermissionDenied("Bu gönderinin yorumlarını görüntüleme izniniz yok.")
         
-        return PostComment.objects.filter(post=post)
+        return PostComment.objects.filter(post=post).select_related('author')
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:

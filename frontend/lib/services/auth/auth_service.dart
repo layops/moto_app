@@ -247,7 +247,6 @@ class AuthService {
       }
       return '';
     } catch (e) {
-      debugPrint('Access token alınırken hata: $e');
       return '';
     }
   }
@@ -271,7 +270,6 @@ class AuthService {
       }
       return '';
     } catch (e) {
-      debugPrint('Refresh token alınırken hata: $e');
       return '';
     }
   }

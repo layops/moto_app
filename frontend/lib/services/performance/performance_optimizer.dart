@@ -14,19 +14,16 @@ class PerformanceOptimizer {
     String? debugLabel,
   }) async {
     if (kDebugMode && debugLabel != null) {
-      debugPrint('Starting background task: $debugLabel');
     }
 
     return await _semaphore.acquire(() async {
       try {
         final result = await computation();
         if (kDebugMode && debugLabel != null) {
-          debugPrint('Completed background task: $debugLabel');
         }
         return result;
       } catch (e) {
         if (kDebugMode && debugLabel != null) {
-          debugPrint('Failed background task $debugLabel: $e');
         }
         rethrow;
       }

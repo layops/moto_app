@@ -34,27 +34,17 @@ class PostSerializer(serializers.ModelSerializer):
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
-        print(f"PostSerializer - Post {obj.id}: get_is_liked called")
-        print(f"  - Request exists: {request is not None}")
-        print(f"  - User authenticated: {request and request.user.is_authenticated}")
-        print(f"  - User: {request.user.username if request and request.user.is_authenticated else 'None'}")
         
         if request and request.user.is_authenticated:
             try:
-                # Önce PostLike tablosunda bu post için kaç beğeni var kontrol et
-                total_likes = PostLike.objects.filter(post=obj).count()
-                user_like = PostLike.objects.filter(post=obj, user=request.user).exists()
-                
-                print(f"  - Total likes for post {obj.id}: {total_likes}")
-                print(f"  - User {request.user.username} liked: {user_like}")
-                
-                return user_like
+                # Prefetch edilmiş likes kullan
+                if hasattr(obj, '_prefetched_objects_cache') and 'likes' in obj._prefetched_objects_cache:
+                    return obj.likes.filter(user=request.user).exists()
+                else:
+                    # Fallback: tek sorgu ile kontrol et
+                    return PostLike.objects.filter(post=obj, user=request.user).exists()
             except Exception as e:
-                print(f"PostSerializer - Post {obj.id}: Error checking is_liked: {e}")
-                import traceback
-                traceback.print_exc()
                 return False
-        print(f"PostSerializer - Post {obj.id}: User not authenticated, is_liked = False")
         return False
 
     def get_comments(self, obj):
@@ -73,11 +63,9 @@ class PostSerializer(serializers.ModelSerializer):
             return []
 
     def create(self, validated_data):
-        print(f"PostSerializer.create çağrıldı - validated_data: {validated_data}")
         
         # Author alanını validated_data'dan çıkar (read_only olduğu için)
         author = validated_data.pop('author', None)
-        print(f"PostSerializer.create - Author: {author}")
         
         if not author:
             raise serializers.ValidationError("Author bilgisi bulunamadı.")
@@ -105,32 +93,17 @@ class PostSerializer(serializers.ModelSerializer):
         if self.context.get('only_content'):
             return representation.get('content')
         
-        # Debug log'ları
-        print(f"PostSerializer - Post {instance.id}:")
-        print(f"  - Author: {instance.author}")
-        print(f"  - Author username: {instance.author.username}")
-        print(f"  - Author ID: {instance.author.id}")
-        print(f"  - Representation author: {representation.get('author')}")
-        if representation.get('author'):
-            author_data = representation.get('author')
-            print(f"  - Author data type: {type(author_data)}")
-            if isinstance(author_data, dict):
-                print(f"  - Author username in data: {author_data.get('username')}")
-                print(f"  - Author ID in data: {author_data.get('id')}")
-        
         # Eğer image_url varsa, image alanını None yap (frontend'de karışıklık olmasın)
         if instance.image_url:
             representation['image'] = None
         
         # Author verisini manuel olarak kontrol et
         if not representation.get('author') or not representation['author'].get('username'):
-            print(f"PostSerializer - Author verisi eksik, manuel olarak ekleniyor")
             representation['author'] = {
                 'id': instance.author.id,
                 'username': instance.author.username,
                 'email': instance.author.email,
                 'profile_photo_url': None,  # Şimdilik None
             }
-            print(f"PostSerializer - Manuel author verisi: {representation['author']}")
         
         return representation

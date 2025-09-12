@@ -192,8 +192,6 @@ class GroupService {
     
     if (mediaFile != null) {
       // Medya dosyası ile mesaj gönder
-      print('Medya dosyası gönderiliyor: ${mediaFile.path}');
-      print('Dosya boyutu: ${await mediaFile.length()} bytes');
       
       FormData formData = FormData.fromMap({
         'content': content,
@@ -203,7 +201,6 @@ class GroupService {
       
       // Dosya boyutunu kontrol et
       final fileSize = await mediaFile.length();
-      print('Gönderilecek dosya boyutu: $fileSize bytes');
       
       if (fileSize == 0) {
         throw Exception('Dosya boş');
@@ -310,7 +307,6 @@ class GroupService {
     if (image != null) {
       // Dosya boyutunu kontrol et
       final fileSize = await image.length();
-      print('Gönderilecek post resmi boyutu: $fileSize bytes');
       
       if (fileSize == 0) {
         throw Exception('Dosya boş');

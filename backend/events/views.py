@@ -13,9 +13,7 @@ from groups.models import Group
 try:
     from users.services.supabase_service import SupabaseStorage
     supabase = SupabaseStorage()
-    print("SupabaseStorage başarıyla yüklendi")
 except Exception as e:
-    print(f"SupabaseStorage yükleme hatası: {str(e)}")
     supabase = None
 
 from users.serializers import UserSerializer  # Yeni import
@@ -27,21 +25,14 @@ class EventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        print(f"get_queryset çağrıldı, kullanıcı: {user.username}")
         
         try:
             # En basit sorgu ile başlayalım
-            print("En basit sorgu başlatılıyor...")
             
             # Sadece tüm etkinlikleri getir
-            all_events = Event.objects.all().order_by('start_time')
-            print(f"Tüm etkinlikler: {all_events.count()}")
-            
-            return all_events
+            return Event.objects.select_related('organizer').prefetch_related('participants').order_by('start_time')
             
         except Exception as e:
-            print(f"get_queryset hatası: {str(e)}")
-            print(f"Hata türü: {type(e)}")
             import traceback
             traceback.print_exc()
             
@@ -49,8 +40,6 @@ class EventViewSet(viewsets.ModelViewSet):
             return Event.objects.none()
 
     def create(self, request, *args, **kwargs):
-        print("Gelen veri:", request.data)
-        print("Dosyalar:", request.FILES)
         
         try:
             data = request.data.copy()
@@ -61,7 +50,6 @@ class EventViewSet(viewsets.ModelViewSet):
             
             serializer = self.get_serializer(data=data)
             if not serializer.is_valid():
-                print("Serializer hataları:", serializer.errors)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             # Etkinliği oluştur
@@ -72,7 +60,6 @@ class EventViewSet(viewsets.ModelViewSet):
                 if request.user not in event.participants.all():
                     event.participants.add(request.user)
             except Exception as e:
-                print(f"Organizatör ekleme hatası: {str(e)}")
                 # Bu hata etkinlik oluşturmayı engellemez
             
             # Kapak resmi varsa yükle
@@ -83,16 +70,13 @@ class EventViewSet(viewsets.ModelViewSet):
                     event.save()
                     serializer = self.get_serializer(event)
                 except Exception as e:
-                    print("Resim yükleme hatası:", str(e))
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
             elif cover_file and supabase is None:
-                print("SupabaseStorage mevcut değil, resim yüklenemedi")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             
         except Exception as e:
-            print("Etkinlik oluşturma hatası:", str(e))
             return Response(
                 {"error": "Etkinlik oluşturulurken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -121,7 +105,6 @@ class EventViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(event)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print(f"Join event hatası: {str(e)}")
             return Response(
                 {"error": "Etkinliğe katılırken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -141,7 +124,6 @@ class EventViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(event)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            print(f"Leave event hatası: {str(e)}")
             return Response(
                 {"error": "Etkinlikten ayrılırken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -156,7 +138,6 @@ class EventViewSet(viewsets.ModelViewSet):
             serializer = UserSerializer(participants, many=True)
             return Response(serializer.data)
         except Exception as e:
-            print(f"Participants getirme hatası: {str(e)}")
             return Response(
                 {"error": "Katılımcılar getirilirken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

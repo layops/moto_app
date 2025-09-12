@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'animated_motorcycle_marker.dart';
+import 'performance_optimized_map.dart';
+import 'map_performance_manager.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -11,16 +13,28 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with AutomaticKeepAliveClientMixin {
   late final MapController _mapController;
   LatLng? _currentPosition;
   bool _isLoading = true;
+  final MapPerformanceManager _performanceManager = MapPerformanceManager();
+  bool _enableAnimations = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _getCurrentLocation();
+    _performanceManager.cleanExpiredCache();
+  }
+
+  @override
+  void dispose() {
+    _performanceManager.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -58,39 +72,13 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
+          : PerformanceOptimizedMap(
               mapController: _mapController,
-              options: MapOptions(
-                initialCenter:
-                    _currentPosition ?? const LatLng(41.0082, 28.9784),
-                initialZoom: 13.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all,
-                ),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.spiride.app',
-                  maxZoom: 20,
-                ),
-                if (_currentPosition != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _currentPosition!,
-                        width: 50,
-                        height: 50,
-                        child: AnimatedMotorcycleMarker(
-                          isPulsing: true,
-                          color: const Color(0xFFD10000),
-                          icon: Icons.motorcycle,
-                          size: 50,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+              currentPosition: _currentPosition,
+              enableAnimations: _enableAnimations,
+              enableTileCaching: true,
+              maxZoom: 20,
+              minZoom: 1,
             ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'map_screen_fab',

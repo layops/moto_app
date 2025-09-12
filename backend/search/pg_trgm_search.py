@@ -30,7 +30,6 @@ class PgTrgmSearchEngine:
         """
         SearchIndex'i User ve Group modelleri ile senkronize et
         """
-        print("🔄 PgTrgmSearchEngine - Search index senkronize ediliyor...")
         start_time = time.time()
         
         # Kullanıcıları senkronize et
@@ -86,7 +85,6 @@ class PgTrgmSearchEngine:
         self.last_sync = time.time()
         elapsed_time = time.time() - start_time
         
-        print(f"✅ PgTrgmSearchEngine - Search index senkronize edildi ({elapsed_time:.3f} saniye)")
     
     def _ensure_synced(self):
         """
@@ -105,7 +103,6 @@ class PgTrgmSearchEngine:
         self._ensure_synced()
         query = query.strip()
         
-        print(f"🔍 PgTrgmSearchEngine - Kullanıcı arama: '{query}'")
         start_time = time.time()
         
         # SearchIndex'ten arama yap
@@ -150,7 +147,6 @@ class PgTrgmSearchEngine:
                 continue
         
         elapsed_time = time.time() - start_time
-        print(f"✅ PgTrgmSearchEngine - {len(results)} kullanıcı bulundu ({elapsed_time:.3f} saniye)")
         
         return results
     
@@ -164,7 +160,6 @@ class PgTrgmSearchEngine:
         self._ensure_synced()
         query = query.strip()
         
-        print(f"🔍 PgTrgmSearchEngine - Grup arama: '{query}'")
         start_time = time.time()
         
         # SearchIndex'ten arama yap
@@ -199,7 +194,6 @@ class PgTrgmSearchEngine:
                 continue
         
         elapsed_time = time.time() - start_time
-        print(f"✅ PgTrgmSearchEngine - {len(results)} grup bulundu ({elapsed_time:.3f} saniye)")
         
         return results
     
@@ -252,7 +246,6 @@ class PgTrgmSearchEngine:
         SearchIndex.objects.all().delete()
         self.last_sync = 0
         self._sync_search_index()
-        print("🗑️ PgTrgmSearchEngine - Cache temizlendi ve yeniden oluşturuldu")
     
     def force_sync(self):
         """

@@ -21,22 +21,15 @@ class HomePostsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('HomePostsList - build çağrıldı, loading: $loading, error: $error, posts count: ${posts.length}');
-    
     if (loading) {
-      print('HomePostsList - Loading state gösteriliyor');
       return _buildLoading(context);
     }
     if (error != null) {
-      print('HomePostsList - Error state gösteriliyor: $error');
       return _buildError(context);
     }
     if (posts.isEmpty) {
-      print('HomePostsList - Empty state gösteriliyor');
       return const HomeEmptyState();
     }
-
-    print('HomePostsList - Posts listesi gösteriliyor, ${posts.length} post');
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
@@ -45,8 +38,6 @@ class HomePostsList extends StatelessWidget {
         itemBuilder: (context, index) {
           final post = posts[index] as Map<String, dynamic>;
           final content = post['content']?.toString() ?? '';
-          final contentPreview = content.length > 20 ? '${content.substring(0, 20)}...' : content;
-          print('HomePostsList - Post $index render ediliyor: ID=${post['id']}, Content="$contentPreview"');
 
           // Author zaten backend'den nested serializer ile geliyor
           final authorData = post['author'] is Map<String, dynamic>
@@ -236,7 +227,6 @@ class HomePostsList extends StatelessWidget {
   // Callback metodları
 
   Future<void> _handleComment(int postId) async {
-    debugPrint('Comment clicked for post: $postId');
     // Yorum sayfasına yönlendir
     _navigateToComments(postId);
   }
@@ -249,7 +239,6 @@ class HomePostsList extends StatelessWidget {
     );
     
     if (post.isEmpty) {
-      debugPrint('Post not found for ID: $postId');
       return;
     }
     
@@ -266,9 +255,6 @@ class HomePostsList extends StatelessWidget {
     
     final postContent = post['content']?.toString() ?? '';
     
-    debugPrint('Navigating to comments for post $postId');
-    debugPrint('  - Username: $username');
-    debugPrint('  - Post content: $postContent');
     
     // Navigator context'ini al
     final context = ServiceLocator.navigatorKey.currentContext;
@@ -284,7 +270,6 @@ class HomePostsList extends StatelessWidget {
         ),
       );
     } else {
-      debugPrint('Navigator context not available');
     }
   }
 
@@ -297,7 +282,6 @@ class HomePostsList extends StatelessWidget {
       );
       
       if (post.isEmpty) {
-        debugPrint('Post not found for ID: $postId');
         return;
       }
       
@@ -365,7 +349,6 @@ class HomePostsList extends StatelessWidget {
         );
       }
     } catch (e) {
-      debugPrint('Share error: $e');
     }
   }
   

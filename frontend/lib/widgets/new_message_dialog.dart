@@ -41,11 +41,8 @@ class _NewMessageDialogState extends State<NewMessageDialog> {
     });
 
     try {
-      print('🔍 Searching users with query: "$query"');
       final results = await _chatService.searchUsers(query.trim());
-      print('🔍 Search results: ${results.length} users found');
       for (var user in results) {
-        print('   - ${user.username} (${user.displayName})');
       }
       if (mounted) {
         setState(() {
@@ -54,7 +51,6 @@ class _NewMessageDialogState extends State<NewMessageDialog> {
         });
       }
     } catch (e) {
-      print('❌ Search error: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
