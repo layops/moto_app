@@ -9,7 +9,7 @@ from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, UserSerializer,
     FollowSerializer
 )
-# from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 import json
 
 User = get_user_model()
@@ -21,12 +21,11 @@ class UserRegisterView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            # refresh = RefreshToken.for_user(user)
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'message': 'Kullanıcı başarıyla oluşturuldu'
-                # 'token': str(refresh.access_token),
-                # 'refresh': str(refresh)
+                'token': str(refresh.access_token),
+                'refresh': str(refresh)
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -37,12 +36,11 @@ class UserLoginView(APIView):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            # refresh = RefreshToken.for_user(user)
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'message': 'Giriş başarılı'
-                # 'token': str(refresh.access_token),
-                # 'refresh': str(refresh)
+                'token': str(refresh.access_token),
+                'refresh': str(refresh)
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -50,8 +48,20 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        # Geçici olarak devre dışı
-        return Response({'error': 'Token refresh geçici olarak devre dışı'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                return Response({'error': 'Refresh token gerekli'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            refresh = RefreshToken(refresh_token)
+            new_access_token = refresh.access_token
+            
+            return Response({
+                'token': str(new_access_token),
+                'refresh': str(refresh)
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': 'Token yenileme başarısız'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProfileImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -222,9 +232,9 @@ class UserLogoutView(APIView):
     
     def post(self, request):
         try:
-            # refresh_token = request.data["refresh"]
-            # token = RefreshToken(refresh_token)
-            # token.blacklist()
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
             return Response({'message': 'Başarıyla çıkış yapıldı'}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({'error': 'Çıkış yapılamadı'}, status=status.HTTP_400_BAD_REQUEST)
