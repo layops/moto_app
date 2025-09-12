@@ -111,10 +111,9 @@ class EventViewSet(viewsets.ModelViewSet):
             event = self.get_object()
             user = request.user
 
-            # Geçici olarak kaldırıldı - is_full metodu
-            # if event.is_full():
-            #     return Response({"error": "Etkinlik kontenjanı dolmuştur."},
-            #                     status=status.HTTP_400_BAD_REQUEST)
+            if event.is_full():
+                return Response({"error": "Etkinlik kontenjanı dolmuştur."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
             if user in event.participants.all():
                 return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},

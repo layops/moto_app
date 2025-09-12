@@ -442,18 +442,6 @@ class GroupService {
 
   // --- GRUP ÜYELERİ ---
 
-  /// Grup üyelerini getir
-  Future<List<dynamic>> getGroupMembers(int groupId) async {
-    final token = await _authService.getToken();
-    
-    final response = await _dio.get(
-      'groups/$groupId/members/',
-      options: _authOptions(token),
-    );
-    
-    return response.data as List<dynamic>;
-  }
-
   /// Grup üyesini kaldır
   Future<void> removeGroupMember(int groupId, int userId) async {
     final token = await _authService.getToken();
