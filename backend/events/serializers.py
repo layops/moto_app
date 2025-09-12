@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Event
+from .models import Event, EventRequest
 from groups.models import Group
 from groups.serializers import GroupSerializer
 from users.serializers import UserSerializer
@@ -33,7 +33,7 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
             'location', 'start_time', 'end_time', 'is_public', 'guest_limit',
-            'cover_image', 'current_participant_count', 'is_full', 'is_joined',
+            'requires_approval', 'cover_image', 'current_participant_count', 'is_full', 'is_joined',
             'created_at', 'updated_at'
         ]
         read_only_fields = (
@@ -69,3 +69,13 @@ class EventSerializer(serializers.ModelSerializer):
         if participants_data is not None:
             instance.participants.set(participants_data)
         return instance
+
+
+class EventRequestSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    event = EventSerializer(read_only=True)
+    
+    class Meta:
+        model = EventRequest
+        fields = ['id', 'user', 'event', 'status', 'message', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'event', 'created_at', 'updated_at']

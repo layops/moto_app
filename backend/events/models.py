@@ -30,6 +30,7 @@ class Event(models.Model):
     )
     is_public = models.BooleanField(default=True, verbose_name="Herkese Açık")
     guest_limit = models.PositiveIntegerField(null=True, blank=True, verbose_name="Katılımcı Sınırı")
+    requires_approval = models.BooleanField(default=False, verbose_name="Onay Gerekli")
     
     cover_image = models.URLField(
         blank=True,
@@ -70,3 +71,28 @@ class Event(models.Model):
         except Exception as e:
             print(f"is_full hatası: {str(e)}")
             return False
+
+
+class EventRequest(models.Model):
+    """Etkinlik katılım istekleri"""
+    STATUS_CHOICES = [
+        ('pending', 'Beklemede'),
+        ('approved', 'Onaylandı'),
+        ('rejected', 'Reddedildi'),
+    ]
+    
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event_requests')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    message = models.TextField(blank=True, null=True, verbose_name="İstek Mesajı")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('event', 'user')
+        ordering = ['-created_at']
+        verbose_name = "Etkinlik Katılım İsteği"
+        verbose_name_plural = "Etkinlik Katılım İstekleri"
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title} ({self.status})"

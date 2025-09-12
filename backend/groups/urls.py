@@ -5,13 +5,14 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     MyGroupsListView, GroupCreateView, GroupDetailView, GroupMembersView,
     GroupJoinLeaveView, GroupMemberDetailView, DiscoverGroupsView,
-    GroupJoinRequestViewSet
+    GroupJoinRequestViewSet, GroupRequestViewSet
 )
 from chat.views import GroupMessageViewSet
 
 # Router for ViewSets
 router = DefaultRouter()
 router.register(r'join-requests', GroupJoinRequestViewSet, basename='group-join-request')
+router.register(r'requests', GroupRequestViewSet, basename='group-request')
 router.register(r'messages', GroupMessageViewSet, basename='group-message')
 
 

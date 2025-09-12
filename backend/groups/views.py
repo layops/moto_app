@@ -233,13 +233,38 @@ class GroupJoinLeaveView(generics.UpdateAPIView):
             if user in group.members.all():
                 return Response({'detail': 'Zaten grubun üyesisiniz.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            group.members.add(user)
-            # Grup katılım sonrası güncel grup bilgisini döndür
-            serializer = GroupSerializer(group)
-            return Response({
-                'detail': 'Gruba başarıyla katıldınız.',
-                'group': serializer.data
-            })
+            # Onay sistemi kontrolü
+            if group.requires_approval:
+                # Onay gerekiyorsa istek oluştur
+                message = request.data.get('message', '')
+                join_request, created = GroupJoinRequest.objects.get_or_create(
+                    group=group,
+                    user=user,
+                    defaults={'message': message}
+                )
+                
+                if not created:
+                    return Response({'detail': 'Bu grup için zaten bir istek gönderdiniz.'}, 
+                                    status=status.HTTP_400_BAD_REQUEST)
+                
+                # Bildirim gönder
+                self._send_notification(
+                    recipient=group.owner,
+                    sender=user,
+                    notification_type='group_join_request',
+                    message=f"{user.username} {group.name} grubuna katılmak istiyor.",
+                    content_object=join_request
+                )
+                
+                return Response({'detail': 'Katılım isteği gönderildi. Onay bekleniyor.'})
+            else:
+                # Onay gerektirmiyorsa direkt katıl
+                group.members.add(user)
+                serializer = GroupSerializer(group)
+                return Response({
+                    'detail': 'Gruba başarıyla katıldınız.',
+                    'group': serializer.data
+                })
 
         elif action == 'leave':
             if user not in group.members.all():
@@ -248,7 +273,135 @@ class GroupJoinLeaveView(generics.UpdateAPIView):
             group.members.remove(user)
             return Response({'detail': 'Gruptan başarıyla ayrıldınız.'})
 
+    def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
+        """Bildirim gönder"""
+        try:
+            from notifications.models import Notification
+            
+            notification = Notification.objects.create(
+                recipient=recipient,
+                sender=sender,
+                notification_type=notification_type,
+                message=message,
+                content_object=content_object
+            )
+            print(f"Bildirim gönderildi: {notification}")
+        except Exception as e:
+            print(f"Bildirim gönderme hatası: {str(e)}")
+
         return Response({'detail': 'Geçersiz eylem. "join" veya "leave" olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GroupRequestViewSet(viewsets.ModelViewSet):
+    """Grup katılım istekleri yönetimi"""
+    queryset = GroupJoinRequest.objects.all()
+    serializer_class = GroupJoinRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def my_requests(self, request):
+        """Kullanıcının gönderdiği istekleri getir"""
+        requests = GroupJoinRequest.objects.filter(user=request.user)
+        serializer = self.get_serializer(requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def pending_requests(self, request):
+        """Kullanıcının sahip olduğu gruplar için bekleyen istekleri getir"""
+        user_groups = Group.objects.filter(owner=request.user)
+        requests = GroupJoinRequest.objects.filter(
+            group__in=user_groups,
+            status='pending'
+        )
+        serializer = self.get_serializer(requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Grup katılım isteğini onayla"""
+        try:
+            join_request = self.get_object()
+            if request.user != join_request.group.owner:
+                return Response({'error': 'Bu grubun sahibi değilsiniz.'},
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            if join_request.status != 'pending':
+                return Response({'error': 'Bu istek zaten işlenmiş.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Onayla
+            join_request.status = 'approved'
+            join_request.save()
+            
+            # Kullanıcıyı gruba ekle
+            join_request.group.members.add(join_request.user)
+            
+            # Bildirim gönder
+            self._send_notification(
+                recipient=join_request.user,
+                sender=request.user,
+                notification_type='group_join_approved',
+                message=f"{join_request.group.name} grubuna katılımınız onaylandı.",
+                content_object=join_request.group
+            )
+            
+            return Response({'message': 'İstek onaylandı.'})
+        except Exception as e:
+            print(f"Approve request hatası: {str(e)}")
+            return Response(
+                {'error': 'İstek onaylanırken bir hata oluştu'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Grup katılım isteğini reddet"""
+        try:
+            join_request = self.get_object()
+            if request.user != join_request.group.owner:
+                return Response({'error': 'Bu grubun sahibi değilsiniz.'},
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            if join_request.status != 'pending':
+                return Response({'error': 'Bu istek zaten işlenmiş.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Reddet
+            join_request.status = 'rejected'
+            join_request.save()
+            
+            # Bildirim gönder
+            self._send_notification(
+                recipient=join_request.user,
+                sender=request.user,
+                notification_type='group_join_rejected',
+                message=f"{join_request.group.name} grubuna katılımınız reddedildi.",
+                content_object=join_request.group
+            )
+            
+            return Response({'message': 'İstek reddedildi.'})
+        except Exception as e:
+            print(f"Reject request hatası: {str(e)}")
+            return Response(
+                {'error': 'İstek reddedilirken bir hata oluştu'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
+        """Bildirim gönder"""
+        try:
+            from notifications.models import Notification
+            
+            notification = Notification.objects.create(
+                recipient=recipient,
+                sender=sender,
+                notification_type=notification_type,
+                message=message,
+                content_object=content_object
+            )
+            print(f"Bildirim gönderildi: {notification}")
+        except Exception as e:
+            print(f"Bildirim gönderme hatası: {str(e)}")
 
 
 class GroupMemberDetailView(generics.RetrieveUpdateDestroyAPIView):

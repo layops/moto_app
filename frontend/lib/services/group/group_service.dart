@@ -134,12 +134,17 @@ class GroupService {
   // --- GRUP KATILIM TALEPLERİ ---
 
   /// Gruba katıl (public gruplar için)
-  Future<Map<String, dynamic>> joinGroup(int groupId) async {
+  Future<Map<String, dynamic>> joinGroup(int groupId, {String? message}) async {
     final token = await _authService.getToken();
+    
+    final data = <String, dynamic>{'action': 'join'};
+    if (message != null && message.isNotEmpty) {
+      data['message'] = message;
+    }
     
     final response = await _dio.patch(
       'groups/$groupId/join-leave/',
-      data: {'action': 'join'},
+      data: data,
       options: _authOptions(token),
     );
     
@@ -175,6 +180,46 @@ class GroupService {
     );
     
     return response.data as List<dynamic>;
+  }
+
+  /// Bekleyen grup katılım isteklerini getir
+  Future<List<dynamic>> getPendingGroupRequests() async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.get(
+      'groups/requests/pending_requests/',
+      options: _authOptions(token),
+    );
+    
+    return response.data as List<dynamic>;
+  }
+
+  /// Grup katılım isteğini onayla
+  Future<void> approveGroupRequest(int requestId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/requests/$requestId/approve/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('İstek onaylanamadı: ${response.statusCode}');
+    }
+  }
+
+  /// Grup katılım isteğini reddet
+  Future<void> rejectGroupRequest(int requestId) async {
+    final token = await _authService.getToken();
+    
+    final response = await _dio.post(
+      'groups/requests/$requestId/reject/',
+      options: _authOptions(token),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('İstek reddedilemedi: ${response.statusCode}');
+    }
   }
 
   /// Katılım talebini onayla

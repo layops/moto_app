@@ -9,6 +9,7 @@ import 'event_helpers.dart';
 import '../../core/theme/color_schemes.dart';
 import '../map/map_page.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class EventDetailPage extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -332,17 +333,47 @@ class _MiniMapPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final pos = _parseLatLng(location);
     if (pos == null) return const SizedBox.shrink();
+    
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         height: 160,
-        child: IgnorePointer(
-          ignoring: true,
-          child: MapPage(
+        child: FlutterMap(
+          options: MapOptions(
             initialCenter: pos,
-            allowSelection: false,
-            showMarker: true,
+            initialZoom: 15.0,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.none, // Hiçbir etkileşim yok
+            ),
           ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.motoapp',
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: pos,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 3,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.location_on,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

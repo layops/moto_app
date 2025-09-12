@@ -6,6 +6,7 @@ class Group(models.Model):
     description = models.TextField(blank=True, verbose_name="Açıklama")
     profile_picture_url = models.URLField(blank=True, null=True, verbose_name="Profil Fotoğrafı URL")
     is_public = models.BooleanField(default=True, verbose_name="Herkese Açık Mı?")
+    requires_approval = models.BooleanField(default=False, verbose_name="Onay Gerekli")
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

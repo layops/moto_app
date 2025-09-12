@@ -172,7 +172,7 @@ class _MembersPageState extends State<MembersPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  member['username'] ?? 'Unknown',
+                  member['username']?.toString() ?? 'Unknown',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -248,7 +248,7 @@ class _MembersPageState extends State<MembersPage> {
       await groupService.makeModerator(widget.groupData['id'], member['id']);
       
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${member['username']} is now a moderator')),
+        SnackBar(content: Text('${member['username']?.toString() ?? 'User'} is now a moderator')),
       );
       
       // Üyeleri yeniden yükle
@@ -270,7 +270,7 @@ class _MembersPageState extends State<MembersPage> {
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
-          'Are you sure you want to remove ${member['username']} from the group?',
+          'Are you sure you want to remove ${member['username']?.toString() ?? 'User'} from the group?',
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
         ),
         actions: [
@@ -286,7 +286,7 @@ class _MembersPageState extends State<MembersPage> {
                 await groupService.removeGroupMember(widget.groupData['id'], member['id']);
                 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${member['username']} removed from group')),
+                  SnackBar(content: Text('${member['username']?.toString() ?? 'User'} removed from group')),
                 );
                 
                 // Üyeleri yeniden yükle

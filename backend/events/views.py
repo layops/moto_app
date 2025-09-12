@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import Event
-from .serializers import EventSerializer
+from .models import Event, EventRequest
+from .serializers import EventSerializer, EventRequestSerializer
 from groups.models import Group
 try:
     from users.services.supabase_service import SupabaseStorage
@@ -131,9 +131,37 @@ class EventViewSet(viewsets.ModelViewSet):
                 return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            event.participants.add(user)
-            serializer = self.get_serializer(event)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # Onay sistemi kontrolü
+            if event.requires_approval:
+                # Onay gerekiyorsa istek oluştur
+                message = request.data.get('message', '')
+                event_request, created = EventRequest.objects.get_or_create(
+                    event=event,
+                    user=user,
+                    defaults={'message': message}
+                )
+                
+                if not created:
+                    return Response({"error": "Bu etkinlik için zaten bir istek gönderdiniz."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                
+                # Bildirim gönder
+                self._send_notification(
+                    recipient=event.organizer,
+                    sender=user,
+                    notification_type='event_join_request',
+                    message=f"{user.username} {event.title} etkinliğine katılmak istiyor.",
+                    content_object=event_request
+                )
+                
+                return Response({"message": "Katılım isteği gönderildi. Onay bekleniyor."},
+                                status=status.HTTP_200_OK)
+            else:
+                # Onay gerektirmiyorsa direkt katıl
+                event.participants.add(user)
+                serializer = self.get_serializer(event)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+                
         except Exception as e:
             print(f"Join event hatası: {str(e)}")
             return Response(
@@ -160,6 +188,126 @@ class EventViewSet(viewsets.ModelViewSet):
                 {"error": "Etkinlikten ayrılırken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=True, methods=['get'])
+    def requests(self, request, pk=None):
+        """Etkinlik katılım isteklerini getir"""
+        try:
+            event = self.get_object()
+            if request.user != event.organizer:
+                return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            requests = EventRequest.objects.filter(event=event, status='pending')
+            serializer = EventRequestSerializer(requests, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Event requests hatası: {str(e)}")
+            return Response(
+                {"error": "İstekler getirilirken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def approve_request(self, request, pk=None):
+        """Etkinlik katılım isteğini onayla"""
+        try:
+            event = self.get_object()
+            if request.user != event.organizer:
+                return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            request_id = request.data.get('request_id')
+            if not request_id:
+                return Response({"error": "İstek ID gerekli."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            event_request = get_object_or_404(EventRequest, id=request_id, event=event)
+            
+            if event_request.status != 'pending':
+                return Response({"error": "Bu istek zaten işlenmiş."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Onayla
+            event_request.status = 'approved'
+            event_request.save()
+            
+            # Kullanıcıyı etkinliğe ekle
+            event.participants.add(event_request.user)
+            
+            # Bildirim gönder
+            self._send_notification(
+                recipient=event_request.user,
+                sender=request.user,
+                notification_type='event_join_approved',
+                message=f"{event.title} etkinliğine katılımınız onaylandı.",
+                content_object=event
+            )
+            
+            return Response({"message": "İstek onaylandı."})
+        except Exception as e:
+            print(f"Approve request hatası: {str(e)}")
+            return Response(
+                {"error": "İstek onaylanırken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def reject_request(self, request, pk=None):
+        """Etkinlik katılım isteğini reddet"""
+        try:
+            event = self.get_object()
+            if request.user != event.organizer:
+                return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
+                                status=status.HTTP_403_FORBIDDEN)
+            
+            request_id = request.data.get('request_id')
+            if not request_id:
+                return Response({"error": "İstek ID gerekli."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            event_request = get_object_or_404(EventRequest, id=request_id, event=event)
+            
+            if event_request.status != 'pending':
+                return Response({"error": "Bu istek zaten işlenmiş."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Reddet
+            event_request.status = 'rejected'
+            event_request.save()
+            
+            # Bildirim gönder
+            self._send_notification(
+                recipient=event_request.user,
+                sender=request.user,
+                notification_type='event_join_rejected',
+                message=f"{event.title} etkinliğine katılımınız reddedildi.",
+                content_object=event
+            )
+            
+            return Response({"message": "İstek reddedildi."})
+        except Exception as e:
+            print(f"Reject request hatası: {str(e)}")
+            return Response(
+                {"error": "İstek reddedilirken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
+        """Bildirim gönder"""
+        try:
+            from notifications.models import Notification
+            
+            notification = Notification.objects.create(
+                recipient=recipient,
+                sender=sender,
+                notification_type=notification_type,
+                message=message,
+                content_object=content_object
+            )
+            print(f"Bildirim gönderildi: {notification}")
+        except Exception as e:
+            print(f"Bildirim gönderme hatası: {str(e)}")
 
     # Yeni eklenen action - Katılımcıları getir
     @action(detail=True, methods=['get'])

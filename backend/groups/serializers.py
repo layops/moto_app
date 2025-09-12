@@ -14,7 +14,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = [
             'id', 'name', 'description', 'profile_picture_url', 
-            'member_count', 'is_public', 'owner', 'members', 
+            'member_count', 'is_public', 'requires_approval', 'owner', 'members', 
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'member_count']
@@ -22,7 +22,7 @@ class GroupSerializer(serializers.ModelSerializer):
 class GroupMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'profile_picture']
+        fields = ['id', 'username', 'email', 'profile_picture']
 
 
 class GroupJoinRequestSerializer(serializers.ModelSerializer):

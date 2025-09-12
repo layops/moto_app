@@ -9,6 +9,12 @@ class Notification(models.Model):
     NOTIFICATION_TYPES = (
         ('message', 'Yeni Mesaj'),
         ('group_invite', 'Grup Daveti'),
+        ('group_join_request', 'Grup Katılım İsteği'),
+        ('group_join_approved', 'Grup Katılım Onaylandı'),
+        ('group_join_rejected', 'Grup Katılım Reddedildi'),
+        ('event_join_request', 'Etkinlik Katılım İsteği'),
+        ('event_join_approved', 'Etkinlik Katılım Onaylandı'),
+        ('event_join_rejected', 'Etkinlik Katılım Reddedildi'),
         ('ride_request', 'Yolculuk Katılım İsteği'),
         ('ride_update', 'Yolculuk Güncellemesi'),
         ('group_update', 'Grup Güncellemesi'),

@@ -105,6 +105,7 @@ class EventService {
     DateTime? endTime,
     required bool isPublic,
     int? guestLimit,
+    bool requiresApproval = false,
     File? coverImageFile,
     int? groupId,
   }) async {
@@ -121,6 +122,7 @@ class EventService {
         'location': location,
         'start_time': startTime.toUtc().toIso8601String(), // UTC formatında
         'is_public': isPublic.toString(), // String olarak gönder
+        'requires_approval': requiresApproval.toString(),
         if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
         if (guestLimit != null) 'guest_limit': guestLimit.toString(),
         if (groupId != null) 'group_id': groupId.toString(),
@@ -171,11 +173,18 @@ class EventService {
     }
   }
 
-  Future<Map<String, dynamic>> joinEvent(int eventId) async {
+  Future<Map<String, dynamic>> joinEvent(int eventId, {String? message}) async {
     try {
       final token = await authService.getToken();
+      
+      final data = <String, dynamic>{};
+      if (message != null && message.isNotEmpty) {
+        data['message'] = message;
+      }
+      
       final response = await _dio.post(
         '$kBaseUrl/api/events/$eventId/join/',
+        data: data,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -235,5 +244,57 @@ class EventService {
   void clearCache() {
     _eventCache.clear();
     _cacheTimestamps.clear();
+  }
+
+  // Event request yönetimi
+  Future<List<dynamic>> getEventRequests(int eventId) async {
+    try {
+      final token = await authService.getToken();
+      final response = await _dio.get(
+        '$kBaseUrl/api/events/$eventId/requests/',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return response.data as List<dynamic>;
+    } catch (e) {
+      throw Exception('Failed to get event requests: $e');
+    }
+  }
+
+  Future<void> approveEventRequest(int eventId, int requestId) async {
+    try {
+      final token = await authService.getToken();
+      await _dio.post(
+        '$kBaseUrl/api/events/$eventId/approve_request/',
+        data: {'request_id': requestId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to approve event request: $e');
+    }
+  }
+
+  Future<void> rejectEventRequest(int eventId, int requestId) async {
+    try {
+      final token = await authService.getToken();
+      await _dio.post(
+        '$kBaseUrl/api/events/$eventId/reject_request/',
+        data: {'request_id': requestId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to reject event request: $e');
+    }
   }
 }

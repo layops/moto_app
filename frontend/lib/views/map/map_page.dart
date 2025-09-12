@@ -73,6 +73,7 @@ class _MapPageState extends State<MapPage> {
   int? _selectedGroupId;
   List<LocationShare> _groupMembersLocations = [];
   bool _showGroupMembers = false;
+  bool _showGroupSelector = false;
 
   static const List<double> _zoomLevels = [5.0, 10.0, 13.0, 15.0, 18.0];
   static const List<String> _zoomLabels = [
@@ -513,6 +514,13 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  void _hideGroupSelector() {
+    setState(() {
+      _showGroupSelector = false;
+      _showGroupMembers = false; // Grup seçiciyi gizlediğimizde grup üyelerini de gizle
+    });
+  }
+
   Widget _buildGroupSelector(BuildContext context) {
     if (_userGroups.isEmpty) return const SizedBox.shrink();
     
@@ -521,79 +529,107 @@ class _MapPageState extends State<MapPage> {
     return Positioned(
       top: 180,
       right: 16,
-      child: Container(
-        width: 200,
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Grup seçici toggle butonu
+          FloatingActionButton(
+            heroTag: 'group_selector_fab',
+            onPressed: () {
+              if (_showGroupSelector) {
+                _hideGroupSelector();
+              } else {
+                setState(() {
+                  _showGroupSelector = true;
+                });
+              }
+            },
+            backgroundColor: _showGroupSelector 
+                ? colorScheme.error 
+                : colorScheme.secondary,
+            child: Icon(
+              _showGroupSelector ? Icons.close : Icons.group,
+              color: colorScheme.onSecondary,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Grup seçici
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: DropdownButtonFormField<int>(
-                value: _selectedGroupId,
-                decoration: InputDecoration(
-                  labelText: 'Grup Seç',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+          ),
+          const SizedBox(height: 8),
+          // Grup seçici paneli
+          if (_showGroupSelector)
+            Container(
+              width: 200,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: _userGroups.map((group) {
-                  return DropdownMenuItem<int>(
-                    value: group['id'],
-                    child: Text(
-                      group['name'] ?? 'Grup',
-                      style: const TextStyle(fontSize: 14),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Grup seçici
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedGroupId,
+                      decoration: InputDecoration(
+                        labelText: 'Grup Seç',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: _userGroups.map((group) {
+                        return DropdownMenuItem<int>(
+                          value: group['id'],
+                          child: Text(
+                            group['name'] ?? 'Grup',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (groupId) {
+                        setState(() {
+                          _selectedGroupId = groupId;
+                        });
+                        if (groupId != null) {
+                          _loadGroupMembersLocations(groupId);
+                        }
+                      },
                     ),
-                  );
-                }).toList(),
-                onChanged: (groupId) {
-                  setState(() {
-                    _selectedGroupId = groupId;
-                  });
-                  if (groupId != null) {
-                    _loadGroupMembersLocations(groupId);
-                  }
-                },
+                  ),
+                  // Grup üyelerini göster/gizle butonu
+                  if (_selectedGroupId != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ElevatedButton.icon(
+                        onPressed: _toggleGroupMembersView,
+                        icon: Icon(_showGroupMembers ? Icons.visibility_off : Icons.visibility),
+                        label: Text(_showGroupMembers ? 'Gizle' : 'Göster'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _showGroupMembers 
+                              ? colorScheme.error 
+                              : colorScheme.primary,
+                          foregroundColor: _showGroupMembers 
+                              ? colorScheme.onError 
+                              : colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            // Grup üyelerini göster/gizle butonu
-            if (_selectedGroupId != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ElevatedButton.icon(
-                  onPressed: _toggleGroupMembersView,
-                  icon: Icon(_showGroupMembers ? Icons.visibility_off : Icons.visibility),
-                  label: Text(_showGroupMembers ? 'Gizle' : 'Göster'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _showGroupMembers 
-                        ? colorScheme.error 
-                        : colorScheme.primary,
-                    foregroundColor: _showGroupMembers 
-                        ? colorScheme.onError 
-                        : colorScheme.onPrimary,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildGroupMembersMarkers(BuildContext context) {
-    if (!_showGroupMembers || _groupMembersLocations.isEmpty) {
+    if (!_showGroupSelector || !_showGroupMembers || _groupMembersLocations.isEmpty) {
       return const SizedBox.shrink();
     }
     
