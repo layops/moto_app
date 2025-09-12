@@ -154,6 +154,8 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
                 group.save()
                 serializer = self.get_serializer(group)
             except Exception as e:
+                # Profil resmi yüklenemezse grup güncellemesi devam eder
+                serializer = self.get_serializer(group)
         
         return Response(serializer.data)
 
@@ -166,6 +168,8 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
                 supabase = SupabaseStorage()
                 supabase.delete_group_profile_picture(instance.profile_picture_url)
             except Exception as e:
+                # Profil resmi silinemezse grup silinmeye devam eder
+                pass
         
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

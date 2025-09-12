@@ -61,6 +61,7 @@ class EventViewSet(viewsets.ModelViewSet):
                     event.participants.add(request.user)
             except Exception as e:
                 # Bu hata etkinlik oluşturmayı engellemez
+                pass
             
             # Kapak resmi varsa yükle
             if cover_file and supabase is not None:
@@ -71,7 +72,10 @@ class EventViewSet(viewsets.ModelViewSet):
                     serializer = self.get_serializer(event)
                 except Exception as e:
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
+                    pass
             elif cover_file and supabase is None:
+                # Supabase mevcut değilse resim yüklenmez
+                pass
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
