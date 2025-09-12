@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 import time
 import logging
+import os
 
 User = get_user_model()
 
@@ -200,7 +201,8 @@ def debug_database(request):
                 'name': connection.settings_dict.get('NAME', 'Unknown'),
                 'tables': [],
                 'user_count': 0,
-                'migration_status': 'unknown'
+                'migration_status': 'unknown',
+                'app_data': {}
             }
         }
         
@@ -253,11 +255,97 @@ def debug_database(request):
         except Exception as e:
             debug_info['database']['migration_status'] = f"Error: {str(e)}"
         
+        # Check app-specific data
+        try:
+            from posts.models import Post
+            from groups.models import Group
+            from events.models import Event
+            from rides.models import Ride
+            
+            debug_info['database']['app_data'] = {
+                'posts': Post.objects.count(),
+                'groups': Group.objects.count(),
+                'events': Event.objects.count(),
+                'rides': Ride.objects.count(),
+            }
+            
+            # Get recent data samples
+            if Post.objects.exists():
+                recent_post = Post.objects.first()
+                debug_info['database']['app_data']['recent_post'] = {
+                    'id': recent_post.id,
+                    'title': recent_post.title,
+                    'author': recent_post.author.username if recent_post.author else 'No author',
+                    'created_at': recent_post.created_at.isoformat()
+                }
+            
+            if Group.objects.exists():
+                recent_group = Group.objects.first()
+                debug_info['database']['app_data']['recent_group'] = {
+                    'id': recent_group.id,
+                    'name': recent_group.name,
+                    'description': recent_group.description[:100] + '...' if len(recent_group.description) > 100 else recent_group.description,
+                    'created_at': recent_group.created_at.isoformat()
+                }
+                
+        except Exception as e:
+            debug_info['database']['app_data_error'] = str(e)
+        
         return JsonResponse(debug_info)
         
     except Exception as e:
         logger.error(f"Database debug failed: {str(e)}")
         return JsonResponse({
+            'error': str(e),
+            'timestamp': time.time()
+        }, status=500)
+
+@never_cache
+@require_http_methods(["GET"])
+def test_database_connection(request):
+    """Test database connection and show current database info"""
+    try:
+        db_info = {
+            'timestamp': time.time(),
+            'connection_test': 'success',
+            'database_info': {
+                'vendor': connection.vendor,
+                'name': connection.settings_dict.get('NAME', 'Unknown'),
+                'host': connection.settings_dict.get('HOST', 'N/A'),
+                'port': connection.settings_dict.get('PORT', 'N/A'),
+                'user': connection.settings_dict.get('USER', 'N/A'),
+            },
+            'environment': {
+                'USE_SQLITE_FALLBACK': os.environ.get('USE_SQLITE_FALLBACK', 'false'),
+                'DATABASE_URL': 'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET',
+                'DEBUG': settings.DEBUG,
+            }
+        }
+        
+        # Test actual connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            db_info['connection_test'] = 'success' if result[0] == 1 else 'failed'
+        
+        # Check if we're using the right database
+        if connection.vendor == 'sqlite':
+            import os
+            db_path = connection.settings_dict.get('NAME')
+            if os.path.exists(db_path):
+                db_info['database_info']['file_exists'] = True
+                db_info['database_info']['file_size'] = os.path.getsize(db_path)
+                db_info['database_info']['file_path'] = str(db_path)
+            else:
+                db_info['database_info']['file_exists'] = False
+                db_info['database_info']['file_path'] = str(db_path)
+        
+        return JsonResponse(db_info)
+        
+    except Exception as e:
+        logger.error(f"Database connection test failed: {str(e)}")
+        return JsonResponse({
+            'connection_test': 'failed',
             'error': str(e),
             'timestamp': time.time()
         }, status=500)
