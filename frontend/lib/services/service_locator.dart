@@ -15,6 +15,7 @@ import 'gamification_service.dart';
 import 'chat/chat_service.dart';
 import 'chat/group_chat_service.dart';
 import 'group/group_service.dart';
+import 'location/location_service.dart';
 import '../config/supabase_config.dart';
 
 class ServiceLocator {
@@ -42,6 +43,7 @@ class ServiceLocator {
   late final ChatService _chatService;
   late final GroupChatService _groupChatService;
   late final GroupService _groupService;
+  late final LocationService _locationService;
   late final supabase_client.SupabaseClient _supabaseClient;
 
   // Private constructor
@@ -132,6 +134,9 @@ class ServiceLocator {
       // 15. Initialize group service
       instance._groupService = GroupService(authService: instance._authService);
 
+      // 16. Initialize location service
+      instance._locationService = LocationService();
+
       _isInitialized = true;
     } catch (e, stackTrace) {
       _isInitialized = false;
@@ -160,6 +165,7 @@ class ServiceLocator {
       _instance._searchService.clearCache();
       _instance._groupService.clearCache();
       _instance._eventService.clearCache();
+      _instance._locationService.clearCache();
       
       _isInitialized = false;
     } catch (e, stackTrace) {
@@ -184,6 +190,7 @@ class ServiceLocator {
   static ChatService get chat => _instance._chatService;
   static GroupChatService get groupChat => _instance._groupChatService;
   static GroupService get group => _instance._groupService;
+  static LocationService get location => _instance._locationService;
   static LocalStorage get storage => _instance._localStorage;
 
   // Supabase helper

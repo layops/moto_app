@@ -10,6 +10,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/service_locator.dart';
+import '../../services/location/location_service.dart';
 
 part 'map_controls.dart';
 part 'map_search.dart';
@@ -60,6 +62,12 @@ class _MapPageState extends State<MapPage> {
   List<String> _searchHistory = [];
   bool _isSearchFocused = false;
 
+  // Konum paylaşımı için
+  final LocationService _locationService = ServiceLocator.location;
+  List<LocationShare> _activeLocationShares = [];
+  bool _isSharingLocation = false;
+  Timer? _locationUpdateTimer;
+
   static const List<double> _zoomLevels = [5.0, 10.0, 13.0, 15.0, 18.0];
   static const List<String> _zoomLabels = [
     'Ülke',
@@ -77,6 +85,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {}); // Suffix icon'ın görünürlüğü için
     };
     _searchController.addListener(_searchControllerListener);
+    _loadActiveLocationShares();
     if (widget.initialCenter != null) {
       if (widget.allowSelection || widget.showMarker) {
         _selectedPosition = widget.initialCenter;
@@ -94,6 +103,7 @@ class _MapPageState extends State<MapPage> {
     _labelController.dispose();
     _searchDebounce?.cancel();
     _positionStream?.cancel();
+    _locationUpdateTimer?.cancel();
     super.dispose();
   }
 
@@ -260,6 +270,7 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ],
                   ),
+                _buildLocationSharesMarkers(context),
                 if (_isRouteMode && _startPoint != null)
                   MarkerLayer(
                     markers: [
@@ -314,6 +325,7 @@ class _MapPageState extends State<MapPage> {
             ),
             _buildSearchBar(context),
             _buildMapControls(context),
+            _buildLocationSharingButton(context),
             if (_selectedPosition != null) _buildLocationActions(context),
             if (_selectedPosition != null) _buildConfirmButton(context),
             _buildSearchHistory(context),
@@ -332,5 +344,124 @@ class _MapPageState extends State<MapPage> {
         ),
       ),
     );
+  }
+
+  // Konum paylaşımı fonksiyonları
+  Future<void> _loadActiveLocationShares() async {
+    try {
+      final shares = await _locationService.getActiveLocationShares();
+      if (mounted) {
+        setState(() {
+          _activeLocationShares = shares;
+        });
+      }
+    } catch (e) {
+      print('Konum paylaşımları yüklenemedi: $e');
+    }
+  }
+
+  Future<void> _toggleLocationSharing() async {
+    try {
+      if (_isSharingLocation) {
+        await _locationService.stopLocationSharing();
+        _stopLocationUpdates();
+        setState(() {
+          _isSharingLocation = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Konum paylaşımı durduruldu'),
+            backgroundColor: Theme.of(context).colorScheme.onSurface,
+          ),
+        );
+      } else {
+        await _locationService.startLocationSharing(shareType: 'public');
+        setState(() {
+          _isSharingLocation = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Konum paylaşımı başlatıldı'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+        
+        // Konum paylaşımlarını yenile
+        _loadActiveLocationShares();
+        
+        // Periyodik güncelleme başlat
+        _startLocationUpdates();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Konum paylaşımı hatası: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Widget _buildLocationSharingButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Positioned(
+      top: 120,
+      right: 16,
+      child: FloatingActionButton(
+        heroTag: 'location_sharing_fab',
+        onPressed: _toggleLocationSharing,
+        backgroundColor: _isSharingLocation 
+            ? colorScheme.error 
+            : colorScheme.primary,
+        child: Icon(
+          _isSharingLocation ? Icons.location_off : Icons.location_on,
+          color: colorScheme.onPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationSharesMarkers(BuildContext context) {
+    if (_activeLocationShares.isEmpty) return const SizedBox.shrink();
+    
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return MarkerLayer(
+      markers: _activeLocationShares.map((share) {
+        return Marker(
+          point: LatLng(share.latitude, share.longitude),
+          width: 30,
+          height: 30,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.secondary,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.onSecondary,
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              Icons.person,
+              color: colorScheme.onSecondary,
+              size: 16,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _startLocationUpdates() {
+    _locationUpdateTimer?.cancel();
+    _locationUpdateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _loadActiveLocationShares();
+    });
+  }
+
+  void _stopLocationUpdates() {
+    _locationUpdateTimer?.cancel();
+    _locationUpdateTimer = null;
   }
 }
