@@ -1,4 +1,4 @@
-from django.db import migrations
+from django.db import migrations, connection
 from django.contrib.postgres.operations import TrigramExtension
 
 
@@ -14,5 +14,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        TrigramExtension(),
+        # PostgreSQL için TrigramExtension, SQLite için boş
+        migrations.RunSQL(
+            "CREATE EXTENSION IF NOT EXISTS pg_trgm;",
+            reverse_sql="DROP EXTENSION IF EXISTS pg_trgm;",
+            state_operations=[],
+        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
+            "-- SQLite için boş migration",
+            reverse_sql="-- SQLite için boş migration",
+            state_operations=[],
+        ),
     ]

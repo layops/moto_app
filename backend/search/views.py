@@ -5,12 +5,19 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
+from django.db import connection
 
 from django.contrib.auth import get_user_model
 from groups.models import Group
 from groups.serializers import GroupSerializer
 from users.serializers import UserSerializer
-from .pg_trgm_search import pg_trgm_search_engine
+
+# Database vendor'a göre search engine'i import et
+if connection.vendor == 'postgresql':
+    from .pg_trgm_search import pg_trgm_search_engine
+else:
+    # SQLite için basit search engine
+    pg_trgm_search_engine = None
 
 User = get_user_model()
 
@@ -19,7 +26,7 @@ User = get_user_model()
 @permission_classes([IsAuthenticated])
 def search_users(request):
     """
-    Kullanıcı arama endpoint'i - pg_trgm extension kullanarak
+    Kullanıcı arama endpoint'i - PostgreSQL için pg_trgm, SQLite için basit arama
     """
     query = request.query_params.get('q', None)
     limit = int(request.query_params.get('limit', 20))
@@ -27,16 +34,38 @@ def search_users(request):
     
     print(f"🔍 search_users - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
     print(f"🔍 search_users - Request user: {request.user}")
+    print(f"🔍 search_users - Database vendor: {connection.vendor}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-        # pg_trgm extension kullanarak arama yap
-        results = pg_trgm_search_engine.search_users(
-            query=query,
-            limit=limit,
-            similarity_threshold=similarity_threshold
-        )
-        
-        print(f"✅ search_users - pg_trgm ile {len(results)} kullanıcı bulundu")
+        if connection.vendor == 'postgresql' and pg_trgm_search_engine:
+            # PostgreSQL için pg_trgm extension kullanarak arama yap
+            results = pg_trgm_search_engine.search_users(
+                query=query,
+                limit=limit,
+                similarity_threshold=similarity_threshold
+            )
+            print(f"✅ search_users - pg_trgm ile {len(results)} kullanıcı bulundu")
+        else:
+            # SQLite için basit LIKE arama
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query)
+            )[:limit]
+            
+            results = []
+            for user in users:
+                results.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'email': user.email,
+                    'full_name': f"{user.first_name} {user.last_name}".strip(),
+                    'similarity_score': 1.0,  # SQLite için sabit skor
+                })
+            print(f"✅ search_users - SQLite LIKE ile {len(results)} kullanıcı bulundu")
         
         # İlk 5 sonucu log'la
         for i, user in enumerate(results[:5]):
@@ -63,7 +92,7 @@ class UserSearchView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def search_groups(request):
     """
-    Grup arama endpoint'i - pg_trgm extension kullanarak
+    Grup arama endpoint'i - PostgreSQL için pg_trgm, SQLite için basit arama
     """
     query = request.query_params.get('q', None)
     limit = int(request.query_params.get('limit', 20))
@@ -71,16 +100,35 @@ def search_groups(request):
     
     print(f"🔍 search_groups - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
     print(f"🔍 search_groups - Request user: {request.user}")
+    print(f"🔍 search_groups - Database vendor: {connection.vendor}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
-        # pg_trgm extension kullanarak arama yap
-        results = pg_trgm_search_engine.search_groups(
-            query=query,
-            limit=limit,
-            similarity_threshold=similarity_threshold
-        )
-        
-        print(f"✅ search_groups - pg_trgm ile {len(results)} grup bulundu")
+        if connection.vendor == 'postgresql' and pg_trgm_search_engine:
+            # PostgreSQL için pg_trgm extension kullanarak arama yap
+            results = pg_trgm_search_engine.search_groups(
+                query=query,
+                limit=limit,
+                similarity_threshold=similarity_threshold
+            )
+            print(f"✅ search_groups - pg_trgm ile {len(results)} grup bulundu")
+        else:
+            # SQLite için basit LIKE arama
+            groups = Group.objects.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query)
+            )[:limit]
+            
+            results = []
+            for group in groups:
+                results.append({
+                    'id': group.id,
+                    'name': group.name,
+                    'description': group.description,
+                    'owner': group.owner.username,
+                    'member_count': group.member_count,
+                    'similarity_score': 1.0,  # SQLite için sabit skor
+                })
+            print(f"✅ search_groups - SQLite LIKE ile {len(results)} grup bulundu")
         
         # İlk 5 sonucu log'la
         for i, group in enumerate(results[:5]):
