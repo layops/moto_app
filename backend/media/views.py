@@ -10,6 +10,16 @@ from users.models import CustomUser
 
 from rest_framework.parsers import MultiPartParser, FormParser 
 
+try:
+    from users.services.supabase_service import SupabaseStorage
+    supabase = SupabaseStorage()
+    print("SupabaseStorage başarıyla yüklendi (Media)")
+except Exception as e:
+    print(f"SupabaseStorage yükleme hatası (Media): {str(e)}")
+    import traceback
+    traceback.print_exc()
+    supabase = None
+
 
 class IsGroupMemberOrOwner(permissions.BasePermission):
     """
@@ -38,10 +48,62 @@ class MediaListCreateView(generics.ListCreateAPIView):
         group = get_object_or_404(Group, pk=group_pk)
         return Media.objects.filter(group=group).order_by('-uploaded_at')
 
-    def perform_create(self, serializer):
-        group_pk = self.kwargs['group_pk']
-        group = get_object_or_404(Group, pk=group_pk)
-        serializer.save(uploaded_by=self.request.user, group=group)
+    def create(self, request, *args, **kwargs):
+        print("Media yükleme başladı:", request.data)
+        print("Media dosyalar:", request.FILES)
+        
+        try:
+            data = request.data.copy()
+            media_file = request.FILES.get('file')
+            
+            # Media file'ı data'dan çıkar çünkü Supabase'e yükleyeceğiz
+            if media_file and 'file' in data:
+                del data['file']
+            
+            serializer = self.get_serializer(data=data)
+            if not serializer.is_valid():
+                print("Media serializer hataları:", serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Media'yı oluştur
+            group_pk = self.kwargs['group_pk']
+            group = get_object_or_404(Group, pk=group_pk)
+            media = serializer.save(uploaded_by=request.user, group=group)
+            
+            # Media dosyası varsa Supabase'e yükle
+            if media_file and supabase is not None:
+                try:
+                    print(f"Media dosyası yükleniyor: {media_file.name}, boyut: {media_file.size}")
+                    # Grup medyası için Supabase bucket'ını kullan
+                    file_url = supabase._upload_file(media_file, supabase.groups_bucket, f"groups/{group_pk}/media/{media.id}/")
+                    print(f"Media URL'i alındı: {file_url}")
+                    media.file_url = file_url
+                    media.save()
+                    print("Media file_url güncellendi")
+                    serializer = self.get_serializer(media)
+                except Exception as e:
+                    print("Media yükleme hatası:", str(e))
+                    import traceback
+                    traceback.print_exc()
+                    # Dosya yükleme hatası media oluşturmayı engellemez
+                    pass
+            elif media_file and supabase is None:
+                print("Supabase mevcut değil, media yüklenemiyor")
+                pass
+            elif media_file:
+                print("Media file var ama supabase None")
+            else:
+                print("Media file yok")
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except Exception as e:
+            print("Media oluşturma hatası:", str(e))
+            return Response(
+                {"error": "Media oluşturulurken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class MediaDetailView(generics.RetrieveUpdateDestroyAPIView):

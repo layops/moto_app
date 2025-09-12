@@ -9,5 +9,5 @@ class MediaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Media
-        fields = ['id', 'group', 'group_name', 'file', 'description', 'uploaded_by', 'uploaded_at']
+        fields = ['id', 'group', 'group_name', 'file_url', 'description', 'uploaded_by', 'uploaded_at']
         read_only_fields = ['uploaded_by', 'uploaded_at', 'group'] # Group alanı URL'den geldiği için read_only olabilir
