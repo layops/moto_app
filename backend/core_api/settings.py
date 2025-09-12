@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'core_api.database_middleware.DatabaseFallbackMiddleware',  # Database fallback middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -81,33 +82,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and dj_database_url:
-    try:
-        # Supabase PostgreSQL için optimize edilmiş ayarlar
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600,
-                conn_health_checks=True,
-                ssl_require=True,  # Supabase SSL gerektirir
-            )
-        }
-        print("✅ PostgreSQL database configured")
-    except Exception as e:
-        print(f"❌ PostgreSQL connection failed: {e}")
-        print("🔄 Falling back to SQLite")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-                'OPTIONS': {
-                    'timeout': 20,
-                }
-            }
-        }
-else:
-    print("⚠️ No DATABASE_URL found, using SQLite")
+# Geçici olarak SQLite kullanımı - Supabase bağlantı sorunu nedeniyle
+USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'true').lower() == 'true'
+
+if USE_SQLITE_FALLBACK:
+    print("🔄 Using SQLite fallback due to Supabase connection issues")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -117,6 +96,43 @@ else:
             }
         }
     }
+else:
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL and dj_database_url:
+        try:
+            # Supabase PostgreSQL için optimize edilmiş ayarlar
+            DATABASES = {
+                'default': dj_database_url.config(
+                    default=DATABASE_URL,
+                    conn_max_age=600,
+                    conn_health_checks=True,
+                    ssl_require=True,  # Supabase SSL gerektirir
+                )
+            }
+            print("✅ PostgreSQL database configured")
+        except Exception as e:
+            print(f"❌ PostgreSQL connection failed: {e}")
+            print("🔄 Falling back to SQLite")
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': BASE_DIR / 'db.sqlite3',
+                    'OPTIONS': {
+                        'timeout': 20,
+                    }
+                }
+            }
+    else:
+        print("⚠️ No DATABASE_URL found, using SQLite")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+                'OPTIONS': {
+                    'timeout': 20,
+                }
+            }
+        }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -228,6 +244,9 @@ SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictur
 SUPABASE_GROUPS_BUCKET = os.environ.get('SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
 SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_images')
 SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID', 'mosiqkyyribzlvdvedet')
+
+# Supabase fallback - eğer Supabase çalışmıyorsa local storage kullan
+USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'false').lower() == 'true'
 
 # Supabase service key kontrolü (geçici olarak devre dışı)
 # if not SUPABASE_SERVICE_KEY:

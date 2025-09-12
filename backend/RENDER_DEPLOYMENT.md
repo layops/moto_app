@@ -8,6 +8,8 @@ Render.com'da aşağıdaki environment variables'ları ayarlayın:
 - `SECRET_KEY`: Django secret key
 - `DEBUG`: False
 - `ALLOWED_HOSTS`: your-app-name.onrender.com,localhost,127.0.0.1
+- `USE_SQLITE_FALLBACK`: true (Supabase bağlantı sorunu için)
+- `USE_SUPABASE_STORAGE`: false (Supabase storage sorunu için)
 
 ### Database:
 - `DATABASE_URL`: Supabase PostgreSQL connection string (postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres)
