@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notifications', '0003_notification_timestamp'),
+        ('notifications', '0002_alter_notification_content_type_and_more'),
     ]
 
     operations = [
