@@ -52,12 +52,9 @@ def detailed_health_check(request):
     
     # Database check
     try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-        health_data['checks']['database'] = {
-            'status': 'healthy',
-            'response_time': '< 1ms'
-        }
+        from .database_utils import DatabaseConnectionManager
+        db_health = DatabaseConnectionManager.check_database_health()
+        health_data['checks']['database'] = db_health
     except Exception as e:
         health_data['checks']['database'] = {
             'status': 'unhealthy',
