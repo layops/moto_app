@@ -460,6 +460,54 @@ def database_status(request):
         }, status=500)
 
 @never_cache
+@require_http_methods(["GET"])
+def jwt_debug(request):
+    """Debug JWT token and authentication"""
+    try:
+        debug_info = {
+            'timestamp': time.time(),
+            'authentication': {
+                'is_authenticated': request.user.is_authenticated,
+                'user_id': request.user.id if request.user.is_authenticated else None,
+                'username': request.user.username if request.user.is_authenticated else None,
+                'email': request.user.email if request.user.is_authenticated else None,
+            },
+            'headers': {
+                'authorization': request.META.get('HTTP_AUTHORIZATION', 'Not set'),
+                'content_type': request.META.get('CONTENT_TYPE', 'Not set'),
+            },
+            'request_info': {
+                'method': request.method,
+                'path': request.path,
+                'user_agent': request.META.get('HTTP_USER_AGENT', 'Not set'),
+            }
+        }
+        
+        # Check if JWT token is present
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]  # Remove 'Bearer ' prefix
+            debug_info['jwt_token'] = {
+                'present': True,
+                'length': len(token),
+                'starts_with': token[:20] + '...' if len(token) > 20 else token,
+            }
+        else:
+            debug_info['jwt_token'] = {
+                'present': False,
+                'auth_header': auth_header,
+            }
+        
+        return JsonResponse(debug_info)
+        
+    except Exception as e:
+        logger.error(f"JWT debug failed: {str(e)}")
+        return JsonResponse({
+            'error': str(e),
+            'timestamp': time.time()
+        }, status=500)
+
+@never_cache
 @require_http_methods(["POST"])
 def create_test_data(request):
     """Create test data for debugging"""

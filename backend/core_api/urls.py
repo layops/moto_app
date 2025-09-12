@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
 )
 from .views import api_root
-from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status
+from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status, jwt_debug
 
 # Swagger / Redoc için
 schema_view = get_schema_view(
@@ -81,6 +81,7 @@ urlpatterns = [
     path('debug/database/', debug_database, name='debug-database'),
     path('debug/test-connection/', test_database_connection, name='test-database-connection'),
     path('debug/database-status/', database_status, name='database-status'),
+    path('debug/jwt/', jwt_debug, name='jwt-debug'),
     path('debug/create-test-data/', create_test_data, name='create-test-data'),
 ]
 
