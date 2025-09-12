@@ -6,8 +6,11 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from .models import Ride, RideRequest # <-- RideRequest'i import edin
-from .serializers import RideSerializer, RideRequestSerializer # <-- RideRequestSerializer'ı import edin
+from .models import Ride, RideRequest, RouteFavorite, LocationShare, RouteTemplate
+from .serializers import (
+    RideSerializer, RideRequestSerializer, RouteFavoriteSerializer,
+    LocationShareSerializer, RouteTemplateSerializer, CreateRideFromTemplateSerializer
+)
 from .permissions import IsOwnerOrReadOnly
 
 class RideViewSet(viewsets.ModelViewSet):
@@ -355,3 +358,134 @@ class RideViewSet(viewsets.ModelViewSet):
             # Hız için maksimum değeri güncelle
             user_achievement.progress = max(user_achievement.progress, max_speed)
             user_achievement.save()
+
+
+class RouteFavoriteViewSet(viewsets.ModelViewSet):
+    """Favori rotalar ViewSet"""
+    serializer_class = RouteFavoriteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return RouteFavorite.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        ride_id = self.request.data.get('ride_id')
+        ride = get_object_or_404(Ride, id=ride_id)
+        
+        # Zaten favori mi kontrol et
+        if RouteFavorite.objects.filter(user=self.request.user, ride=ride).exists():
+            raise serializers.ValidationError("Bu rota zaten favorilerinizde.")
+        
+        serializer.save(user=self.request.user, ride=ride)
+    
+    @action(detail=False, methods=['post'])
+    def toggle_favorite(self, request):
+        """Favoriye ekle/çıkar"""
+        ride_id = request.data.get('ride_id')
+        ride = get_object_or_404(Ride, id=ride_id)
+        
+        favorite, created = RouteFavorite.objects.get_or_create(
+            user=request.user,
+            ride=ride
+        )
+        
+        if not created:
+            favorite.delete()
+            return Response({"detail": "Favorilerden çıkarıldı."})
+        else:
+            return Response({"detail": "Favorilere eklendi."})
+
+
+class LocationShareViewSet(viewsets.ModelViewSet):
+    """Real-time konum paylaşımı ViewSet"""
+    serializer_class = LocationShareSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return LocationShare.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def active_shares(self, request):
+        """Aktif konum paylaşımlarını getir"""
+        ride_id = request.query_params.get('ride_id')
+        group_id = request.query_params.get('group_id')
+        
+        queryset = LocationShare.objects.filter(is_active=True)
+        
+        if ride_id:
+            queryset = queryset.filter(ride_id=ride_id)
+        if group_id:
+            queryset = queryset.filter(group_id=group_id)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def stop_sharing(self, request, pk=None):
+        """Konum paylaşımını durdur"""
+        location_share = self.get_object()
+        location_share.is_active = False
+        location_share.save()
+        
+        return Response({"detail": "Konum paylaşımı durduruldu."})
+
+
+class RouteTemplateViewSet(viewsets.ModelViewSet):
+    """Rota şablonları ViewSet"""
+    serializer_class = RouteTemplateSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def get_queryset(self):
+        return RouteTemplate.objects.filter(is_public=True)
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """Kategoriye göre şablonları getir"""
+        category = request.query_params.get('category')
+        if category:
+            templates = RouteTemplate.objects.filter(category=category, is_public=True)
+        else:
+            templates = RouteTemplate.objects.filter(is_public=True)
+        
+        serializer = self.get_serializer(templates, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def create_ride(self, request, pk=None):
+        """Şablondan yolculuk oluştur"""
+        template = self.get_object()
+        serializer = CreateRideFromTemplateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            ride_data = serializer.validated_data
+            
+            # Yolculuk oluştur
+            ride = Ride.objects.create(
+                owner=request.user,
+                title=ride_data['title'],
+                description=ride_data.get('description', ''),
+                start_location=template.start_location,
+                end_location=template.end_location,
+                start_coordinates=template.waypoints[0] if template.waypoints else [],
+                end_coordinates=template.waypoints[-1] if template.waypoints else [],
+                start_time=ride_data['start_time'],
+                max_participants=ride_data.get('max_participants'),
+                privacy_level=ride_data.get('privacy_level', 'public'),
+                ride_type='touring',
+                distance_km=template.distance_km,
+                estimated_duration_minutes=template.estimated_duration_minutes,
+                route_polyline=template.route_polyline,
+                waypoints=template.waypoints,
+                group_id=ride_data.get('group_id')
+            )
+            
+            ride_serializer = RideSerializer(ride)
+            return Response(ride_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

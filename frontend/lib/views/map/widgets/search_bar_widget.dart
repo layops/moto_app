@@ -4,7 +4,7 @@ import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 /// Arama çubuğu widget'ı
 class SearchBarWidget extends StatelessWidget {
   final TextEditingController controller;
-  final ValueChanged<String> onChanged;
+  final Function(String) onChanged;
   final VoidCallback onSubmitted;
   final VoidCallback onClear;
   final bool isSearchFocused;
@@ -31,10 +31,9 @@ class SearchBarWidget extends StatelessWidget {
       left: 16,
       right: 16,
       child: Container(
-        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusXLarge),
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
           boxShadow: [
             BoxShadow(
               color: colorScheme.onSurface.withOpacity(0.2),
@@ -45,21 +44,40 @@ class SearchBarWidget extends StatelessWidget {
         ),
         child: TextField(
           controller: controller,
-          style: textTheme.bodyLarge,
+          onChanged: onChanged,
+          onSubmitted: (_) => onSubmitted(),
           decoration: InputDecoration(
-            hintText: "Konum ara... (örn: İstanbul, Kadıköy)",
-            border: InputBorder.none,
-            hintStyle: textTheme.bodyMedium,
-            prefixIcon: Icon(Icons.search, color: textTheme.bodyMedium?.color),
+            hintText: 'Konum ara...',
+            hintStyle: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: colorScheme.primary,
+            ),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: Icon(Icons.clear, color: textTheme.bodyMedium?.color),
+                    icon: Icon(
+                      Icons.clear,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                     onPressed: onClear,
                   )
                 : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
-          onChanged: onChanged,
-          onSubmitted: (_) => onSubmitted(),
+          style: textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurface,
+          ),
         ),
       ),
     );

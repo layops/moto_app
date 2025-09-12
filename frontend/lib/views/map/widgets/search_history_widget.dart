@@ -14,24 +14,27 @@ class SearchHistoryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (searchHistory.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final mediaQuery = MediaQuery.of(context);
     final safeAreaTop = mediaQuery.padding.top;
 
-    if (searchHistory.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Positioned(
       top: 80 + safeAreaTop,
       left: 16,
       right: 16,
       child: Container(
+        constraints: BoxConstraints(
+          maxHeight: mediaQuery.size.height * 0.3,
+        ),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
           boxShadow: [
             BoxShadow(
               color: colorScheme.onSurface.withOpacity(0.2),
@@ -41,32 +44,108 @@ class SearchHistoryWidget extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Son Aramalar',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
+                  topRight: Radius.circular(ThemeConstants.borderRadiusLarge),
                 ),
               ),
-            ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: searchHistory.length,
-              itemBuilder: (context, index) {
-                final historyItem = searchHistory[index];
-                return ListTile(
-                  leading: Icon(
+              child: Row(
+                children: [
+                  Icon(
                     Icons.history,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.primary,
+                    size: 20,
                   ),
-                  title: Text(historyItem, style: textTheme.bodyLarge),
-                  onTap: () => onHistoryItemSelected(historyItem),
-                );
-              },
+                  const SizedBox(width: 8),
+                  Text(
+                    'Son Aramalar',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // History List
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: searchHistory.length,
+                itemBuilder: (context, index) {
+                  final query = searchHistory[index];
+                  return _buildHistoryItem(context, query, index);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(BuildContext context, String query, int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return InkWell(
+      onTap: () => onHistoryItemSelected(query),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: colorScheme.outline.withOpacity(0.2),
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // History Icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.access_time,
+                color: colorScheme.onSecondaryContainer,
+                size: 20,
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Query Text
+            Expanded(
+              child: Text(
+                query,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            
+            // Arrow Icon
+            Icon(
+              Icons.arrow_forward_ios,
+              color: colorScheme.onSurfaceVariant,
+              size: 16,
             ),
           ],
         ),

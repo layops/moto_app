@@ -22,15 +22,15 @@ class ZoomLevelsWidget extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final mediaQuery = MediaQuery.of(context);
-    final safeAreaBottom = mediaQuery.padding.bottom;
+    final safeAreaTop = mediaQuery.padding.top;
 
     return Positioned(
-      bottom: 160 + safeAreaBottom,
-      left: 16,
+      top: 16 + safeAreaTop,
+      right: 16,
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
           boxShadow: [
             BoxShadow(
               color: colorScheme.onSurface.withOpacity(0.2),
@@ -41,50 +41,88 @@ class ZoomLevelsWidget extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: zoomLevels.asMap().entries.map((entry) {
-            final index = entry.key;
-            final level = entry.value;
-            final isSelected = (currentZoomLevel - level).abs() < 0.5;
-
-            return InkWell(
-              onTap: () => onZoomLevelSelected(level),
-              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? colorScheme.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      size: 16,
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      zoomLabels[index],
-                      style: textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.onSurface.withOpacity(0.7),
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
+                  topRight: Radius.circular(ThemeConstants.borderRadiusLarge),
                 ),
               ),
-            );
-          }).toList(),
+              child: Text(
+                'Zoom',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            
+            // Zoom Levels
+            ...zoomLevels.asMap().entries.map((entry) {
+              final index = entry.key;
+              final zoomLevel = entry.value;
+              final isSelected = (currentZoomLevel - zoomLevel).abs() < 0.5;
+              
+              return _buildZoomLevelItem(
+                context,
+                zoomLevel,
+                zoomLabels[index],
+                isSelected,
+                index == zoomLevels.length - 1,
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildZoomLevelItem(
+    BuildContext context,
+    double zoomLevel,
+    String label,
+    bool isSelected,
+    bool isLast,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return InkWell(
+      onTap: () => onZoomLevelSelected(zoomLevel),
+      child: Container(
+        width: 80,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+          borderRadius: BorderRadius.only(
+            bottomLeft: isLast ? const Radius.circular(ThemeConstants.borderRadiusLarge) : Radius.zero,
+            bottomRight: isLast ? const Radius.circular(ThemeConstants.borderRadiusLarge) : Radius.zero,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              zoomLevel.toStringAsFixed(0),
+              style: textTheme.bodySmall?.copyWith(
+                color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: textTheme.bodySmall?.copyWith(
+                color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
+                fontSize: 10,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

@@ -1,7 +1,7 @@
 # moto_app/backend/rides/serializers.py
 
 from rest_framework import serializers
-from .models import Ride, RideRequest
+from .models import Ride, RideRequest, RouteFavorite, LocationShare, RouteTemplate
 from django.conf import settings
 from users.serializers import UserSerializer
 
@@ -32,15 +32,15 @@ class RideSerializer(serializers.ModelSerializer):
         model = Ride
         fields = [
             'id', 'owner', 'title', 'description', 'start_location',
-            'end_location', 'start_time', 'end_time', 'participants',
-            'max_participants', 'is_active', 'created_at', 'updated_at',
-            'pending_requests',
-            'route_polyline',  # <-- Yeni eklenen alan
-            'waypoints'        # <-- Yeni eklenen alan
+            'end_location', 'start_coordinates', 'end_coordinates',
+            'start_time', 'end_time', 'completed_at', 'participants',
+            'max_participants', 'ride_type', 'privacy_level',
+            'distance_km', 'estimated_duration_minutes',
+            'is_active', 'is_favorite', 'group',
+            'created_at', 'updated_at', 'pending_requests',
+            'route_polyline', 'waypoints'
         ]
-        # 'participants' alanı artık doğrudan API üzerinden değiştirilmez.
-        # owner, created_at, updated_at gibi alanlar da sadece okunabilir.
-        read_only_fields = ('owner', 'created_at', 'updated_at', 'participants', 'pending_requests')
+        read_only_fields = ('owner', 'created_at', 'updated_at', 'participants', 'pending_requests', 'completed_at')
 
     def get_pending_requests(self, obj):
         """
@@ -61,3 +61,50 @@ class RideSerializer(serializers.ModelSerializer):
         # RideRequestSerializer'ı kullanarak bu istekleri serileştiriyoruz.
         # Context'i RideRequestSerializer'a da aktarıyoruz, böylece requester alanı doğru çalışır.
         return RideRequestSerializer(pending_requests, many=True, context=self.context).data
+
+
+class RouteFavoriteSerializer(serializers.ModelSerializer):
+    ride = RideSerializer(read_only=True)
+    
+    class Meta:
+        model = RouteFavorite
+        fields = ['id', 'ride', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class LocationShareSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = LocationShare
+        fields = [
+            'id', 'user', 'ride', 'group', 'latitude', 'longitude',
+            'accuracy', 'speed', 'heading', 'share_type', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+class RouteTemplateSerializer(serializers.ModelSerializer):
+    created_by = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = RouteTemplate
+        fields = [
+            'id', 'name', 'description', 'category', 'route_polyline',
+            'waypoints', 'start_location', 'end_location', 'distance_km',
+            'estimated_duration_minutes', 'difficulty_level', 'is_public',
+            'created_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
+
+class CreateRideFromTemplateSerializer(serializers.Serializer):
+    """Şablondan yolculuk oluşturma serializer'ı"""
+    template_id = serializers.IntegerField()
+    title = serializers.CharField(max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True)
+    start_time = serializers.DateTimeField()
+    max_participants = serializers.IntegerField(required=False, min_value=1)
+    privacy_level = serializers.ChoiceField(choices=Ride.PRIVACY_LEVELS, default='public')
+    group_id = serializers.IntegerField(required=False, allow_null=True)

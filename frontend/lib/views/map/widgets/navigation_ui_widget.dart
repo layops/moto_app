@@ -29,10 +29,9 @@ class NavigationUIWidget extends StatelessWidget {
       left: 16,
       right: 16,
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
           boxShadow: [
             BoxShadow(
               color: colorScheme.onSurface.withOpacity(0.2),
@@ -41,64 +40,166 @@ class NavigationUIWidget extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      Icons.navigation,
+                      color: colorScheme.onPrimary,
+                      size: 24,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.navigation,
-                    color: colorScheme.primary,
-                    size: 24,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Navigasyon Aktif',
+                          style: textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Rotayı takip edin',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  
+                  // Stop Button
+                  IconButton(
+                    onPressed: onStopNavigation,
+                    icon: Icon(
+                      Icons.stop,
+                      color: colorScheme.error,
+                    ),
+                    tooltip: 'Navigasyonu Durdur',
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Progress Bar
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Navigasyon Aktif',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
+                        'İlerleme',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       Text(
-                        'Kalan: ${(remainingDistance / 1000).toStringAsFixed(1)} km, ${(remainingTime / 60).round()} dk',
-                        style: textTheme.bodySmall,
+                        '${(progress * 100).toStringAsFixed(0)}%',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  onPressed: onStopNavigation,
-                  icon: Icon(Icons.stop, color: colorScheme.error),
-                  tooltip: 'Navigasyonu durdur',
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: colorScheme.onSurface.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'İlerleme: ${(progress * 100).toStringAsFixed(0)}%',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.7),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: colorScheme.surfaceVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                    minHeight: 6,
+                  ),
+                ],
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 16),
+              
+              // Remaining Info
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoCard(
+                      context,
+                      Icons.straighten,
+                      'Kalan Mesafe',
+                      '${(remainingDistance / 1000).toStringAsFixed(1)} km',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildInfoCard(
+                      context,
+                      Icons.access_time,
+                      'Tahmini Süre',
+                      '${(remainingTime / 60).round()} dk',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String value,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusMedium),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: colorScheme.primary,
+            size: 20,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
