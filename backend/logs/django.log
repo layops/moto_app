@@ -1,0 +1,2 @@
+WARNING 2025-09-12 17:35:16,310 supabase_service 17844 9288 Supabase modülü bulunamadý, istemci oluþturulamadý
+INFO 2025-09-12 17:35:16,310 supabase_service 17844 9288 Kovalar bulundu: profile_pictures, cover_pictures, events_pictures, groups_profile_pictures, group_posts_images
