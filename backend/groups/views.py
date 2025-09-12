@@ -99,6 +99,8 @@ class GroupCreateView(generics.ListCreateAPIView):
                 group.save()
                 serializer = self.get_serializer(group)
             except Exception as e:
+                # Profil resmi yüklenemezse grup oluşturulmaya devam eder
+                serializer = self.get_serializer(group)
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
