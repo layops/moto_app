@@ -9,8 +9,11 @@ from django.views import View
 from django.db import connection
 from django.core.cache import cache
 from django.conf import settings
+from django.contrib.auth import get_user_model
 import time
 import logging
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +184,129 @@ def liveness_check(request):
         logger.error(f"Liveness check failed: {str(e)}")
         return JsonResponse({
             'status': 'dead',
+            'error': str(e),
+            'timestamp': time.time()
+        }, status=500)
+
+@never_cache
+@require_http_methods(["GET"])
+def debug_database(request):
+    """Debug database status and data"""
+    try:
+        debug_info = {
+            'timestamp': time.time(),
+            'database': {
+                'vendor': connection.vendor,
+                'name': connection.settings_dict.get('NAME', 'Unknown'),
+                'tables': [],
+                'user_count': 0,
+                'migration_status': 'unknown'
+            }
+        }
+        
+        # Check database file (for SQLite)
+        if connection.vendor == 'sqlite':
+            import os
+            db_path = connection.settings_dict.get('NAME')
+            debug_info['database']['file_exists'] = os.path.exists(db_path)
+            if os.path.exists(db_path):
+                debug_info['database']['file_size'] = os.path.getsize(db_path)
+        
+        # List tables
+        with connection.cursor() as cursor:
+            if connection.vendor == 'sqlite':
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            else:
+                cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+            
+            tables = cursor.fetchall()
+            for table in tables:
+                table_name = table[0]
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+                    count = cursor.fetchone()[0]
+                    debug_info['database']['tables'].append({
+                        'name': table_name,
+                        'record_count': count
+                    })
+                except Exception as e:
+                    debug_info['database']['tables'].append({
+                        'name': table_name,
+                        'error': str(e)
+                    })
+        
+        # Check user count
+        try:
+            debug_info['database']['user_count'] = User.objects.count()
+        except Exception as e:
+            debug_info['database']['user_count_error'] = str(e)
+        
+        # Check migration status
+        try:
+            with connection.cursor() as cursor:
+                if connection.vendor == 'sqlite':
+                    cursor.execute("SELECT COUNT(*) FROM django_migrations;")
+                else:
+                    cursor.execute("SELECT COUNT(*) FROM django_migrations;")
+                migration_count = cursor.fetchone()[0]
+                debug_info['database']['migration_status'] = f"{migration_count} migrations applied"
+        except Exception as e:
+            debug_info['database']['migration_status'] = f"Error: {str(e)}"
+        
+        return JsonResponse(debug_info)
+        
+    except Exception as e:
+        logger.error(f"Database debug failed: {str(e)}")
+        return JsonResponse({
+            'error': str(e),
+            'timestamp': time.time()
+        }, status=500)
+
+@never_cache
+@require_http_methods(["POST"])
+def create_test_data(request):
+    """Create test data for debugging"""
+    try:
+        created_users = []
+        
+        # Create superuser if not exists
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@test.com',
+                password='admin123'
+            )
+            created_users.append('admin (superuser)')
+        
+        # Create test users
+        test_users = [
+            {'username': 'testuser1', 'email': 'test1@test.com', 'first_name': 'Test', 'last_name': 'User1'},
+            {'username': 'testuser2', 'email': 'test2@test.com', 'first_name': 'Test', 'last_name': 'User2'},
+        ]
+        
+        for user_data in test_users:
+            if not User.objects.filter(username=user_data['username']).exists():
+                User.objects.create_user(
+                    username=user_data['username'],
+                    email=user_data['email'],
+                    first_name=user_data['first_name'],
+                    last_name=user_data['last_name'],
+                    password='test123'
+                )
+                created_users.append(user_data['username'])
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Created {len(created_users)} users',
+            'created_users': created_users,
+            'total_users': User.objects.count(),
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"Test data creation failed: {str(e)}")
+        return JsonResponse({
+            'success': False,
             'error': str(e),
             'timestamp': time.time()
         }, status=500)

@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
 )
 from .views import api_root
-from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check
+from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data
 
 # Swagger / Redoc için
 schema_view = get_schema_view(
@@ -76,6 +76,10 @@ urlpatterns = [
     path('metrics/', metrics, name='metrics'),
     path('ready/', readiness_check, name='readiness-check'),
     path('live/', liveness_check, name='liveness-check'),
+    
+    # Debug endpoints
+    path('debug/database/', debug_database, name='debug-database'),
+    path('debug/create-test-data/', create_test_data, name='create-test-data'),
 ]
 
 # Geliştirme ortamında medya dosyalarını sunmak için
