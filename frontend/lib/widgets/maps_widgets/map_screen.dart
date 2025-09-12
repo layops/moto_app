@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'animated_motorcycle_marker.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -69,17 +70,23 @@ class _MapScreenState extends State<MapScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://tiles.stadiamaps.com/styles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.spiride.app',
+                  maxZoom: 20,
                 ),
                 if (_currentPosition != null)
                   MarkerLayer(
                     markers: [
                       Marker(
                         point: _currentPosition!,
-                        child: const Icon(Icons.motorcycle,
-                            color: Color(0xFFD10000), size: 30),
+                        width: 50,
+                        height: 50,
+                        child: AnimatedMotorcycleMarker(
+                          isPulsing: true,
+                          color: const Color(0xFFD10000),
+                          icon: Icons.motorcycle,
+                          size: 50,
+                        ),
                       ),
                     ],
                   ),

@@ -43,8 +43,18 @@ class LocationService {
     return Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: LocationAccuracy.medium, // Reduced accuracy for better performance
-        distanceFilter: 50, // Increased to 50 metres to reduce updates
-        timeLimit: const Duration(seconds: 15), // Add timeout
+        distanceFilter: 25, // Reduced to 25 metres for better tracking
+        timeLimit: const Duration(seconds: 10), // Reduced timeout
+        androidSettings: const AndroidSettings(
+          forceLocationManager: false, // Use FusedLocationProvider for better performance
+          backgroundLocationNotificationTitle: 'MotoApp Konum Takibi',
+          backgroundLocationNotificationBody: 'Konumunuz arka planda takip ediliyor',
+          backgroundLocationNotificationIcon: 'mipmap/ic_launcher',
+        ),
+        iosSettings: const IOSSettings(
+          pauseLocationUpdatesAutomatically: true,
+          showBackgroundLocationIndicator: true,
+        ),
       ),
     );
   }

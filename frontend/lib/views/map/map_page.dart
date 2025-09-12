@@ -10,6 +10,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:motoapp_frontend/widgets/maps_widgets/animated_motorcycle_marker.dart';
+import 'package:motoapp_frontend/widgets/maps_widgets/animated_route_polyline.dart';
 
 part 'map_controls.dart';
 part 'map_search.dart';
@@ -223,7 +225,7 @@ class _MapPageState extends State<MapPage> {
               children: [
                 TileLayer(
                   urlTemplate: _isSatelliteView ? satelliteUrl : defaultMapUrl,
-                  userAgentPackageName: 'com.example.frontend',
+                  userAgentPackageName: 'com.spiride.app',
                   maxZoom: 20,
                 ),
                 if (_currentPosition != null)
@@ -231,10 +233,14 @@ class _MapPageState extends State<MapPage> {
                     markers: [
                       Marker(
                         point: _currentPosition!,
-                        width: 40,
-                        height: 40,
-                        child: Icon(Icons.my_location,
-                            color: colorScheme.primary, size: 32),
+                        width: 50,
+                        height: 50,
+                        child: AnimatedMotorcycleMarker(
+                          isPulsing: true,
+                          color: const Color(0xFFD10000),
+                          icon: Icons.motorcycle,
+                          size: 50,
+                        ),
                       ),
                     ],
                   ),
@@ -251,14 +257,12 @@ class _MapPageState extends State<MapPage> {
                     ],
                   ),
                 if (_routePoints.isNotEmpty)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routePoints,
-                        color: colorScheme.primary,
-                        strokeWidth: 4,
-                      ),
-                    ],
+                  AnimatedRoutePolyline(
+                    points: _routePoints,
+                    color: const Color(0xFFD10000),
+                    strokeWidth: 5.0,
+                    animationDuration: const Duration(milliseconds: 2000),
+                    isAnimating: true,
                   ),
                 if (_isRouteMode && _startPoint != null)
                   MarkerLayer(
@@ -267,20 +271,11 @@ class _MapPageState extends State<MapPage> {
                         point: _startPoint!,
                         width: 40,
                         height: 40,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colorScheme.onPrimary,
-                              width: 2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: colorScheme.onPrimary,
-                            size: 20,
-                          ),
+                        child: AnimatedMotorcycleMarker(
+                          isSelected: true,
+                          color: const Color(0xFF4CAF50),
+                          icon: Icons.play_arrow,
+                          size: 40,
                         ),
                       ),
                     ],
@@ -292,20 +287,11 @@ class _MapPageState extends State<MapPage> {
                         point: _endPoint!,
                         width: 40,
                         height: 40,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme.error,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colorScheme.onError,
-                              width: 2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.flag,
-                            color: colorScheme.onError,
-                            size: 20,
-                          ),
+                        child: AnimatedMotorcycleMarker(
+                          isSelected: true,
+                          color: const Color(0xFFD10000),
+                          icon: Icons.flag,
+                          size: 40,
                         ),
                       ),
                     ],

@@ -28,13 +28,19 @@ class SearchService {
           'limit': '5',
           'addressdetails': '1',
           'countrycodes': 'tr',
+          'extratags': '0', // Disable extra tags for performance
+          'namedetails': '0', // Disable name details for performance
         },
       );
 
       final response = await http.get(
         uri,
-        headers: {'User-Agent': 'MotoApp/1.0 (location search)'},
-      ).timeout(const Duration(seconds: 10));
+        headers: {
+          'User-Agent': 'MotoApp/1.0 (location search)',
+          'Accept': 'application/json',
+          'Connection': 'keep-alive',
+        },
+      ).timeout(const Duration(seconds: 8)); // Reduced timeout
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);

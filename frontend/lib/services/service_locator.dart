@@ -168,6 +168,7 @@ class ServiceLocator {
   static GamificationService get gamification => _instance._gamificationService;
   static ChatService get chat => _instance._chatService;
   static LocalStorage get storage => _instance._localStorage;
+  static LocalStorage get localStorage => _instance._localStorage;
 
   // Supabase helper
   static supabase_client.SupabaseClient get supabaseClient =>
