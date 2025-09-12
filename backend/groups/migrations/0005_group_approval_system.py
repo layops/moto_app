@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('groups', '0004_groupjoinrequest'),
+        ('groups', '0003_add_groupjoinrequest'),
     ]
 
     operations = [
