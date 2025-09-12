@@ -10,7 +10,7 @@ class ChatService {
   final Map<String, List<PrivateMessage>> _messagesCache = {};
   final Map<String, List<Conversation>> _conversationsCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
-  static const Duration _cacheDuration = Duration(minutes: 2);
+  static const Duration _cacheDuration = Duration(seconds: 30); // Cache süresini kısalt
 
   Future<String?> _getToken() async {
     return await ServiceLocator.token.getToken();
@@ -62,10 +62,10 @@ class ChatService {
   Future<List<Conversation>> getConversations() async {
     const cacheKey = 'conversations';
     
-    // Cache kontrolü
-    if (_isCacheValid(cacheKey) && _conversationsCache.containsKey(cacheKey)) {
-      return _conversationsCache[cacheKey]!;
-    }
+    // Cache kontrolü - mesaj gönderme sonrası güncel veri için cache'i bypass et
+    // if (_isCacheValid(cacheKey) && _conversationsCache.containsKey(cacheKey)) {
+    //   return _conversationsCache[cacheKey]!;
+    // }
     
     final token = await _getToken();
     if (token == null) {
@@ -184,11 +184,14 @@ class ChatService {
         final data = jsonDecode(response.body);
         final newMessage = PrivateMessage.fromJson(data);
         
-        // Cache'i temizle
+        // Cache'i temizle - mesaj gönderme sonrası tüm cache'leri temizle
         _clearMessageCache();
         
         // Conversations cache'ini de temizle ki yeni konuşma listeye eklensin
         _conversationsCache.clear();
+        _cacheTimestamps.clear();
+        
+        print('✅ ChatService - Cache temizlendi, yeni mesaj gönderildi');
         
         return newMessage;
       } else {

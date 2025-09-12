@@ -262,9 +262,6 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
     final hasImage = _selectedImage != null;
     final canPost = hasText || hasImage;
     
-    // Debug için
-    print('Post validation - Text: $hasText, Image: $hasImage, CanPost: $canPost');
-    print('Text content: "${_contentController.text.trim()}"');
     
     return canPost;
   }

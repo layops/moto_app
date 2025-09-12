@@ -41,9 +41,7 @@ class _MessageSearchPageState extends State<MessageSearchPage> {
     });
 
     try {
-      print('🔍 MessageSearch - Searching messages with query: "$query"');
       final results = await _chatService.searchMessages(query.trim());
-      print('🔍 MessageSearch - Search results: ${results.length} messages found');
       
       if (mounted) {
         setState(() {
@@ -52,7 +50,6 @@ class _MessageSearchPageState extends State<MessageSearchPage> {
         });
       }
     } catch (e) {
-      print('❌ MessageSearch - Search error: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();

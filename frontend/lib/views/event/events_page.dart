@@ -79,7 +79,6 @@ class _EventsPageState extends State<EventsPage> {
             }
           } catch (e) {
             // Geçersiz tarih formatı olan etkinlikleri atla
-            print('Geçersiz tarih formatı: ${e.toString()}');
             return false;
           }
         }).toList();

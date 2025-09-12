@@ -8,6 +8,11 @@ import '../../config.dart';
 class EventService {
   final AuthService authService;
   final Dio _dio = Dio();
+  
+  // Cache için
+  final Map<String, dynamic> _eventCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   EventService({required this.authService});
 
@@ -150,6 +155,9 @@ class EventService {
         throw Exception(
             'Failed to create event: ${response.statusCode} - ${response.data}');
       }
+      
+      // Event oluşturma sonrası cache'i temizle
+      clearCache();
     } on DioException catch (e) {
       // Detaylı hata bilgisi
       final errorData = e.response?.data;
@@ -174,6 +182,9 @@ class EventService {
           },
         ),
       );
+      // Event katılım sonrası cache'i temizle
+      clearCache();
+      
       return response.data; // Doğrudan event verisini döndür
     } on DioException catch (e) {
       throw Exception('Failed to join event: ${e.message}');
@@ -204,9 +215,25 @@ class EventService {
           },
         ),
       );
+      // Event ayrılma sonrası cache'i temizle
+      clearCache();
+      
       return response.data; // Doğrudan event verisini döndür
     } on DioException catch (e) {
       throw Exception('Failed to leave event: ${e.message}');
     }
+  }
+
+  // Cache helper methods
+  bool _isCacheValid(String cacheKey) {
+    final timestamp = _cacheTimestamps[cacheKey];
+    if (timestamp == null) return false;
+    
+    return DateTime.now().difference(timestamp) < _cacheDuration;
+  }
+  
+  void clearCache() {
+    _eventCache.clear();
+    _cacheTimestamps.clear();
   }
 }

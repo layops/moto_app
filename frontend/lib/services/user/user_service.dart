@@ -205,4 +205,12 @@ class UserService {
     _userCache.clear();
     _cacheTimestamps.clear();
   }
+  
+  /// Belirli bir kullanıcının cache'ini temizle
+  void clearUserCache(String username) {
+    final cacheKey = 'profile_$username';
+    _userCache.remove(cacheKey);
+    _cacheTimestamps.remove(cacheKey);
+    print('✅ UserService - User cache temizlendi: $username');
+  }
 }

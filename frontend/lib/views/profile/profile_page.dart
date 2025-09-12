@@ -233,7 +233,10 @@ class _ProfilePageState extends State<ProfilePage> {
           type: PhotoType.profile, // <-- type eklendi
           networkImageUrl: _profileData?['profile_photo_url'] ?? _profileData?['profile_picture'],
           onImageSelected: (File image) => setState(() => _avatarFile = image),
-          onUploadSuccess: (Map<String, dynamic> updatedUser) {
+          onUploadSuccess: (Map<String, dynamic> updatedUser) async {
+            // Cache'leri temizle
+            await _clearProfileCache();
+            
             setState(() {
               _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'] ?? updatedUser['profile_picture'];
               _avatarFile = null;
@@ -311,10 +314,31 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (updatedData != null) {
+      // Cache'leri temizle ve profil verilerini yeniden yükle
+      await _clearProfileCache();
       _loadProfile();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profil başarıyla güncellendi')),
       );
+    }
+  }
+
+  /// Profil cache'ini temizle
+  Future<void> _clearProfileCache() async {
+    try {
+      if (_currentUsername != null) {
+        // UserService cache'ini temizle
+        ServiceLocator.user.clearUserCache(_currentUsername!);
+        
+        // API Client cache'ini temizle
+        ServiceLocator.api.clearCacheForPath('users/$_currentUsername/profile/');
+        
+        // LocalStorage'daki profil verilerini temizle
+        await ServiceLocator.storage.clearProfileData();
+        
+      }
+    } catch (e) {
+      // Hata durumunda sessizce devam et
     }
   }
 
@@ -372,8 +396,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
-    // Debug mesajı
-    print('ProfilePage build() çağrıldı!');
 
     if (_isLoading) return _buildLoading();
     if (_errorMessage != null) return Scaffold(body: _buildError());

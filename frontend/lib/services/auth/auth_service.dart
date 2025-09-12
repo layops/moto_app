@@ -283,6 +283,9 @@ class AuthService {
     await _storage.setRememberMe(false);
     await _storage.clearProfileData();
 
+    // Tüm servislerin cache'lerini temizle
+    await ServiceLocator.reset();
+
     // Auth state sıfırla
     _authStateController.add(false);
   }

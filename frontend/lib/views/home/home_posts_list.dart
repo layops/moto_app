@@ -21,22 +21,17 @@ class HomePostsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('HomePostsList - build çağrıldı, loading: $loading, error: $error, posts count: ${posts.length}');
     
     if (loading) {
-      print('HomePostsList - Loading state gösteriliyor');
       return _buildLoading(context);
     }
     if (error != null) {
-      print('HomePostsList - Error state gösteriliyor: $error');
       return _buildError(context);
     }
     if (posts.isEmpty) {
-      print('HomePostsList - Empty state gösteriliyor');
       return const HomeEmptyState();
     }
 
-    print('HomePostsList - Posts listesi gösteriliyor, ${posts.length} post');
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
@@ -46,7 +41,6 @@ class HomePostsList extends StatelessWidget {
           final post = posts[index] as Map<String, dynamic>;
           final content = post['content']?.toString() ?? '';
           final contentPreview = content.length > 20 ? '${content.substring(0, 20)}...' : content;
-          print('HomePostsList - Post $index render ediliyor: ID=${post['id']}, Content="$contentPreview"');
 
           // Author zaten backend'den nested serializer ile geliyor
           final authorData = post['author'] is Map<String, dynamic>
@@ -382,51 +376,37 @@ class HomePostsList extends StatelessWidget {
 
   Future<bool> _isCurrentUserPost(Map<String, dynamic> post) async {
     try {
-      print('🔍 HomePostsList - _isCurrentUserPost called for post: ${post['id']}');
-      print('🔍 HomePostsList - Full post data: $post');
       
       final authorData = post['author'] is Map<String, dynamic>
           ? post['author'] as Map<String, dynamic>
           : {};
       
-      print('🔍 HomePostsList - Author data: $authorData');
       
       final postAuthorId = authorData['id'];
       final currentUser = await ServiceLocator.auth.currentUser;
       final currentUserId = currentUser?['id'];
       
-      print('🔍 HomePostsList - Post author ID: $postAuthorId (type: ${postAuthorId.runtimeType})');
-      print('🔍 HomePostsList - Current user ID: $currentUserId (type: ${currentUserId.runtimeType})');
-      print('🔍 HomePostsList - Current user data: $currentUser');
       
       // String/int karşılaştırması için dönüşüm yap
       final postAuthorIdStr = postAuthorId?.toString();
       final currentUserIdStr = currentUserId?.toString();
       
-      print('🔍 HomePostsList - Post author ID (string): $postAuthorIdStr');
-      print('🔍 HomePostsList - Current user ID (string): $currentUserIdStr');
       
       final isCurrentUser = postAuthorIdStr == currentUserIdStr;
-      print('🔍 HomePostsList - Is current user post: $isCurrentUser');
       
       return isCurrentUser;
     } catch (e) {
-      print('❌ HomePostsList - Error checking if current user post: $e');
       return false;
     }
   }
 
   Future<void> _handleDelete(int postId) async {
     try {
-      print('HomePostsList - Deleting post: $postId');
       await ServiceLocator.post.deletePost(postId);
-      print('HomePostsList - Post deleted successfully');
       
       // Anasayfayı yenile
       await onRefresh();
-      print('HomePostsList - Home page refreshed after delete');
     } catch (e) {
-      print('HomePostsList - Error deleting post: $e');
       // Hata mesajını göster
       final context = ServiceLocator.navigatorKey.currentContext;
       if (context != null && context.mounted) {

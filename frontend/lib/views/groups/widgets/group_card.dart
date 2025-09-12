@@ -101,10 +101,6 @@ class _GroupCardState extends State<GroupCard> {
                        widget.group['members']?.length?.toString() ?? '0';
     final createdDate = widget.group['created_at']?.toString() ?? '';
     
-    // Debug için grup verilerini yazdır
-    print('Group Card - Group ID: $groupId');
-    print('Group Card - Profile Picture URL: $profilePictureUrl');
-    print('Group Card - Group Data: ${widget.group}');
 
     return InkWell(
       onTap: () {
@@ -165,7 +161,6 @@ class _GroupCardState extends State<GroupCard> {
                                 );
                               },
                               errorBuilder: (context, error, stackTrace) {
-                                print('Group Card Image load error: $error');
                                 return Icon(
                                   Icons.group,
                                   size: 30,

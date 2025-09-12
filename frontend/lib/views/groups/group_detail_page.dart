@@ -65,33 +65,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         _isModerator = false; // Şimdilik moderator özelliği yok
       });
     } catch (e) {
-      print('Kullanıcı durumu kontrol edilemedi: $e');
+      // Hata durumunda sessizce devam et
     }
   }
 
   Future<void> _loadPosts() async {
     try {
       final posts = await _groupService.getGroupPosts(widget.groupId);
-      print('Yüklenen postlar: ${posts.length}');
-      for (int i = 0; i < posts.length; i++) {
-        final post = posts[i];
-        print('Post $i:');
-        print('  - ID: ${post['id']}');
-        print('  - Content: ${post['content']}');
-        print('  - Author: ${post['author']}');
-        if (post['author'] is Map) {
-          final author = post['author'] as Map<String, dynamic>;
-          print('  - Author username: ${author['username']}');
-          print('  - Author ID: ${author['id']}');
-        }
-        print('  - Image URL: ${post['image_url']}');
-        print('  ---');
-      }
       setState(() {
         _posts = posts;
       });
     } catch (e) {
-      print('Postlar yüklenemedi: $e');
+      // Hata durumunda sessizce devam et
     }
   }
 
@@ -462,9 +447,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     final memberCount = widget.groupData['member_count'] ?? 0;
     final profilePictureUrl = widget.groupData['profile_picture_url'];
     
-    // Debug için profil fotoğrafı URL'sini yazdır
-    print('Group Detail - Profile Picture URL: $profilePictureUrl');
-    print('Group Detail - Group Data: ${widget.groupData}');
     
     return Container(
         width: double.infinity,
@@ -531,7 +513,6 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                                       );
                                     },
                                     errorBuilder: (context, error, stackTrace) {
-                                      print('Image load error: $error');
                                       return _buildDefaultLogo();
                                     },
                                 ),
@@ -945,9 +926,6 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
     final hasImage = _selectedImage != null;
     final canPost = hasText; // Content zorunlu, resim opsiyonel
     
-    // Debug için
-    print('Group Detail Post validation - Text: $hasText, Image: $hasImage, CanPost: $canPost');
-    print('Text content: "${_contentController.text.trim()}"');
     
     return canPost;
   }
@@ -962,8 +940,6 @@ class _CreatePostDialogState extends State<_CreatePostDialog> {
     if (image != null) {
       final file = File(image.path);
       final fileSize = await file.length();
-      print('Seçilen dosya boyutu: $fileSize bytes');
-      print('Dosya yolu: ${image.path}');
       
       if (fileSize > 0) {
         setState(() {

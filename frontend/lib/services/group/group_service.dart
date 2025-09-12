@@ -6,6 +6,11 @@ import '../../config.dart';
 class GroupService {
   final Dio _dio;
   final AuthService _authService;
+  
+  // Cache için
+  final Map<String, dynamic> _groupCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   GroupService({Dio? dio, required AuthService authService})
       : _dio = dio ??
@@ -69,6 +74,9 @@ class GroupService {
     if (response.statusCode != 201) {
       throw Exception('Grup oluşturulamadı: ${response.statusCode}');
     }
+    
+    // Grup oluşturma sonrası cache'i temizle
+    clearCache();
   }
 
   /// Grup profil fotoğrafını güncelle
@@ -342,6 +350,9 @@ class GroupService {
       throw Exception('Post oluşturulamadı: ${response.statusCode}');
     }
     
+    // Grup postu oluşturma sonrası cache'i temizle
+    clearCache();
+    
     return response.data as Map<String, dynamic>;
   }
 
@@ -383,6 +394,9 @@ class GroupService {
       throw Exception('Post güncellenemedi: ${response.statusCode}');
     }
     
+    // Grup postu güncelleme sonrası cache'i temizle
+    clearCache();
+    
     return response.data as Map<String, dynamic>;
   }
 
@@ -398,6 +412,9 @@ class GroupService {
     if (response.statusCode != 204) {
       throw Exception('Post silinemedi: ${response.statusCode}');
     }
+    
+    // Grup postu silme sonrası cache'i temizle
+    clearCache();
   }
 
   // --- GRUP ÜYELERİ ---
@@ -482,4 +499,16 @@ class GroupService {
     }
   }
 
+  // Cache helper methods
+  bool _isCacheValid(String cacheKey) {
+    final timestamp = _cacheTimestamps[cacheKey];
+    if (timestamp == null) return false;
+    
+    return DateTime.now().difference(timestamp) < _cacheDuration;
+  }
+  
+  void clearCache() {
+    _groupCache.clear();
+    _cacheTimestamps.clear();
+  }
 }

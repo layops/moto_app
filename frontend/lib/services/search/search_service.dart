@@ -228,4 +228,10 @@ class SearchService {
       throw Exception('Grup listesi hatası: $e');
     }
   }
+
+  /// Cache'i temizler
+  void clearCache() {
+    // SearchService için özel cache yok, sadece placeholder
+    // Gelecekte arama cache'i eklenebilir
+  }
 }

@@ -28,15 +28,15 @@ class _MessagesPageState extends State<MessagesPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Sayfa her açıldığında conversations listesini yenile
-    _loadConversations();
+    // Sadece ilk kez açıldığında conversations listesini yenile
+    // Sürekli yenileme yapmayalım
   }
 
   @override
   void didUpdateWidget(MessagesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Widget güncellendiğinde conversations listesini yenile
-    _loadConversations();
+    // Sadece gerekli olduğunda yenile
   }
 
   Future<void> _loadConversations() async {
@@ -47,12 +47,7 @@ class _MessagesPageState extends State<MessagesPage> {
         _errorMessage = null;
       });
 
-      print('📱 MessagesPage - Loading conversations...');
       final conversations = await _chatService.getConversations();
-      print('📱 MessagesPage - Loaded ${conversations.length} conversations');
-      for (var conv in conversations) {
-        print('   - ${conv.otherUser.displayName} (${conv.otherUser.username})');
-      }
       
       if (!mounted) return;
       setState(() {
@@ -63,7 +58,6 @@ class _MessagesPageState extends State<MessagesPage> {
       // Bottom navigation'ı güncelle
       widget.onUnreadCountChanged?.call();
     } catch (e) {
-      print('❌ MessagesPage - Error loading conversations: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
@@ -331,18 +325,24 @@ class _MessagesPageState extends State<MessagesPage> {
           otherUser: conversation.otherUser,
           onMessageSent: () {
             // Mesaj gönderildiğinde conversations listesini yenile
-            _loadConversations();
+            if (mounted) {
+              _loadConversations();
+            }
           },
           onMessagesRead: () {
             // Mesajlar okunduğunda conversations listesini yenile
-            _loadConversations();
+            if (mounted) {
+              _loadConversations();
+            }
           },
         ),
       ),
     ).then((_) {
       // ChatDetailPage'den geri döndüğünde conversations listesini yenile
       // Bu sayede okunmamış mesaj sayıları güncellenir
-      _loadConversations();
+      if (mounted) {
+        _loadConversations();
+      }
     });
   }
 

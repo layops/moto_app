@@ -33,13 +33,20 @@ class ProfileService {
         ),
       });
 
-      return await _apiClient.post(
+      final response = await _apiClient.post(
         'users/$username/upload-photo/',
         formData,
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
+
+      // Profil fotoğrafı yükleme sonrası cache'leri temizle
+      if (response.statusCode == 200) {
+        await _clearProfileCache(username);
+      }
+
+      return response;
     } catch (e) {
       print('Profil fotoğrafı yükleme hatası: $e');
       rethrow;
@@ -68,13 +75,20 @@ class ProfileService {
         ),
       });
 
-      return await _apiClient.post(
+      final response = await _apiClient.post(
         'users/$username/upload-cover/',
         formData,
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
+
+      // Kapak fotoğrafı yükleme sonrası cache'leri temizle
+      if (response.statusCode == 200) {
+        await _clearProfileCache(username);
+      }
+
+      return response;
     } catch (e) {
       print('Kapak fotoğrafı yükleme hatası: $e');
       rethrow;
@@ -128,16 +142,41 @@ class ProfileService {
         throw Exception('Token bulunamadı. Lütfen tekrar giriş yapın.');
       }
 
-      return await _apiClient.put(
+      final response = await _apiClient.put(
         'users/$username/profile/',
         profileData,
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
+
+      // Profil güncelleme sonrası cache'leri temizle
+      if (response.statusCode == 200) {
+        await _clearProfileCache(username);
+      }
+
+      return response;
     } catch (e) {
       debugPrint('Profil güncelleme hatası: $e');
       rethrow;
+    }
+  }
+
+  /// Profil cache'ini temizle
+  Future<void> _clearProfileCache(String username) async {
+    try {
+      // UserService cache'ini temizle
+      ServiceLocator.user.clearUserCache(username);
+      
+      // API Client cache'ini temizle
+      ServiceLocator.api.clearCacheForPath('users/$username/profile/');
+      
+      // LocalStorage'daki profil verilerini temizle
+      await ServiceLocator.storage.clearProfileData();
+      
+      print('✅ ProfileService - Cache temizlendi: $username');
+    } catch (e) {
+      print('❌ ProfileService - Cache temizleme hatası: $e');
     }
   }
 }

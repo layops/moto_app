@@ -94,8 +94,6 @@ class _GroupMessagesPageState extends State<GroupMessagesPage> {
     if (image != null) {
       final file = File(image.path);
       final fileSize = await file.length();
-      print('Seçilen dosya boyutu: $fileSize bytes');
-      print('Dosya yolu: ${image.path}');
       
       if (fileSize > 0) {
         setState(() {
