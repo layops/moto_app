@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
 )
 from .views import api_root
+from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check
 
 # Swagger / Redoc için
 schema_view = get_schema_view(
@@ -68,6 +69,13 @@ urlpatterns = [
 
     # DRF login/logout
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    
+    # Health check endpoints
+    path('health/', health_check, name='health-check'),
+    path('health/detailed/', detailed_health_check, name='detailed-health-check'),
+    path('metrics/', metrics, name='metrics'),
+    path('ready/', readiness_check, name='readiness-check'),
+    path('live/', liveness_check, name='liveness-check'),
 ]
 
 # Geliştirme ortamında medya dosyalarını sunmak için

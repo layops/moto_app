@@ -22,6 +22,14 @@ class PostSerializer(serializers.ModelSerializer):
     comments_count = serializers.ReadOnlyField()
     is_liked = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Optimize serializer based on context
+        if self.context.get('optimize', False):
+            # Remove expensive fields for list views
+            if 'comments' in self.fields:
+                del self.fields['comments']
 
     class Meta:
         model = Post
