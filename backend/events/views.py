@@ -16,6 +16,8 @@ try:
     print("SupabaseStorage başarıyla yüklendi")
 except Exception as e:
     print(f"SupabaseStorage yükleme hatası: {str(e)}")
+    import traceback
+    traceback.print_exc()
     supabase = None
 
 from users.serializers import UserSerializer  # Yeni import
@@ -56,6 +58,7 @@ class EventViewSet(viewsets.ModelViewSet):
             data = request.data.copy()
             cover_file = request.FILES.get('cover_image')
             
+            # Cover image'ı data'dan çıkar çünkü Supabase'e yükleyeceğiz
             if cover_file and 'cover_image' in data:
                 del data['cover_image']
             
@@ -76,20 +79,29 @@ class EventViewSet(viewsets.ModelViewSet):
                 # Bu hata etkinlik oluşturmayı engellemez
                 pass
             
-            # Kapak resmi varsa yükle
+            # Kapak resmi varsa Supabase'e yükle
             if cover_file and supabase is not None:
                 try:
+                    print(f"Resim yükleniyor: {cover_file.name}, boyut: {cover_file.size}")
                     cover_url = supabase.upload_event_picture(cover_file, str(event.id))
+                    print(f"Resim URL'i alındı: {cover_url}")
                     event.cover_image = cover_url
                     event.save()
+                    print("Event cover_image güncellendi")
                     serializer = self.get_serializer(event)
                 except Exception as e:
                     print("Resim yükleme hatası:", str(e))
+                    import traceback
+                    traceback.print_exc()
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
                     pass
             elif cover_file and supabase is None:
-                # Supabase mevcut değilse resim yüklenmez
+                print("Supabase mevcut değil, resim yüklenemiyor")
                 pass
+            elif cover_file:
+                print("Cover file var ama supabase None")
+            else:
+                print("Cover file yok")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
