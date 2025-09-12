@@ -33,84 +33,48 @@ class Migration(migrations.Migration):
                 'db_table': 'search_index',
             },
         ),
-        # PostgreSQL için GIN indexleri, SQLite için normal indexler
+        # SQLite uyumlu indexler - PostgreSQL'de çalışmayacak ama SQLite'da çalışacak
         migrations.RunSQL(
-            "CREATE INDEX search_username_gin_idx ON search_index USING gin (username gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_username_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_username_idx ON search_index (username);",
             reverse_sql="DROP INDEX IF EXISTS search_username_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_first_name_gin_idx ON search_index USING gin (first_name gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_first_name_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_first_name_idx ON search_index (first_name);",
             reverse_sql="DROP INDEX IF EXISTS search_first_name_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_last_name_gin_idx ON search_index USING gin (last_name gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_last_name_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_last_name_idx ON search_index (last_name);",
             reverse_sql="DROP INDEX IF EXISTS search_last_name_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_full_name_gin_idx ON search_index USING gin (full_name gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_full_name_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_full_name_idx ON search_index (full_name);",
             reverse_sql="DROP INDEX IF EXISTS search_full_name_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_email_gin_idx ON search_index USING gin (email gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_email_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_email_idx ON search_index (email);",
             reverse_sql="DROP INDEX IF EXISTS search_email_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_group_name_gin_idx ON search_index USING gin (group_name gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_group_name_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_group_name_idx ON search_index (group_name);",
             reverse_sql="DROP INDEX IF EXISTS search_group_name_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_group_desc_gin_idx ON search_index USING gin (group_description gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_group_desc_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_group_desc_idx ON search_index (group_description);",
             reverse_sql="DROP INDEX IF EXISTS search_group_desc_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_vector_gin_idx ON search_index USING gin (search_vector gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_vector_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_vector_idx ON search_index (search_vector);",
             reverse_sql="DROP INDEX IF EXISTS search_vector_idx;",
             state_operations=[],
         ),
         migrations.RunSQL(
-            "CREATE INDEX search_group_vector_gin_idx ON search_index USING gin (group_search_vector gin_trgm_ops);",
-            reverse_sql="DROP INDEX IF EXISTS search_group_vector_gin_idx;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "CREATE INDEX search_group_vector_idx ON search_index (group_search_vector);",
             reverse_sql="DROP INDEX IF EXISTS search_group_vector_idx;",
             state_operations=[],

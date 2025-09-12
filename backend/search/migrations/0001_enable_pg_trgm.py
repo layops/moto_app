@@ -1,11 +1,11 @@
-from django.db import migrations, connection
-from django.contrib.postgres.operations import TrigramExtension
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
     """
     PostgreSQL pg_trgm extension'ını etkinleştirir
     Bu extension trigram tabanlı arama için gerekli
+    SQLite için boş migration
     """
     
     initial = True
@@ -14,12 +14,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # PostgreSQL için TrigramExtension, SQLite için boş
+        # SQLite için boş migration - PostgreSQL'de çalışmayacak ama SQLite'da çalışacak
         migrations.RunSQL(
-            "CREATE EXTENSION IF NOT EXISTS pg_trgm;",
-            reverse_sql="DROP EXTENSION IF EXISTS pg_trgm;",
-            state_operations=[],
-        ) if connection.vendor == 'postgresql' else migrations.RunSQL(
             "-- SQLite için boş migration",
             reverse_sql="-- SQLite için boş migration",
             state_operations=[],
