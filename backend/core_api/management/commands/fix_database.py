@@ -44,20 +44,19 @@ class Command(BaseCommand):
         
         # Show environment variables
         self.stdout.write("\n📋 Environment Variables:")
-        self.stdout.write(f"USE_SQLITE_FALLBACK: {os.environ.get('USE_SQLITE_FALLBACK', 'Not set')}")
         self.stdout.write(f"DATABASE_URL: {'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET'}")
         self.stdout.write(f"DEBUG: {settings.DEBUG}")
         
         # Show recommendations
         self.stdout.write("\n💡 Recommendations:")
-        if connection.vendor == 'sqlite':
-            self.stdout.write("• Currently using SQLite")
-            self.stdout.write("• To switch to PostgreSQL, set USE_SQLITE_FALLBACK=false")
-            self.stdout.write("• Make sure DATABASE_URL is set correctly")
-        else:
+        if connection.vendor == 'postgresql':
             self.stdout.write("• Currently using PostgreSQL")
-            self.stdout.write("• If having connection issues, set USE_SQLITE_FALLBACK=true")
             self.stdout.write("• Check DATABASE_URL format and credentials")
+            self.stdout.write("• Ensure Supabase connection is working")
+        else:
+            self.stdout.write("• Currently using SQLite (unexpected)")
+            self.stdout.write("• Check DATABASE_URL environment variable")
+            self.stdout.write("• Ensure Supabase credentials are correct")
         
         # Check database file (for SQLite)
         if connection.vendor == 'sqlite':

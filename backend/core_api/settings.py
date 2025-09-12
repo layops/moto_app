@@ -81,73 +81,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-# Database fallback configuration
-USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'false').lower() == 'true'
-
-if USE_SQLITE_FALLBACK:
-    print("🔄 Using SQLite fallback due to Supabase connection issues")
+# PostgreSQL Database Configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL and dj_database_url:
+    # Supabase PostgreSQL için optimize edilmiş ayarlar
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                'timeout': 20,
-            }
-        }
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,  # Supabase SSL gerektirir
+        )
     }
+    print("✅ PostgreSQL database configured")
 else:
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if DATABASE_URL and dj_database_url:
-        try:
-            # Supabase PostgreSQL için optimize edilmiş ayarlar
-            DATABASES = {
-                'default': dj_database_url.config(
-                    default=DATABASE_URL,
-                    conn_max_age=600,
-                    conn_health_checks=True,
-                    ssl_require=True,  # Supabase SSL gerektirir
-                )
-            }
-            print("✅ PostgreSQL database configured")
-            
-            # Test connection
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                print("✅ PostgreSQL connection test successful")
-                
-        except Exception as e:
-            print(f"❌ PostgreSQL connection failed: {e}")
-            if USE_SQLITE_FALLBACK:
-                print("🔄 Falling back to SQLite")
-                DATABASES = {
-                    'default': {
-                        'ENGINE': 'django.db.backends.sqlite3',
-                        'NAME': BASE_DIR / 'db.sqlite3',
-                        'OPTIONS': {
-                            'timeout': 20,
-                        }
-                    }
-                }
-            else:
-                print("❌ PostgreSQL connection failed and fallback disabled")
-                raise e
-    else:
-        print("⚠️ No DATABASE_URL found")
-        if USE_SQLITE_FALLBACK:
-            print("🔄 Using SQLite fallback")
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.db.backends.sqlite3',
-                    'NAME': BASE_DIR / 'db.sqlite3',
-                    'OPTIONS': {
-                        'timeout': 20,
-                    }
-                }
-            }
-        else:
-            print("❌ No DATABASE_URL and fallback disabled")
-            raise Exception("No database configuration available")
+    print("❌ No DATABASE_URL found")
+    raise Exception("DATABASE_URL environment variable is required")
 
 AUTH_PASSWORD_VALIDATORS = [
     {

@@ -317,7 +317,6 @@ def test_database_connection(request):
                 'engine': connection.settings_dict.get('ENGINE', 'Unknown'),
             },
             'environment': {
-                'USE_SQLITE_FALLBACK': os.environ.get('USE_SQLITE_FALLBACK', 'false'),
                 'DATABASE_URL': 'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET',
                 'DEBUG': settings.DEBUG,
             },
@@ -406,7 +405,6 @@ def database_status(request):
                 'status': 'unknown'
             },
             'environment': {
-                'USE_SQLITE_FALLBACK': os.environ.get('USE_SQLITE_FALLBACK', 'false'),
                 'DATABASE_URL': 'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET',
                 'DEBUG': settings.DEBUG,
             }
