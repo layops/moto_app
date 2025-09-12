@@ -18,16 +18,24 @@ class SearchResultsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🔍 SearchResultsWidget - build çağrıldı');
+    print('   Type: $type');
+    print('   Query: $query');
+    print('   Results count: ${results.length}');
+    print('   Results: $results');
     
     if (results.isEmpty) {
+      print('🔍 SearchResultsWidget - Sonuç boş, empty state gösteriliyor');
       return _buildEmptyState(context);
     }
 
+    print('🔍 SearchResultsWidget - ${results.length} sonuç gösteriliyor');
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: results.length,
       itemBuilder: (context, index) {
         final item = results[index];
+        print('   ${index + 1}. ${item}');
         return _buildResultItem(context, item);
       },
     );
@@ -114,6 +122,10 @@ class SearchResultsWidget extends StatelessWidget {
     final userId = user['id'];
     
     // Debug için profil fotoğrafı URL'ini log'la
+    print('🔍 SearchResultsWidget - User: $username');
+    print('   - profile_picture: ${user['profile_picture']}');
+    print('   - profile_photo_url: ${user['profile_photo_url']}');
+    print('   - Final profilePhotoUrl: $profilePhotoUrl');
     
 
     return Card(
@@ -129,6 +141,8 @@ class SearchResultsWidget extends StatelessWidget {
                     height: 48,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
+                      print('❌ SearchResultsWidget - Profil fotoğrafı yüklenemedi: $error');
+                      print('   - URL: $profilePhotoUrl');
                       return Text(
                         username.isNotEmpty ? username[0].toUpperCase() : '?',
                         style: const TextStyle(fontSize: 18),
@@ -173,6 +187,11 @@ class SearchResultsWidget extends StatelessWidget {
     final groupId = group['id'];
     
     // Debug için grup profil fotoğrafı URL'ini log'la
+    print('🔍 SearchResultsWidget - Group: $name');
+    print('   - profile_picture: ${group['profile_picture']}');
+    print('   - profile_picture_url: ${group['profile_picture_url']}');
+    print('   - Final profilePictureUrl: $profilePictureUrl');
+    print('   - member_count: ${group['member_count']}');
     
 
     return Card(
@@ -188,6 +207,8 @@ class SearchResultsWidget extends StatelessWidget {
                     height: 48,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
+                      print('❌ SearchResultsWidget - Grup fotoğrafı yüklenemedi: $error');
+                      print('   - URL: $profilePictureUrl');
                       return const Icon(Icons.group, size: 24);
                     },
                     loadingBuilder: (context, child, loadingProgress) {

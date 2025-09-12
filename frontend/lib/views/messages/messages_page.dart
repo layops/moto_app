@@ -47,8 +47,11 @@ class _MessagesPageState extends State<MessagesPage> {
         _errorMessage = null;
       });
 
+      print('📱 MessagesPage - Loading conversations...');
       final conversations = await _chatService.getConversations();
+      print('📱 MessagesPage - Loaded ${conversations.length} conversations');
       for (var conv in conversations) {
+        print('   - ${conv.otherUser.displayName} (${conv.otherUser.username})');
       }
       
       if (!mounted) return;
@@ -60,6 +63,7 @@ class _MessagesPageState extends State<MessagesPage> {
       // Bottom navigation'ı güncelle
       widget.onUnreadCountChanged?.call();
     } catch (e) {
+      print('❌ MessagesPage - Error loading conversations: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();

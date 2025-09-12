@@ -136,6 +136,7 @@ class ProfileService {
         ),
       );
     } catch (e) {
+      debugPrint('Profil güncelleme hatası: $e');
       rethrow;
     }
   }

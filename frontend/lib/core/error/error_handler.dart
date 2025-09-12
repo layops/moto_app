@@ -64,6 +64,9 @@ class ErrorHandler {
     final appError = AppError.fromException(error);
     
     // Log error for debugging
+    debugPrint('Error: ${appError.message}');
+    debugPrint('Code: ${appError.code}');
+    debugPrint('Details: ${appError.details}');
     
     // Show error dialog
     showDialog(

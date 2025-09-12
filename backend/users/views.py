@@ -165,7 +165,7 @@ class FollowersListView(APIView):
     
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
-        followers = user.followers.select_related('profile').all()
+        followers = user.followers.all()
         serializer = FollowSerializer(followers, many=True)
         return Response(serializer.data)
 
@@ -174,7 +174,7 @@ class FollowingListView(APIView):
     
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
-        following = user.following.select_related('profile').all()
+        following = user.following.all()
         serializer = FollowSerializer(following, many=True)
         return Response(serializer.data)
 
@@ -202,7 +202,7 @@ class UserPostsView(APIView):
     
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
-        posts = user.posts.select_related('author').prefetch_related('likes', 'comments__author').all().order_by('-created_at')
+        posts = user.posts.all().order_by('-created_at')
         from posts.serializers import PostSerializer
         serializer = PostSerializer(posts, many=True, context={'request': request})
         return Response(serializer.data)
@@ -222,7 +222,7 @@ class UserEventsView(APIView):
     
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
-        events = user.events.select_related('organizer').prefetch_related('participants').all().order_by('-created_at')
+        events = user.events.all().order_by('-created_at')
         from events.serializers import EventSerializer
         serializer = EventSerializer(events, many=True, context={'request': request})
         return Response(serializer.data)

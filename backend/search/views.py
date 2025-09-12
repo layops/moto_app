@@ -25,6 +25,8 @@ def search_users(request):
     limit = int(request.query_params.get('limit', 20))
     similarity_threshold = float(request.query_params.get('threshold', 0.3))
     
+    print(f"🔍 search_users - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
+    print(f"🔍 search_users - Request user: {request.user}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
         # pg_trgm extension kullanarak arama yap
@@ -34,13 +36,16 @@ def search_users(request):
             similarity_threshold=similarity_threshold
         )
         
+        print(f"✅ search_users - pg_trgm ile {len(results)} kullanıcı bulundu")
         
         # İlk 5 sonucu log'la
         for i, user in enumerate(results[:5]):
             similarity = user.get('similarity_score', 0)
+            print(f"   {i+1}. {user['username']} - {user['first_name']} {user['last_name']} - {user['email']} (similarity: {similarity:.3f})")
         
         return Response(results)
     else:
+        print(f"❌ search_users - Query too short or empty")
         return Response([])  # Boş sorgu için hiç sonuç döndürme
 
 
@@ -64,6 +69,8 @@ def search_groups(request):
     limit = int(request.query_params.get('limit', 20))
     similarity_threshold = float(request.query_params.get('threshold', 0.3))
     
+    print(f"🔍 search_groups - Query: '{query}', Limit: {limit}, Threshold: {similarity_threshold}")
+    print(f"🔍 search_groups - Request user: {request.user}")
     
     if query and len(query.strip()) >= 2:  # Minimum 2 karakter arama
         # pg_trgm extension kullanarak arama yap
@@ -73,13 +80,16 @@ def search_groups(request):
             similarity_threshold=similarity_threshold
         )
         
+        print(f"✅ search_groups - pg_trgm ile {len(results)} grup bulundu")
         
         # İlk 5 sonucu log'la
         for i, group in enumerate(results[:5]):
             similarity = group.get('similarity_score', 0)
+            print(f"   {i+1}. {group['name']} - {group['description']} (similarity: {similarity:.3f})")
         
         return Response(results)
     else:
+        print(f"❌ search_groups - Query too short or empty")
         return Response([])  # Boş sorgu için hiç sonuç döndürme
 
 
@@ -97,6 +107,8 @@ class GroupSearchView(generics.ListAPIView):
 @permission_classes([IsAuthenticated])
 def get_available_users(request):
     """Mevcut kullanıcıları listeler (arama için referans)"""
+    print(f"🔍 get_available_users - Request user: {request.user}")
+    print(f"🔍 get_available_users - Total users in DB: {User.objects.count()}")
     
     users = User.objects.all()[:20]  # İlk 20 kullanıcı
     user_data = []
@@ -108,7 +120,9 @@ def get_available_users(request):
             'last_name': user.last_name,
             'full_name': f"{user.first_name} {user.last_name}".strip(),
         })
+        print(f"   - {user.username} ({user.first_name} {user.last_name})")
     
+    print(f"✅ get_available_users - Returning {len(user_data)} users")
     
     return Response({
         'users': user_data,

@@ -50,6 +50,7 @@ class TokenService {
       final decoded = utf8.decode(base64Url.decode(normalizedPayload));
       return jsonDecode(decoded) as Map<String, dynamic>;
     } catch (e) {
+      debugPrint('Token decode hatası: $e');
       return null;
     }
   }
@@ -62,6 +63,7 @@ class TokenService {
       }
       return await getCurrentUsername();
     } catch (e) {
+      debugPrint('Token\'dan kullanıcı adı alma hatası: $e');
       return await getCurrentUsername();
     }
   }

@@ -59,7 +59,7 @@ class MyGroupsListView(generics.ListAPIView):
         user = self.request.user
         return Group.objects.filter(
             Q(owner=user) | Q(members=user)
-        ).select_related('owner').prefetch_related('members').distinct()
+        ).distinct()
 
 
 class GroupCreateView(generics.ListCreateAPIView):
@@ -73,7 +73,7 @@ class GroupCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         if self.request.method == 'GET':
             # GET isteği için tüm grupları listele
-            return Group.objects.select_related('owner').prefetch_related('members')
+            return Group.objects.all()
         return Group.objects.none()
 
     def create(self, request, *args, **kwargs):
@@ -99,8 +99,12 @@ class GroupCreateView(generics.ListCreateAPIView):
                 group.save()
                 serializer = self.get_serializer(group)
             except Exception as e:
+<<<<<<< HEAD
                 # Profil resmi yüklenemezse grup oluşturulmaya devam eder
                 serializer = self.get_serializer(group)
+=======
+                print("Profil resmi yükleme hatası:", str(e))
+>>>>>>> parent of bb92252 (performance improvement)
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -116,11 +120,11 @@ class DiscoverGroupsView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         # Kullanıcının üyesi olmadığı grupları getir (geçici olarak tüm gruplar)
-        return Group.objects.exclude(members=user).select_related('owner').prefetch_related('members')
+        return Group.objects.exclude(members=user)
 
 
 class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Group.objects.select_related('owner').prefetch_related('members')
+    queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsGroupOwnerOrReadOnly]
     parser_classes = (MultiPartParser, FormParser)
@@ -154,8 +158,12 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
                 group.save()
                 serializer = self.get_serializer(group)
             except Exception as e:
+<<<<<<< HEAD
                 # Profil resmi yüklenemezse grup güncellemesi devam eder
                 serializer = self.get_serializer(group)
+=======
+                print("Profil resmi güncelleme hatası:", str(e))
+>>>>>>> parent of bb92252 (performance improvement)
         
         return Response(serializer.data)
 
@@ -168,8 +176,12 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
                 supabase = SupabaseStorage()
                 supabase.delete_group_profile_picture(instance.profile_picture_url)
             except Exception as e:
+<<<<<<< HEAD
                 # Profil resmi silinemezse grup silinmeye devam eder
                 pass
+=======
+                print("Profil resmi silme hatası:", str(e))
+>>>>>>> parent of bb92252 (performance improvement)
         
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

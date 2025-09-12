@@ -118,6 +118,7 @@ class _MotoAppState extends State<MotoApp> {
         });
       }
     } catch (e) {
+      print('Kullanıcı adı yüklenirken hata: $e');
     }
   }
 
@@ -213,6 +214,12 @@ class _MotoAppState extends State<MotoApp> {
       ProfilePage(username: profileUsername), // Index 5 - Profile
     ];
 
+    // Debug için sayfa listesini kontrol et
+    print('=== SAYFA LİSTESİ ===');
+    for (int i = 0; i < pages.length; i++) {
+      print('Index $i: ${pages[i].runtimeType}');
+    }
+    print('====================');
 
     return MainWrapperNew(
       key: _mainWrapperKey,

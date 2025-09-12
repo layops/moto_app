@@ -67,15 +67,20 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         }
       }
     } catch (e) {
+      print('❌ ChatDetail - Error getting current user ID: $e');
     }
   }
 
   Future<void> _markMessagesAsRead() async {
     if (_currentUserId == null) {
+      print('❌ ChatDetail - Current user ID is null, cannot mark messages as read');
       return;
     }
     
     try {
+      print('📖 ChatDetail - Current user ID: $_currentUserId');
+      print('📖 ChatDetail - Other user ID: ${widget.otherUser.id}');
+      print('📖 ChatDetail - Total messages: ${_messages.length}');
       
       // Sadece diğer kullanıcıdan gelen okunmamış mesajları işaretle
       final unreadMessages = _messages.where((message) => 
@@ -84,14 +89,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         !message.isRead
       ).toList();
       
+      print('📖 ChatDetail - Found ${unreadMessages.length} unread messages to mark as read');
       for (final message in unreadMessages) {
+        print('   - Message ${message.id}: sender=${message.sender.id}, receiver=${message.receiver.id}, isRead=${message.isRead}');
       }
       
       // Her okunmamış mesajı işaretle
       for (final message in unreadMessages) {
         try {
           await _chatService.markMessageAsRead(message.id);
+          print('📖 ChatDetail - Marked message ${message.id} as read');
         } catch (e) {
+          print('❌ ChatDetail - Error marking message ${message.id} as read: $e');
         }
       }
       
@@ -108,6 +117,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         widget.onMessagesRead?.call();
       }
     } catch (e) {
+      print('❌ ChatDetail - Error marking messages as read: $e');
     }
   }
 
@@ -127,7 +137,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         _errorMessage = null;
       });
 
+      print('💬 ChatDetail - Loading messages with user: ${widget.otherUser.username}');
       final messages = await _chatService.getConversationWithUser(widget.otherUser.id);
+      print('💬 ChatDetail - Loaded ${messages.length} messages');
       
       if (mounted) {
         setState(() {
@@ -143,6 +155,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         }
       }
     } catch (e) {
+      print('❌ ChatDetail - Error loading messages: $e');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -159,11 +172,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() => _isSending = true);
 
     try {
+      print('📤 ChatDetail - Sending message: "$messageText" to ${widget.otherUser.username}');
       final newMessage = await _chatService.sendPrivateMessage(
         receiverId: widget.otherUser.id,
         message: messageText,
       );
       
+      print('📤 ChatDetail - Message sent successfully');
       
       if (mounted) {
         setState(() {
@@ -177,6 +192,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         widget.onMessageSent?.call();
       }
     } catch (e) {
+      print('❌ ChatDetail - Error sending message: $e');
       if (mounted) {
         setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
