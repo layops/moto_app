@@ -314,19 +314,46 @@ def test_database_connection(request):
                 'host': connection.settings_dict.get('HOST', 'N/A'),
                 'port': connection.settings_dict.get('PORT', 'N/A'),
                 'user': connection.settings_dict.get('USER', 'N/A'),
+                'engine': connection.settings_dict.get('ENGINE', 'Unknown'),
             },
             'environment': {
                 'USE_SQLITE_FALLBACK': os.environ.get('USE_SQLITE_FALLBACK', 'false'),
                 'DATABASE_URL': 'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET',
                 'DEBUG': settings.DEBUG,
+            },
+            'connection_details': {
+                'can_connect': False,
+                'error': None,
+                'tables_count': 0,
+                'migrations_count': 0
             }
         }
         
         # Test actual connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            result = cursor.fetchone()
-            db_info['connection_test'] = 'success' if result[0] == 1 else 'failed'
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
+                db_info['connection_details']['can_connect'] = result[0] == 1
+                
+                # Count tables
+                if connection.vendor == 'sqlite':
+                    cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table';")
+                else:
+                    cursor.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
+                db_info['connection_details']['tables_count'] = cursor.fetchone()[0]
+                
+                # Count migrations
+                try:
+                    cursor.execute("SELECT COUNT(*) FROM django_migrations;")
+                    db_info['connection_details']['migrations_count'] = cursor.fetchone()[0]
+                except:
+                    db_info['connection_details']['migrations_count'] = 0
+                    
+        except Exception as e:
+            db_info['connection_details']['can_connect'] = False
+            db_info['connection_details']['error'] = str(e)
+            db_info['connection_test'] = 'failed'
         
         # Check if we're using the right database
         if connection.vendor == 'sqlite':
@@ -346,6 +373,90 @@ def test_database_connection(request):
         logger.error(f"Database connection test failed: {str(e)}")
         return JsonResponse({
             'connection_test': 'failed',
+            'error': str(e),
+            'timestamp': time.time()
+        }, status=500)
+
+@never_cache
+@require_http_methods(["GET"])
+def database_status(request):
+    """Get comprehensive database status"""
+    try:
+        status = {
+            'timestamp': time.time(),
+            'database': {
+                'vendor': connection.vendor,
+                'name': connection.settings_dict.get('NAME', 'Unknown'),
+                'engine': connection.settings_dict.get('ENGINE', 'Unknown'),
+                'host': connection.settings_dict.get('HOST', 'N/A'),
+                'port': connection.settings_dict.get('PORT', 'N/A'),
+                'user': connection.settings_dict.get('USER', 'N/A'),
+            },
+            'connection': {
+                'can_connect': False,
+                'error': None,
+                'test_query': None
+            },
+            'tables': {
+                'count': 0,
+                'list': []
+            },
+            'migrations': {
+                'count': 0,
+                'status': 'unknown'
+            },
+            'environment': {
+                'USE_SQLITE_FALLBACK': os.environ.get('USE_SQLITE_FALLBACK', 'false'),
+                'DATABASE_URL': 'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET',
+                'DEBUG': settings.DEBUG,
+            }
+        }
+        
+        # Test connection
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 as test")
+                result = cursor.fetchone()
+                status['connection']['can_connect'] = True
+                status['connection']['test_query'] = f"SELECT 1 = {result[0]}"
+                
+                # Get tables
+                if connection.vendor == 'sqlite':
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+                else:
+                    cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;")
+                
+                tables = cursor.fetchall()
+                status['tables']['count'] = len(tables)
+                status['tables']['list'] = [table[0] for table in tables]
+                
+                # Get migrations
+                try:
+                    cursor.execute("SELECT COUNT(*) FROM django_migrations;")
+                    migration_count = cursor.fetchone()[0]
+                    status['migrations']['count'] = migration_count
+                    status['migrations']['status'] = f"{migration_count} migrations applied"
+                except Exception as e:
+                    status['migrations']['status'] = f"Error: {str(e)}"
+                    
+        except Exception as e:
+            status['connection']['can_connect'] = False
+            status['connection']['error'] = str(e)
+        
+        # SQLite specific info
+        if connection.vendor == 'sqlite':
+            import os
+            db_path = connection.settings_dict.get('NAME')
+            status['database']['file_path'] = str(db_path)
+            status['database']['file_exists'] = os.path.exists(db_path)
+            if os.path.exists(db_path):
+                status['database']['file_size'] = os.path.getsize(db_path)
+        
+        return JsonResponse(status)
+        
+    except Exception as e:
+        logger.error(f"Database status check failed: {str(e)}")
+        return JsonResponse({
             'error': str(e),
             'timestamp': time.time()
         }, status=500)
