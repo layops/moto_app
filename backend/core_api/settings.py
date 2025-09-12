@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
 # Geçici olarak SQLite kullanımı - Supabase bağlantı sorunu nedeniyle
-USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'false').lower() == 'true'
+USE_SQLITE_FALLBACK = os.environ.get('USE_SQLITE_FALLBACK', 'true').lower() == 'true'
 
 if USE_SQLITE_FALLBACK:
     print("🔄 Using SQLite fallback due to Supabase connection issues")
@@ -106,19 +106,9 @@ else:
                     conn_max_age=600,
                     conn_health_checks=True,
                     ssl_require=True,  # Supabase SSL gerektirir
-                    options={
-                        'connect_timeout': 10,
-                        'options': '-c statement_timeout=30000'
-                    }
                 )
             }
             print("✅ PostgreSQL database configured")
-            
-            # Test connection
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                print("✅ PostgreSQL connection test successful")
                 
         except Exception as e:
             print(f"❌ PostgreSQL connection failed: {e}")
