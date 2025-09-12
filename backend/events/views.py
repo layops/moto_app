@@ -88,12 +88,8 @@ class EventViewSet(viewsets.ModelViewSet):
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
                     pass
             elif cover_file and supabase is None:
-<<<<<<< HEAD
                 # Supabase mevcut değilse resim yüklenmez
                 pass
-=======
-                print("SupabaseStorage mevcut değil, resim yüklenemedi")
->>>>>>> parent of bb92252 (performance improvement)
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

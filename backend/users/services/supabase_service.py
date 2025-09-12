@@ -1,7 +1,10 @@
 # users/services/supabase_service.py
 import logging
 from django.conf import settings
-from supabase import create_client
+try:
+    from supabase import create_client
+except ImportError:
+    create_client = None
 import os
 import uuid
 
@@ -18,13 +21,18 @@ class SupabaseStorage:
         self.posts_bucket = getattr(settings, 'SUPABASE_POSTS_BUCKET', 'group_posts_images')
         
         try:
-            self.client = create_client(self.supabase_url, self.supabase_key)
-            logger.info("Supabase istemcisi başarıyla oluşturuldu")
+            if create_client:
+                self.client = create_client(self.supabase_url, self.supabase_key)
+                logger.info("Supabase istemcisi başarıyla oluşturuldu")
+            else:
+                self.client = None
+                logger.warning("Supabase modülü bulunamadı, istemci oluşturulamadı")
 
-            buckets = [b.name for b in self.client.storage.list_buckets()]
-            for bucket in [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket, self.posts_bucket]:
-                if bucket not in buckets:
-                    raise ValueError(f"Kova bulunamadı: {bucket}")
+            if self.client:
+                buckets = [b.name for b in self.client.storage.list_buckets()]
+                for bucket in [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket, self.posts_bucket]:
+                    if bucket not in buckets:
+                        raise ValueError(f"Kova bulunamadı: {bucket}")
             logger.info(f"Kovalar bulundu: {self.profile_bucket}, {self.cover_bucket}, {self.events_bucket}, {self.groups_bucket}, {self.posts_bucket}")
 
         except Exception as e:
