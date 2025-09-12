@@ -296,6 +296,48 @@ class LocationService {
     _clearLocationCache();
   }
 
+  /// Grup üyelerinin konumlarını getir
+  Future<List<LocationShare>> getGroupMembersLocations(int groupId) async {
+    final cacheKey = 'group_locations_$groupId';
+    
+    // Cache kontrolü
+    if (_isCacheValid(cacheKey) && _locationCache.containsKey(cacheKey)) {
+      return _locationCache[cacheKey]!;
+    }
+
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/rides/location-shares/active_shares/?group_id=$groupId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final shares = (data as List)
+            .map((json) => LocationShare.fromJson(json))
+            .toList();
+            
+        // Cache'e kaydet
+        _locationCache[cacheKey] = shares;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+        
+        return shares;
+      } else {
+        throw Exception('Grup üyelerinin konumları alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Grup üyelerinin konumları alınırken hata: $e');
+    }
+  }
+
   // Getters
   bool get isSharingLocation => _isSharingLocation;
 }
@@ -384,3 +426,4 @@ class User {
     );
   }
 }
+

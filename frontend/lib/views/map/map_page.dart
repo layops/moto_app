@@ -68,6 +68,12 @@ class _MapPageState extends State<MapPage> {
   bool _isSharingLocation = false;
   Timer? _locationUpdateTimer;
 
+  // Grup üyeleri için
+  List<dynamic> _userGroups = [];
+  int? _selectedGroupId;
+  List<LocationShare> _groupMembersLocations = [];
+  bool _showGroupMembers = false;
+
   static const List<double> _zoomLevels = [5.0, 10.0, 13.0, 15.0, 18.0];
   static const List<String> _zoomLabels = [
     'Ülke',
@@ -86,6 +92,7 @@ class _MapPageState extends State<MapPage> {
     };
     _searchController.addListener(_searchControllerListener);
     _loadActiveLocationShares();
+    _loadUserGroups();
     if (widget.initialCenter != null) {
       if (widget.allowSelection || widget.showMarker) {
         _selectedPosition = widget.initialCenter;
@@ -271,6 +278,7 @@ class _MapPageState extends State<MapPage> {
                     ],
                   ),
                 _buildLocationSharesMarkers(context),
+                _buildGroupMembersMarkers(context),
                 if (_isRouteMode && _startPoint != null)
                   MarkerLayer(
                     markers: [
@@ -326,6 +334,7 @@ class _MapPageState extends State<MapPage> {
             _buildSearchBar(context),
             _buildMapControls(context),
             _buildLocationSharingButton(context),
+            _buildGroupSelector(context),
             if (_selectedPosition != null) _buildLocationActions(context),
             if (_selectedPosition != null) _buildConfirmButton(context),
             _buildSearchHistory(context),
@@ -443,7 +452,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             child: Icon(
-              Icons.person,
+              Icons.motorcycle, // Motor işareti
               color: colorScheme.onSecondary,
               size: 16,
             ),
@@ -457,11 +466,169 @@ class _MapPageState extends State<MapPage> {
     _locationUpdateTimer?.cancel();
     _locationUpdateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       _loadActiveLocationShares();
+      if (_showGroupMembers && _selectedGroupId != null) {
+        _loadGroupMembersLocations(_selectedGroupId!);
+      }
     });
   }
 
   void _stopLocationUpdates() {
     _locationUpdateTimer?.cancel();
     _locationUpdateTimer = null;
+  }
+
+  // Grup üyeleri fonksiyonları
+  Future<void> _loadUserGroups() async {
+    try {
+      final groups = await ServiceLocator.group.fetchUserGroups();
+      if (mounted) {
+        setState(() {
+          _userGroups = groups;
+        });
+      }
+    } catch (e) {
+      print('Gruplar yüklenemedi: $e');
+    }
+  }
+
+  Future<void> _loadGroupMembersLocations(int groupId) async {
+    try {
+      final locations = await _locationService.getGroupMembersLocations(groupId);
+      if (mounted) {
+        setState(() {
+          _groupMembersLocations = locations;
+        });
+      }
+    } catch (e) {
+      print('Grup üyelerinin konumları yüklenemedi: $e');
+    }
+  }
+
+  void _toggleGroupMembersView() {
+    setState(() {
+      _showGroupMembers = !_showGroupMembers;
+      if (_showGroupMembers && _selectedGroupId != null) {
+        _loadGroupMembersLocations(_selectedGroupId!);
+      }
+    });
+  }
+
+  Widget _buildGroupSelector(BuildContext context) {
+    if (_userGroups.isEmpty) return const SizedBox.shrink();
+    
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Positioned(
+      top: 180,
+      right: 16,
+      child: Container(
+        width: 200,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Grup seçici
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: DropdownButtonFormField<int>(
+                value: _selectedGroupId,
+                decoration: InputDecoration(
+                  labelText: 'Grup Seç',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: _userGroups.map((group) {
+                  return DropdownMenuItem<int>(
+                    value: group['id'],
+                    child: Text(
+                      group['name'] ?? 'Grup',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (groupId) {
+                  setState(() {
+                    _selectedGroupId = groupId;
+                  });
+                  if (groupId != null) {
+                    _loadGroupMembersLocations(groupId);
+                  }
+                },
+              ),
+            ),
+            // Grup üyelerini göster/gizle butonu
+            if (_selectedGroupId != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ElevatedButton.icon(
+                  onPressed: _toggleGroupMembersView,
+                  icon: Icon(_showGroupMembers ? Icons.visibility_off : Icons.visibility),
+                  label: Text(_showGroupMembers ? 'Gizle' : 'Göster'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _showGroupMembers 
+                        ? colorScheme.error 
+                        : colorScheme.primary,
+                    foregroundColor: _showGroupMembers 
+                        ? colorScheme.onError 
+                        : colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupMembersMarkers(BuildContext context) {
+    if (!_showGroupMembers || _groupMembersLocations.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return MarkerLayer(
+      markers: _groupMembersLocations.map((share) {
+        return Marker(
+          point: LatLng(share.latitude, share.longitude),
+          width: 40,
+          height: 40,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.secondary,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.onSecondary,
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.motorcycle, // Motor işareti
+              color: colorScheme.onSecondary,
+              size: 20,
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
