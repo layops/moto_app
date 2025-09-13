@@ -62,110 +62,280 @@ class _EventDetailPageState extends State<EventDetailPage> {
         : null;
     final organizerName = organizer?['username'] ?? 'Bilinmiyor';
     final organizerEmail = organizer?['email'] ?? '';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final coverImageUrl = widget.event['cover_image'] as String?;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.event['title']?.toString() ?? 'Etkinlik Detayları'),
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text('Hata: $_error'))
-              : SingleChildScrollView(
+              : CustomScrollView(
+                  slivers: [
+                    // Hero Header
+                    SliverAppBar(
+                      expandedHeight: 280,
+                      pinned: true,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      flexibleSpace: FlexibleSpaceBar(
+                        title: Text(
+                          widget.event['title']?.toString() ?? 'Etkinlik Detayları',
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                        background: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Cover Image or Gradient Background
+                            if (coverImageUrl != null && coverImageUrl.isNotEmpty)
+                              Image.network(
+                                coverImageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildGradientBackground(colorScheme),
+                              )
+                            else
+                              _buildGradientBackground(colorScheme),
+                            
+                            // Gradient Overlay
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            
+                            // Status Chips
+                            Positioned(
+                              top: 100,
+                              left: 16,
+                              right: 16,
+                              child: Row(
+                                children: [
+                                  _buildStatusChip(
+                                    widget.event['is_public'] == true ? 'Public' : 'Private',
+                                    widget.event['is_public'] == true ? Colors.green : Colors.red,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (widget.event['requires_approval'] == true)
+                                    _buildStatusChip('Onay Gerekli', Colors.orange),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    // Content
+                    SliverToBoxAdapter(
+                      child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Etkinlik detayları
-                      Text(
-                        widget.event['title']?.toString() ??
-                            'Başlıksız Etkinlik',
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      // Onay sistemi durumu
-                      Row(
-                        children: [
-                          Chip(
-                            label: Text(
-                              widget.event['is_public'] == true ? 'Public' : 'Private',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            backgroundColor: widget.event['is_public'] == true
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                          const SizedBox(width: 8),
-                          if (widget.event['requires_approval'] == true)
-                            Chip(
-                              label: const Text(
-                                'Onay Gerekli',
-                                style: TextStyle(color: Colors.white, fontSize: 12),
+                            // Organizer Card
+                            Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              backgroundColor: Colors.orange,
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Etkinlik kurucusu
-                      const Text(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: colorScheme.primary.withOpacity(0.1),
+                                      child: Text(
+                                        organizerName.isNotEmpty
+                                            ? organizerName[0].toUpperCase()
+                                            : '?',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
                         'Etkinlik Kurucusu',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      ListTile(
-                        leading: CircleAvatar(
-                          child: Text(organizerName.isNotEmpty
-                              ? organizerName[0].toUpperCase()
-                              : '?'),
-                        ),
-                        title: Text(organizerName),
-                        subtitle: organizerEmail.isNotEmpty
-                            ? Text(organizerEmail)
-                            : null,
+                                              fontSize: 14,
+                                              color: colorScheme.onSurface.withOpacity(0.6),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            organizerName,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          if (organizerEmail.isNotEmpty)
+                                            Text(
+                                              organizerEmail,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: colorScheme.onSurface.withOpacity(0.7),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 16),
 
-                      // Etkinlik açıklaması
-                      if ((widget.event['description']?.toString() ?? '')
-                          .isNotEmpty)
-                        Column(
+                            // Description Card
+                            if ((widget.event['description']?.toString() ?? '').isNotEmpty)
+                              Card(
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.description_outlined,
+                                            color: colorScheme.primary,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
                               'Açıklama',
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(widget.event['description'].toString()),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-
-                      // Etkinlik tarih ve konum bilgileri
-                      const Text(
-                        'Detaylar',
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        widget.event['description'].toString(),
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
+                                          fontSize: 15,
+                                          color: colorScheme.onSurface.withOpacity(0.8),
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+
+                            // Event Details Card
+                            Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                       Row(
                         children: [
-                          Icon(Icons.calendar_today,
-                              size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                        Icon(
+                                          Icons.info_outline,
+                                          color: colorScheme.primary,
+                                          size: 20,
+                                        ),
                           const SizedBox(width: 8),
-                          Text(formatDate(widget.event['start_time']),
+                                        Text(
+                                          'Etkinlik Detayları',
                               style: TextStyle(
-                                  fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if ((widget.event['location']?.toString() ?? '')
-                          .isNotEmpty)
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // Date
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            color: colorScheme.primary,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Tarih ve Saat',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  formatDate(widget.event['start_time']),
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    
+                                    if ((widget.event['location']?.toString() ?? '').isNotEmpty) ...[
+                                      const SizedBox(height: 12),
+                                      
+                                      // Location
                         GestureDetector(
                           onTap: () {
                             final pos = _parseLatLng(widget.event['location'].toString());
@@ -182,28 +352,210 @@ class _EventDetailPageState extends State<EventDetailPage> {
                               );
                             }
                           },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.secondary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: colorScheme.secondary.withOpacity(0.3),
+                                              width: 1,
+                                            ),
+                                          ),
                           child: Row(
                             children: [
-                              Icon(Icons.location_on,
-                                  size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-                              const SizedBox(width: 8),
+                                              Icon(
+                                                Icons.location_on,
+                                                color: colorScheme.secondary,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Konum',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: colorScheme.onSurface.withOpacity(0.6),
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
                                   widget.event['location'].toString(),
                                   style: TextStyle(
-                                      fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: colorScheme.onSurface,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      const SizedBox(height: 12),
-                      if ((widget.event['location']?.toString() ?? '')
-                          .isNotEmpty)
-                        _MiniMapPreview(location: widget.event['location'].toString()),
+                                              Icon(
+                                                Icons.arrow_forward_ios,
+                                                color: colorScheme.secondary,
+                                                size: 16,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
                       const SizedBox(height: 16),
 
-                      // Katılımcılar listesi
+                            // Map Preview
+                            if ((widget.event['location']?.toString() ?? '').isNotEmpty)
+                              Card(
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: _MiniMapPreview(location: widget.event['location'].toString()),
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+
+                            // Participants Card
+                            Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.people_outline,
+                                          color: colorScheme.primary,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Katılımcılar',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.primary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            '${_participants.length}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    if (_participants.isEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.surfaceVariant.withOpacity(0.3),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.people_outline,
+                                              size: 48,
+                                              color: colorScheme.onSurface.withOpacity(0.4),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'Henüz katılımcı yok',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: colorScheme.onSurface.withOpacity(0.6),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      Column(
+                                        children: [
+                                          // First 3 participants
+                                          ...(_participants.take(3).map((user) => Container(
+                                            margin: const EdgeInsets.only(bottom: 8),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surfaceVariant.withOpacity(0.3),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  radius: 20,
+                                                  backgroundImage: user['profile_picture'] != null
+                                                      ? NetworkImage(user['profile_picture'])
+                                                      : null,
+                                                  backgroundColor: colorScheme.primary.withOpacity(0.1),
+                                                  child: user['profile_picture'] == null
+                                                      ? Text(
+                                                          user['username'][0].toUpperCase(),
+                                                          style: TextStyle(
+                                                            color: colorScheme.primary,
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
+                                                        )
+                                                      : null,
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        user['username'],
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: colorScheme.onSurface,
+                                                        ),
+                                                      ),
+                                                      if (user['email'] != null)
+                                                        Text(
+                                                          user['email'],
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: colorScheme.onSurface.withOpacity(0.6),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ))),
+                                          
+                                          // Show more button if there are more participants
+                                          if (_participants.length > 3)
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -216,66 +568,54 @@ class _EventDetailPageState extends State<EventDetailPage> {
                             ),
                           );
                         },
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.primary.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: colorScheme.primary.withOpacity(0.3),
+                                                    width: 1,
+                                                  ),
+                                                ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Katılımcılar',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '${_participants.length}',
+                                                      've ${_participants.length - 3} kişi daha',
                                   style: TextStyle(
-                                      fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.arrow_forward_ios,
-                                    size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-                              ],
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: colorScheme.primary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Icon(
+                                                      Icons.arrow_forward_ios,
+                                                      size: 16,
+                                                      color: colorScheme.primary,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      _participants.isEmpty
-                          ? const Text('Henüz katılımcı yok')
-                          : Column(
-                              children: _participants.take(3).map((user) => ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundImage:
-                                              user['profile_picture'] != null
-                                                  ? NetworkImage(
-                                                      user['profile_picture'])
-                                                  : null,
-                                          child: user['profile_picture'] == null
-                                              ? Text(user['username'][0]
-                                                  .toUpperCase())
-                                              : null,
-                                        ),
-                                        title: Text(user['username']),
-                                        subtitle: user['email'] != null
-                                            ? Text(user['email'])
-                                            : null,
-                                      )).toList(),
+                                            ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
-                      if (_participants.length > 3)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            've ${_participants.length - 3} kişi daha...',
-                            style: TextStyle(
-                                fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-                          ),
-                        ),
-                      
-                      // Katılma butonu
-                      const SizedBox(height: 24),
+                            const SizedBox(height: 16),
+
+                            // Join Button
                       _buildJoinButton(),
+                            const SizedBox(height: 32),
                     ],
                   ),
+                      ),
+                    ),
+                  ],
                 ),
     );
   }
@@ -289,27 +629,126 @@ class _EventDetailPageState extends State<EventDetailPage> {
     final canJoin = !isJoined &&
         organizerUsername != widget.currentUsername &&
         (guestLimit == '-' || participantCount < guestLimit);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     if (!canJoin && !isJoined) {
       return const SizedBox.shrink(); // Buton gösterme
     }
 
-    return SizedBox(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Participant count info
+          Container(
       width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.people,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Katılımcılar: $participantCount${guestLimit != '-' ? ' / $guestLimit' : ''}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Join/Leave button
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: (isJoined ? Colors.red : colorScheme.primary).withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
       child: ElevatedButton(
         onPressed: isJoined ? _leaveEvent : _joinEvent,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isJoined ? Colors.red : Theme.of(context).primaryColor,
+                backgroundColor: isJoined ? Colors.red : colorScheme.primary,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isJoined ? Icons.exit_to_app : Icons.event_available,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _getButtonText(isJoined, requiresApproval),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          
+          // Additional info for approval required events
+          if (requiresApproval && !isJoined)
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.orange.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.orange,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
         child: Text(
-          _getButtonText(isJoined, requiresApproval),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+                      'Bu etkinliğe katılmak için organizatörden onay gerekiyor.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -451,6 +890,47 @@ class _EventDetailPageState extends State<EventDetailPage> {
     );
   }
 
+  Widget _buildGradientBackground(ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withOpacity(0.8),
+            colorScheme.secondary,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
   LatLng? _parseLatLng(String location) {
     try {
       final parts = location.split(',');
@@ -466,34 +946,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
   }
 }
 
-class _DetailLocationText extends StatefulWidget {
-  final String location;
-  const _DetailLocationText({required this.location});
-
-  @override
-  State<_DetailLocationText> createState() => _DetailLocationTextState();
-}
-
-class _DetailLocationTextState extends State<_DetailLocationText> {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(Icons.location_on,
-            size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            widget.location,
-            style: TextStyle(
-                fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _MiniMapPreview extends StatelessWidget {
   final String location;
 
@@ -502,33 +954,60 @@ class _MiniMapPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pos = _parseLatLng(location);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     if (pos == null) {
       return Container(
-        height: 200,
+        height: 250,
         decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surfaceVariant.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Konum bilgisi geçersiz'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 48,
+              color: colorScheme.onSurface.withOpacity(0.4),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Konum bilgisi geçersiz',
+              style: TextStyle(
+                fontSize: 16,
+                color: colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Container(
-      height: 200,
+      height: 250,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: FlutterMap(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            FlutterMap(
           options: MapOptions(
             initialCenter: pos,
             initialZoom: 15.0,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.none, // Sadece görüntüleme
+                  flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
             ),
           ),
           children: [
@@ -540,13 +1019,114 @@ class _MiniMapPreview extends StatelessWidget {
               markers: [
                 Marker(
                   point: pos,
-                  child: const Icon(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
                     Icons.location_on,
-                    color: Colors.red,
-                    size: 30,
+                          color: colorScheme.primary,
+                          size: 24,
+                        ),
                   ),
                 ),
               ],
+                ),
+              ],
+            ),
+            
+            // Tap to open full map button
+            Positioned(
+              top: 12,
+              right: 12,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MapPage(
+                        initialCenter: pos,
+                        allowSelection: false,
+                        showMarker: true,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.fullscreen,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+            
+            // Location info overlay
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: colorScheme.primary,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Etkinlik Konumu',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.touch_app,
+                      color: colorScheme.primary,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

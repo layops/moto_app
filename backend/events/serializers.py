@@ -50,7 +50,8 @@ class EventSerializer(serializers.ModelSerializer):
         try:
             request = self.context.get('request')
             if request and request.user.is_authenticated:
-                return obj.participants.filter(id=request.user.id).exists()
+                # ManyToMany field için doğru kontrol
+                return request.user in obj.participants.all()
             return False
         except Exception as e:
             print(f"get_is_joined hatası: {str(e)}")
