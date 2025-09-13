@@ -117,30 +117,24 @@ class EventViewSet(viewsets.ModelViewSet):
         # perform_create artık create metodunda yapılıyor, bu metod boş bırakıldı
         pass
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def join(self, request, pk=None):
         try:
-            print(f"Join event başladı - Event ID: {pk}, User: {request.user.username}")
             event = self.get_object()
-            print(f"Event bulundu: {event.title}, requires_approval: {event.requires_approval}")
             user = request.user
 
             if event.is_full():
-                print("Event dolu")
                 return Response({"error": "Etkinlik kontenjanı dolmuştur."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             if user in event.participants.all():
-                print("User zaten katılımcı")
                 return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             # Onay sistemi kontrolü
             if event.requires_approval:
-                print("Onay sistemi aktif")
                 # Onay gerekiyorsa istek oluştur
-                message = request.data.get('message', '')
-                print(f"Message: {message}")
+                message = request.data.get('message', '') if request.data else ''
                 
                 try:
                     event_request, created = EventRequest.objects.get_or_create(
@@ -148,13 +142,11 @@ class EventViewSet(viewsets.ModelViewSet):
                         user=user,
                         defaults={'message': message}
                     )
-                    print(f"EventRequest oluşturuldu: {created}")
                 except Exception as e:
                     print(f"EventRequest oluşturma hatası: {str(e)}")
                     raise e
                 
                 if not created:
-                    print("EventRequest zaten mevcut")
                     return Response({"error": "Bu etkinlik için zaten bir istek gönderdiniz."},
                                     status=status.HTTP_400_BAD_REQUEST)
                 
@@ -167,7 +159,6 @@ class EventViewSet(viewsets.ModelViewSet):
                         message=f"{user.username} {event.title} etkinliğine katılmak istiyor.",
                         content_object=event_request
                     )
-                    print("Bildirim gönderildi")
                 except Exception as e:
                     print(f"Bildirim gönderme hatası: {str(e)}")
                     # Bildirim hatası etkinlik katılımını engellemez
@@ -175,7 +166,6 @@ class EventViewSet(viewsets.ModelViewSet):
                 return Response({"message": "Katılım isteği gönderildi. Onay bekleniyor."},
                                 status=status.HTTP_200_OK)
             else:
-                print("Onay sistemi kapalı, direkt katılım")
                 # Onay gerektirmiyorsa direkt katıl
                 event.participants.add(user)
                 serializer = self.get_serializer(event)
@@ -183,8 +173,6 @@ class EventViewSet(viewsets.ModelViewSet):
                 
         except Exception as e:
             print(f"Join event hatası: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return Response(
                 {"error": "Etkinliğe katılırken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
