@@ -20,11 +20,15 @@ class AuthTokenMiddleware:
             headers = dict(scope.get('headers', []))
             upgrade_header = headers.get(b'upgrade', b'').decode('utf-8').lower()
             connection_header = headers.get(b'connection', b'').decode('utf-8').lower()
+            path = scope.get('path', '')
+            
+            print(f"DEBUG ASGI (WS): WebSocket isteği geldi - Path: {path}")
+            print(f"DEBUG ASGI (WS): Upgrade: {upgrade_header}, Connection: {connection_header}")
             
             if upgrade_header == 'websocket' and 'upgrade' in connection_header:
                 print("DEBUG ASGI (WS): WebSocket upgrade detected")
             else:
-                print(f"DEBUG ASGI (WS): Upgrade headers - Upgrade: {upgrade_header}, Connection: {connection_header}")
+                print(f"DEBUG ASGI (WS): WebSocket upgrade başarısız")
         # HTTP istekleri için token doğrulama ekleyelim
         if scope['type'] == 'http':
             headers = dict(scope['headers'])
