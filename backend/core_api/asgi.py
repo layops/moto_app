@@ -89,12 +89,13 @@ print("DEBUG: asgi.py yüklendi - HTTP ve WS Token Doğrulamalı")
 
 # WebSocket URL desenlerini import et
 import chat.routing
+import notifications.routing
 
 application = ProtocolTypeRouter({
     "http": AuthTokenMiddleware(django_asgi_app),  # HTTP için de token middleware ekledik
     "websocket": AuthTokenMiddleware(
         URLRouter(
-            chat.routing.websocket_urlpatterns
+            chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
         )
     ),
 })

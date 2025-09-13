@@ -9,7 +9,7 @@ import '../service_locator.dart';
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
   final String _wsApiUrl =
-      kBaseUrl.replaceFirst('https', 'ws') + 'ws/notifications/';
+      kBaseUrl.replaceFirst('https://', 'ws://') + '/ws/notifications/';
 
   WebSocketChannel? _channel;
   final StreamController<Map<String, dynamic>> _notificationStreamController =
@@ -38,7 +38,9 @@ class NotificationsService {
     }
 
     try {
-      _channel = WebSocketChannel.connect(Uri.parse('$_wsApiUrl?token=$token'));
+      final wsUrl = '$_wsApiUrl?token=$token';
+      print('DEBUG: WebSocket bağlantısı kuruluyor: $wsUrl');
+      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(
         (data) {
