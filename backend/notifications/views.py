@@ -77,12 +77,9 @@ class NotificationDeleteView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         try:
             instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response(
-                {"detail": f"Bildirim silinirken hata oluştu: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            from rest_framework.exceptions import APIException
+            raise APIException(f"Bildirim silinirken hata oluştu: {str(e)}")
 
 class SendTestNotificationView(APIView):
     permission_classes = [IsAuthenticated]

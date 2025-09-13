@@ -74,11 +74,12 @@ def send_bulk_notifications(recipients, message, notification_type='other', send
             notifications.append(notification)
         
         # Toplu kaydet
-        Notification.objects.bulk_create(notifications)
+        created_notifications = Notification.objects.bulk_create(notifications)
         
         # Her kullanıcı için WebSocket bildirimi gönder
         channel_layer = get_channel_layer()
-        for notification in notifications:
+        for notification in created_notifications:
+            # bulk_create sonrası ID'ler otomatik atanır
             serialized_notification = NotificationSerializer(notification).data
             group_name = f'user_notifications_{notification.recipient.id}'
             

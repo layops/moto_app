@@ -23,7 +23,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close(code=4001)
             return
 
-        if not self.scope["user"].is_authenticated:
+        # Kullanıcı authentication kontrolü
+        if not hasattr(self.scope, 'user') or not self.scope["user"].is_authenticated:
             logger.warning("WebSocket bağlantısı reddedildi: Kullanıcı kimlik doğrulaması başarısız")
             await self.close(code=4001)
             return

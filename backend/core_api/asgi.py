@@ -115,9 +115,20 @@ except Exception as e:
     print(f"DEBUG ASGI: notifications.routing import hatası: {e}")
 
 # Render.com için WebSocket konfigürasyonu
+all_websocket_patterns = []
+
 try:
-    all_websocket_patterns = chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
-    print(f"DEBUG ASGI: Tüm WebSocket patterns: {all_websocket_patterns}")
+    # Chat routing'i ekle
+    if hasattr(chat, 'routing') and hasattr(chat.routing, 'websocket_urlpatterns'):
+        all_websocket_patterns.extend(chat.routing.websocket_urlpatterns)
+        print(f"DEBUG ASGI: Chat routing eklendi: {len(chat.routing.websocket_urlpatterns)} pattern")
+    
+    # Notifications routing'i ekle
+    if hasattr(notifications, 'routing') and hasattr(notifications.routing, 'websocket_urlpatterns'):
+        all_websocket_patterns.extend(notifications.routing.websocket_urlpatterns)
+        print(f"DEBUG ASGI: Notifications routing eklendi: {len(notifications.routing.websocket_urlpatterns)} pattern")
+    
+    print(f"DEBUG ASGI: Toplam WebSocket patterns: {len(all_websocket_patterns)}")
     
     # Her pattern'i ayrı ayrı yazdır
     for i, pattern in enumerate(all_websocket_patterns):
