@@ -1,6 +1,7 @@
 // lib/services/notifications/notifications_service.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import '../../config.dart';
@@ -22,6 +23,8 @@ class NotificationsService {
   }
 
   WebSocketChannel? _channel;
+  HttpClient? _sseClient;
+  StreamSubscription? _sseSubscription;
   final StreamController<Map<String, dynamic>> _notificationStreamController =
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<bool> _connectionStatusController =
@@ -34,8 +37,124 @@ class NotificationsService {
 
   bool _isConnected = false;
   bool get isConnected => _isConnected;
+  
+  /// Ana bağlantı metodu - önce SSE'yi dener, başarısız olursa polling'e geçer
+  Future<void> connect() async {
+    try {
+      // Önce SSE'yi dene
+      await connectSSE();
+    } catch (e) {
+      print('SSE başarısız, polling fallback başlatılıyor: $e');
+      // SSE başarısız olursa polling fallback başlat
+      _startPollingFallback();
+    }
+  }
+  
+  /// Bağlantıyı kapatır
+  void disconnect() {
+    disconnectSSE();
+    disconnectWebSocket();
+    _stopPollingFallback();
+  }
 
-  /// WebSocket bağlantısını başlatır
+  /// Server-Sent Events ile bağlantıyı başlatır (WebSocket alternatifi)
+  Future<void> connectSSE() async {
+    final token = await ServiceLocator.token.getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    // Eğer zaten bağlıysa, önceki bağlantıyı kapat
+    if (_isConnected) {
+      disconnectSSE();
+    }
+
+    try {
+      print('DEBUG: SSE bağlantısı başlatılıyor...');
+      
+      final uri = Uri.parse('$_restApiBaseUrl/notifications/stream/');
+      final request = await HttpClient().getUrl(uri);
+      
+      // Authorization header ekle
+      request.headers.set('Authorization', 'Bearer $token');
+      request.headers.set('Accept', 'text/event-stream');
+      request.headers.set('Cache-Control', 'no-cache');
+      
+      final response = await request.close();
+      
+      if (response.statusCode == 200) {
+        _isConnected = true;
+        _connectionStatusController.add(true);
+        print('SSE bağlantısı başarılı');
+        
+        // SSE stream'i dinle
+        response.listen(
+          (data) {
+            final text = utf8.decode(data);
+            final lines = text.split('\n');
+            
+            for (final line in lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  final jsonData = line.substring(6); // 'data: ' kısmını çıkar
+                  if (jsonData.trim().isNotEmpty) {
+                    final decodedData = jsonDecode(jsonData);
+                    print('SSE yeni bildirim: $decodedData');
+                    _notificationStreamController.add(decodedData);
+                  }
+                } catch (e) {
+                  print('SSE veri parse hatası: $e');
+                }
+              }
+            }
+          },
+          onDone: () {
+            print('SSE bağlantısı kapandı');
+            _isConnected = false;
+            _connectionStatusController.add(false);
+          },
+          onError: (error) {
+            print('SSE hatası: $error');
+            _isConnected = false;
+            _connectionStatusController.add(false);
+            _notificationStreamController.addError(error);
+          },
+        );
+      } else {
+        throw Exception('SSE bağlantı hatası: ${response.statusCode}');
+      }
+    } catch (e) {
+      _isConnected = false;
+      _connectionStatusController.add(false);
+      print('SSE bağlantı hatası: $e');
+      
+      // SSE başarısız olursa polling fallback başlat
+      print('DEBUG: SSE başarısız, polling fallback başlatılıyor...');
+      _startPollingFallback();
+      
+      throw Exception('SSE bağlantı hatası: $e');
+    }
+  }
+
+  /// SSE bağlantısını kapatır
+  void disconnectSSE() {
+    if (_sseClient != null) {
+      _sseClient!.close();
+      _sseClient = null;
+    }
+    if (_sseSubscription != null) {
+      _sseSubscription!.cancel();
+      _sseSubscription = null;
+    }
+    _isConnected = false;
+    _connectionStatusController.add(false);
+    print('SSE bağlantısı kesildi.');
+    
+    // Polling'i de durdur
+    _stopPollingFallback();
+  }
+
+  /// WebSocket bağlantısını başlatır (eski metod - SSE başarısız olursa kullanılabilir)
   Future<void> connectWebSocket() async {
     final token = await ServiceLocator.token.getToken();
     if (token == null) {
@@ -142,19 +261,36 @@ class NotificationsService {
     _isPolling = true;
     print('DEBUG: Polling fallback başlatıldı');
     
-    _pollingTimer = Timer.periodic(Duration(seconds: 30), (timer) async {
-      try {
-        final notifications = await getNotifications();
-        if (notifications.isNotEmpty) {
-          // Yeni bildirimler varsa notification stream'e ekle
-          for (final notification in notifications) {
-            _notificationStreamController.add(notification);
-          }
-        }
-      } catch (e) {
-        print('Polling hatası: $e');
-      }
+    // İlk polling'i hemen yap
+    _performPolling();
+    
+    // Sonra periyodik olarak devam et
+    _pollingTimer = Timer.periodic(Duration(seconds: 15), (timer) async {
+      await _performPolling();
     });
+  }
+  
+  /// Polling işlemini gerçekleştirir
+  Future<void> _performPolling() async {
+    try {
+      final notifications = await getNotifications();
+      if (notifications.isNotEmpty) {
+        // Yeni bildirimler varsa notification stream'e ekle
+        for (final notification in notifications) {
+          _notificationStreamController.add(notification);
+        }
+        print('DEBUG: Polling ile ${notifications.length} bildirim alındı');
+      }
+    } catch (e) {
+      print('Polling hatası: $e');
+      // Polling hatası durumunda interval'i artır
+      if (_pollingTimer != null) {
+        _pollingTimer!.cancel();
+        _pollingTimer = Timer.periodic(Duration(seconds: 30), (timer) async {
+          await _performPolling();
+        });
+      }
+    }
   }
   
   /// Polling fallback'i durdurur
@@ -275,6 +411,7 @@ class NotificationsService {
   /// Servisi temizler
   void dispose() {
     disconnectWebSocket();
+    disconnectSSE();
     _stopPollingFallback();
     _notificationStreamController.close();
     _connectionStatusController.close();
