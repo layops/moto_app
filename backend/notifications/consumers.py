@@ -11,8 +11,13 @@ logger = logging.getLogger(__name__)
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print(f"DEBUG CONSUMER: NotificationConsumer.connect() çağrıldı")
+        print(f"DEBUG CONSUMER: Scope: {self.scope}")
+        
         # Token tabanlı authentication kontrolü
         token = self.scope.get('query_string', b'').decode('utf-8')
+        print(f"DEBUG CONSUMER: Query string: {token}")
+        
         if 'token=' not in token:
             logger.warning("WebSocket bağlantısı reddedildi: Token bulunamadı")
             await self.close(code=4001)

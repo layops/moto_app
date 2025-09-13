@@ -102,11 +102,12 @@ import chat.routing
 import notifications.routing
 
 # Render.com için WebSocket konfigürasyonu
+all_websocket_patterns = chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
+print(f"DEBUG ASGI: Tüm WebSocket patterns: {all_websocket_patterns}")
+
 application = ProtocolTypeRouter({
     "http": AuthTokenMiddleware(django_asgi_app),  # HTTP için de token middleware ekledik
     "websocket": AuthTokenMiddleware(
-        URLRouter(
-            chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
-        )
+        URLRouter(all_websocket_patterns)
     ),
 })
