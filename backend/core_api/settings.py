@@ -133,6 +133,10 @@ CORS_ALLOWED_ORIGINS = [
 
 # WebSocket için CORS ayarları
 CORS_ALLOW_CREDENTIALS = True
+
+# Render.com için WebSocket ayarları
+SECURE_SSL_REDIRECT = False  # Render.com'da SSL proxy kullanıldığı için
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
