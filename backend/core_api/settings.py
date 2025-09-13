@@ -130,6 +130,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://yourdomain.com",  # Production domain'inizi buraya ekleyin
 ] if not DEBUG else []
+
+# WebSocket için CORS ayarları
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

@@ -8,8 +8,14 @@ import '../service_locator.dart';
 
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
-  final String _wsApiUrl =
-      kBaseUrl.replaceFirst('https://', 'ws://') + '/ws/notifications/';
+  // Render.com için WebSocket URL'i - WSS protokolü kullan
+  final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://') + '/ws/notifications/';
+  
+  // Debug için constructor'da URL'yi yazdır
+  NotificationsService() {
+    print('DEBUG: kBaseUrl = $kBaseUrl');
+    print('DEBUG: _wsApiUrl = $_wsApiUrl');
+  }
 
   WebSocketChannel? _channel;
   final StreamController<Map<String, dynamic>> _notificationStreamController =
@@ -40,6 +46,10 @@ class NotificationsService {
     try {
       final wsUrl = '$_wsApiUrl?token=$token';
       print('DEBUG: WebSocket bağlantısı kuruluyor: $wsUrl');
+      print('DEBUG: WebSocket URL protokolü: ${Uri.parse(wsUrl).scheme}');
+      print('DEBUG: WebSocket URL host: ${Uri.parse(wsUrl).host}');
+      print('DEBUG: WebSocket URL port: ${Uri.parse(wsUrl).port}');
+      print('DEBUG: WebSocket URL path: ${Uri.parse(wsUrl).path}');
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(

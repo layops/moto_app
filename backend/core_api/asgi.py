@@ -15,6 +15,16 @@ class AuthTokenMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
+        # Render.com için WebSocket upgrade header'larını kontrol et
+        if scope['type'] == 'websocket':
+            headers = dict(scope.get('headers', []))
+            upgrade_header = headers.get(b'upgrade', b'').decode('utf-8').lower()
+            connection_header = headers.get(b'connection', b'').decode('utf-8').lower()
+            
+            if upgrade_header == 'websocket' and 'upgrade' in connection_header:
+                print("DEBUG ASGI (WS): WebSocket upgrade detected")
+            else:
+                print(f"DEBUG ASGI (WS): Upgrade headers - Upgrade: {upgrade_header}, Connection: {connection_header}")
         # HTTP istekleri için token doğrulama ekleyelim
         if scope['type'] == 'http':
             headers = dict(scope['headers'])
@@ -91,6 +101,7 @@ print("DEBUG: asgi.py yüklendi - HTTP ve WS Token Doğrulamalı")
 import chat.routing
 import notifications.routing
 
+# Render.com için WebSocket konfigürasyonu
 application = ProtocolTypeRouter({
     "http": AuthTokenMiddleware(django_asgi_app),  # HTTP için de token middleware ekledik
     "websocket": AuthTokenMiddleware(
