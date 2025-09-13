@@ -21,6 +21,25 @@ def send_realtime_notification(recipient_user, message, notification_type='other
         content_object: İlgili nesne (opsiyonel)
     """
     try:
+        # Çift bildirim kontrolü - son 5 dakika içinde aynı bildirim var mı?
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        recent_time = timezone.now() - timedelta(minutes=5)
+        
+        # Aynı gönderici, alıcı, mesaj ve türde son 5 dakika içinde bildirim var mı?
+        existing_notification = Notification.objects.filter(
+            recipient=recipient_user,
+            sender=sender_user,
+            message=message,
+            notification_type=notification_type,
+            timestamp__gte=recent_time
+        ).first()
+        
+        if existing_notification:
+            logger.info(f"Çift bildirim engellendi: {recipient_user.username} - {notification_type}")
+            return existing_notification
+        
         # Bildirimi veritabanına kaydet
         notification = Notification.objects.create(
             recipient=recipient_user,

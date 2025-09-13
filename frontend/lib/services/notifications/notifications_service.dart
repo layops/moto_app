@@ -273,6 +273,12 @@ class NotificationsService {
   /// Polling işlemini gerçekleştirir
   Future<void> _performPolling() async {
     try {
+      // WebSocket bağlıysa polling yapma (çift bildirim önleme)
+      if (_isConnected) {
+        print('DEBUG: WebSocket bağlı, polling atlanıyor');
+        return;
+      }
+      
       final notifications = await getNotifications();
       if (notifications.isNotEmpty) {
         // Yeni bildirimler varsa notification stream'e ekle
