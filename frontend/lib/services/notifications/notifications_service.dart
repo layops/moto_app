@@ -8,8 +8,12 @@ import '../service_locator.dart';
 
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
-  // Render.com için WebSocket URL'i - HTTPS protokolü kullan (Render.com proxy)
-  final String _wsApiUrl = kBaseUrl + '/ws/notifications/';
+  // Render.com için WebSocket URL'i - WSS protokolü kullan
+  final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://') + '/ws/notifications/';
+  
+  // Polling fallback için
+  Timer? _pollingTimer;
+  bool _isPolling = false;
   
   // Debug için constructor'da URL'yi yazdır
   NotificationsService() {
@@ -62,12 +66,25 @@ class NotificationsService {
       print('DEBUG: URI path: ${uri.path}');
       print('DEBUG: URI query: ${uri.query}');
       
-      // Render.com için WebSocket bağlantısı - HTTPS üzerinden upgrade
+      // Render.com için WebSocket bağlantısı - WSS protokolü
       print('DEBUG: WebSocketChannel.connect çağrılıyor...');
-      _channel = WebSocketChannel.connect(
-        Uri.parse(wsUrl),
-        protocols: ['websocket'],
-      );
+      
+      // Render.com'da WebSocket bağlantısı için timeout ekle
+      _channel = await Future.any([
+        Future.value(WebSocketChannel.connect(
+          Uri.parse(wsUrl),
+          headers: {
+            'Origin': kBaseUrl,
+            'User-Agent': 'Flutter-WebSocket-Client',
+          },
+        )).then((channel) {
+          print('DEBUG: WebSocket bağlantısı başarılı');
+          return channel;
+        }),
+        Future.delayed(Duration(seconds: 5)).then((_) {
+          throw TimeoutException('WebSocket connection timeout', Duration(seconds: 5));
+        }),
+      ]);
 
       _channel!.stream.listen(
         (data) {
@@ -99,6 +116,11 @@ class NotificationsService {
       _isConnected = false;
       _connectionStatusController.add(false);
       print('WebSocket bağlantı hatası: $e');
+      
+      // WebSocket başarısız olursa polling fallback başlat
+      print('DEBUG: WebSocket başarısız, polling fallback başlatılıyor...');
+      _startPollingFallback();
+      
       throw Exception('WebSocket bağlantı hatası: $e');
     }
   }
@@ -112,6 +134,41 @@ class NotificationsService {
     _isConnected = false;
     _connectionStatusController.add(false);
     print('WebSocket bağlantısı kesildi.');
+    
+    // Polling'i de durdur
+    _stopPollingFallback();
+  }
+
+  /// Polling fallback başlatır
+  void _startPollingFallback() {
+    if (_isPolling) return;
+    
+    _isPolling = true;
+    print('DEBUG: Polling fallback başlatıldı');
+    
+    _pollingTimer = Timer.periodic(Duration(seconds: 30), (timer) async {
+      try {
+        final notifications = await getNotifications();
+        if (notifications.isNotEmpty) {
+          // Yeni bildirimler varsa notification stream'e ekle
+          for (final notification in notifications) {
+            _notificationStreamController.add(notification);
+          }
+        }
+      } catch (e) {
+        print('Polling hatası: $e');
+      }
+    });
+  }
+  
+  /// Polling fallback'i durdurur
+  void _stopPollingFallback() {
+    if (_pollingTimer != null) {
+      _pollingTimer!.cancel();
+      _pollingTimer = null;
+    }
+    _isPolling = false;
+    print('DEBUG: Polling fallback durduruldu');
   }
 
   /// Backend'den bildirimleri çeker
@@ -222,6 +279,7 @@ class NotificationsService {
   /// Servisi temizler
   void dispose() {
     disconnectWebSocket();
+    _stopPollingFallback();
     _notificationStreamController.close();
     _connectionStatusController.close();
   }
