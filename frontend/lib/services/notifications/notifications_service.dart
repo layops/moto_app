@@ -8,7 +8,7 @@ import '../service_locator.dart';
 
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
-  // Render.com için WebSocket URL'i - WSS protokolü kullan
+  // Render.com için WebSocket URL'i - WSS protokolü kullan, port belirtme
   final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://') + '/ws/notifications/';
   
   // Polling fallback için
@@ -73,10 +73,6 @@ class NotificationsService {
       _channel = await Future.any([
         Future.value(WebSocketChannel.connect(
           Uri.parse(wsUrl),
-          headers: {
-            'Origin': kBaseUrl,
-            'User-Agent': 'Flutter-WebSocket-Client',
-          },
         )).then((channel) {
           print('DEBUG: WebSocket bağlantısı başarılı');
           return channel;
