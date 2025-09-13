@@ -12,15 +12,13 @@ class SearchService {
   /// Kullanıcı arama
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     try {
-      print('🔍 SearchService - Kullanıcı arama başlatıldı: "$query"');
       
       // Minimum 2 karakter kontrolü
       if (query.trim().length < 2) {
-        print('🔍 SearchService - Query çok kısa, boş liste döndürülüyor');
         return [];
       }
       
-      print('🔍 SearchService - API çağrısı yapılıyor: search/users/?q=${query.trim()}');
+      // print('🔍 SearchService - API çağrısı yapılıyor: search/users/?q=${query.trim()}');
       
       final response = await _apiClient.get(
         'search/users/',
@@ -28,29 +26,29 @@ class SearchService {
         useCache: false, // Arama sonuçları cache'lenmemeli
       );
 
-      print('🔍 SearchService - API yanıtı alındı: ${response.statusCode}');
-      print('🔍 SearchService - Response data: ${response.data}');
+      // print('🔍 SearchService - API yanıtı alındı: ${response.statusCode}');
+      // print('🔍 SearchService - Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        print('✅ SearchService - Kullanıcı arama başarılı: ${data.length} kullanıcı bulundu');
+        // print('✅ SearchService - Kullanıcı arama başarılı: ${data.length} kullanıcı bulundu');
         for (int i = 0; i < data.length && i < 3; i++) {
           final user = data[i];
-          print('   ${i+1}. Username: "${user['username']}", First: "${user['first_name']}", Last: "${user['last_name']}", Email: "${user['email']}"');
+          // print('   ${i+1}. Username: "${user['username']}", First: "${user['first_name']}", Last: "${user['last_name']}", Email: "${user['email']}"');
         }
         return data.cast<Map<String, dynamic>>();
       } else {
-        print('❌ SearchService - API yanıt hatası: ${response.statusCode}');
-        print('❌ SearchService - Hata detayı: ${response.data}');
+        // print('❌ SearchService - API yanıt hatası: ${response.statusCode}');
+        // print('❌ SearchService - Hata detayı: ${response.data}');
         throw Exception('Kullanıcı arama başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ SearchService - DioException: ${e.message}');
-      print('❌ SearchService - DioException response: ${e.response?.data}');
-      print('❌ SearchService - DioException status: ${e.response?.statusCode}');
+      // print('❌ SearchService - DioException: ${e.message}');
+      // print('❌ SearchService - DioException response: ${e.response?.data}');
+      // print('❌ SearchService - DioException status: ${e.response?.statusCode}');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
-      print('❌ SearchService - Genel hata: $e');
+      // print('❌ SearchService - Genel hata: $e');
       throw Exception('Kullanıcı arama hatası: $e');
     }
   }
@@ -58,15 +56,14 @@ class SearchService {
   /// Grup arama
   Future<List<Map<String, dynamic>>> searchGroups(String query) async {
     try {
-      print('🔍 SearchService - Grup arama başlatıldı: "$query"');
+      // print('🔍 SearchService - Grup arama başlatıldı: "$query"');
       
       // Minimum 2 karakter kontrolü
       if (query.trim().length < 2) {
-        print('🔍 SearchService - Query çok kısa, boş liste döndürülüyor');
         return [];
       }
       
-      print('🔍 SearchService - API çağrısı yapılıyor: search/groups/?q=${query.trim()}');
+      // print('🔍 SearchService - API çağrısı yapılıyor: search/groups/?q=${query.trim()}');
       
       final response = await _apiClient.get(
         'search/groups/',
@@ -74,29 +71,29 @@ class SearchService {
         useCache: false, // Arama sonuçları cache'lenmemeli
       );
 
-      print('🔍 SearchService - API yanıtı alındı: ${response.statusCode}');
-      print('🔍 SearchService - Response data: ${response.data}');
+      // print('🔍 SearchService - API yanıtı alındı: ${response.statusCode}');
+      // print('🔍 SearchService - Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        print('✅ SearchService - Grup arama başarılı: ${data.length} grup bulundu');
+        // print('✅ SearchService - Grup arama başarılı: ${data.length} grup bulundu');
         for (int i = 0; i < data.length && i < 3; i++) {
           final group = data[i];
-          print('   ${i+1}. Name: "${group['name']}", Description: "${group['description']}", Member Count: ${group['member_count']}');
+          // print('   ${i+1}. Name: "${group['name']}", Description: "${group['description']}", Member Count: ${group['member_count']}');
         }
         return data.cast<Map<String, dynamic>>();
       } else {
-        print('❌ SearchService - API yanıt hatası: ${response.statusCode}');
-        print('❌ SearchService - Hata detayı: ${response.data}');
+        // print('❌ SearchService - API yanıt hatası: ${response.statusCode}');
+        // print('❌ SearchService - Hata detayı: ${response.data}');
         throw Exception('Grup arama başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ SearchService - DioException: ${e.message}');
-      print('❌ SearchService - DioException response: ${e.response?.data}');
-      print('❌ SearchService - DioException status: ${e.response?.statusCode}');
+      // print('❌ SearchService - DioException: ${e.message}');
+      // print('❌ SearchService - DioException response: ${e.response?.data}');
+      // print('❌ SearchService - DioException status: ${e.response?.statusCode}');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
-      print('❌ SearchService - Genel hata: $e');
+      // print('❌ SearchService - Genel hata: $e');
       throw Exception('Grup arama hatası: $e');
     }
   }
@@ -178,32 +175,32 @@ class SearchService {
   /// Mevcut kullanıcıları getir (arama için referans)
   Future<List<Map<String, dynamic>>> getAvailableUsers() async {
     try {
-      print('🔍 SearchService - Mevcut kullanıcılar getiriliyor...');
+      // print('🔍 SearchService - Mevcut kullanıcılar getiriliyor...');
       
       final response = await _apiClient.get(
         'search/available-users/',
         useCache: true, // Bu veri cache'lenebilir
       );
 
-      print('🔍 SearchService - Available users response: ${response.statusCode}');
-      print('🔍 SearchService - Available users data: ${response.data}');
+      // print('🔍 SearchService - Available users response: ${response.statusCode}');
+      // print('🔍 SearchService - Available users data: ${response.data}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['users'];
-        print('✅ SearchService - ${data.length} kullanıcı alındı');
+        // print('✅ SearchService - ${data.length} kullanıcı alındı');
         for (int i = 0; i < data.length && i < 3; i++) {
-          print('   ${i+1}. ${data[i]}');
+          // print('   ${i+1}. ${data[i]}');
         }
         return data.cast<Map<String, dynamic>>();
       } else {
-        print('❌ SearchService - Available users hatası: ${response.statusCode}');
+        // print('❌ SearchService - Available users hatası: ${response.statusCode}');
         throw Exception('Kullanıcı listesi alınamadı: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ SearchService - Available users DioException: ${e.message}');
+      // print('❌ SearchService - Available users DioException: ${e.message}');
       throw ApiExceptions.fromDioError(e);
     } catch (e) {
-      print('❌ SearchService - Available users genel hata: $e');
+      // print('❌ SearchService - Available users genel hata: $e');
       throw Exception('Kullanıcı listesi hatası: $e');
     }
   }

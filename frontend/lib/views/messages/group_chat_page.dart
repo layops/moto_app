@@ -383,6 +383,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
+        final isMe = message.sender.id == _currentUserId;
         final isFirstInGroup = index == 0 || 
             _messages[index - 1].sender.id != message.sender.id ||
             message.createdAt.difference(_messages[index - 1].createdAt).inMinutes >= 5;

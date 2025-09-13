@@ -258,11 +258,11 @@ class EventService {
   }
 
   // Event request yönetimi
-  Future<List<dynamic>> getEventRequests(int eventId) async {
+  Future<List<dynamic>> getEventJoinRequests(int eventId) async {
     try {
       final token = await authService.getToken();
       final response = await _dio.get(
-        '$kBaseUrl/api/events/$eventId/requests/',
+        '$kBaseUrl/api/events/$eventId/join-requests/',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -271,41 +271,40 @@ class EventService {
       );
       return response.data as List<dynamic>;
     } catch (e) {
-      throw Exception('Failed to get event requests: $e');
+      throw Exception('Failed to get event join requests: $e');
     }
+  }
+
+  Future<void> handleJoinRequest(int eventId, int userId, bool approved) async {
+    try {
+      final token = await authService.getToken();
+      await _dio.post(
+        '$kBaseUrl/api/events/$eventId/handle-join-request/',
+        data: {
+          'user_id': userId,
+          'approved': approved,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to handle join request: $e');
+    }
+  }
+
+  // Eski metodlar (geriye uyumluluk için)
+  Future<List<dynamic>> getEventRequests(int eventId) async {
+    return getEventJoinRequests(eventId);
   }
 
   Future<void> approveEventRequest(int eventId, int requestId) async {
-    try {
-      final token = await authService.getToken();
-      await _dio.post(
-        '$kBaseUrl/api/events/$eventId/approve_request/',
-        data: {'request_id': requestId},
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-    } catch (e) {
-      throw Exception('Failed to approve event request: $e');
-    }
+    await handleJoinRequest(eventId, requestId, true);
   }
 
   Future<void> rejectEventRequest(int eventId, int requestId) async {
-    try {
-      final token = await authService.getToken();
-      await _dio.post(
-        '$kBaseUrl/api/events/$eventId/reject_request/',
-        data: {'request_id': requestId},
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-    } catch (e) {
-      throw Exception('Failed to reject event request: $e');
-    }
+    await handleJoinRequest(eventId, requestId, false);
   }
 }

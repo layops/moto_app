@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../http/api_client.dart';
 import '../http/api_exceptions.dart';
+import '../storage/local_storage.dart';
 
 /// Rides API servisi
 class RidesService {
@@ -8,7 +9,7 @@ class RidesService {
   factory RidesService() => _instance;
   RidesService._internal();
 
-  final ApiClient _apiClient = ApiClient();
+  final ApiClient _apiClient = ApiClient(LocalStorage());
 
   /// Tüm yolculukları getir
   Future<List<Ride>> getRides({
@@ -28,7 +29,7 @@ class RidesService {
           .map((json) => Ride.fromJson(json))
           .toList();
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
@@ -41,7 +42,7 @@ class RidesService {
           .map((json) => Ride.fromJson(json))
           .toList();
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
@@ -51,67 +52,67 @@ class RidesService {
       final response = await _apiClient.get('/rides/$rideId/');
       return Ride.fromJson(response.data);
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Yeni yolculuk oluştur
   Future<Ride> createRide(CreateRideRequest request) async {
     try {
-      final response = await _apiClient.post('/rides/', data: request.toJson());
+      final response = await _apiClient.post('/rides/', request.toJson());
       return Ride.fromJson(response.data);
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Yolculuğa katıl
   Future<void> joinRide(int rideId) async {
     try {
-      await _apiClient.post('/rides/$rideId/join/');
+      await _apiClient.post('/rides/$rideId/join/', {});
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Yolculuktan ayrıl
   Future<void> leaveRide(int rideId) async {
     try {
-      await _apiClient.post('/rides/$rideId/leave/');
+      await _apiClient.post('/rides/$rideId/leave/', {});
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Katılım isteğini onayla
   Future<void> approveRequest(int rideId, int requestId) async {
     try {
-      await _apiClient.post('/rides/$rideId/approve_request/', data: {
+      await _apiClient.post('/rides/$rideId/approve_request/', {
         'request_id': requestId,
       });
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Katılım isteğini reddet
   Future<void> rejectRequest(int rideId, int requestId) async {
     try {
-      await _apiClient.post('/rides/$rideId/reject_request/', data: {
+      await _apiClient.post('/rides/$rideId/reject_request/', {
         'request_id': requestId,
       });
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Yolculuğu tamamla
   Future<Ride> completeRide(int rideId, CompleteRideRequest request) async {
     try {
-      final response = await _apiClient.post('/rides/$rideId/complete_ride/', data: request.toJson());
+      final response = await _apiClient.post('/rides/$rideId/complete_ride/', request.toJson());
       return Ride.fromJson(response.data['ride']);
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
@@ -124,18 +125,18 @@ class RidesService {
           .map((json) => RouteFavorite.fromJson(json))
           .toList();
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Rotayı favorilere ekle/çıkar
   Future<void> toggleFavorite(int rideId) async {
     try {
-      await _apiClient.post('/route-favorites/toggle_favorite/', data: {
+      await _apiClient.post('/route-favorites/toggle_favorite/', {
         'ride_id': rideId,
       });
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
@@ -151,17 +152,17 @@ class RidesService {
           .map((json) => RouteTemplate.fromJson(json))
           .toList();
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Şablondan yolculuk oluştur
   Future<Ride> createRideFromTemplate(int templateId, CreateRideFromTemplateRequest request) async {
     try {
-      final response = await _apiClient.post('/route-templates/$templateId/create_ride/', data: request.toJson());
+      final response = await _apiClient.post('/route-templates/$templateId/create_ride/', request.toJson());
       return Ride.fromJson(response.data);
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
@@ -178,26 +179,26 @@ class RidesService {
           .map((json) => LocationShare.fromJson(json))
           .toList();
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Konum paylaşımı başlat
   Future<LocationShare> startLocationShare(StartLocationShareRequest request) async {
     try {
-      final response = await _apiClient.post('/location-shares/', data: request.toJson());
+      final response = await _apiClient.post('/location-shares/', request.toJson());
       return LocationShare.fromJson(response.data);
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 
   /// Konum paylaşımını durdur
   Future<void> stopLocationShare(int locationShareId) async {
     try {
-      await _apiClient.post('/location-shares/$locationShareId/stop_sharing/');
+      await _apiClient.post('/location-shares/$locationShareId/stop_sharing/', {});
     } on DioException catch (e) {
-      throw ApiException.fromDioException(e);
+      throw Exception('Yolculuklar alınamadı: ${e.message}');
     }
   }
 }

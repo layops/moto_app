@@ -14,7 +14,6 @@ class FollowService {
     if (token == null) throw Exception('Kullanıcı girişi gerekli');
 
     try {
-      print('🔄 FollowService - Takip işlemi başlatılıyor: $username');
       
       final response = await _apiClient.post(
         'users/$username/follow-toggle/',
@@ -24,20 +23,15 @@ class FollowService {
         ),
       );
 
-      print('✅ FollowService - Takip işlemi tamamlandı: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final detail = response.data['detail'] ?? '';
         final isFollowing = detail.contains('Takip edildi');
-        print('📊 FollowService - Sonuç: $detail (Takip edildi: $isFollowing)');
         return isFollowing;
       } else {
         throw Exception('Takip işlemi başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ FollowService - DioException: ${e.message}');
-      print('❌ FollowService - Error type: ${e.type}');
-      print('❌ FollowService - Response status: ${e.response?.statusCode}');
       
       if (e.type == DioExceptionType.connectionTimeout || 
           e.type == DioExceptionType.receiveTimeout ||
@@ -56,7 +50,6 @@ class FollowService {
       
       rethrow;
     } catch (e) {
-      print('❌ FollowService - Genel hata: $e');
       rethrow;
     }
   }
@@ -89,22 +82,15 @@ class FollowService {
     if (token == null) throw Exception('Kullanıcı girişi gerekli');
 
     try {
-      print('🔍 FollowService - getFollowing çağrıldı, username: $username');
       final response = await _apiClient.get('users/$username/following/');
-      print('🔍 FollowService - getFollowing response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final following = response.data as List<dynamic>;
-        print('🔍 FollowService - Takip edilen kullanıcı sayısı: ${following.length}');
-        for (var user in following) {
-          print('🔍 FollowService - Takip edilen: ${user['username']}');
-        }
         return following;
       } else {
         throw Exception('Takip edilenler alınamadı: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('❌ FollowService - getFollowing hatası: ${e.message}');
       if (e.response?.statusCode == 404) return [];
       rethrow;
     }

@@ -32,20 +32,7 @@ class MainWrapperNewState extends State<MainWrapperNew> {
     _loadUnreadMessageCount();
     
     // Debug için navigation yapısını göster (sadece debug modda)
-    if (kDebugMode) {
-      print("=== YENİ NAVIGATION INIT ===");
-      print("NavItems sayısı: ${widget.navItems.length}");
-      print("Pages sayısı: ${widget.pages.length}");
-      
-      for (int i = 0; i < widget.navItems.length; i++) {
-        print("NavItem $i: ${widget.navItems[i].label}");
-      }
-      
-      for (int i = 0; i < widget.pages.length; i++) {
-        print("Page $i: ${widget.pages[i].runtimeType}");
-      }
-      print("===========================");
-    }
+    // Navigation initialized
   }
 
   @override
@@ -76,18 +63,11 @@ class MainWrapperNewState extends State<MainWrapperNew> {
       // Parent widget'a bildir
       widget.onUnreadCountChanged?.call();
     } catch (e) {
-      print('❌ MainWrapper - Error loading unread message count: $e');
     }
   }
 
   void _onTabSelected(int index) {
-    if (kDebugMode) {
-      print("=== YENİ NAVIGATION DEBUG ===");
-      print("Tıklanan buton index: $index");
-      print("Tıklanan buton: ${widget.navItems[index].label}");
-      print("Açılacak sayfa: ${widget.pages[index].runtimeType}");
-      print("=============================");
-    }
+    // Tab selected: $index
 
     setState(() {
       _currentIndex = index;

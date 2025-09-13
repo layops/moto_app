@@ -115,7 +115,7 @@ class LocalStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_profileDataKey, json.encode(profileData));
     } catch (e) {
-      print('Profil verileri kaydedilirken hata: $e');
+      // print('Profil verileri kaydedilirken hata: $e');
     }
   }
 
@@ -127,7 +127,7 @@ class LocalStorage {
         return json.decode(profileDataString) as Map<String, dynamic>;
       }
     } catch (e) {
-      print('Profil verileri okunurken hata: $e');
+      // print('Profil verileri okunurken hata: $e');
     }
     return null;
   }
@@ -137,7 +137,7 @@ class LocalStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_profileDataKey);
     } catch (e) {
-      print('Profil verileri temizlenirken hata: $e');
+      // print('Profil verileri temizlenirken hata: $e');
     }
   }
 }

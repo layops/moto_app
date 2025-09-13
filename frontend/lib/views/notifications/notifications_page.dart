@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/services/notifications/notifications_service.dart';
+import 'package:motoapp_frontend/views/event/event_requests_page.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -16,7 +17,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ServiceLocator.notification;
   List<dynamic> _notifications = [];
   bool _isLoading = true;
-  bool _isWebSocketConnected = false;
+  bool _isNotificationConnected = false;
   String? _errorMessage;
 
   @override
@@ -27,14 +28,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _initializeNotifications() async {
     await _fetchNotifications();
-    await _connectWebSocket();
+    await _connectNotifications();
   }
 
-  Future<void> _connectWebSocket() async {
+  Future<void> _connectNotifications() async {
     try {
       await _notificationsService.connect(); // Yeni akıllı bağlantı metodu
       setState(() {
-        _isWebSocketConnected = true;
+        _isNotificationConnected = true;
         _errorMessage = null;
       });
       
@@ -49,7 +50,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               if (existingIndex == -1) {
                 // Yeni bildirim, en başa ekle
                 _notifications.insert(0, newNotification);
-                print('📱 Yeni bildirim eklendi: ${newNotification['message']}');
                 
                 // Sıralamayı koru (en yeni en üstte)
                 _notifications.sort((a, b) {
@@ -61,7 +61,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               } else {
                 // Çift bildirim, mevcut olanı güncelle
                 _notifications[existingIndex] = newNotification;
-                print('🔄 Bildirim güncellendi: ${newNotification['message']}');
               }
             });
           }
@@ -69,7 +68,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         onError: (error) {
           if (mounted) {
             setState(() {
-              _isWebSocketConnected = false;
+              _isNotificationConnected = false;
               _errorMessage = 'Bildirim bağlantı hatası: $error';
             });
           }
@@ -78,7 +77,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isWebSocketConnected = false;
+          _isNotificationConnected = false;
           _errorMessage = 'Bildirim bağlantı hatası: $e';
         });
       }
@@ -192,7 +191,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final contentObjectId = notification['content_object_id'] as int?;
     final sender = notification['sender'] as Map<String, dynamic>?;
     
-    print('🔔 Bildirim tıklandı: $notificationType (ID: $contentObjectId)');
     
     switch (notificationType) {
       case 'group_invite':
@@ -224,9 +222,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
         break;
         
       case 'event_join_request':
+        // Etkinlik katılım isteği - katılım istekleri sayfasına git
+        if (contentObjectId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventRequestsPage(
+                eventId: contentObjectId,
+                eventTitle: 'Etkinlik', // TODO: Etkinlik başlığını al
+              ),
+            ),
+          );
+        } else {
+          _showNavigationError('Etkinlik bilgisi bulunamadı');
+        }
+        break;
+        
       case 'event_join_approved':
       case 'event_join_rejected':
-        // Etkinlik katılım isteği/onay/red - etkinlik detay sayfasına git
+        // Etkinlik katılım onay/red - etkinlik detay sayfasına git
         if (contentObjectId != null) {
           Navigator.pushNamed(
             context,
@@ -352,26 +366,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             ),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Bildirimler',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (unreadCount > 0)
-                  Text(
-                    '$unreadCount okunmamış bildirim',
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Bildirimler',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-              ],
+                  if (unreadCount > 0)
+                    Text(
+                      '$unreadCount okunmamış bildirim',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
+              ),
             ),
             if (unreadCount > 0) ...[
               const SizedBox(width: 8),
@@ -444,7 +461,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
       body: Column(
         children: [
-          // WebSocket bağlantı durumu
+          // Bildirim bağlantı durumu
           if (_errorMessage != null)
             Container(
               width: double.infinity,
@@ -463,15 +480,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   TextButton(
                     onPressed: () {
                       setState(() => _errorMessage = null);
-                      _connectWebSocket(); // Bu metod artık SSE kullanıyor
+                      _connectNotifications(); // Bu metod artık SSE kullanıyor
                     },
                     child: const Text('Tekrar Dene'),
                   ),
                 ],
               ),
             ),
-          // WebSocket bağlantı durumu göstergesi
-          if (!_isWebSocketConnected && _errorMessage == null)
+          // Bildirim bağlantı durumu göstergesi
+          if (!_isNotificationConnected && _errorMessage == null)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(8),
@@ -489,7 +506,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'WebSocket bağlantısı kuruluyor...',
+                    'Bildirim bağlantısı kuruluyor...',
                     style: TextStyle(color: Colors.orange[700], fontSize: 12),
                   ),
                 ],

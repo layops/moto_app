@@ -230,7 +230,7 @@ class HomePostsList extends StatelessWidget {
   // Callback metodları
 
   Future<void> _handleComment(int postId) async {
-    debugPrint('Comment clicked for post: $postId');
+    // debugPrint('Comment clicked for post: $postId');
     // Yorum sayfasına yönlendir
     _navigateToComments(postId);
   }
@@ -243,7 +243,7 @@ class HomePostsList extends StatelessWidget {
     );
     
     if (post.isEmpty) {
-      debugPrint('Post not found for ID: $postId');
+      // debugPrint('Post not found for ID: $postId');
       return;
     }
     
@@ -260,9 +260,9 @@ class HomePostsList extends StatelessWidget {
     
     final postContent = post['content']?.toString() ?? '';
     
-    debugPrint('Navigating to comments for post $postId');
-    debugPrint('  - Username: $username');
-    debugPrint('  - Post content: $postContent');
+    // debugPrint('Navigating to comments for post $postId');
+    // debugPrint('  - Username: $username');
+    // debugPrint('  - Post content: $postContent');
     
     // Navigator context'ini al
     final context = ServiceLocator.navigatorKey.currentContext;
@@ -278,7 +278,7 @@ class HomePostsList extends StatelessWidget {
         ),
       );
     } else {
-      debugPrint('Navigator context not available');
+      // debugPrint('Navigator context not available');
     }
   }
 
@@ -291,7 +291,7 @@ class HomePostsList extends StatelessWidget {
       );
       
       if (post.isEmpty) {
-        debugPrint('Post not found for ID: $postId');
+        // debugPrint('Post not found for ID: $postId');
         return;
       }
       
@@ -359,7 +359,7 @@ class HomePostsList extends StatelessWidget {
         );
       }
     } catch (e) {
-      debugPrint('Share error: $e');
+      // debugPrint('Share error: $e');
     }
   }
   

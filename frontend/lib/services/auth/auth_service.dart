@@ -23,12 +23,12 @@ class AuthService {
   Future<Map<String, dynamic>?> get currentUser async {
     // Token'dan kullanıcı bilgilerini al
     try {
-      print('🔑 AuthService - Getting current user from token...');
+      // print('🔑 AuthService - Getting current user from token...');
       final token = await _tokenService.getToken();
-      print('🔑 AuthService - Raw token: $token');
+      // print('🔑 AuthService - Raw token: $token');
       
       final tokenData = await _tokenService.getTokenData();
-      print('🔑 AuthService - Token data: $tokenData');
+      // print('🔑 AuthService - Token data: $tokenData');
       
       if (tokenData != null) {
         final userData = {
@@ -36,14 +36,14 @@ class AuthService {
           'username': tokenData['username'],
           'email': tokenData['email'],
         };
-        print('🔑 AuthService - Current user data: $userData');
+        // print('🔑 AuthService - Current user data: $userData');
         return userData;
       } else {
-        print('🔑 AuthService - No token data found, trying alternative method...');
+        // print('🔑 AuthService - No token data found, trying alternative method...');
         
         // Alternatif: Token'dan username al ve API'den user bilgilerini çek
         final username = await _tokenService.getUsernameFromToken();
-        print('🔑 AuthService - Username from token: $username');
+        // print('🔑 AuthService - Username from token: $username');
         
         if (username != null) {
           // API'den user bilgilerini çek
@@ -51,7 +51,7 @@ class AuthService {
             final response = await _apiClient.get('users/$username/profile/');
             if (response.statusCode == 200) {
               final userData = response.data;
-              print('🔑 AuthService - User data from API: $userData');
+              // print('🔑 AuthService - User data from API: $userData');
               return {
                 'id': userData['id'],
                 'username': userData['username'],
@@ -59,12 +59,12 @@ class AuthService {
               };
             }
           } catch (e) {
-            print('❌ AuthService - Error fetching user from API: $e');
+            // print('❌ AuthService - Error fetching user from API: $e');
           }
         }
       }
     } catch (e) {
-      print('❌ AuthService - Error getting current user: $e');
+      // print('❌ AuthService - Error getting current user: $e');
     }
     return null;
   }
@@ -77,19 +77,19 @@ class AuthService {
   Future<Response> login(String username, String password,
       {bool rememberMe = false}) async {
     try {
-      print('🔑 AuthService - JWT Login başlatılıyor: $username');
+      // print('🔑 AuthService - JWT Login başlatılıyor: $username');
       final response = await _apiClient.post('token/', {
         'username': username,
         'password': password,
       });
 
-      print('🔑 AuthService - JWT Login response: ${response.statusCode}');
-      print('🔑 AuthService - JWT Login data: ${response.data}');
+      // print('🔑 AuthService - JWT Login response: ${response.statusCode}');
+      // print('🔑 AuthService - JWT Login data: ${response.data}');
 
       final accessToken = _extractAccessToken(response);
       final refreshToken = _extractRefreshToken(response);
-      print('🔑 AuthService - Extracted access token: ${accessToken.isNotEmpty ? "Token mevcut (${accessToken.substring(0, 10)}...)" : "Token boş"}');
-      print('🔑 AuthService - Extracted refresh token: ${refreshToken.isNotEmpty ? "Refresh token mevcut" : "Refresh token boş"}');
+      // print('🔑 AuthService - Extracted access token: ${accessToken.isNotEmpty ? "Token mevcut (${accessToken.substring(0, 10)}...)" : "Token boş"}');
+      // print('🔑 AuthService - Extracted refresh token: ${refreshToken.isNotEmpty ? "Refresh token mevcut" : "Refresh token boş"}');
       
       if (accessToken.isNotEmpty) {
         await _tokenService.saveAuthData(accessToken, username, refreshToken: refreshToken);
@@ -104,9 +104,9 @@ class AuthService {
 
         // Auth state güncelle
         _authStateController.add(true);
-        print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
+        // print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
       } else {
-        print('❌ AuthService - Access token boş, login başarısız');
+        // print('❌ AuthService - Access token boş, login başarısız');
       }
       return response;
     } on DioException catch (e) {
@@ -153,7 +153,7 @@ class AuthService {
         });
       }
     } catch (e) {
-      print('❌ AuthService - Logout sırasında token blacklist hatası: $e');
+      // print('❌ AuthService - Logout sırasında token blacklist hatası: $e');
     }
     
     await clearAllUserData();
@@ -167,11 +167,11 @@ class AuthService {
     try {
       final refreshToken = await _tokenService.getRefreshToken();
       if (refreshToken == null) {
-        print('❌ AuthService - Refresh token bulunamadı');
+        // print('❌ AuthService - Refresh token bulunamadı');
         return false;
       }
 
-      print('🔑 AuthService - Token yenileniyor...');
+      // print('🔑 AuthService - Token yenileniyor...');
       final response = await _apiClient.post('token/refresh/', {
         'refresh': refreshToken,
       });
@@ -188,16 +188,16 @@ class AuthService {
               username, 
               refreshToken: newRefreshToken.isNotEmpty ? newRefreshToken : refreshToken
             );
-            print('🔑 AuthService - Token başarıyla yenilendi');
+            // print('🔑 AuthService - Token başarıyla yenilendi');
             return true;
           }
         }
       }
       
-      print('❌ AuthService - Token yenileme başarısız');
+      // print('❌ AuthService - Token yenileme başarısız');
       return false;
     } catch (e) {
-      print('❌ AuthService - Token yenileme hatası: $e');
+      // print('❌ AuthService - Token yenileme hatası: $e');
       return false;
     }
   }
@@ -247,7 +247,7 @@ class AuthService {
       }
       return '';
     } catch (e) {
-      debugPrint('Access token alınırken hata: $e');
+      // print('Access token alınırken hata: $e');
       return '';
     }
   }
@@ -271,7 +271,7 @@ class AuthService {
       }
       return '';
     } catch (e) {
-      debugPrint('Refresh token alınırken hata: $e');
+      // print('Refresh token alınırken hata: $e');
       return '';
     }
   }

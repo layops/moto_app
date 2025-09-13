@@ -366,7 +366,6 @@ class _MapPageState extends State<MapPage> {
         });
       }
     } catch (e) {
-      print('Konum paylaşımları yüklenemedi: $e');
     }
   }
 
@@ -488,7 +487,6 @@ class _MapPageState extends State<MapPage> {
         });
       }
     } catch (e) {
-      print('Gruplar yüklenemedi: $e');
     }
   }
 
@@ -501,7 +499,6 @@ class _MapPageState extends State<MapPage> {
         });
       }
     } catch (e) {
-      print('Grup üyelerinin konumları yüklenemedi: $e');
     }
   }
 

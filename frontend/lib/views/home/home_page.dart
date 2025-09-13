@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
     try {
       return await ServiceLocator.user.fetchUser(userId);
     } catch (e) {
-      debugPrint('Error fetching user $userId: $e');
+      // debugPrint('Error fetching user $userId: $e');
       return {};
     }
   }
@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> {
         unreadNotificationsCount = unreadCount;
       });
     } catch (e) {
-      debugPrint('Bildirimler alınamadı: $e');
+      // debugPrint('Bildirimler alınamadı: $e');
     }
   }
 

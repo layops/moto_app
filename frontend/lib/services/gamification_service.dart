@@ -31,7 +31,7 @@ class GamificationService {
 
   Future<List<dynamic>> getUserAchievements() async {
     try {
-      print('DEBUG: Getting achievements without authentication');
+      // print('DEBUG: Getting achievements without authentication');
       final response = await http.get(
         Uri.parse('$_baseUrl/api/gamification/achievements/'),
         headers: {
@@ -39,18 +39,18 @@ class GamificationService {
         },
       );
 
-      print('DEBUG: Achievements API response status: ${response.statusCode}');
-      print('DEBUG: Achievements API response body: ${response.body}');
+      // print('DEBUG: Achievements API response status: ${response.statusCode}');
+      // print('DEBUG: Achievements API response body: ${response.body}');
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('DEBUG: Parsed achievements data: $data');
+        // print('DEBUG: Parsed achievements data: $data');
         return List<dynamic>.from(data);
       } else {
         throw Exception('Başarımlar alınamadı: ${response.statusCode}');
       }
     } catch (e) {
-      print('DEBUG: Error in getUserAchievements: $e');
+      // print('DEBUG: Error in getUserAchievements: $e');
       throw Exception('Başarımlar yüklenirken hata: $e');
     }
   }

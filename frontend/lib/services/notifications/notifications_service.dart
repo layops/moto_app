@@ -18,8 +18,7 @@ class NotificationsService {
   
   // Debug için constructor'da URL'yi yazdır
   NotificationsService() {
-    print('DEBUG: kBaseUrl = $kBaseUrl');
-    print('DEBUG: _wsApiUrl = $_wsApiUrl');
+    // Service initialized
   }
 
   WebSocketChannel? _channel;
@@ -44,7 +43,6 @@ class NotificationsService {
       // Önce SSE'yi dene
       await connectSSE();
     } catch (e) {
-      print('SSE başarısız, polling fallback başlatılıyor: $e');
       // SSE başarısız olursa polling fallback başlat
       _startPollingFallback();
     }
@@ -70,7 +68,6 @@ class NotificationsService {
     }
 
     try {
-      print('DEBUG: SSE bağlantısı başlatılıyor...');
       
       final uri = Uri.parse('$_restApiBaseUrl/notifications/stream/');
       final request = await HttpClient().getUrl(uri);
@@ -85,7 +82,6 @@ class NotificationsService {
       if (response.statusCode == 200) {
         _isConnected = true;
         _connectionStatusController.add(true);
-        print('SSE bağlantısı başarılı');
         
         // SSE stream'i dinle
         response.listen(
@@ -99,22 +95,18 @@ class NotificationsService {
                   final jsonData = line.substring(6); // 'data: ' kısmını çıkar
                   if (jsonData.trim().isNotEmpty) {
                     final decodedData = jsonDecode(jsonData);
-                    print('SSE yeni bildirim: $decodedData');
                     _notificationStreamController.add(decodedData);
                   }
                 } catch (e) {
-                  print('SSE veri parse hatası: $e');
                 }
               }
             }
           },
           onDone: () {
-            print('SSE bağlantısı kapandı');
             _isConnected = false;
             _connectionStatusController.add(false);
           },
           onError: (error) {
-            print('SSE hatası: $error');
             _isConnected = false;
             _connectionStatusController.add(false);
             _notificationStreamController.addError(error);
@@ -126,10 +118,7 @@ class NotificationsService {
     } catch (e) {
       _isConnected = false;
       _connectionStatusController.add(false);
-      print('SSE bağlantı hatası: $e');
-      
       // SSE başarısız olursa polling fallback başlat
-      print('DEBUG: SSE başarısız, polling fallback başlatılıyor...');
       _startPollingFallback();
       
       throw Exception('SSE bağlantı hatası: $e');
@@ -148,7 +137,6 @@ class NotificationsService {
     }
     _isConnected = false;
     _connectionStatusController.add(false);
-    print('SSE bağlantısı kesildi.');
     
     // Polling'i de durdur
     _stopPollingFallback();
@@ -167,33 +155,14 @@ class NotificationsService {
     }
 
     try {
-      print('DEBUG: _wsApiUrl değeri: $_wsApiUrl');
-      print('DEBUG: Token: $token');
-      
       final wsUrl = '$_wsApiUrl?token=$token';
-      print('DEBUG: WebSocket bağlantısı kuruluyor: $wsUrl');
-      print('DEBUG: WebSocket URL protokolü: ${Uri.parse(wsUrl).scheme}');
-      print('DEBUG: WebSocket URL host: ${Uri.parse(wsUrl).host}');
-      print('DEBUG: WebSocket URL port: ${Uri.parse(wsUrl).port}');
-      print('DEBUG: WebSocket URL path: ${Uri.parse(wsUrl).path}');
-      print('DEBUG: Parsed URI: ${Uri.parse(wsUrl)}');
-      
       final uri = Uri.parse(wsUrl);
-      print('DEBUG: URI scheme: ${uri.scheme}');
-      print('DEBUG: URI host: ${uri.host}');
-      print('DEBUG: URI port: ${uri.port}');
-      print('DEBUG: URI path: ${uri.path}');
-      print('DEBUG: URI query: ${uri.query}');
-      
-      // Render.com için WebSocket bağlantısı - WSS protokolü
-      print('DEBUG: WebSocketChannel.connect çağrılıyor...');
       
       // Render.com'da WebSocket bağlantısı için timeout ekle
       _channel = await Future.any([
         Future.value(WebSocketChannel.connect(
           Uri.parse(wsUrl),
         )).then((channel) {
-          print('DEBUG: WebSocket bağlantısı başarılı');
           return channel;
         }),
         Future.delayed(Duration(seconds: 5)).then((_) {
@@ -205,19 +174,15 @@ class NotificationsService {
         (data) {
           try {
             final decodedData = jsonDecode(data);
-            print('WebSocket yeni bildirim: $decodedData');
             _notificationStreamController.add(decodedData);
           } catch (e) {
-            print('WebSocket veri parse hatası: $e');
           }
         },
         onDone: () {
-          print('WebSocket kapandı');
           _isConnected = false;
           _connectionStatusController.add(false);
         },
         onError: (error) {
-          print('WebSocket hatası: $error');
           _isConnected = false;
           _connectionStatusController.add(false);
           _notificationStreamController.addError(error);
@@ -226,14 +191,10 @@ class NotificationsService {
 
       _isConnected = true;
       _connectionStatusController.add(true);
-      print('WebSocket başarıyla bağlandı.');
     } catch (e) {
       _isConnected = false;
       _connectionStatusController.add(false);
-      print('WebSocket bağlantı hatası: $e');
-      
       // WebSocket başarısız olursa polling fallback başlat
-      print('DEBUG: WebSocket başarısız, polling fallback başlatılıyor...');
       _startPollingFallback();
       
       throw Exception('WebSocket bağlantı hatası: $e');
@@ -248,7 +209,6 @@ class NotificationsService {
     }
     _isConnected = false;
     _connectionStatusController.add(false);
-    print('WebSocket bağlantısı kesildi.');
     
     // Polling'i de durdur
     _stopPollingFallback();
@@ -259,7 +219,6 @@ class NotificationsService {
     if (_isPolling) return;
     
     _isPolling = true;
-    print('DEBUG: Polling fallback başlatıldı');
     
     // İlk polling'i hemen yap
     _performPolling();
@@ -275,7 +234,6 @@ class NotificationsService {
     try {
       // WebSocket bağlıysa polling yapma (çift bildirim önleme)
       if (_isConnected) {
-        print('DEBUG: WebSocket bağlı, polling atlanıyor');
         return;
       }
       
@@ -285,10 +243,8 @@ class NotificationsService {
         for (final notification in notifications) {
           _notificationStreamController.add(notification);
         }
-        print('DEBUG: Polling ile ${notifications.length} bildirim alındı');
       }
     } catch (e) {
-      print('Polling hatası: $e');
       // Polling hatası durumunda interval'i artır
       if (_pollingTimer != null) {
         _pollingTimer!.cancel();
@@ -306,7 +262,6 @@ class NotificationsService {
       _pollingTimer = null;
     }
     _isPolling = false;
-    print('DEBUG: Polling fallback durduruldu');
   }
 
   /// Backend'den bildirimleri çeker
@@ -359,7 +314,6 @@ class NotificationsService {
       );
 
       if (response.statusCode == 200) {
-        print('Tüm bildirimler okundu olarak işaretlendi.');
       } else if (response.statusCode == 401) {
         throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
       } else {
@@ -394,7 +348,6 @@ class NotificationsService {
       );
 
       if (response.statusCode == 200) {
-        print('Bildirim $notificationId okundu olarak işaretlendi.');
       } else if (response.statusCode == 401) {
         throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
       } else {

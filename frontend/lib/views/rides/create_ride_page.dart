@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import '../../services/rides/rides_service.dart';
-import '../map/map_page_new.dart';
+import '../map/pages/map_page_new.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Yolculuk oluşturma sayfası

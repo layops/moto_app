@@ -82,7 +82,7 @@ class MapController extends ChangeNotifier {
       ));
       
       if (position != null) {
-        _mapController.move(position, 15.0);
+        _mapController.moveAndRotate(position, 15.0, 0.0);
       }
     } catch (e) {
       updateMapState(_mapState.copyWith(isLoading: false));
@@ -117,7 +117,7 @@ class MapController extends ChangeNotifier {
       isSearchFocused: false,
     ));
     _searchController.clear();
-    _mapController.move(result.coordinates, 15.0);
+    _mapController.moveAndRotate(result.coordinates, 15.0, 0.0);
   }
 
   void onSearchHistorySelected(String query) {
@@ -136,7 +136,7 @@ class MapController extends ChangeNotifier {
       final newZoom = _mapState.zoomLevel + 1;
       updateMapState(_mapState.copyWith(zoomLevel: newZoom));
       final center = _mapState.selectedPosition ?? _mapController.camera.center;
-      _mapController.move(center, newZoom);
+      _mapController.moveAndRotate(center, newZoom, 0.0);
     }
   }
 
@@ -145,7 +145,7 @@ class MapController extends ChangeNotifier {
       final newZoom = _mapState.zoomLevel - 1;
       updateMapState(_mapState.copyWith(zoomLevel: newZoom));
       final center = _mapState.selectedPosition ?? _mapController.camera.center;
-      _mapController.move(center, newZoom);
+      _mapController.moveAndRotate(center, newZoom, 0.0);
     }
   }
 
@@ -154,7 +154,7 @@ class MapController extends ChangeNotifier {
     final center = _mapState.selectedPosition ?? 
                    _mapState.currentPosition ?? 
                    const LatLng(41.0082, 28.9784);
-    _mapController.move(center, level);
+    _mapController.moveAndRotate(center, level, 0.0);
   }
 
   // Map Type Methods
@@ -295,7 +295,7 @@ class MapController extends ChangeNotifier {
       updateRouteState(_routeState.copyWith(currentRouteIndex: nearestIndex));
 
       // Map'i kullanıcının konumuna odakla
-      _mapController.move(currentLocation, 16.0);
+      _mapController.moveAndRotate(currentLocation, 16.0, 0.0);
 
       // Hedefe yaklaştıysa navigasyonu bitir
       if (nearestIndex >= _routeState.routePoints.length - 5) {
@@ -333,7 +333,7 @@ class MapController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _searchController.removeListener(_searchControllerListener);
+    _searchController.removeAndRotateListener(_searchControllerListener);
     _searchController.dispose();
     _labelController.dispose();
     _searchDebounce?.cancel();

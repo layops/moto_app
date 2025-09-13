@@ -94,17 +94,17 @@ class PostService {
       cacheKey = 'posts_all';
     }
 
-    print('PostService - fetchPosts başlatıldı, endpoint: $endpoint');
-    print('PostService - Cache key: $cacheKey');
-    print('PostService - Following only: $followingOnly');
+    // print('PostService - fetchPosts başlatıldı, endpoint: $endpoint');
+    // print('PostService - Cache key: $cacheKey');
+    // print('PostService - Following only: $followingOnly');
 
     // Cache kontrolü
     if (_isCacheValid(cacheKey)) {
-      print('PostService - Cache geçerli, cache\'den döndürülüyor');
+      // print('PostService - Cache geçerli, cache\'den döndürülüyor');
       return _postsCache[cacheKey]!;
     }
 
-    print('PostService - Cache geçersiz veya yok, API\'den çekiliyor');
+    // print('PostService - Cache geçersiz veya yok, API\'den çekiliyor');
 
     try {
       // Cache bypass için timestamp ekle
@@ -112,38 +112,38 @@ class PostService {
       final urlWithTimestamp = '$endpoint?t=$timestamp';
       
       final response = await _apiClient.get(urlWithTimestamp);
-      print('PostService - API response alındı, status: ${response.statusCode}');
-      print('PostService - API response data type: ${response.data.runtimeType}');
+      // print('PostService - API response alındı, status: ${response.statusCode}');
+      // print('PostService - API response data type: ${response.data.runtimeType}');
 
       if (response.statusCode == 200) {
         final posts = response.data as List<dynamic>;
         
         // Debug için gelen postları yazdır
-        print('PostService - Fetched ${posts.length} posts');
+        // print('PostService - Fetched ${posts.length} posts');
         for (int i = 0; i < posts.length && i < 5; i++) {
           final post = posts[i] as Map<String, dynamic>;
           final content = post['content']?.toString() ?? '';
           final contentPreview = content.length > 20 ? '${content.substring(0, 20)}...' : content;
-          print('PostService - Post ${post['id']}: content="$contentPreview", author=${post['author']?['username']}');
+          // print('PostService - Post ${post['id']}: content="$contentPreview", author=${post['author']?['username']}');
         }
         
         // Cache'e kaydet
         _postsCache[cacheKey] = posts;
         _cacheTimestamps[cacheKey] = DateTime.now();
-        print('PostService - Posts cache\'e kaydedildi');
+        // print('PostService - Posts cache\'e kaydedildi');
         
         return posts;
       } else {
-        print('PostService - API error: ${response.statusCode}');
+        // print('PostService - API error: ${response.statusCode}');
         throw Exception('Postlar alınamadı: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('PostService - DioException: ${e.message}');
-      print('PostService - Status code: ${e.response?.statusCode}');
+      // print('PostService - DioException: ${e.message}');
+      // print('PostService - Status code: ${e.response?.statusCode}');
       if (e.response?.statusCode == 404) {
         // Eğer following endpoint yoksa, fallback olarak tüm postları getir ve filtrele
         if (followingOnly) {
-          print('PostService - Following endpoint bulunamadı, fallback yapılıyor...');
+          // print('PostService - Following endpoint bulunamadı, fallback yapılıyor...');
           return await _fetchFollowingPostsFallback();
         }
         throw Exception('API endpointi bulunamadı: $kBaseUrl/$endpoint');
@@ -157,10 +157,10 @@ class PostService {
         throw Exception('Postlar alınırken hata oluştu: ${e.message}');
       }
     } catch (e) {
-      print('PostService - Genel hata: $e');
+      // print('PostService - Genel hata: $e');
       // Eğer following endpoint yoksa, fallback olarak tüm postları getir ve filtrele
       if (followingOnly) {
-        print('PostService - Genel hata durumunda fallback yapılıyor...');
+        // print('PostService - Genel hata durumunda fallback yapılıyor...');
         return await _fetchFollowingPostsFallback();
       }
       rethrow;
@@ -170,39 +170,39 @@ class PostService {
   /// Fallback: Tüm postları getir ve takip edilen kullanıcıların postlarını filtrele
   Future<List<dynamic>> _fetchFollowingPostsFallback() async {
     try {
-      print('🔄 PostService - Fallback: Tüm postları getirip filtreleme yapılıyor...');
+      // print('🔄 PostService - Fallback: Tüm postları getirip filtreleme yapılıyor...');
       
       // Tüm postları getir
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await _apiClient.get('posts/?t=$timestamp');
       
-      print('🔄 PostService - Fallback: Tüm postlar alındı, status: ${response.statusCode}');
+      // print('🔄 PostService - Fallback: Tüm postlar alındı, status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final allPosts = response.data as List<dynamic>;
-        print('🔄 PostService - Fallback: Toplam ${allPosts.length} post alındı');
+        // print('🔄 PostService - Fallback: Toplam ${allPosts.length} post alındı');
         
         // Takip edilen kullanıcıları al
         final currentUser = await ServiceLocator.auth.currentUser;
         if (currentUser == null) {
-          print('❌ PostService - Fallback: Kullanıcı bilgisi alınamadı');
+          // print('❌ PostService - Fallback: Kullanıcı bilgisi alınamadı');
           return [];
         }
         
         final username = currentUser['username'];
         if (username == null) {
-          print('❌ PostService - Fallback: Username alınamadı');
+          // print('❌ PostService - Fallback: Username alınamadı');
           return [];
         }
         
-        print('🔄 PostService - Fallback: Mevcut kullanıcı: $username');
+        // print('🔄 PostService - Fallback: Mevcut kullanıcı: $username');
         
         // Takip edilen kullanıcıları getir
         final following = await ServiceLocator.follow.getFollowing(username);
         final followingUsernames = following.map((user) => user['username'] as String).toSet();
         followingUsernames.add(username); // Kendi postlarını da ekle
         
-        print('🔄 PostService - Fallback: Takip edilen kullanıcılar: $followingUsernames');
+        // print('🔄 PostService - Fallback: Takip edilen kullanıcılar: $followingUsernames');
         
         // Sadece takip edilen kullanıcıların postlarını filtrele
         final filteredPosts = allPosts.where((post) {
@@ -214,7 +214,7 @@ class PostService {
           return false;
         }).toList();
         
-        print('✅ PostService - Fallback: ${filteredPosts.length} takip edilen post bulundu');
+        // print('✅ PostService - Fallback: ${filteredPosts.length} takip edilen post bulundu');
         
         // Cache'e kaydet
         _postsCache['posts_following'] = filteredPosts;
@@ -222,11 +222,11 @@ class PostService {
         
         return filteredPosts;
       } else {
-        print('❌ PostService - Fallback: Tüm postlar alınamadı: ${response.statusCode}');
+        // print('❌ PostService - Fallback: Tüm postlar alınamadı: ${response.statusCode}');
         throw Exception('Fallback postlar alınamadı: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ PostService - Fallback hatası: $e');
+      // print('❌ PostService - Fallback hatası: $e');
       return [];
     }
   }
@@ -284,10 +284,10 @@ class PostService {
   }
   
   void _clearPostsCache() {
-    print('PostService - Cache temizleniyor...');
+    // print('PostService - Cache temizleniyor...');
     _postsCache.clear();
     _cacheTimestamps.clear();
-    print('PostService - Cache temizlendi');
+    // print('PostService - Cache temizlendi');
   }
   
   void clearCache() {
@@ -309,7 +309,7 @@ class PostService {
       
       // Cache'i temizle
       _clearPostsCache();
-      print('PostService - Post $postId silindi, cache temizlendi');
+      // print('PostService - Post $postId silindi, cache temizlendi');
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         throw Exception('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');

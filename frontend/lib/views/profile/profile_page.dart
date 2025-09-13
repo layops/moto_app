@@ -123,7 +123,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.profile.getProfile(_currentUsername!);
     } catch (e) {
-      debugPrint('Profil verisi yüklenirken hata: $e');
+      // debugPrint('Profil verisi yüklenirken hata: $e');
       return null;
     }
   }
@@ -132,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.user.getPosts(_currentUsername!);
     } catch (e) {
-      debugPrint('Gönderiler yüklenirken hata: $e');
+      // debugPrint('Gönderiler yüklenirken hata: $e');
       _postsError = 'Gönderiler yüklenirken hata oluştu';
       return [];
     }
@@ -142,7 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       return await ServiceLocator.user.getMedia(_currentUsername!);
     } catch (e) {
-      debugPrint('Medya yüklenirken hata: $e');
+      // debugPrint('Medya yüklenirken hata: $e');
       return [];
     }
   }
@@ -150,10 +150,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<List<dynamic>> _loadAchievements() async {
     try {
       final achievements = await ServiceLocator.gamification.getUserAchievements();
-      debugPrint('DEBUG: Loaded achievements: $achievements');
+      // debugPrint('DEBUG: Loaded achievements: $achievements');
       return achievements;
     } catch (e) {
-      debugPrint('Başarımlar yüklenirken hata: $e');
+      // debugPrint('Başarımlar yüklenirken hata: $e');
       return [];
     }
   }
@@ -183,7 +183,6 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isFollowLoading = true);
 
     try {
-      print('🔄 ProfilePage - Takip işlemi başlatılıyor: $_currentUsername');
       
       // Kullanıcı profilini al (cache'den olabilir)
       final userProfile =
@@ -191,12 +190,10 @@ class _ProfilePageState extends State<ProfilePage> {
       final userId = userProfile?['id'];
       if (userId == null) throw Exception('Kullanıcı ID bulunamadı');
 
-      print('🔄 ProfilePage - Takip toggle çağrılıyor...');
       
       // Takip işlemini gerçekleştir
       final isNowFollowing = await ServiceLocator.follow.followToggleUser(_currentUsername!);
       
-      print('✅ ProfilePage - Takip işlemi tamamlandı: $isNowFollowing');
 
       if (mounted) {
         setState(() {
@@ -214,7 +211,6 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } catch (e) {
-      print('❌ ProfilePage - Takip hatası: $e');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

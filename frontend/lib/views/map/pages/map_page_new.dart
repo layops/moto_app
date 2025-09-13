@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
-import '../controllers/map_controller.dart';
+import '../controllers/map_controller.dart' as custom;
 import '../widgets/map_controls_widget.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/search_results_widget.dart';
@@ -30,12 +30,12 @@ class MapPageNew extends StatefulWidget {
 }
 
 class _MapPageNewState extends State<MapPageNew> {
-  late MapController _mapController;
+  late custom.MapController _mapController;
 
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    _mapController = custom.MapController();
     
     if (widget.initialCenter != null) {
       if (widget.allowSelection || widget.showMarker) {
@@ -61,7 +61,7 @@ class _MapPageNewState extends State<MapPageNew> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _mapController,
-      child: Consumer<MapController>(
+      child: Consumer<custom.MapController>(
         builder: (context, controller, child) {
           final mapState = controller.mapState;
           final routeState = controller.routeState;
@@ -220,8 +220,8 @@ class _MapPageNewState extends State<MapPageNew> {
                   // SearchResultsWidget will be implemented when search results are available
                   
                   ZoomLevelsWidget(
-                    zoomLevels: MapController.zoomLevels,
-                    zoomLabels: MapController.zoomLabels,
+                    zoomLevels: custom.MapController.zoomLevels,
+                    zoomLabels: custom.MapController.zoomLabels,
                     currentZoomLevel: mapState.zoomLevel,
                     onZoomLevelSelected: controller.setZoomLevel,
                   ),
@@ -260,7 +260,7 @@ class _MapPageNewState extends State<MapPageNew> {
     );
   }
 
-  Widget _buildLocationActions(BuildContext context, MapController controller) {
+  Widget _buildLocationActions(BuildContext context, custom.MapController controller) {
     final colorScheme = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
     final safeAreaBottom = mediaQuery.padding.bottom;
@@ -304,7 +304,7 @@ class _MapPageNewState extends State<MapPageNew> {
     );
   }
 
-  Widget _buildConfirmButton(BuildContext context, MapController controller) {
+  Widget _buildConfirmButton(BuildContext context, custom.MapController controller) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -353,7 +353,7 @@ class _MapPageNewState extends State<MapPageNew> {
     );
   }
 
-  void _shareLocation(MapController controller) {
+  void _shareLocation(custom.MapController controller) {
     if (controller.mapState.selectedPosition == null) return;
 
     final locationText = 'Konum: ${controller.mapState.selectedPosition!.latitude}, ${controller.mapState.selectedPosition!.longitude}';
@@ -368,7 +368,7 @@ class _MapPageNewState extends State<MapPageNew> {
     );
   }
 
-  void _showLabelDialog(BuildContext context, MapController controller) {
+  void _showLabelDialog(BuildContext context, custom.MapController controller) {
     if (controller.mapState.selectedPosition == null) return;
 
     final theme = Theme.of(context);

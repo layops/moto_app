@@ -43,8 +43,6 @@ class ApiClient {
         }
 
         final token = await _tokenService.getToken();
-        debugPrint('API Request - Path: ${options.path}');
-        debugPrint('API Request - Token: ${token != null ? "Token mevcut (${token.substring(0, 10)}...)" : "Token yok"}');
         
         if (token != null) {
           // Token süresi kontrolü (5 dakika toleranslı)
@@ -71,10 +69,8 @@ class ApiClient {
           final newToken = await _tokenService.getToken();
           if (newToken != null) {
             options.headers['Authorization'] = 'Bearer $newToken';
-            debugPrint('API Request - Authorization header eklendi: Bearer ${newToken.substring(0, 10)}...');
           }
         } else {
-          debugPrint('API Request - Token bulunamadı, istek token olmadan gönderiliyor');
         }
         return handler.next(options);
       },
@@ -86,7 +82,6 @@ class ApiClient {
         if (err.response?.statusCode == 401 ||
             err.response?.statusCode == 403) {
           // Token geçersiz veya süresi dolmuşsa, sadece log yaz
-          debugPrint('API Error - 401/403: Token geçersiz veya süresi dolmuş');
           // Otomatik logout yapma, kullanıcı manuel olarak logout yapabilir
         }
         handler.next(err);
@@ -102,7 +97,7 @@ class ApiClient {
         responseHeader: false,
         responseBody: false,
         error: true,
-        logPrint: (object) => debugPrint(object.toString()),
+        logPrint: (object) => print(object.toString()),
       ));
     }
     
@@ -146,7 +141,6 @@ class ApiClient {
         throw Exception('Refresh token bulunamadı');
       }
 
-      debugPrint('JWT Token yenileme işlemi başlatıldı');
 
       // JWT token yenileme endpoint'ini çağır
       final response = await _dio.post('token/refresh/', data: {
@@ -164,7 +158,6 @@ class ApiClient {
             await _tokenService.getCurrentUsername() ?? '', 
             refreshToken: newRefreshToken ?? refreshToken
           );
-          debugPrint('JWT Token başarıyla yenilendi');
         } else {
           throw Exception('Yeni access token alınamadı');
         }
@@ -172,7 +165,6 @@ class ApiClient {
         throw Exception('JWT Token yenileme başarısız: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('JWT Token yenileme hatası: $e');
       rethrow;
     }
   }
@@ -238,7 +230,6 @@ class ApiClient {
     
     try {
       if (kDebugMode) {
-        debugPrint('GET Request: $path');
       }
       
       // Cache kontrolü
@@ -246,7 +237,6 @@ class ApiClient {
         final cachedResponse = _getCachedResponse(path);
         if (cachedResponse != null) {
           if (kDebugMode) {
-            debugPrint('GET Response (cached): ${cachedResponse.statusCode}');
           }
           return cachedResponse;
         }
@@ -258,14 +248,12 @@ class ApiClient {
       stopwatch.stop();
       
       if (kDebugMode) {
-        debugPrint('GET Response: ${response.statusCode} (${stopwatch.elapsedMilliseconds}ms)');
       }
       return response;
     } on DioException catch (e) {
       stopwatch.stop();
       
       if (kDebugMode) {
-        debugPrint('GET Error: ${e.message} (${stopwatch.elapsedMilliseconds}ms)');
       }
       throw ApiExceptions.fromDioError(e);
     }
@@ -277,8 +265,8 @@ class ApiClient {
   Future<Response> post(String path, dynamic data, {Options? options}) async {
     try {
       if (kDebugMode) {
-        debugPrint('POST Request: $path');
-        debugPrint('POST Data: $data');
+        // print('POST Request: $path');
+        // print('POST Data: $data');
       }
       
       final response = await _dio.post(path, data: data, options: options);
@@ -287,13 +275,13 @@ class ApiClient {
       _invalidateRelatedCache(path);
       
       if (kDebugMode) {
-        debugPrint('POST Response: ${response.statusCode}');
-        debugPrint('POST Response Data: ${response.data}');
+        // print('POST Response: ${response.statusCode}');
+        // print('POST Response Data: ${response.data}');
       }
       return response;
     } on DioException catch (e) {
       if (kDebugMode) {
-        debugPrint('POST Error: ${e.message}');
+        // print('POST Error: ${e.message}');
       }
       throw ApiExceptions.fromDioError(e);
     }
@@ -305,7 +293,7 @@ class ApiClient {
   Future<Response> put(String path, dynamic data, {Options? options}) async {
     try {
       if (kDebugMode) {
-        debugPrint('PUT Request: $path');
+        // print('PUT Request: $path');
       }
       
       final response = await _dio.put(path, data: data, options: options);
@@ -314,12 +302,12 @@ class ApiClient {
       _invalidateRelatedCache(path);
       
       if (kDebugMode) {
-        debugPrint('PUT Response: ${response.statusCode}');
+        // print('PUT Response: ${response.statusCode}');
       }
       return response;
     } on DioException catch (e) {
       if (kDebugMode) {
-        debugPrint('PUT Error: ${e.message}');
+        // print('PUT Error: ${e.message}');
       }
       throw ApiExceptions.fromDioError(e);
     }
@@ -331,7 +319,7 @@ class ApiClient {
   Future<Response> delete(String path, {Options? options}) async {
     try {
       if (kDebugMode) {
-        debugPrint('DELETE Request: $path');
+        // print('DELETE Request: $path');
       }
       
       final response = await _dio.delete(path, options: options);
@@ -340,12 +328,12 @@ class ApiClient {
       _invalidateRelatedCache(path);
       
       if (kDebugMode) {
-        debugPrint('DELETE Response: ${response.statusCode}');
+        // print('DELETE Response: ${response.statusCode}');
       }
       return response;
     } on DioException catch (e) {
       if (kDebugMode) {
-        debugPrint('DELETE Error: ${e.message}');
+        // print('DELETE Error: ${e.message}');
       }
       throw ApiExceptions.fromDioError(e);
     }

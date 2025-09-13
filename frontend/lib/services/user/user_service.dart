@@ -82,7 +82,7 @@ class UserService {
       
       return profileData;
     } catch (e) {
-      print('Profil getirme hatası: $e');
+      // print('Profil getirme hatası: $e');
       return null;
     }
   }
@@ -94,13 +94,13 @@ class UserService {
       return response.data as List<dynamic>;
     } on DioException catch (e) {
       if (e.response?.statusCode == 500) {
-        print('User posts endpoint 500 hatası, fallback yapılıyor');
+        // print('User posts endpoint 500 hatası, fallback yapılıyor');
         return await _getPostsFallback(username);
       }
-      print('Gönderiler getirme hatası (DioException): ${e.message}');
+      // print('Gönderiler getirme hatası (DioException): ${e.message}');
       return [];
     } catch (e) {
-      print('Gönderiler getirme hatası (genel): $e');
+      // print('Gönderiler getirme hatası (genel): $e');
       return await _getPostsFallback(username);
     }
   }
@@ -115,7 +115,7 @@ class UserService {
               post['author'] != null && post['author']['username'] == username)
           .toList();
     } catch (e) {
-      print('Fallback gönderi getirme hatası: $e');
+      // print('Fallback gönderi getirme hatası: $e');
       return [];
     }
   }
@@ -146,7 +146,7 @@ class UserService {
       final response = await _apiClient.post('users/$username/follow/', {});
       return response.statusCode == 200;
     } catch (e) {
-      print('Takip etme hatası: $e');
+      // print('Takip etme hatası: $e');
       return false;
     }
   }
@@ -157,7 +157,7 @@ class UserService {
       final response = await _apiClient.post('users/$username/unfollow/', {});
       return response.statusCode == 200;
     } catch (e) {
-      print('Takipten çıkma hatası: $e');
+      // print('Takipten çıkma hatası: $e');
       return false;
     }
   }
@@ -182,13 +182,13 @@ class UserService {
       return data;
     } on DioException catch (e) {
       if (e.response?.statusCode == 500) {
-        print('$label endpointi sunucu hatası (500), boş liste döndürülüyor');
+        // print('$label endpointi sunucu hatası (500), boş liste döndürülüyor');
         return [];
       }
-      print('$label getirme hatası (DioException): ${e.message}');
+      // print('$label getirme hatası (DioException): ${e.message}');
       return [];
     } catch (e) {
-      print('$label getirme hatası (genel): $e');
+      // print('$label getirme hatası (genel): $e');
       return [];
     }
   }
@@ -211,6 +211,6 @@ class UserService {
     final cacheKey = 'profile_$username';
     _userCache.remove(cacheKey);
     _cacheTimestamps.remove(cacheKey);
-    print('✅ UserService - User cache temizlendi: $username');
+    // print('✅ UserService - User cache temizlendi: $username');
   }
 }

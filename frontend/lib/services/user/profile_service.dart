@@ -48,7 +48,7 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      print('Profil fotoğrafı yükleme hatası: $e');
+      // print('Profil fotoğrafı yükleme hatası: $e');
       rethrow;
     }
   }
@@ -90,7 +90,7 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      print('Kapak fotoğrafı yükleme hatası: $e');
+      // print('Kapak fotoğrafı yükleme hatası: $e');
       rethrow;
     }
   }
@@ -117,7 +117,7 @@ class ProfileService {
 
       return data;
     } catch (e) {
-      print('Profil getirme hatası: $e');
+      // print('Profil getirme hatası: $e');
       rethrow;
     }
   }
@@ -157,7 +157,7 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      debugPrint('Profil güncelleme hatası: $e');
+      // print('Profil güncelleme hatası: $e');
       rethrow;
     }
   }
@@ -174,9 +174,9 @@ class ProfileService {
       // LocalStorage'daki profil verilerini temizle
       await ServiceLocator.storage.clearProfileData();
       
-      print('✅ ProfileService - Cache temizlendi: $username');
+      // print('✅ ProfileService - Cache temizlendi: $username');
     } catch (e) {
-      print('❌ ProfileService - Cache temizleme hatası: $e');
+      // print('❌ ProfileService - Cache temizleme hatası: $e');
     }
   }
 }

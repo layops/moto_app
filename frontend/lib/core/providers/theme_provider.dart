@@ -10,7 +10,7 @@ class ThemeProvider with ChangeNotifier {
     _themeMode =
         _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
-    debugPrint('Tema değiştirildi: $_themeMode');
+    // debugPrint('Tema değiştirildi: $_themeMode');
   }
 
   void setTheme(ThemeMode mode) {

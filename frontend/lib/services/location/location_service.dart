@@ -55,7 +55,7 @@ class LocationService {
       
       return position;
     } catch (e) {
-      print('Konum alınamadı: $e');
+      // print('Konum alınamadı: $e');
       return null;
     }
   }
@@ -96,7 +96,7 @@ class LocationService {
         );
       },
       onError: (error) {
-        print('Konum takibi hatası: $error');
+        // print('Konum takibi hatası: $error');
       },
     );
   }
@@ -146,12 +146,12 @@ class LocationService {
       );
 
       if (response.statusCode == 201) {
-        print('✅ Konum güncellendi: ${currentPosition.latitude}, ${currentPosition.longitude}');
+        // print('✅ Konum güncellendi: ${currentPosition.latitude}, ${currentPosition.longitude}');
       } else {
-        print('❌ Konum güncellenemedi: ${response.statusCode} - ${response.body}');
+        // print('❌ Konum güncellenemedi: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ Konum gönderme hatası: $e');
+      // print('❌ Konum gönderme hatası: $e');
     }
   }
 
