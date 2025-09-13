@@ -396,6 +396,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         return Icon(Icons.groups, color: color, size: 20);
       case 'friend_request':
         return Icon(Icons.person_add, color: color, size: 20);
+      case 'follow':
+        return Icon(Icons.person_add_alt_1, color: color, size: 20);
       default:
         return Icon(Icons.notifications, color: color, size: 20);
     }
@@ -415,6 +417,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         return Colors.purple;
       case 'friend_request':
         return Colors.indigo;
+      case 'follow':
+        return Colors.teal;
       default:
         return Colors.grey;
     }

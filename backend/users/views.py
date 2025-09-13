@@ -148,6 +148,23 @@ class FollowToggleView(APIView):
             return Response({"detail": "Takip bırakıldı"}, status=status.HTTP_200_OK)
         else:
             request.user.following.add(target_user)
+            
+            # Takip bildirimi gönder
+            try:
+                from notifications.utils import send_realtime_notification
+                message = f"{request.user.get_full_name() or request.user.username} sizi takip etmeye başladı"
+                send_realtime_notification(
+                    recipient_user=target_user,
+                    message=message,
+                    notification_type='follow',
+                    sender_user=request.user
+                )
+            except Exception as e:
+                # Bildirim gönderme hatası kritik değil, sadece logla
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Takip bildirimi gönderilemedi: {e}")
+            
             return Response({"detail": "Takip edildi"}, status=status.HTTP_200_OK)
 
 class FollowersListView(APIView):

@@ -19,6 +19,7 @@ class Notification(models.Model):
         ('ride_update', 'Yolculuk Güncellemesi'),
         ('group_update', 'Grup Güncellemesi'),
         ('friend_request', 'Arkadaşlık İsteği'),
+        ('follow', 'Takip Bildirimi'),
         ('other', 'Diğer'),
     )
 
