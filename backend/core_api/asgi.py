@@ -98,12 +98,25 @@ class AuthTokenMiddleware:
 print("DEBUG: asgi.py yüklendi - HTTP ve WS Token Doğrulamalı")
 
 # WebSocket URL desenlerini import et
-import chat.routing
-import notifications.routing
+try:
+    import chat.routing
+    print("DEBUG ASGI: chat.routing import edildi")
+except Exception as e:
+    print(f"DEBUG ASGI: chat.routing import hatası: {e}")
+
+try:
+    import notifications.routing
+    print("DEBUG ASGI: notifications.routing import edildi")
+except Exception as e:
+    print(f"DEBUG ASGI: notifications.routing import hatası: {e}")
 
 # Render.com için WebSocket konfigürasyonu
-all_websocket_patterns = chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
-print(f"DEBUG ASGI: Tüm WebSocket patterns: {all_websocket_patterns}")
+try:
+    all_websocket_patterns = chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
+    print(f"DEBUG ASGI: Tüm WebSocket patterns: {all_websocket_patterns}")
+except Exception as e:
+    print(f"DEBUG ASGI: WebSocket patterns oluşturma hatası: {e}")
+    all_websocket_patterns = []
 
 application = ProtocolTypeRouter({
     "http": AuthTokenMiddleware(django_asgi_app),  # HTTP için de token middleware ekledik
