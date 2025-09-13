@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.middleware.csrf import get_token
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -144,3 +145,12 @@ def api_root(request):
     }
     
     return Response(api_endpoints)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    """
+    CSRF token'ı almak için endpoint
+    """
+    csrf_token = get_token(request)
+    return Response({'csrfToken': csrf_token})

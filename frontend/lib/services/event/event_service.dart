@@ -177,18 +177,22 @@ class EventService {
     try {
       final token = await authService.getToken();
       
-      final data = <String, dynamic>{};
+      // CSRF token'ı al
+      final csrfResponse = await _dio.get('$kBaseUrl/api/csrf-token/');
+      final csrfToken = csrfResponse.data['csrfToken'];
+      
+      final formData = FormData();
       if (message != null && message.isNotEmpty) {
-        data['message'] = message;
+        formData.fields.add(MapEntry('message', message));
       }
       
       final response = await _dio.post(
         '$kBaseUrl/api/events/$eventId/join/',
-        data: data,
+        data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
           },
         ),
       );
@@ -217,11 +221,17 @@ class EventService {
   Future<Map<String, dynamic>> leaveEvent(int eventId) async {
     try {
       final token = await authService.getToken();
+      
+      // CSRF token'ı al
+      final csrfResponse = await _dio.get('$kBaseUrl/api/csrf-token/');
+      final csrfToken = csrfResponse.data['csrfToken'];
+      
       final response = await _dio.post(
         '$kBaseUrl/api/events/$eventId/leave/',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
+            'X-CSRFToken': csrfToken,
           },
         ),
       );

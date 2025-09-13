@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Event, EventRequest
 from .serializers import EventSerializer, EventRequestSerializer
@@ -25,7 +25,7 @@ from users.serializers import UserSerializer  # Yeni import
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def get_queryset(self):
         user = self.request.user
@@ -134,7 +134,17 @@ class EventViewSet(viewsets.ModelViewSet):
             # Onay sistemi kontrolü
             if event.requires_approval:
                 # Onay gerekiyorsa istek oluştur
-                message = request.data.get('message', '') if request.data else ''
+                message = ''
+                try:
+                    # Form data veya JSON data'yı parse et
+                    if hasattr(request, 'data'):
+                        message = request.data.get('message', '')
+                    else:
+                        # POST data'yı da kontrol et
+                        message = request.POST.get('message', '')
+                except Exception as e:
+                    print(f"Message parse hatası: {str(e)}")
+                    message = ''
                 
                 try:
                     event_request, created = EventRequest.objects.get_or_create(

@@ -12,7 +12,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenBlacklistView,
 )
-from .views import api_root
+from .views import api_root, get_csrf_token
 from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status, jwt_debug
 
 # Swagger / Redoc için
@@ -40,6 +40,9 @@ urlpatterns = [
     
     # API Root
     path('api/', api_root, name='api-root'),
+    
+    # CSRF Token
+    path('api/csrf-token/', get_csrf_token, name='csrf-token'),
 
     # Admin paneli
     path('admin/', admin.site.urls),
