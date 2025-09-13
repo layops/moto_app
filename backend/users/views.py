@@ -149,21 +149,34 @@ class FollowToggleView(APIView):
         else:
             request.user.following.add(target_user)
             
-            # Takip bildirimi gönder
+            # Takip bildirimi gönder (asenkron olarak)
             try:
                 from notifications.utils import send_realtime_notification
                 message = f"{request.user.get_full_name() or request.user.username} sizi takip etmeye başladı"
-                send_realtime_notification(
-                    recipient_user=target_user,
-                    message=message,
-                    notification_type='follow',
-                    sender_user=request.user
-                )
+                
+                # Bildirimi arka planda gönder (asenkron)
+                import threading
+                def send_notification_async():
+                    try:
+                        send_realtime_notification(
+                            recipient_user=target_user,
+                            message=message,
+                            notification_type='follow',
+                            sender_user=request.user
+                        )
+                    except Exception as e:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Takip bildirimi gönderilemedi: {e}")
+                
+                # Arka planda bildirim gönder
+                threading.Thread(target=send_notification_async, daemon=True).start()
+                
             except Exception as e:
                 # Bildirim gönderme hatası kritik değil, sadece logla
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.error(f"Takip bildirimi gönderilemedi: {e}")
+                logger.error(f"Takip bildirimi thread başlatılamadı: {e}")
             
             return Response({"detail": "Takip edildi"}, status=status.HTTP_200_OK)
 

@@ -183,22 +183,56 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isFollowLoading = true);
 
     try {
+      print('🔄 ProfilePage - Takip işlemi başlatılıyor: $_currentUsername');
+      
+      // Kullanıcı profilini al (cache'den olabilir)
       final userProfile =
           await ServiceLocator.profile.getProfile(_currentUsername!);
       final userId = userProfile?['id'];
       if (userId == null) throw Exception('Kullanıcı ID bulunamadı');
 
-      await ServiceLocator.follow.followToggleUser(_currentUsername!);
+      print('🔄 ProfilePage - Takip toggle çağrılıyor...');
+      
+      // Takip işlemini gerçekleştir
+      final isNowFollowing = await ServiceLocator.follow.followToggleUser(_currentUsername!);
+      
+      print('✅ ProfilePage - Takip işlemi tamamlandı: $isNowFollowing');
 
-      setState(() {
-        _isFollowing = !_isFollowing;
-        _followerCount += _isFollowing ? 1 : -1;
-      });
+      if (mounted) {
+        setState(() {
+          _isFollowing = isNowFollowing;
+          _followerCount += _isFollowing ? 1 : -1;
+        });
+        
+        // Başarı mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFollowing ? 'Takip edildi!' : 'Takipten çıkıldı!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('İşlem başarısız: $e'), backgroundColor: Colors.red),
-      );
+      print('❌ ProfilePage - Takip hatası: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('İşlem başarısız: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Tekrar Dene',
+              textColor: Colors.white,
+              onPressed: () {
+                // Tekrar deneme
+                _toggleFollow();
+              },
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isFollowLoading = false);
     }

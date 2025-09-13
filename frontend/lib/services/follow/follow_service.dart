@@ -14,24 +14,52 @@ class FollowService {
     if (token == null) throw Exception('Kullanıcı girişi gerekli');
 
     try {
+      print('🔄 FollowService - Takip işlemi başlatılıyor: $username');
+      
       final response = await _apiClient.post(
         'users/$username/follow-toggle/',
         {},
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
+          connectTimeout: const Duration(seconds: 10), // Takip işlemi için kısa timeout
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
         ),
       );
 
+      print('✅ FollowService - Takip işlemi tamamlandı: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final detail = response.data['detail'] ?? '';
-        return detail.contains('Takip edildi');
+        final isFollowing = detail.contains('Takip edildi');
+        print('📊 FollowService - Sonuç: $detail (Takip edildi: $isFollowing)');
+        return isFollowing;
       } else {
         throw Exception('Takip işlemi başarısız: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('❌ FollowService - DioException: ${e.message}');
+      print('❌ FollowService - Error type: ${e.type}');
+      print('❌ FollowService - Response status: ${e.response?.statusCode}');
+      
+      if (e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        throw Exception('Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.');
+      }
+      
       if (e.response?.statusCode == 404) {
         throw Exception('Kullanıcı bulunamadı');
       }
+      
+      if (e.response?.statusCode == 400) {
+        final errorMessage = e.response?.data?['error'] ?? 'Geçersiz istek';
+        throw Exception(errorMessage);
+      }
+      
+      rethrow;
+    } catch (e) {
+      print('❌ FollowService - Genel hata: $e');
       rethrow;
     }
   }
