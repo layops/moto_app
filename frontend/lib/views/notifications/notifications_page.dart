@@ -32,7 +32,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _connectWebSocket() async {
     try {
-      await _notificationsService.connectWebSocket();
+      await _notificationsService.connect(); // Yeni akıllı bağlantı metodu
       setState(() {
         _isWebSocketConnected = true;
         _errorMessage = null;
@@ -50,7 +50,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           if (mounted) {
             setState(() {
               _isWebSocketConnected = false;
-              _errorMessage = 'WebSocket bağlantı hatası: $error';
+              _errorMessage = 'Bildirim bağlantı hatası: $error';
             });
           }
         },
@@ -59,7 +59,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (mounted) {
         setState(() {
           _isWebSocketConnected = false;
-          _errorMessage = 'WebSocket bağlantı hatası: $e';
+          _errorMessage = 'Bildirim bağlantı hatası: $e';
         });
       }
     }
@@ -67,7 +67,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   void dispose() {
-    _notificationsService.disconnectWebSocket();
+    _notificationsService.disconnect(); // Yeni disconnect metodu
     super.dispose();
   }
 
@@ -226,7 +226,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   TextButton(
                     onPressed: () {
                       setState(() => _errorMessage = null);
-                      _connectWebSocket();
+                      _connectWebSocket(); // Bu metod artık SSE kullanıyor
                     },
                     child: const Text('Tekrar Dene'),
                   ),
