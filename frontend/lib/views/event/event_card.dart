@@ -6,10 +6,10 @@ import 'event_helpers.dart';
 import 'event_detail_page.dart'; // Yeni sayfa için import
 import '../../core/theme/color_schemes.dart';
 
-class EventCard extends StatelessWidget {
+class EventCard extends StatefulWidget {
   final Map<String, dynamic> event;
   final String currentUsername;
-  final Future<void> Function(int) onJoin;
+  final Future<Map<String, dynamic>?> Function(int, {String? message}) onJoin;
   final Future<void> Function(int) onLeave;
 
   const EventCard({
@@ -21,15 +21,30 @@ class EventCard extends StatelessWidget {
   });
 
   @override
+  State<EventCard> createState() => _EventCardState();
+}
+
+class _EventCardState extends State<EventCard> {
+  bool _requestSent = false;
+  Map<String, dynamic> _currentEvent = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _currentEvent = Map<String, dynamic>.from(widget.event);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isJoined = event['is_joined'] as bool? ?? false;
-    final participantCount = event['current_participant_count'] ?? 0;
-    final guestLimit = event['guest_limit'] ?? '-';
-    final organizerUsername = (event['organizer'] as Map?)?['username'] ?? '';
+    final isJoined = _currentEvent['is_joined'] as bool? ?? false;
+    final participantCount = _currentEvent['current_participant_count'] ?? 0;
+    final guestLimit = _currentEvent['guest_limit'] ?? '-';
+    final organizerUsername = (_currentEvent['organizer'] as Map?)?['username'] ?? '';
+    final requiresApproval = _currentEvent['requires_approval'] as bool? ?? false;
     final canJoin = !isJoined &&
-        organizerUsername != currentUsername &&
+        organizerUsername != widget.currentUsername &&
         (guestLimit == '-' || participantCount < guestLimit);
-    final coverImageUrl = event['cover_image'] as String?;
+    final coverImageUrl = _currentEvent['cover_image'] as String?;
 
     return InkWell(
       onTap: () {
@@ -37,8 +52,8 @@ class EventCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => EventDetailPage(
-              event: event,
-              currentUsername: currentUsername,
+              event: _currentEvent,
+              currentUsername: widget.currentUsername,
             ),
           ),
         );
@@ -82,33 +97,42 @@ class EventCard extends StatelessWidget {
                     children: [
                       Chip(
                         label: Text(
-                          event['is_public'] == true ? 'Public' : 'Private',
+                          _currentEvent['is_public'] == true ? 'Public' : 'Private',
                           style: const TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: event['is_public'] == true
+                        backgroundColor: _currentEvent['is_public'] == true
                             ? Colors.green
                             : Colors.red,
                       ),
+                      const SizedBox(width: 8),
+                      if (requiresApproval)
+                        Chip(
+                          label: const Text(
+                            'Onay Gerekli',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                          backgroundColor: Colors.orange,
+                        ),
                       const Spacer(),
                       if (isJoined || canJoin)
                         TextButton(
                           onPressed: isJoined
-                              ? () => onLeave(event['id'])
-                              : () => onJoin(event['id']),
-                          child: Text(isJoined ? 'Ayrıl' : 'Katıl'),
+                              ? () => widget.onLeave(_currentEvent['id'])
+                              : () => _handleJoin(),
+                          child: Text(_getButtonText(isJoined, requiresApproval)),
                         ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    event['title']?.toString() ?? 'Başlıksız Etkinlik',
+                    _currentEvent['title']?.toString() ?? 'Başlıksız Etkinlik',
                     style: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  if ((event['description']?.toString() ?? '').isNotEmpty)
+                  if ((_currentEvent['description']?.toString() ?? '').isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Text(event['description'].toString(),
+                      child: Text(_currentEvent['description'].toString(),
                           style: const TextStyle(fontSize: 14)),
                     ),
                   const SizedBox(height: 12),
@@ -117,13 +141,13 @@ class EventCard extends StatelessWidget {
                       const Icon(Icons.calendar_today,
                           size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
-                      Text(formatDate(event['start_time']),
+                      Text(formatDate(_currentEvent['start_time']),
                           style: const TextStyle(
                               fontSize: 14, color: Colors.grey)),
                     ],
                   ),
-                  if ((event['location']?.toString() ?? '').isNotEmpty)
-                    LocationText(location: event['location'].toString()),
+                  if ((_currentEvent['location']?.toString() ?? '').isNotEmpty)
+                    LocationText(location: _currentEvent['location'].toString()),
                   const SizedBox(height: 12),
                   Text(
                     'Katılımcılar: $participantCount / $guestLimit',
@@ -135,6 +159,97 @@ class EventCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  String _getButtonText(bool isJoined, bool requiresApproval) {
+    if (isJoined) {
+      return 'Ayrıl';
+    } else if (requiresApproval && _requestSent) {
+      return 'İsteğiniz Gönderildi';
+    } else if (requiresApproval) {
+      return 'Katıl';
+    } else {
+      return 'Katıl';
+    }
+  }
+
+  Future<void> _handleJoin() async {
+    final requiresApproval = _currentEvent['requires_approval'] as bool? ?? false;
+    
+    if (requiresApproval) {
+      // Onay gerektiren event için mesaj dialog'u göster
+      final message = await _showJoinRequestDialog();
+      if (message != null) {
+        try {
+          final updatedEvent = await widget.onJoin(_currentEvent['id'], message: message);
+          if (updatedEvent != null) {
+            setState(() {
+              _requestSent = true;
+              _currentEvent = updatedEvent;
+            });
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Katılım isteği gönderildi. Onay bekleniyor.')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('İstek gönderilemedi: $e')),
+          );
+        }
+      }
+    } else {
+      // Onay gerektirmeyen event için direkt katıl
+      try {
+        final updatedEvent = await widget.onJoin(_currentEvent['id']);
+        if (updatedEvent != null) {
+          setState(() {
+            _currentEvent = updatedEvent;
+          });
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Katılamadı: $e')),
+        );
+      }
+    }
+  }
+
+  Future<String?> _showJoinRequestDialog() async {
+    String message = '';
+    
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Katılım İsteği'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Bu etkinliğe katılmak için organizatörden onay gerekiyor.'),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Mesaj (isteğe bağlı)',
+                  hintText: 'Katılmak istediğinizi belirten bir mesaj yazabilirsiniz...',
+                ),
+                maxLines: 3,
+                onChanged: (value) => message = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(message),
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

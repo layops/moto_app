@@ -32,6 +32,7 @@ class _AddEventPageState extends State<AddEventPage> {
   TimeOfDay? _time;
   bool _isPublic = true;
   bool _noGuestLimit = true;
+  bool _requiresApproval = false;
   File? _coverImageFile;
   bool _submitting = false;
   LatLng? _selectedLatLng; // Seçilen konum
@@ -145,6 +146,7 @@ class _AddEventPageState extends State<AddEventPage> {
         endTime: null,
         isPublic: _isPublic,
         guestLimit: _noGuestLimit ? null : guestLimit,
+        requiresApproval: _requiresApproval,
         coverImageFile: _coverImageFile,
       );
 
@@ -295,10 +297,12 @@ class _AddEventPageState extends State<AddEventPage> {
               EventPrivacyGuest(
                 isPublic: _isPublic,
                 noGuestLimit: _noGuestLimit,
+                requiresApproval: _requiresApproval,
                 guestLimitCtrl: _guestLimitCtrl,
                 onPrivacyChanged: (val) => setState(() => _isPublic = val),
                 onGuestLimitChanged: (val) =>
                     setState(() => _noGuestLimit = val),
+                onApprovalChanged: (val) => setState(() => _requiresApproval = val),
               ),
               const SizedBox(height: 32),
               ElevatedButton(

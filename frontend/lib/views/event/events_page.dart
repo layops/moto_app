@@ -104,19 +104,21 @@ class _EventsPageState extends State<EventsPage> {
     }
   }
 
-  Future<void> _joinEvent(int eventId) async {
+  Future<Map<String, dynamic>?> _joinEvent(int eventId, {String? message}) async {
     try {
-      final updatedEvent = await _service.joinEvent(eventId);
-      if (!mounted) return;
+      final updatedEvent = await _service.joinEvent(eventId, message: message);
+      if (!mounted) return null;
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {
           _events[index] = updatedEvent;
         }
       });
+      return updatedEvent;
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Katılamadı: $e')));
+      return null;
     }
   }
 

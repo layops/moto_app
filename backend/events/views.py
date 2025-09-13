@@ -120,43 +120,62 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def join(self, request, pk=None):
         try:
+            print(f"Join event başladı - Event ID: {pk}, User: {request.user.username}")
             event = self.get_object()
+            print(f"Event bulundu: {event.title}, requires_approval: {event.requires_approval}")
             user = request.user
 
             if event.is_full():
+                print("Event dolu")
                 return Response({"error": "Etkinlik kontenjanı dolmuştur."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             if user in event.participants.all():
+                print("User zaten katılımcı")
                 return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             # Onay sistemi kontrolü
             if event.requires_approval:
+                print("Onay sistemi aktif")
                 # Onay gerekiyorsa istek oluştur
                 message = request.data.get('message', '')
-                event_request, created = EventRequest.objects.get_or_create(
-                    event=event,
-                    user=user,
-                    defaults={'message': message}
-                )
+                print(f"Message: {message}")
+                
+                try:
+                    event_request, created = EventRequest.objects.get_or_create(
+                        event=event,
+                        user=user,
+                        defaults={'message': message}
+                    )
+                    print(f"EventRequest oluşturuldu: {created}")
+                except Exception as e:
+                    print(f"EventRequest oluşturma hatası: {str(e)}")
+                    raise e
                 
                 if not created:
+                    print("EventRequest zaten mevcut")
                     return Response({"error": "Bu etkinlik için zaten bir istek gönderdiniz."},
                                     status=status.HTTP_400_BAD_REQUEST)
                 
                 # Bildirim gönder
-                self._send_notification(
-                    recipient=event.organizer,
-                    sender=user,
-                    notification_type='event_join_request',
-                    message=f"{user.username} {event.title} etkinliğine katılmak istiyor.",
-                    content_object=event_request
-                )
+                try:
+                    self._send_notification(
+                        recipient=event.organizer,
+                        sender=user,
+                        notification_type='event_join_request',
+                        message=f"{user.username} {event.title} etkinliğine katılmak istiyor.",
+                        content_object=event_request
+                    )
+                    print("Bildirim gönderildi")
+                except Exception as e:
+                    print(f"Bildirim gönderme hatası: {str(e)}")
+                    # Bildirim hatası etkinlik katılımını engellemez
                 
                 return Response({"message": "Katılım isteği gönderildi. Onay bekleniyor."},
                                 status=status.HTTP_200_OK)
             else:
+                print("Onay sistemi kapalı, direkt katılım")
                 # Onay gerektirmiyorsa direkt katıl
                 event.participants.add(user)
                 serializer = self.get_serializer(event)
@@ -164,6 +183,8 @@ class EventViewSet(viewsets.ModelViewSet):
                 
         except Exception as e:
             print(f"Join event hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"error": "Etkinliğe katılırken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -297,17 +318,31 @@ class EventViewSet(viewsets.ModelViewSet):
         """Bildirim gönder"""
         try:
             from notifications.models import Notification
+            from django.contrib.contenttypes.models import ContentType
+            
+            print(f"Bildirim gönderiliyor - Recipient: {recipient.username}, Sender: {sender.username}, Type: {notification_type}")
+            
+            # ContentType'ı manuel olarak ayarla
+            content_type = None
+            object_id = None
+            if content_object:
+                content_type = ContentType.objects.get_for_model(content_object)
+                object_id = content_object.id
+                print(f"ContentType: {content_type}, Object ID: {object_id}")
             
             notification = Notification.objects.create(
                 recipient=recipient,
                 sender=sender,
                 notification_type=notification_type,
                 message=message,
-                content_object=content_object
+                content_type=content_type,
+                object_id=object_id
             )
             print(f"Bildirim gönderildi: {notification}")
         except Exception as e:
             print(f"Bildirim gönderme hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     # Yeni eklenen action - Katılımcıları getir
     @action(detail=True, methods=['get'])

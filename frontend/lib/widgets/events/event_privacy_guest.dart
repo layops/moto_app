@@ -3,17 +3,21 @@ import 'package:flutter/material.dart';
 class EventPrivacyGuest extends StatelessWidget {
   final bool isPublic;
   final bool noGuestLimit;
+  final bool requiresApproval;
   final TextEditingController guestLimitCtrl;
   final void Function(bool) onPrivacyChanged;
   final void Function(bool) onGuestLimitChanged;
+  final void Function(bool) onApprovalChanged;
 
   const EventPrivacyGuest({
     super.key,
     required this.isPublic,
     required this.noGuestLimit,
+    required this.requiresApproval,
     required this.guestLimitCtrl,
     required this.onPrivacyChanged,
     required this.onGuestLimitChanged,
+    required this.onApprovalChanged,
   });
 
   @override
@@ -78,6 +82,27 @@ class EventPrivacyGuest extends StatelessWidget {
               return null;
             },
           ),
+        const SizedBox(height: 16),
+        const Text('Approval Required',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Checkbox(
+                value: requiresApproval, 
+                onChanged: (v) => onApprovalChanged(v!)),
+            const Text('Require approval for participation'),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 48),
+          child: Text(
+            requiresApproval
+                ? 'Participants need organizer approval to join'
+                : 'Anyone can join directly',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ),
       ],
     );
   }

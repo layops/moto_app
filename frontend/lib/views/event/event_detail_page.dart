@@ -30,6 +30,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
   List<dynamic> _participants = [];
   bool _loading = true;
   String? _error;
+  bool _requestSent = false;
 
   @override
   void initState() {
@@ -81,6 +82,30 @@ class _EventDetailPageState extends State<EventDetailPage> {
                             'Başlıksız Etkinlik',
                         style: const TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      // Onay sistemi durumu
+                      Row(
+                        children: [
+                          Chip(
+                            label: Text(
+                              widget.event['is_public'] == true ? 'Public' : 'Private',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: widget.event['is_public'] == true
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          const SizedBox(width: 8),
+                          if (widget.event['requires_approval'] == true)
+                            Chip(
+                              label: const Text(
+                                'Onay Gerekli',
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                              backgroundColor: Colors.orange,
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 16),
 
@@ -148,16 +173,29 @@ class _EventDetailPageState extends State<EventDetailPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => MapPage(
+                                  builder: (context) => MapPage(
                                     initialCenter: pos,
                                     allowSelection: false,
+                                    showMarker: true,
                                   ),
                                 ),
                               );
                             }
                           },
-                          child: _DetailLocationText(
-                              location: widget.event['location'].toString()),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on,
+                                  size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  widget.event['location'].toString(),
+                                  style: TextStyle(
+                                      fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       const SizedBox(height: 12),
                       if ((widget.event['location']?.toString() ?? '')
@@ -232,10 +270,199 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                 fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
                         ),
+                      
+                      // Katılma butonu
+                      const SizedBox(height: 24),
+                      _buildJoinButton(),
                     ],
                   ),
                 ),
     );
+  }
+
+  Widget _buildJoinButton() {
+    final isJoined = widget.event['is_joined'] as bool? ?? false;
+    final participantCount = widget.event['current_participant_count'] ?? 0;
+    final guestLimit = widget.event['guest_limit'] ?? '-';
+    final organizerUsername = (widget.event['organizer'] as Map?)?['username'] ?? '';
+    final requiresApproval = widget.event['requires_approval'] as bool? ?? false;
+    final canJoin = !isJoined &&
+        organizerUsername != widget.currentUsername &&
+        (guestLimit == '-' || participantCount < guestLimit);
+
+    if (!canJoin && !isJoined) {
+      return const SizedBox.shrink(); // Buton gösterme
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isJoined ? _leaveEvent : _joinEvent,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isJoined ? Colors.red : Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          _getButtonText(isJoined, requiresApproval),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  String _getButtonText(bool isJoined, bool requiresApproval) {
+    if (isJoined) {
+      return 'Ayrıl';
+    } else if (requiresApproval && _requestSent) {
+      return 'İsteğiniz Gönderildi';
+    } else if (requiresApproval) {
+      return 'Katıl';
+    } else {
+      return 'Katıl';
+    }
+  }
+
+  Future<void> _joinEvent() async {
+    final requiresApproval = widget.event['requires_approval'] as bool? ?? false;
+    
+    if (requiresApproval) {
+      // Onay gerektiren event için mesaj dialog'u göster
+      final message = await _showJoinRequestDialog();
+      if (message == null) return; // Kullanıcı iptal etti
+      
+      try {
+        final updatedEvent = await _service.joinEvent(widget.event['id'], message: message);
+        if (!mounted) return;
+        
+        // Backend'den gelen güncel event bilgisini kullan
+        setState(() {
+          _requestSent = true;
+          // Event bilgisini güncelle
+          widget.event.updateAll((key, value) => updatedEvent[key] ?? value);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Katılım isteği gönderildi. Onay bekleniyor.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İstek gönderilemedi: $e')),
+        );
+      }
+    } else {
+      // Onay gerektirmeyen event için direkt katıl
+      try {
+        final updatedEvent = await _service.joinEvent(widget.event['id']);
+        if (!mounted) return;
+        
+        // Backend'den gelen güncel event bilgisini kullan
+        setState(() {
+          // Event bilgisini güncelle
+          widget.event.updateAll((key, value) => updatedEvent[key] ?? value);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Etkinliğe başarıyla katıldınız!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Sayfayı yenile
+        _loadParticipants();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Katılamadı: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _leaveEvent() async {
+    try {
+      final updatedEvent = await _service.leaveEvent(widget.event['id']);
+      if (!mounted) return;
+      
+      // Backend'den gelen güncel event bilgisini kullan
+      setState(() {
+        // Event bilgisini güncelle
+        widget.event.updateAll((key, value) => updatedEvent[key] ?? value);
+        _requestSent = false; // İstek durumunu sıfırla
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Etkinlikten ayrıldınız.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      
+      // Sayfayı yenile
+      _loadParticipants();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ayrılamadı: $e')),
+      );
+    }
+  }
+
+  Future<String?> _showJoinRequestDialog() async {
+    String message = '';
+    
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Katılım İsteği'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Bu etkinliğe katılmak için organizatörden onay gerekiyor.'),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Mesaj (isteğe bağlı)',
+                  hintText: 'Katılmak istediğinizi belirten bir mesaj yazabilirsiniz...',
+                ),
+                maxLines: 3,
+                onChanged: (value) => message = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(message),
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  LatLng? _parseLatLng(String location) {
+    try {
+      final parts = location.split(',');
+      if (parts.length == 2) {
+        final lat = double.parse(parts[0].trim());
+        final lng = double.parse(parts[1].trim());
+        return LatLng(lat, lng);
+      }
+    } catch (e) {
+      // Hata durumunda null döndür
+    }
+    return null;
   }
 }
 
@@ -248,102 +475,60 @@ class _DetailLocationText extends StatefulWidget {
 }
 
 class _DetailLocationTextState extends State<_DetailLocationText> {
-  String? _displayName;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _resolveAddress();
-  }
-
-  Future<void> _resolveAddress() async {
-    final parts = widget.location.split(',');
-    if (parts.length != 2) {
-      setState(() {
-        _displayName = widget.location;
-        _loading = false;
-      });
-      return;
-    }
-    final String lat = parts[0].trim();
-    final String lon = parts[1].trim();
-    try {
-      final uri = Uri.parse(
-          'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
-      final response = await http.get(uri, headers: {
-        'User-Agent': 'motoapp-front/1.0 (reverse-geocode)'
-      });
-      if (!mounted) return;
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        setState(() {
-          _displayName = data['display_name']?.toString() ?? widget.location;
-          _loading = false;
-        });
-      } else {
-        setState(() {
-          _displayName = widget.location;
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _displayName = widget.location;
-        _loading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.location_on, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+        Icon(Icons.location_on,
+            size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         const SizedBox(width: 8),
         Expanded(
-          child: _loading
-              ? Text('Konum yükleniyor...',
-                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))
-              : Text(
-                  _displayName ?? '-',
-                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-                ),
+          child: Text(
+            widget.location,
+            style: TextStyle(
+                fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          ),
         ),
       ],
     );
   }
 }
 
-LatLng? _parseLatLng(String input) {
-  final parts = input.split(',');
-  if (parts.length != 2) return null;
-  final lat = double.tryParse(parts[0].trim());
-  final lon = double.tryParse(parts[1].trim());
-  if (lat == null || lon == null) return null;
-  return LatLng(lat, lon);
-}
-
 class _MiniMapPreview extends StatelessWidget {
   final String location;
+
   const _MiniMapPreview({required this.location});
 
   @override
   Widget build(BuildContext context) {
     final pos = _parseLatLng(location);
-    if (pos == null) return const SizedBox.shrink();
-    
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 160,
+    if (pos == null) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Text('Konum bilgisi geçersiz'),
+        ),
+      );
+    }
+
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
         child: FlutterMap(
           options: MapOptions(
             initialCenter: pos,
             initialZoom: 15.0,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.none, // Hiçbir etkileşim yok
+              flags: InteractiveFlag.none, // Sadece görüntüleme
             ),
           ),
           children: [
@@ -355,20 +540,10 @@ class _MiniMapPreview extends StatelessWidget {
               markers: [
                 Marker(
                   point: pos,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.location_on,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 30,
                   ),
                 ),
               ],
@@ -377,6 +552,20 @@ class _MiniMapPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  LatLng? _parseLatLng(String location) {
+    try {
+      final parts = location.split(',');
+      if (parts.length == 2) {
+        final lat = double.parse(parts[0].trim());
+        final lng = double.parse(parts[1].trim());
+        return LatLng(lat, lng);
+      }
+    } catch (e) {
+      // Hata durumunda null döndür
+    }
+    return null;
   }
 }
 
@@ -393,130 +582,29 @@ class _EventParticipantsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Katılımcılar',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 0,
+        title: const Text('Katılımcılar'),
       ),
-      body: Column(
-        children: [
-          // Etkinlik bilgileri
-          Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Text(
-                  event['title']?.toString() ?? 'Etkinlik',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+      body: participants.isEmpty
+          ? const Center(child: Text('Henüz katılımcı yok'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: participants.length,
+              itemBuilder: (context, index) {
+                final user = participants[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: user['profile_picture'] != null
+                        ? NetworkImage(user['profile_picture'])
+                        : null,
+                    child: user['profile_picture'] == null
+                        ? Text(user['username'][0].toUpperCase())
+                        : null,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${participants.length} katılımcı',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ],
+                  title: Text(user['username']),
+                  subtitle: user['email'] != null ? Text(user['email']) : null,
+                );
+              },
             ),
-          ),
-          
-          // Katılımcılar listesi
-          Expanded(
-            child: participants.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Henüz katılımcı yok',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: participants.length,
-                    itemBuilder: (context, index) {
-                      final participant = participants[index];
-                      return _buildParticipantItem(context, participant);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildParticipantItem(BuildContext context, Map<String, dynamic> participant) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundImage: participant['profile_picture'] != null
-                ? NetworkImage(participant['profile_picture'])
-                : null,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            child: participant['profile_picture'] == null
-                ? Icon(
-                    Icons.person,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  )
-                : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  participant['username'] ?? 'Bilinmiyor',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                if (participant['email'] != null)
-                  Text(
-                    participant['email'],
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

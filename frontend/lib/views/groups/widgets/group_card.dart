@@ -29,9 +29,18 @@ class GroupCard extends StatefulWidget {
 
 class _GroupCardState extends State<GroupCard> {
   bool _isJoining = false;
+  bool _requestSent = false;
 
   Future<void> _joinGroup() async {
     if (_isJoining) return;
+    
+    final requiresApproval = widget.group['requires_approval'] as bool? ?? false;
+    
+    if (requiresApproval) {
+      // Onay gerektiren grup için mesaj dialog'u göster
+      final message = await _showJoinRequestDialog();
+      if (message == null) return; // Kullanıcı iptal etti
+    }
     
     setState(() {
       _isJoining = true;
@@ -43,27 +52,40 @@ class _GroupCardState extends State<GroupCard> {
           ? widget.group['id'] as int
           : int.tryParse(widget.group['id'].toString()) ?? 0;
       
-      final response = await groupService.joinGroup(groupId);
+      final message = requiresApproval ? await _showJoinRequestDialog() : null;
+      final response = await groupService.joinGroup(groupId, message: message);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gruba başarıyla katıldınız!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Backend'den gelen güncel grup bilgisini kullan
-        final updatedGroup = response['group'];
-        if (updatedGroup != null) {
-          widget.onGroupJoined?.call(updatedGroup);
+        if (requiresApproval) {
+          setState(() {
+            _requestSent = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Katılım isteği gönderildi. Onay bekleniyor.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         } else {
-          // Fallback: eski grup bilgisini kullan
-          widget.onGroupJoined?.call(widget.group);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gruba başarıyla katıldınız!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Backend'den gelen güncel grup bilgisini kullan
+          final updatedGroup = response['group'];
+          if (updatedGroup != null) {
+            widget.onGroupJoined?.call(updatedGroup);
+          } else {
+            // Fallback: eski grup bilgisini kullan
+            widget.onGroupJoined?.call(widget.group);
+          }
+          
+          // Callback'i çağır (backend'den güncel veriyi çek)
+          widget.onJoinSuccess?.call();
         }
-        
-        // Callback'i çağır (backend'den güncel veriyi çek)
-        widget.onJoinSuccess?.call();
       }
     } catch (e) {
       if (mounted) {
@@ -215,7 +237,7 @@ class _GroupCardState extends State<GroupCard> {
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text('Katıl'),
+                          : Text(_getButtonText()),
                     ),
                 ],
               ),
@@ -238,6 +260,54 @@ class _GroupCardState extends State<GroupCard> {
           ),
         ),
       ),
+    );
+  }
+
+  String _getButtonText() {
+    final requiresApproval = widget.group['requires_approval'] as bool? ?? false;
+    
+    if (requiresApproval && _requestSent) {
+      return 'İsteğiniz Gönderildi';
+    } else {
+      return 'Katıl';
+    }
+  }
+
+  Future<String?> _showJoinRequestDialog() async {
+    String message = '';
+    
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Katılım İsteği'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Bu gruba katılmak için grup sahibinden onay gerekiyor.'),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Mesaj (isteğe bağlı)',
+                  hintText: 'Katılmak istediğinizi belirten bir mesaj yazabilirsiniz...',
+                ),
+                maxLines: 3,
+                onChanged: (value) => message = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(message),
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
     );
   }
 
