@@ -118,6 +118,11 @@ except Exception as e:
 try:
     all_websocket_patterns = chat.routing.websocket_urlpatterns + notifications.routing.websocket_urlpatterns
     print(f"DEBUG ASGI: Tüm WebSocket patterns: {all_websocket_patterns}")
+    
+    # Her pattern'i ayrı ayrı yazdır
+    for i, pattern in enumerate(all_websocket_patterns):
+        print(f"DEBUG ASGI: Pattern {i}: {pattern}")
+        
 except Exception as e:
     print(f"DEBUG ASGI: WebSocket patterns oluşturma hatası: {e}")
     all_websocket_patterns = []
