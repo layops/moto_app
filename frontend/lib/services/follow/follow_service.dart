@@ -21,9 +21,6 @@ class FollowService {
         {},
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
-          connectTimeout: const Duration(seconds: 10), // Takip işlemi için kısa timeout
-          receiveTimeout: const Duration(seconds: 10),
-          sendTimeout: const Duration(seconds: 10),
         ),
       );
 
