@@ -8,8 +8,8 @@ import '../service_locator.dart';
 
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
-  // Render.com için WebSocket URL'i - WSS protokolü kullan, port belirtme
-  final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://').replaceAll(':443', '') + '/ws/notifications/';
+  // Render.com için WebSocket URL'i - WSS protokolü kullan
+  final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://') + '/ws/notifications/';
   
   // Debug için constructor'da URL'yi yazdır
   NotificationsService() {
@@ -44,12 +44,26 @@ class NotificationsService {
     }
 
     try {
+      print('DEBUG: _wsApiUrl değeri: $_wsApiUrl');
+      print('DEBUG: Token: $token');
+      
       final wsUrl = '$_wsApiUrl?token=$token';
       print('DEBUG: WebSocket bağlantısı kuruluyor: $wsUrl');
       print('DEBUG: WebSocket URL protokolü: ${Uri.parse(wsUrl).scheme}');
       print('DEBUG: WebSocket URL host: ${Uri.parse(wsUrl).host}');
       print('DEBUG: WebSocket URL port: ${Uri.parse(wsUrl).port}');
       print('DEBUG: WebSocket URL path: ${Uri.parse(wsUrl).path}');
+      print('DEBUG: Parsed URI: ${Uri.parse(wsUrl)}');
+      
+      final uri = Uri.parse(wsUrl);
+      print('DEBUG: URI scheme: ${uri.scheme}');
+      print('DEBUG: URI host: ${uri.host}');
+      print('DEBUG: URI port: ${uri.port}');
+      print('DEBUG: URI path: ${uri.path}');
+      print('DEBUG: URI query: ${uri.query}');
+      
+      // WSS protokolü ile WebSocket bağlantısı
+      print('DEBUG: WebSocketChannel.connect çağrılıyor...');
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
       _channel!.stream.listen(
