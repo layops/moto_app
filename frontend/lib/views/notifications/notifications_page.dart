@@ -224,8 +224,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
       case 'event_join_request':
         // Etkinlik katılım isteği - katılım istekleri sayfasına git
         if (contentObjectId != null) {
-          // contentObjectId EventRequest ID'si, Event ID'sini almak için API çağrısı yap
-          _navigateToEventRequestsPage(contentObjectId);
+          // contentObjectId artık Event ID'si
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventRequestsPage(
+                eventId: contentObjectId,
+                eventTitle: 'Etkinlik', // Event title'ı bildirimden alınabilir
+              ),
+            ),
+          );
         } else {
           _showNavigationError('Etkinlik bilgisi bulunamadı');
         }
@@ -335,91 +343,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  /// EventRequest ID'sinden Event ID'sini al ve EventRequestsPage'e git
-  Future<void> _navigateToEventRequestsPage(int eventRequestId) async {
-    try {
-      print('DEBUG: EventRequest ID ile navigation başlatılıyor: $eventRequestId');
-      
-      // EventRequest ID'sinden Event ID'sini al
-      final eventRequest = await ServiceLocator.event.getEventRequestById(eventRequestId);
-      print('DEBUG: EventRequest response: $eventRequest');
-      
-      if (eventRequest != null && eventRequest['event_id'] != null) {
-        print('DEBUG: Event ID bulundu: ${eventRequest['event_id']}');
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EventRequestsPage(
-              eventId: eventRequest['event_id'],
-              eventTitle: eventRequest['event_title'] ?? 'Etkinlik',
-            ),
-          ),
-        );
-      } else {
-        print('DEBUG: EventRequest bulunamadı, fallback kullanılıyor');
-        // Fallback: Tüm event'leri listele ve kullanıcıya seçtir
-        _showEventSelectionDialog();
-      }
-    } catch (e) {
-      print('EventRequest bilgisi alınamadı: $e');
-      print('DEBUG: Hata durumunda fallback kullanılıyor');
-      // Fallback: Tüm event'leri listele ve kullanıcıya seçtir
-      _showEventSelectionDialog();
-    }
-  }
-  
-  /// Event seçim dialog'u göster (fallback)
-  Future<void> _showEventSelectionDialog() async {
-    try {
-      final events = await ServiceLocator.event.fetchAllEvents();
-      if (events.isEmpty) {
-        _showNavigationError('Hiç etkinlik bulunamadı');
-        return;
-      }
-      
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Etkinlik Seçin'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: events.length,
-              itemBuilder: (context, index) {
-                final event = events[index];
-                return ListTile(
-                  title: Text(event['title'] ?? 'Etkinlik'),
-                  subtitle: Text(event['organizer']?['username'] ?? ''),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EventRequestsPage(
-                          eventId: event['id'],
-                          eventTitle: event['title'] ?? 'Etkinlik',
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      print('Event listesi alınamadı: $e');
-      _showNavigationError('Etkinlik listesi alınamadı');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

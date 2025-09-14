@@ -231,14 +231,14 @@ class EventViewSet(viewsets.ModelViewSet):
                         "request_status": request_status
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Bildirim gönder
+                # Bildirim gönder - Event ID'sini gönder (EventRequest ID'si yerine)
                 try:
                     self._send_notification(
                         recipient=event.organizer,
                         sender=user,
                         notification_type='event_join_request',
                         message=f"{user.username} {event.title} etkinliğine katılmak istiyor.",
-                        content_object=event_request
+                        content_object=event  # EventRequest yerine Event gönder
                     )
                 except Exception as e:
                     print(f"Bildirim gönderme hatası: {str(e)}")
