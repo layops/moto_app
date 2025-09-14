@@ -20,7 +20,10 @@ except Exception as e:
     traceback.print_exc()
     supabase = None
 
-from users.serializers import UserSerializer  # Yeni import
+# UserSerializer'ı lazy import edelim - circular import'u önlemek için
+def get_user_serializer():
+    from users.serializers import UserSerializer
+    return UserSerializer
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
@@ -483,6 +486,9 @@ class EventRequestDetailView(generics.RetrieveAPIView):
             
             participants = event.participants.all()
             print(f"DEBUG: {participants.count()} adet katılımcı bulundu")
+            
+            # UserSerializer'ı lazy import et
+            UserSerializer = get_user_serializer()
             serializer = UserSerializer(participants, many=True)
             print(f"DEBUG: Serializer başarılı, {len(serializer.data)} item döndürülüyor")
             return Response(serializer.data)

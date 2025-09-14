@@ -2,13 +2,17 @@ from rest_framework import serializers
 from .models import Event, EventRequest
 from groups.models import Group
 from groups.serializers import GroupSerializer
-from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+# Circular import'u önlemek için UserSerializer'ı lazy import edelim
+def get_user_serializer():
+    from users.serializers import UserSerializer
+    return UserSerializer
+
 class EventSerializer(serializers.ModelSerializer):
-    organizer = UserSerializer(read_only=True)
+    organizer = serializers.SerializerMethodField()
     # participants field'ını geçici olarak kaldırıyoruz
     # participants = serializers.PrimaryKeyRelatedField(
     #     queryset=User.objects.all(),
@@ -67,6 +71,18 @@ class EventSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"get_request_status hatası: {str(e)}")
             return None
+    
+    def get_organizer(self, obj):
+        try:
+            UserSerializer = get_user_serializer()
+            return UserSerializer(obj.organizer).data
+        except Exception as e:
+            print(f"get_organizer hatası: {str(e)}")
+            return {
+                'id': obj.organizer.id,
+                'username': obj.organizer.username,
+                'email': obj.organizer.email
+            }
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])
@@ -84,7 +100,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class EventRequestSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = serializers.SerializerMethodField()
     # Circular reference'ı önlemek için sadece event ID'sini döndür
     event_id = serializers.IntegerField(source='event.id', read_only=True)
     event_title = serializers.CharField(source='event.title', read_only=True)
@@ -93,3 +109,15 @@ class EventRequestSerializer(serializers.ModelSerializer):
         model = EventRequest
         fields = ['id', 'user', 'event_id', 'event_title', 'status', 'message', 'created_at', 'updated_at']
         read_only_fields = ['id', 'user', 'event_id', 'event_title', 'created_at', 'updated_at']
+    
+    def get_user(self, obj):
+        try:
+            UserSerializer = get_user_serializer()
+            return UserSerializer(obj.user).data
+        except Exception as e:
+            print(f"get_user hatası: {str(e)}")
+            return {
+                'id': obj.user.id,
+                'username': obj.user.username,
+                'email': obj.user.email
+            }
