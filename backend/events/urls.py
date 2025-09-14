@@ -11,4 +11,6 @@ urlpatterns = [
     path('event-requests/<int:pk>/', EventRequestDetailView.as_view(), name='event-request-detail'),
     # Participants için ayrı endpoint (DRF action çalışmazsa)
     path('<int:event_id>/participants/', EventViewSet.as_view({'get': 'participants'}), name='event-participants'),
+    # Geçici: join-requests URL'si için (frontend uyumluluğu)
+    path('<int:event_id>/join-requests/', EventViewSet.as_view({'get': 'requests'}), name='event-join-requests-legacy'),
 ]
