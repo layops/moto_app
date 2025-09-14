@@ -369,23 +369,6 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
-class EventRequestDetailView(generics.RetrieveAPIView):
-    """EventRequest detay bilgilerini getir"""
-    serializer_class = EventRequestSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        return EventRequest.objects.all()
-    
-    def get_object(self):
-        event_request = get_object_or_404(EventRequest, pk=self.kwargs['pk'])
-        # Sadece event organizatörü veya istek sahibi görebilir
-        if (self.request.user != event_request.event.organizer and 
-            self.request.user != event_request.user):
-            raise PermissionDenied("Bu isteği görme yetkiniz yok.")
-        return event_request
-
     @action(detail=True, methods=['post'])
     def approve_request(self, request, pk=None):
         """Etkinlik katılım isteğini onayla"""
@@ -470,6 +453,23 @@ class EventRequestDetailView(generics.RetrieveAPIView):
                 {"error": "İstek reddedilirken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class EventRequestDetailView(generics.RetrieveAPIView):
+    """EventRequest detay bilgilerini getir"""
+    serializer_class = EventRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return EventRequest.objects.all()
+    
+    def get_object(self):
+        event_request = get_object_or_404(EventRequest, pk=self.kwargs['pk'])
+        # Sadece event organizatörü veya istek sahibi görebilir
+        if (self.request.user != event_request.event.organizer and 
+            self.request.user != event_request.user):
+            raise PermissionDenied("Bu isteği görme yetkiniz yok.")
+        return event_request
 
     def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
         """Bildirim gönder"""
