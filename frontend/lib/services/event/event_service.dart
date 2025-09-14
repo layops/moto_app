@@ -294,7 +294,7 @@ class EventService {
     try {
       final token = await authService.getToken();
       final response = await _dio.get(
-        '$kBaseUrl/api/events/$eventId/join-requests/',
+        '$kBaseUrl/api/events/$eventId/requests/',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',

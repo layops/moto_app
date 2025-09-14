@@ -15,9 +15,9 @@ def notification_stream(request):
     """
     Server-Sent Events ile gerçek zamanlı bildirim akışı
     """
-    # Accept header kontrolü
+    # Accept header kontrolü - daha esnek hale getir
     accept_header = request.META.get('HTTP_ACCEPT', '')
-    if 'text/event-stream' not in accept_header and '*/*' not in accept_header:
+    if not any(accept in accept_header.lower() for accept in ['text/event-stream', '*/*', 'text/html', 'application/json']):
         from rest_framework.response import Response
         from rest_framework import status
         return Response(

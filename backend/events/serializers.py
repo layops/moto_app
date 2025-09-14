@@ -85,9 +85,11 @@ class EventSerializer(serializers.ModelSerializer):
 
 class EventRequestSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    event = EventSerializer(read_only=True)
+    # Circular reference'ı önlemek için sadece event ID'sini döndür
+    event_id = serializers.IntegerField(source='event.id', read_only=True)
+    event_title = serializers.CharField(source='event.title', read_only=True)
     
     class Meta:
         model = EventRequest
-        fields = ['id', 'user', 'event', 'status', 'message', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'user', 'event', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'event_id', 'event_title', 'status', 'message', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'event_id', 'event_title', 'created_at', 'updated_at']
