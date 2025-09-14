@@ -238,8 +238,17 @@ class EventViewSet(viewsets.ModelViewSet):
         """Etkinlik katılım isteklerini getir"""
         try:
             print(f"DEBUG: Event requests endpoint çağrıldı - Event ID: {pk}, User: {request.user.username}")
-            event = self.get_object()
-            print(f"DEBUG: Event bulundu: {event.title}")
+            
+            # Event'i bul
+            try:
+                event = self.get_object()
+                print(f"DEBUG: Event bulundu: {event.title}")
+            except Exception as e:
+                print(f"DEBUG: Event bulunamadı - ID: {pk}, Hata: {str(e)}")
+                return Response(
+                    {"error": f"Event ID {pk} bulunamadı. Etkinlik mevcut değil veya silinmiş olabilir."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
             if request.user != event.organizer:
                 print(f"DEBUG: Kullanıcı organizatör değil: {request.user.username} != {event.organizer.username}")

@@ -38,6 +38,7 @@ class _EventRequestsPageState extends State<EventRequestsPage> {
     });
 
     try {
+      print('DEBUG: EventRequestsPage - Event ID: ${widget.eventId}');
       // Etkinlik katılım isteklerini al
       final requests = await _eventService.getEventJoinRequests(widget.eventId);
       if (mounted) {
@@ -47,6 +48,7 @@ class _EventRequestsPageState extends State<EventRequestsPage> {
         });
       }
     } catch (e) {
+      print('DEBUG: EventRequestsPage - Hata: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Katılım istekleri yüklenirken hata oluştu: $e';
@@ -56,9 +58,9 @@ class _EventRequestsPageState extends State<EventRequestsPage> {
     }
   }
 
-  Future<void> _handleRequest(int userId, bool approved) async {
+  Future<void> _handleRequest(int requestId, bool approved) async {
     try {
-      await _eventService.handleJoinRequest(widget.eventId, userId, approved);
+      await _eventService.handleJoinRequest(widget.eventId, requestId, approved);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -425,7 +427,7 @@ class _EventRequestsPageState extends State<EventRequestsPage> {
                                     children: [
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          onPressed: () => _handleRequest(user['id'], false),
+                                          onPressed: () => _handleRequest(request['id'], false),
                                           icon: const Icon(Icons.close_rounded, size: 18),
                                           label: const Text('Reddet'),
                                           style: ElevatedButton.styleFrom(
@@ -446,7 +448,7 @@ class _EventRequestsPageState extends State<EventRequestsPage> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          onPressed: () => _handleRequest(user['id'], true),
+                                          onPressed: () => _handleRequest(request['id'], true),
                                           icon: const Icon(Icons.check_rounded, size: 18),
                                           label: const Text('Kabul Et'),
                                           style: ElevatedButton.styleFrom(

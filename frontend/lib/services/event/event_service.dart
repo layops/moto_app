@@ -311,14 +311,14 @@ class EventService {
     }
   }
 
-  Future<void> handleJoinRequest(int eventId, int userId, bool approved) async {
+  Future<void> handleJoinRequest(int eventId, int requestId, bool approved) async {
     try {
       final token = await authService.getToken();
+      final endpoint = approved ? 'approve_request' : 'reject_request';
       await _dio.post(
-        '$kBaseUrl/api/events/$eventId/handle-join-request/',
+        '$kBaseUrl/api/events/$eventId/$endpoint/',
         data: {
-          'user_id': userId,
-          'approved': approved,
+          'request_id': requestId,
         },
         options: Options(
           headers: {

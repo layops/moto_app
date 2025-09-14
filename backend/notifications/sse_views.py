@@ -15,15 +15,9 @@ def notification_stream(request):
     """
     Server-Sent Events ile gerçek zamanlı bildirim akışı
     """
-    # Accept header kontrolü - daha esnek hale getir
-    accept_header = request.META.get('HTTP_ACCEPT', '')
-    if not any(accept in accept_header.lower() for accept in ['text/event-stream', '*/*', 'text/html', 'application/json']):
-        from rest_framework.response import Response
-        from rest_framework import status
-        return Response(
-            {"error": "Bu endpoint Server-Sent Events için tasarlanmıştır. Accept: text/event-stream header'ı gerekli."},
-            status=status.HTTP_406_NOT_ACCEPTABLE
-        )
+    # Accept header kontrolünü kaldır - tüm istekleri kabul et
+    print(f"DEBUG: Notification stream endpoint çağrıldı - User: {request.user.username}")
+    print(f"DEBUG: Accept header: {request.META.get('HTTP_ACCEPT', '')}")
     def event_stream():
         last_check = timezone.now()
         
