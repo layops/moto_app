@@ -46,6 +46,11 @@ class NotificationsService {
   
   /// Ana bağlantı metodu - akıllı strateji ile en iyi bağlantı türünü seçer
   Future<void> connect() async {
+    if (_isConnected) {
+      print('⚠️ Zaten bağlı, yeniden bağlanma iptal edildi');
+      return;
+    }
+    
     try {
       // Connection Manager'ı başlat
       await _connectionManager.initialize();
@@ -59,8 +64,10 @@ class NotificationsService {
       
     } catch (e) {
       print('❌ Akıllı bağlantı başarısız: $e');
-      // Akıllı retry başlat
-      _smartRetry?.startRetry(() => connect());
+      // Akıllı retry başlat - sadece henüz bağlı değilse
+      if (!_isConnected) {
+        _smartRetry?.startRetry(() => connect());
+      }
     }
   }
 
@@ -82,6 +89,9 @@ class NotificationsService {
       _connectionManager.updateConnectionStatus(true);
     } catch (e) {
       _connectionManager.updateConnectionStatus(false);
+      // SSE başarısız olursa polling fallback başlat
+      print('🔄 SSE başarısız, polling fallback başlatılıyor...');
+      _startPollingFallback();
       throw e;
     }
   }
@@ -156,12 +166,15 @@ class NotificationsService {
       request.headers.set('Authorization', 'Bearer $token');
       request.headers.set('Accept', 'text/event-stream');
       request.headers.set('Cache-Control', 'no-cache');
+      request.headers.set('Connection', 'keep-alive');
       
       final response = await request.close();
       
       if (response.statusCode == 200) {
         _isConnected = true;
-        _connectionStatusController.add(true);
+        if (!_connectionStatusController.isClosed) {
+          _connectionStatusController.add(true);
+        }
         
         // SSE stream'i dinle
         response.listen(
@@ -175,21 +188,32 @@ class NotificationsService {
                   final jsonData = line.substring(6); // 'data: ' kısmını çıkar
                   if (jsonData.trim().isNotEmpty) {
                     final decodedData = jsonDecode(jsonData);
-                    _notificationStreamController.add(decodedData);
+                    if (!_notificationStreamController.isClosed) {
+                      _notificationStreamController.add(decodedData);
+                    }
                   }
                 } catch (e) {
+                  print('SSE data parse hatası: $e');
                 }
               }
             }
           },
           onDone: () {
             _isConnected = false;
-            _connectionStatusController.add(false);
+            if (!_connectionStatusController.isClosed) {
+              _connectionStatusController.add(false);
+            }
+            print('SSE stream kapandı');
           },
           onError: (error) {
             _isConnected = false;
-            _connectionStatusController.add(false);
-            _notificationStreamController.addError(error);
+            if (!_connectionStatusController.isClosed) {
+              _connectionStatusController.add(false);
+            }
+            if (!_notificationStreamController.isClosed) {
+              _notificationStreamController.addError(error);
+            }
+            print('SSE stream hatası: $error');
           },
         );
       } else {
@@ -197,9 +221,9 @@ class NotificationsService {
       }
     } catch (e) {
       _isConnected = false;
-      _connectionStatusController.add(false);
-      // SSE başarısız olursa polling fallback başlat
-      _startPollingFallback();
+      if (!_connectionStatusController.isClosed) {
+        _connectionStatusController.add(false);
+      }
       
       throw Exception('SSE bağlantı hatası: $e');
     }
@@ -452,10 +476,20 @@ class NotificationsService {
 
   /// Servisi temizler
   void dispose() {
+    _smartRetry?.dispose();
+    _connectionManager.dispose();
+    
     disconnectWebSocket();
     disconnectSSE();
     _stopPollingFallback();
-    _notificationStreamController.close();
-    _connectionStatusController.close();
+    
+    if (!_notificationStreamController.isClosed) {
+      _notificationStreamController.close();
+    }
+    if (!_connectionStatusController.isClosed) {
+      _connectionStatusController.close();
+    }
+    
+    print('🧹 NotificationsService temizlendi');
   }
 }

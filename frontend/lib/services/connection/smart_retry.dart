@@ -9,13 +9,14 @@ class SmartRetry {
   int _currentAttempt = 0;
   Timer? _retryTimer;
   bool _isRetrying = false;
+  bool _isDisposed = false;
 
   SmartRetry(this._connectionManager) 
       : _retryDelays = _connectionManager.getRetryDelays();
 
   /// Akıllı yeniden deneme başlatır
   Future<void> startRetry(Future<void> Function() retryFunction) async {
-    if (_isRetrying) return;
+    if (_isRetrying || _isDisposed) return;
     
     _isRetrying = true;
     _currentAttempt = 0;
@@ -26,6 +27,11 @@ class SmartRetry {
 
   /// Retry işlemini gerçekleştirir
   Future<void> _executeRetry(Future<void> Function() retryFunction) async {
+    if (_isDisposed) {
+      _isRetrying = false;
+      return;
+    }
+    
     if (_currentAttempt >= _retryDelays.length) {
       print('❌ Maksimum retry denemesi aşıldı');
       _isRetrying = false;
@@ -33,11 +39,17 @@ class SmartRetry {
     }
 
     final delay = _retryDelays[_currentAttempt];
-    final jitter = Random().nextInt(1000); // 0-1 saniye rastgele gecikme
+    final jitter = Random().nextInt(500); // 0-0.5 saniye rastgele gecikme (daha kısa)
     
     print('⏳ ${delay + jitter}ms sonra ${_currentAttempt + 1}. deneme...');
     
+    _retryTimer?.cancel(); // Önceki timer'ı iptal et
     _retryTimer = Timer(Duration(milliseconds: delay + jitter), () async {
+      if (_isDisposed) {
+        _isRetrying = false;
+        return;
+      }
+      
       try {
         await retryFunction();
         print('✅ Retry başarılı!');
@@ -63,6 +75,15 @@ class SmartRetry {
     _isRetrying = false;
     _currentAttempt = 0;
     print('🛑 Retry durduruldu');
+  }
+  
+  /// SmartRetry'ı temizler
+  void dispose() {
+    _isDisposed = true;
+    _retryTimer?.cancel();
+    _isRetrying = false;
+    _currentAttempt = 0;
+    print('🧹 SmartRetry temizlendi');
   }
 
   /// Exponential backoff ile retry

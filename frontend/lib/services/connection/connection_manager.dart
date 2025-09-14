@@ -19,6 +19,9 @@ class ConnectionManager {
       StreamController<NetworkQuality>.broadcast();
   final StreamController<bool> _isConnectedController = 
       StreamController<bool>.broadcast();
+  
+  // Stream controller durumu
+  bool _isDisposed = false;
 
   // State
   ConnectionType _currentConnectionType = ConnectionType.websocket;
@@ -92,18 +95,26 @@ class ConnectionManager {
 
   /// Bağlantı türünü günceller
   void updateConnectionType(ConnectionType type) {
+    if (_isDisposed) return;
+    
     if (_currentConnectionType != type) {
       _currentConnectionType = type;
-      _connectionTypeController.add(type);
+      if (!_connectionTypeController.isClosed) {
+        _connectionTypeController.add(type);
+      }
       print('🔄 Bağlantı türü güncellendi: $type');
     }
   }
 
   /// Bağlantı durumunu günceller
   void updateConnectionStatus(bool connected) {
+    if (_isDisposed) return;
+    
     if (_isConnected != connected) {
       _isConnected = connected;
-      _isConnectedController.add(connected);
+      if (!_isConnectedController.isClosed) {
+        _isConnectedController.add(connected);
+      }
       print('🔗 Bağlantı durumu: ${connected ? "Bağlı" : "Bağlı değil"}');
     }
   }
@@ -121,7 +132,9 @@ class ConnectionManager {
         _currentNetworkQuality = quality;
       }
       
-      _networkQualityController.add(_currentNetworkQuality);
+      if (!_networkQualityController.isClosed) {
+        _networkQualityController.add(_currentNetworkQuality);
+      }
       print('📶 Ağ kalitesi: $_currentNetworkQuality');
       
       // Ağ kalitesi değiştiyse bağlantı türünü yeniden değerlendir
@@ -260,13 +273,23 @@ class ConnectionManager {
 
   /// Connection Manager'ı temizler
   void dispose() {
+    if (_isDisposed) return;
+    
+    _isDisposed = true;
+    
     _healthCheckTimer?.cancel();
     _networkCheckTimer?.cancel();
     _batteryCheckTimer?.cancel();
     
-    _connectionTypeController.close();
-    _networkQualityController.close();
-    _isConnectedController.close();
+    if (!_connectionTypeController.isClosed) {
+      _connectionTypeController.close();
+    }
+    if (!_networkQualityController.isClosed) {
+      _networkQualityController.close();
+    }
+    if (!_isConnectedController.isClosed) {
+      _isConnectedController.close();
+    }
     
     print('🧹 Connection Manager temizlendi');
   }
