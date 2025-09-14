@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
@@ -464,12 +465,27 @@ class EventRequestDetailView(generics.RetrieveAPIView):
         return EventRequest.objects.all()
     
     def get_object(self):
-        event_request = get_object_or_404(EventRequest, pk=self.kwargs['pk'])
-        # Sadece event organizatörü veya istek sahibi görebilir
-        if (self.request.user != event_request.event.organizer and 
-            self.request.user != event_request.user):
-            raise PermissionDenied("Bu isteği görme yetkiniz yok.")
-        return event_request
+        request_id = self.kwargs['pk']
+        print(f"DEBUG: EventRequestDetailView çağrıldı - Request ID: {request_id}, User: {self.request.user.username}")
+        
+        # Mevcut EventRequest ID'lerini log'la
+        existing_request_ids = list(EventRequest.objects.values_list('id', flat=True))
+        print(f"DEBUG: Mevcut EventRequest ID'leri: {existing_request_ids}")
+        
+        try:
+            event_request = EventRequest.objects.get(pk=request_id)
+            print(f"DEBUG: EventRequest bulundu - ID: {event_request.id}, Event: {event_request.event.title}, User: {event_request.user.username}")
+            
+            # Sadece event organizatörü veya istek sahibi görebilir
+            if (self.request.user != event_request.event.organizer and 
+                self.request.user != event_request.user):
+                print(f"DEBUG: Yetki hatası - User: {self.request.user.username}, Organizer: {event_request.event.organizer.username}, Request User: {event_request.user.username}")
+                raise PermissionDenied("Bu isteği görme yetkiniz yok.")
+            
+            return event_request
+        except EventRequest.DoesNotExist:
+            print(f"DEBUG: EventRequest bulunamadı - ID: {request_id}")
+            raise Http404(f"EventRequest ID {request_id} bulunamadı. Mevcut EventRequest ID'leri: {existing_request_ids}")
 
     def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
         """Bildirim gönder"""
