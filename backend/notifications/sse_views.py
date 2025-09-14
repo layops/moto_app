@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 import json
-import time
+import asyncio
 from .models import Notification
 
 User = get_user_model()
@@ -24,7 +24,9 @@ def notification_stream(request):
     
     # Accept header kontrolünü tamamen kaldır - tüm istekleri kabul et
     print("DEBUG: SSE endpoint başlatılıyor, header kontrolleri atlandı")
+    
     def event_stream():
+        import time
         last_check = timezone.now()
         
         while True:
@@ -54,14 +56,23 @@ def notification_stream(request):
                 
                 last_check = timezone.now()
                 
-                # 2 saniye bekle
-                time.sleep(2)
+                # Heartbeat gönder - bağlantının canlı olduğunu göster
+                yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': last_check.isoformat()})}\n\n"
                 
+                # Non-blocking sleep - Gunicorn worker'ını bloklamaz
+                # Kısa sleep ile worker'ı bloklamadan kontrol et
+                time.sleep(5)  # 5 saniye aralıklarla kontrol et
+                
+            except GeneratorExit:
+                # Client bağlantıyı kapattı
+                print("DEBUG: SSE client bağlantıyı kapattı")
+                break
             except Exception as e:
                 # Hata durumunda error event gönder
-                error_data = {'error': str(e)}
+                print(f"DEBUG: SSE stream hatası: {e}")
+                error_data = {'error': str(e), 'type': 'error'}
                 yield f"data: {json.dumps(error_data)}\n\n"
-                time.sleep(5)  # Hata durumunda daha uzun bekle
+                time.sleep(30)  # Hata durumunda daha uzun bekle
     
     response = StreamingHttpResponse(
         event_stream(),

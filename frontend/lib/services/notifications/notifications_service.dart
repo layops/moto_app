@@ -55,12 +55,12 @@ class NotificationsService {
       // Connection Manager'ı başlat
       await _connectionManager.initialize();
       
-      // SSE ile bağlan - WebSocket hata veriyor
-      print('📡 Bildirimler SSE ile bağlanıyor');
-      await _connectWithSSE();
-      _connectionManager.updateConnectionType(ConnectionType.sse);
+      // SSE production'da sorunlu, direkt polling kullan
+      print('📡 Bildirimler polling ile bağlanıyor (SSE production sorunlu)');
+      await _connectWithPolling();
+      _connectionManager.updateConnectionType(ConnectionType.polling);
       
-      print('✅ SSE bağlantı başarılı');
+      print('✅ Polling bağlantı başarılı');
       
     } catch (e) {
       print('❌ Akıllı bağlantı başarısız: $e');
@@ -100,8 +100,10 @@ class NotificationsService {
   Future<void> _connectWithPolling() async {
     try {
       _startPollingFallback();
+      _isConnected = true;
       _connectionManager.updateConnectionStatus(true);
     } catch (e) {
+      _isConnected = false;
       _connectionManager.updateConnectionStatus(false);
       throw e;
     }
@@ -193,6 +195,19 @@ class NotificationsService {
                   final jsonData = line.substring(6); // 'data: ' kısmını çıkar
                   if (jsonData.trim().isNotEmpty) {
                     final decodedData = jsonDecode(jsonData);
+                    
+                    // Heartbeat mesajlarını handle et
+                    if (decodedData['type'] == 'heartbeat') {
+                      print('💓 SSE heartbeat alındı');
+                      continue; // Heartbeat'i notification stream'e ekleme
+                    }
+                    
+                    // Error mesajlarını handle et
+                    if (decodedData['type'] == 'error') {
+                      print('❌ SSE error: ${decodedData['error']}');
+                      continue;
+                    }
+                    
                     if (!_notificationStreamController.isClosed) {
                       _notificationStreamController.add(decodedData);
                     }

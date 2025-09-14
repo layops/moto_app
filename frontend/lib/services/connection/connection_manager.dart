@@ -239,11 +239,11 @@ class ConnectionManager {
   /// Optimize edilmiş polling interval'ı döndürür
   Duration getOptimalPollingInterval() {
     if (_batteryLevel < 20) {
-      return Duration(seconds: 60); // Pil azsa daha az sık
+      return Duration(seconds: 120); // Pil azsa daha az sık
     } else if (_currentNetworkQuality == NetworkQuality.poor) {
-      return Duration(seconds: 30); // Ağ kötüyse orta sıklık
+      return Duration(seconds: 60); // Ağ kötüyse orta sıklık
     } else {
-      return Duration(seconds: 15); // Normal sıklık
+      return Duration(seconds: 30); // Normal sıklık - SSE yerine polling kullanıyoruz
     }
   }
 
