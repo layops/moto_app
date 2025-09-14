@@ -18,6 +18,8 @@ def notification_stream(request):
     # Accept header kontrolünü kaldır - tüm istekleri kabul et
     print(f"DEBUG: Notification stream endpoint çağrıldı - User: {request.user.username}")
     print(f"DEBUG: Accept header: {request.META.get('HTTP_ACCEPT', '')}")
+    print(f"DEBUG: Authorization header: {request.META.get('HTTP_AUTHORIZATION', '')[:20]}...")
+    print(f"DEBUG: User authenticated: {request.user.is_authenticated}")
     def event_stream():
         last_check = timezone.now()
         

@@ -205,11 +205,13 @@ class EventViewSet(viewsets.ModelViewSet):
                     message = ''
                 
                 try:
+                    print(f"DEBUG: EventRequest oluşturuluyor - Event: {event.id}, User: {user.username}, Message: {message}")
                     event_request, created = EventRequest.objects.get_or_create(
                         event=event,
                         user=user,
                         defaults={'message': message}
                     )
+                    print(f"DEBUG: EventRequest {'oluşturuldu' if created else 'bulundu'} - ID: {event_request.id}, Status: {event_request.status}")
                 except Exception as e:
                     print(f"EventRequest oluşturma hatası: {str(e)}")
                     raise e
