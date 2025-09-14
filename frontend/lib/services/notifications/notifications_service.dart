@@ -164,11 +164,16 @@ class NotificationsService {
       
       // Authorization header ekle
       request.headers.set('Authorization', 'Bearer $token');
-      request.headers.set('Accept', 'text/event-stream');
+      request.headers.set('Accept', 'text/event-stream, */*');
       request.headers.set('Cache-Control', 'no-cache');
       request.headers.set('Connection', 'keep-alive');
+      request.headers.set('User-Agent', 'MotoApp/1.0');
       
+      print('SSE isteği gönderiliyor: $uri');
       final response = await request.close();
+      
+      print('SSE response status: ${response.statusCode}');
+      print('SSE response headers: ${response.headers}');
       
       if (response.statusCode == 200) {
         _isConnected = true;

@@ -19,12 +19,11 @@ def notification_stream(request):
     print(f"DEBUG: Accept header: {request.META.get('HTTP_ACCEPT', '')}")
     print(f"DEBUG: Authorization header: {request.META.get('HTTP_AUTHORIZATION', '')[:20]}...")
     print(f"DEBUG: User authenticated: {request.user.is_authenticated}")
+    print(f"DEBUG: Request method: {request.method}")
+    print(f"DEBUG: Content-Type: {request.META.get('CONTENT_TYPE', '')}")
     
-    # Accept header kontrolü - daha esnek
-    accept_header = request.META.get('HTTP_ACCEPT', '')
-    if 'text/event-stream' not in accept_header and '*/*' not in accept_header and accept_header != '':
-        print(f"DEBUG: Accept header uyumsuz: {accept_header}")
-        # Yine de devam et, çoğu client bu header'ı doğru gönderemeyebilir
+    # Accept header kontrolünü tamamen kaldır - tüm istekleri kabul et
+    print("DEBUG: SSE endpoint başlatılıyor, header kontrolleri atlandı")
     def event_stream():
         last_check = timezone.now()
         
@@ -71,6 +70,9 @@ def notification_stream(request):
     response['Cache-Control'] = 'no-cache'
     response['Connection'] = 'keep-alive'
     response['Access-Control-Allow-Origin'] = '*'
-    response['Access-Control-Allow-Headers'] = 'Cache-Control'
+    response['Access-Control-Allow-Headers'] = 'Cache-Control, Authorization, Accept'
+    response['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+    response['X-Accel-Buffering'] = 'no'  # Nginx buffering'i kapat
     
+    print("DEBUG: SSE response oluşturuldu")
     return response

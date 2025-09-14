@@ -33,11 +33,20 @@ class AuthTokenMiddleware:
         if scope['type'] == 'http':
             headers = dict(scope['headers'])
             auth_header = headers.get(b'authorization', b'').decode('utf-8')
+            path = scope.get('path', '')
             
-            if auth_header.startswith('Token '):
+            print(f"DEBUG ASGI (HTTP): Path: {path}, Auth: {auth_header[:20]}...")
+            
+            # Bearer token veya Token formatını destekle
+            token_key = None
+            if auth_header.startswith('Bearer '):
+                token_key = auth_header[7:].strip()
+                print(f"DEBUG ASGI (HTTP): Bearer token bulundu, başlangıç: {token_key[:5]}...")
+            elif auth_header.startswith('Token '):
                 token_key = auth_header[6:].strip()
                 print(f"DEBUG ASGI (HTTP): Token bulundu, başlangıç: {token_key[:5]}...")
-                
+            
+            if token_key:
                 # Gerekli importları burada yapıyoruz
                 from rest_framework.authtoken.models import Token
                 from django.contrib.auth.models import AnonymousUser
@@ -60,6 +69,10 @@ class AuthTokenMiddleware:
                 except Exception as e:
                     print(f"DEBUG ASGI (HTTP): Token doğrulama hatası: {e}")
                     scope['user'] = AnonymousUser()
+            else:
+                print(f"DEBUG ASGI (HTTP): Authorization header bulunamadı veya desteklenmeyen format")
+                from django.contrib.auth.models import AnonymousUser
+                scope['user'] = AnonymousUser()
         
         # WebSocket için orijinal doğrulama
         if scope['type'] == 'websocket':
