@@ -26,6 +26,7 @@ class EventSerializer(serializers.ModelSerializer):
     current_participant_count = serializers.ReadOnlyField()
     is_full = serializers.ReadOnlyField()
     is_joined = serializers.SerializerMethodField()
+    request_status = serializers.SerializerMethodField()
     cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
@@ -33,12 +34,12 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
             'location', 'start_time', 'end_time', 'is_public', 'guest_limit',
-            'requires_approval', 'cover_image', 'current_participant_count', 'is_full', 'is_joined',
+            'requires_approval', 'cover_image', 'current_participant_count', 'is_full', 'is_joined', 'request_status',
             'created_at', 'updated_at'
         ]
         read_only_fields = (
             'id', 'organizer', 'created_at', 'updated_at',
-            'current_participant_count', 'is_full', 'is_joined'
+            'current_participant_count', 'is_full', 'is_joined', 'request_status'
         )
         extra_kwargs = {
             'title': {'required': True},
@@ -56,6 +57,16 @@ class EventSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"get_is_joined hatası: {str(e)}")
             return False
+    
+    def get_request_status(self, obj):
+        try:
+            request = self.context.get('request')
+            if request and request.user.is_authenticated:
+                return obj.get_user_request_status(request.user)
+            return None
+        except Exception as e:
+            print(f"get_request_status hatası: {str(e)}")
+            return None
 
     def create(self, validated_data):
         participants_data = validated_data.pop('participants', [])

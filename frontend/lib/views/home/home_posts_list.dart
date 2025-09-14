@@ -271,6 +271,7 @@ class HomePostsList extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (context) => PostCommentsPage(
+            post: post,
             postId: postId,
             postContent: postContent,
             authorUsername: username,

@@ -32,6 +32,12 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _availableGroups = [];
   bool _showSuggestions = false;
 
+  // Gelişmiş filtreleme özellikleri
+  String _selectedFilter = 'all'; // 'all', 'users', 'groups'
+  String _sortBy = 'relevance'; // 'relevance', 'name', 'date'
+  bool _showOnlineOnly = false;
+  bool _showActiveOnly = false;
+
   @override
   void initState() {
     super.initState();
@@ -215,6 +221,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             ),
           ),
           
+          // Filtreleme seçenekleri (arama yapıldığında göster)
+          if (_currentQuery.isNotEmpty)
+            _buildFilterOptions(),
+
           // Arama geçmişi (sadece arama yapılmamışsa göster)
           if (_currentQuery.isEmpty && _searchHistory.isNotEmpty)
             _buildSearchHistory(),
@@ -397,6 +407,230 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           results: _searchResults['groups'] ?? [],
           type: SearchResultType.groups,
           query: _currentQuery,
+        ),
+      ],
+    );
+  }
+
+  /// Filtreleme seçenekleri UI'ı
+  Widget _buildFilterOptions() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          // Filtre türü seçici
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: _selectedFilter,
+              decoration: InputDecoration(
+                labelText: 'Filtre',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'all', child: Text('Tümü')),
+                DropdownMenuItem(value: 'users', child: Text('Kullanıcılar')),
+                DropdownMenuItem(value: 'groups', child: Text('Gruplar')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedFilter = value;
+                  });
+                  _applyFilters();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          
+          // Sıralama seçici
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: _sortBy,
+              decoration: InputDecoration(
+                labelText: 'Sırala',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'relevance', child: Text('İlgililik')),
+                DropdownMenuItem(value: 'name', child: Text('İsim')),
+                DropdownMenuItem(value: 'date', child: Text('Tarih')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _sortBy = value;
+                  });
+                  _applyFilters();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          
+          // Filtre butonu
+          IconButton(
+            onPressed: _showAdvancedFilters,
+            icon: const Icon(Icons.tune),
+            tooltip: 'Gelişmiş Filtreler',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Gelişmiş filtreler dialog'unu göster
+  void _showAdvancedFilters() {
+    showDialog(
+      context: context,
+      builder: (context) => _AdvancedFiltersDialog(
+        showOnlineOnly: _showOnlineOnly,
+        showActiveOnly: _showActiveOnly,
+        onFiltersChanged: (onlineOnly, activeOnly) {
+          setState(() {
+            _showOnlineOnly = onlineOnly;
+            _showActiveOnly = activeOnly;
+          });
+          _applyFilters();
+        },
+      ),
+    );
+  }
+
+  /// Filtreleri uygula
+  void _applyFilters() {
+    if (_currentQuery.isEmpty) return;
+
+    // Mevcut sonuçları filtrele
+    List<Map<String, dynamic>> filteredUsers = List.from(_searchResults['users'] ?? []);
+    List<Map<String, dynamic>> filteredGroups = List.from(_searchResults['groups'] ?? []);
+
+    // Online kullanıcılar filtresi
+    if (_showOnlineOnly) {
+      filteredUsers = filteredUsers.where((user) => user['is_online'] == true).toList();
+    }
+
+    // Aktif gruplar filtresi
+    if (_showActiveOnly) {
+      filteredGroups = filteredGroups.where((group) => 
+        group['is_active'] == true && group['member_count'] > 0).toList();
+    }
+
+    // Sıralama uygula
+    _sortResults(filteredUsers, filteredGroups);
+
+    setState(() {
+      _searchResults = {
+        'users': filteredUsers,
+        'groups': filteredGroups,
+      };
+    });
+  }
+
+  /// Sonuçları sırala
+  void _sortResults(List<Map<String, dynamic>> users, List<Map<String, dynamic>> groups) {
+    switch (_sortBy) {
+      case 'name':
+        users.sort((a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''));
+        groups.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
+        break;
+      case 'date':
+        users.sort((a, b) => (b['last_login'] ?? '').compareTo(a['last_login'] ?? ''));
+        groups.sort((a, b) => (b['created_at'] ?? '').compareTo(a['created_at'] ?? ''));
+        break;
+      case 'relevance':
+      default:
+        // İlgililik sıralaması - backend'den gelen sıralama korunur
+        break;
+    }
+  }
+
+  /// Filtreleme durumuna göre sonuçları filtrele
+  List<Map<String, dynamic>> _getFilteredResults(List<Map<String, dynamic>> results, String type) {
+    if (_selectedFilter == 'all') return results;
+    if (_selectedFilter == type) return results;
+    return [];
+  }
+}
+
+/// Gelişmiş filtreler dialog'u
+class _AdvancedFiltersDialog extends StatefulWidget {
+  final bool showOnlineOnly;
+  final bool showActiveOnly;
+  final Function(bool onlineOnly, bool activeOnly) onFiltersChanged;
+
+  const _AdvancedFiltersDialog({
+    required this.showOnlineOnly,
+    required this.showActiveOnly,
+    required this.onFiltersChanged,
+  });
+
+  @override
+  State<_AdvancedFiltersDialog> createState() => _AdvancedFiltersDialogState();
+}
+
+class _AdvancedFiltersDialogState extends State<_AdvancedFiltersDialog> {
+  late bool _showOnlineOnly;
+  late bool _showActiveOnly;
+
+  @override
+  void initState() {
+    super.initState();
+    _showOnlineOnly = widget.showOnlineOnly;
+    _showActiveOnly = widget.showActiveOnly;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return AlertDialog(
+      title: const Text('Gelişmiş Filtreler'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SwitchListTile(
+            title: const Text('Sadece Online Kullanıcılar'),
+            subtitle: const Text('Sadece şu anda online olan kullanıcıları göster'),
+            value: _showOnlineOnly,
+            onChanged: (value) {
+              setState(() {
+                _showOnlineOnly = value;
+              });
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Sadece Aktif Gruplar'),
+            subtitle: const Text('Sadece aktif ve üyesi olan grupları göster'),
+            value: _showActiveOnly,
+            onChanged: (value) {
+              setState(() {
+                _showActiveOnly = value;
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.onFiltersChanged(_showOnlineOnly, _showActiveOnly);
+            Navigator.pop(context);
+          },
+          child: const Text('Uygula'),
         ),
       ],
     );

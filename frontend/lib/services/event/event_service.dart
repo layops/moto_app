@@ -201,7 +201,39 @@ class EventService {
       
       return response.data; // Doğrudan event verisini döndür
     } on DioException catch (e) {
-      throw Exception('Failed to join event: ${e.message}');
+      if (e.response != null) {
+        final errorData = e.response?.data;
+        if (errorData is Map) {
+          final errorMessage = errorData['error'] ?? e.message;
+          final errorType = errorData['error_type'];
+          
+          // Özel hata mesajları
+          switch (errorType) {
+            case 'event_full':
+              throw Exception('Etkinlik kontenjanı dolmuştur. Katılımcı sayısı: ${errorData['participant_count']}/${errorData['guest_limit']}');
+            case 'already_joined':
+              throw Exception('Zaten bu etkinliğe katılıyorsunuz.');
+            case 'request_exists':
+              final requestStatus = errorData['request_status'];
+              switch (requestStatus) {
+                case 'pending':
+                  throw Exception('Bu etkinlik için zaten bir katılım isteği gönderdiniz. Onay bekleniyor.');
+                case 'approved':
+                  throw Exception('Bu etkinliğe zaten katılıyorsunuz.');
+                case 'rejected':
+                  throw Exception('Bu etkinlik için gönderdiğiniz istek reddedilmiş. Yeni bir istek gönderebilirsiniz.');
+                default:
+                  throw Exception(errorMessage);
+              }
+            default:
+              throw Exception(errorMessage);
+          }
+        } else {
+          throw Exception('Failed to join event: ${e.message}');
+        }
+      } else {
+        throw Exception('Failed to join event: ${e.message}');
+      }
     }
   }
 

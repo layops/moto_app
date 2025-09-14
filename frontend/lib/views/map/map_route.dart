@@ -723,6 +723,11 @@ extension MapRoute on _MapPageState {
 
     _startLocationTracking();
     
+    // İlk konum güncellemesini hemen yap
+    if (_currentPosition != null) {
+      _updateNavigationProgress(_currentPosition!);
+    }
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Navigasyon başladı! Rotayı takip edin.'),
@@ -773,11 +778,16 @@ extension MapRoute on _MapPageState {
   void _updateNavigationProgress(LatLng currentLocation) {
     if (_routePoints.isEmpty) return;
 
-    // En yakın rota noktasını bul
+    // En yakın rota noktasını bul (daha akıllı algoritma)
     double minDistance = double.infinity;
-    int nearestIndex = 0;
+    int nearestIndex = _currentRouteIndex;
 
-    for (int i = _currentRouteIndex; i < _routePoints.length; i++) {
+    // Mevcut indeksten başlayarak ileriye doğru ara (daha verimli)
+    final searchRange = 10; // Sadece 10 nokta ileriye bak
+    final startIndex = _currentRouteIndex;
+    final endIndex = (startIndex + searchRange).clamp(0, _routePoints.length);
+
+    for (int i = startIndex; i < endIndex; i++) {
       final distance = _calculateDistance(currentLocation, _routePoints[i]);
       if (distance < minDistance) {
         minDistance = distance;
@@ -785,21 +795,27 @@ extension MapRoute on _MapPageState {
       }
     }
 
-    // Eğer kullanıcı rota üzerinde ilerliyorsa
-    if (minDistance < 50) { // 50 metre tolerans
-      setState(() {
-        _currentRouteIndex = nearestIndex;
-      });
+    // Eğer kullanıcı rota üzerinde ilerliyorsa (toleransı artırdık)
+    if (minDistance < 100) { // 100 metre tolerans
+      // Geriye gitmeyi önle
+      if (nearestIndex >= _currentRouteIndex - 1) {
+        setState(() {
+          _currentRouteIndex = nearestIndex;
+        });
+      }
 
-      // Map'i kullanıcının konumuna odakla
-      _mapController.move(currentLocation, 16.0);
+      // Map'i kullanıcının konumuna odakla (daha yumuşak)
+      if (_mapController.mapEventStream != null) {
+        _mapController.move(currentLocation, 16.0);
+      }
 
       // Hedefe yaklaştıysa navigasyonu bitir
-      if (nearestIndex >= _routePoints.length - 5) {
+      final remainingPoints = _routePoints.length - nearestIndex;
+      if (remainingPoints <= 3) {
         _stopNavigation();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Hedefe ulaştınız!'),
+            content: Text('Hedefe ulaştınız! 🎉'),
             duration: Duration(seconds: 3),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
@@ -873,8 +889,10 @@ extension MapRoute on _MapPageState {
                         ),
                       ),
                       Text(
-                        'Kalan: ${(remainingDistance / 1000).toStringAsFixed(1)} km, ${(remainingTime / 60).round()} dk',
-                        style: textTheme.bodySmall,
+                        'Kalan: ${(remainingDistance / 1000).toStringAsFixed(1)} km • ${(remainingTime / 60).round()} dk',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                        ),
                       ),
                     ],
                   ),
@@ -887,17 +905,25 @@ extension MapRoute on _MapPageState {
               ],
             ),
             const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: colorScheme.onSurface.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'İlerleme: ${(progress * 100).toStringAsFixed(0)}%',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.7),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: colorScheme.onSurface.withOpacity(0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${(progress * 100).toStringAsFixed(0)}%',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -6,11 +6,17 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import '../../config.dart';
 import '../service_locator.dart';
+import '../connection/connection_manager.dart';
+import '../connection/smart_retry.dart';
 
 class NotificationsService {
   final String _restApiBaseUrl = '$kBaseUrl/api';
   // Render.com için WebSocket URL'i - WSS protokolü kullan, port belirtme
   final String _wsApiUrl = kBaseUrl.replaceFirst('https://', 'wss://') + '/ws/notifications/';
+  
+  // Akıllı bağlantı yönetimi
+  final ConnectionManager _connectionManager = ConnectionManager();
+  SmartRetry? _smartRetry;
   
   // Polling fallback için
   Timer? _pollingTimer;
@@ -18,6 +24,7 @@ class NotificationsService {
   
   // Debug için constructor'da URL'yi yazdır
   NotificationsService() {
+    _smartRetry = SmartRetry(_connectionManager);
     // Service initialized
   }
 
@@ -37,13 +44,86 @@ class NotificationsService {
   bool _isConnected = false;
   bool get isConnected => _isConnected;
   
-  /// Ana bağlantı metodu - önce SSE'yi dener, başarısız olursa polling'e geçer
+  /// Ana bağlantı metodu - akıllı strateji ile en iyi bağlantı türünü seçer
   Future<void> connect() async {
     try {
-      // Önce SSE'yi dene
-      await connectSSE();
+      // Connection Manager'ı başlat
+      await _connectionManager.initialize();
+      
+      // SSE ile bağlan - WebSocket hata veriyor
+      print('📡 Bildirimler SSE ile bağlanıyor');
+      await _connectWithSSE();
+      _connectionManager.updateConnectionType(ConnectionType.sse);
+      
+      print('✅ SSE bağlantı başarılı');
+      
     } catch (e) {
-      // SSE başarısız olursa polling fallback başlat
+      print('❌ Akıllı bağlantı başarısız: $e');
+      // Akıllı retry başlat
+      _smartRetry?.startRetry(() => connect());
+    }
+  }
+
+  /// WebSocket ile bağlanma
+  Future<void> _connectWithWebSocket() async {
+    try {
+      await connectWebSocket();
+      _connectionManager.updateConnectionStatus(true);
+    } catch (e) {
+      _connectionManager.updateConnectionStatus(false);
+      throw e;
+    }
+  }
+
+  /// SSE ile bağlanma
+  Future<void> _connectWithSSE() async {
+    try {
+      await connectSSE();
+      _connectionManager.updateConnectionStatus(true);
+    } catch (e) {
+      _connectionManager.updateConnectionStatus(false);
+      throw e;
+    }
+  }
+
+  /// Polling ile bağlanma
+  Future<void> _connectWithPolling() async {
+    try {
+      _startPollingFallback();
+      _connectionManager.updateConnectionStatus(true);
+    } catch (e) {
+      _connectionManager.updateConnectionStatus(false);
+      throw e;
+    }
+  }
+
+  /// Akıllı yeniden bağlanma - bağlantı türüne göre en iyi stratejiyi seçer
+  Future<void> _smartReconnect() async {
+    if (_isConnected) return;
+    
+    try {
+      // En iyi bağlantı türünü yeniden değerlendir
+      final bestType = _connectionManager.determineBestConnectionType();
+      _connectionManager.updateConnectionType(bestType);
+      
+      // Bağlantı türüne göre yeniden bağlan
+      switch (bestType) {
+        case ConnectionType.websocket:
+          await _connectWithWebSocket();
+          print('✅ WebSocket ile yeniden bağlanıldı');
+          break;
+        case ConnectionType.sse:
+          await _connectWithSSE();
+          print('✅ SSE ile yeniden bağlanıldı');
+          break;
+        case ConnectionType.polling:
+          await _connectWithPolling();
+          print('✅ Polling ile yeniden bağlanıldı');
+          break;
+      }
+    } catch (e) {
+      print('❌ Akıllı yeniden bağlanma başarısız: $e');
+      // Son çare olarak polling'e geç
       _startPollingFallback();
     }
   }
@@ -214,7 +294,7 @@ class NotificationsService {
     _stopPollingFallback();
   }
 
-  /// Polling fallback başlatır
+  /// Polling fallback başlatır - akıllı interval ile
   void _startPollingFallback() {
     if (_isPolling) return;
     
@@ -223,10 +303,13 @@ class NotificationsService {
     // İlk polling'i hemen yap
     _performPolling();
     
-    // Sonra periyodik olarak devam et
-    _pollingTimer = Timer.periodic(Duration(seconds: 15), (timer) async {
+    // Akıllı interval ile periyodik polling
+    final optimalInterval = _connectionManager.getOptimalPollingInterval();
+    _pollingTimer = Timer.periodic(optimalInterval, (timer) async {
       await _performPolling();
     });
+    
+    print('📡 Polling başlatıldı - interval: ${optimalInterval.inSeconds}s');
   }
   
   /// Polling işlemini gerçekleştirir

@@ -16,6 +16,29 @@ import '../../services/location/location_service.dart';
 part 'map_controls.dart';
 part 'map_search.dart';
 part 'map_route.dart';
+part 'map_location_share.dart';
+
+// Map page için LocationShare class'ı
+class LocationShare {
+  final int id;
+  final String userName;
+  final LatLng position;
+  final DateTime updatedAt;
+  final String shareType;
+  final bool isActive;
+
+  LocationShare({
+    required this.id,
+    required this.userName,
+    required this.position,
+    required this.updatedAt,
+    required this.shareType,
+    required this.isActive,
+  });
+
+  double get latitude => position.latitude;
+  double get longitude => position.longitude;
+}
 
 class MapPage extends StatefulWidget {
   final LatLng? initialCenter;
@@ -75,6 +98,11 @@ class _MapPageState extends State<MapPage> {
   bool _showGroupMembers = false;
   bool _showGroupSelector = false;
 
+  // Konum paylaşımı özellikleri
+  bool _showLocationShareDialog = false;
+  String _shareMessage = '';
+  List<dynamic> _selectedShareUsers = [];
+
   static const List<double> _zoomLevels = [5.0, 10.0, 13.0, 15.0, 18.0];
   static const List<String> _zoomLabels = [
     'Ülke',
@@ -113,6 +141,21 @@ class _MapPageState extends State<MapPage> {
     _positionStream?.cancel();
     _locationUpdateTimer?.cancel();
     super.dispose();
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inMinutes < 1) {
+      return 'Şimdi';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} dk önce';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} saat önce';
+    } else {
+      return '${difference.inDays} gün önce';
+    }
   }
 
   void _getCurrentLocation() async {
@@ -335,7 +378,9 @@ class _MapPageState extends State<MapPage> {
             _buildSearchBar(context),
             _buildMapControls(context),
             _buildLocationSharingButton(context),
+            _buildLocationShareButton(),
             _buildGroupSelector(context),
+            _buildGroupMembersLocations(),
             if (_selectedPosition != null) _buildLocationActions(context),
             if (_selectedPosition != null) _buildConfirmButton(context),
             _buildSearchHistory(context),
@@ -359,10 +404,17 @@ class _MapPageState extends State<MapPage> {
   // Konum paylaşımı fonksiyonları
   Future<void> _loadActiveLocationShares() async {
     try {
-      final shares = await _locationService.getActiveLocationShares();
+      final serviceShares = await _locationService.getActiveLocationShares();
       if (mounted) {
         setState(() {
-          _activeLocationShares = shares;
+          _activeLocationShares = serviceShares.map((share) => LocationShare(
+            id: share.id,
+            userName: share.user.username ?? 'Bilinmeyen',
+            position: LatLng(share.latitude, share.longitude),
+            updatedAt: share.updatedAt,
+            shareType: share.shareType,
+            isActive: share.isActive,
+          )).toList();
         });
       }
     } catch (e) {
@@ -492,10 +544,17 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _loadGroupMembersLocations(int groupId) async {
     try {
-      final locations = await _locationService.getGroupMembersLocations(groupId);
+      final serviceLocations = await _locationService.getGroupMembersLocations(groupId);
       if (mounted) {
         setState(() {
-          _groupMembersLocations = locations;
+          _groupMembersLocations = serviceLocations.map((location) => LocationShare(
+            id: location.id,
+            userName: location.user.username ?? 'Bilinmeyen',
+            position: LatLng(location.latitude, location.longitude),
+            updatedAt: location.updatedAt,
+            shareType: location.shareType,
+            isActive: location.isActive,
+          )).toList();
         });
       }
     } catch (e) {

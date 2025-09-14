@@ -121,21 +121,22 @@ class _PostItemState extends State<PostItem> {
   Widget _buildUserHeader(BuildContext context, String username, String? profilePhoto, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: InkWell(
-        onTap: () {
-          if (username.isNotEmpty && username != 'Bilinmeyen') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProfilePage(username: username),
-              ),
-            );
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Row(
-          children: [
-            CircleAvatar(
+      child: Row(
+        children: [
+          // Profil fotoğrafı - tıklanabilir
+          InkWell(
+            onTap: () {
+              if (username.isNotEmpty && username != 'Bilinmeyen') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(username: username),
+                  ),
+                );
+              }
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: CircleAvatar(
               radius: 20,
               backgroundColor: colorScheme.primary.withOpacity(0.1),
               backgroundImage: profilePhoto != null && profilePhoto.isNotEmpty
@@ -150,108 +151,139 @@ class _PostItemState extends State<PostItem> {
                   ? Icon(Icons.person, size: 20, color: colorScheme.primary)
                   : null,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    username,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: colorScheme.onSurface,
+          ),
+          const SizedBox(width: 12),
+          // Kullanıcı adı ve tarih - kullanıcı adı tıklanabilir
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: () {
+                    if (username.isNotEmpty && username != 'Bilinmeyen') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfilePage(username: username),
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      username,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
-                  Text(
-                    _formatDate(widget.post['created_at']),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                ),
+                Text(
+                  _formatDate(widget.post['created_at']),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.6),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            if (widget.canDelete && widget.onDelete != null) ...[
-              Builder(
-                builder: (context) {
-                  return _buildDeleteButton(context, colorScheme);
-                },
-              ),
-            ] else ...[
-              Builder(
-                builder: (context) {
-                  return const SizedBox.shrink();
-                },
-              ),
-            ]
-          ],
-        ),
+          ),
+          if (widget.canDelete && widget.onDelete != null) ...[
+            Builder(
+              builder: (context) {
+                return _buildDeleteButton(context, colorScheme);
+              },
+            ),
+          ] else ...[
+            Builder(
+              builder: (context) {
+                return const SizedBox.shrink();
+              },
+            ),
+          ]
+        ],
       ),
     );
   }
 
   Widget _buildPostContent(BuildContext context, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        widget.post['content'].toString(),
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          color: colorScheme.onSurface,
-          height: 1.4,
+    return InkWell(
+      onTap: () {
+        debugPrint('Post content tapped');
+        _navigateToPostDetail();
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text(
+          widget.post['content'].toString(),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: colorScheme.onSurface,
+            height: 1.4,
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPostImage(BuildContext context, String imageUrl, ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: 250,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 250,
-              color: colorScheme.surface,
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                      : null,
-                  color: colorScheme.primary,
-                ),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) => Container(
+    return InkWell(
+      onTap: () {
+        debugPrint('Post image tapped');
+        _navigateToPostDetail();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
             height: 250,
-            color: colorScheme.surface,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                  size: 48,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Görsel yüklenemedi',
-                  style: TextStyle(
-                    color: colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: 14,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 250,
+                color: colorScheme.surface,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                    color: colorScheme.primary,
                   ),
                 ),
-              ],
+              );
+            },
+            errorBuilder: (context, error, stackTrace) => Container(
+              height: 250,
+              color: colorScheme.surface,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    size: 48,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Görsel yüklenemedi',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -494,6 +526,7 @@ class _PostItemState extends State<PostItem> {
         context,
         MaterialPageRoute(
           builder: (context) => PostCommentsPage(
+            post: widget.post,
             postId: postId,
             postContent: postContent,
             authorUsername: username,
@@ -503,6 +536,91 @@ class _PostItemState extends State<PostItem> {
       // debugPrint('  - Navigation successful');
     } catch (e) {
       // debugPrint('  - Navigation error: $e');
+    }
+  }
+
+  void _navigateToPostDetail() {
+    final postId = widget.post['id'] ?? 0;
+    
+    final authorData = widget.post['author'] is Map<String, dynamic>
+        ? widget.post['author'] as Map<String, dynamic>
+        : {};
+    
+    String username = 'Bilinmeyen';
+    if (authorData.isNotEmpty && authorData['username'] != null) {
+      username = authorData['username'].toString();
+    } else if (widget.post['username'] != null) {
+      username = widget.post['username'].toString();
+    }
+    
+    final postContent = widget.post['content']?.toString() ?? '';
+    
+    // Profil fotoğrafını al - daha kapsamlı arama
+    String? profilePhoto;
+    
+    // Önce author data'dan dene
+    if (authorData.isNotEmpty) {
+      profilePhoto = authorData['profile_photo_url']?.toString() ??
+          authorData['profile_picture']?.toString() ??
+          authorData['avatar']?.toString() ??
+          authorData['photo']?.toString() ??
+          authorData['image']?.toString();
+    }
+    
+    // Sonra post data'dan dene
+    if (profilePhoto == null || profilePhoto.isEmpty) {
+      profilePhoto = widget.post['profile_photo']?.toString() ??
+          widget.post['avatar']?.toString() ??
+          widget.post['author_photo']?.toString() ??
+          widget.post['user_photo']?.toString() ??
+          widget.post['photo']?.toString();
+    }
+    
+    // URL'yi temizle ve doğrula
+    if (profilePhoto != null && profilePhoto.isNotEmpty) {
+      // Başındaki ve sonundaki boşlukları temizle
+      profilePhoto = profilePhoto.trim();
+      
+      // Eğer URL değilse null yap
+      if (!profilePhoto.startsWith('http')) {
+        profilePhoto = null;
+      }
+    }
+    
+    debugPrint('_navigateToPostDetail called');
+    debugPrint('  - Post ID: $postId');
+    debugPrint('  - Username: $username');
+    debugPrint('  - Post content: $postContent');
+    debugPrint('  - Author data: $authorData');
+    debugPrint('  - Raw post data: ${widget.post}');
+    debugPrint('  - Profile photo from authorData: ${authorData['profile_photo_url']}');
+    debugPrint('  - Profile photo from authorData (alt): ${authorData['profile_picture']}');
+    debugPrint('  - Profile photo from post: ${widget.post['profile_photo']}');
+    debugPrint('  - Profile photo from post (alt): ${widget.post['avatar']}');
+    debugPrint('  - Final profile photo: $profilePhoto');
+    
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostCommentsPage(
+            post: widget.post, // Tam post verisini gönder
+            postId: postId,
+            postContent: postContent,
+            authorUsername: username,
+            authorProfilePhoto: profilePhoto,
+          ),
+        ),
+      );
+      debugPrint('  - Navigation successful');
+    } catch (e) {
+      debugPrint('Post detail navigation error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Post detay sayfası açılamadı: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 

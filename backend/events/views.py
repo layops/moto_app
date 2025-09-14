@@ -123,13 +123,21 @@ class EventViewSet(viewsets.ModelViewSet):
             event = self.get_object()
             user = request.user
 
+            # Kontenjan kontrolü
             if event.is_full():
-                return Response({"error": "Etkinlik kontenjanı dolmuştur."},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    "error": "Etkinlik kontenjanı dolmuştur.",
+                    "error_type": "event_full",
+                    "participant_count": event.current_participant_count,
+                    "guest_limit": event.guest_limit
+                }, status=status.HTTP_400_BAD_REQUEST)
 
+            # Zaten katılıyor mu kontrolü
             if user in event.participants.all():
-                return Response({"error": "Zaten bu etkinliğe katılıyorsunuz."},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    "error": "Zaten bu etkinliğe katılıyorsunuz.",
+                    "error_type": "already_joined"
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             # Onay sistemi kontrolü
             if event.requires_approval:
@@ -157,8 +165,19 @@ class EventViewSet(viewsets.ModelViewSet):
                     raise e
                 
                 if not created:
-                    return Response({"error": "Bu etkinlik için zaten bir istek gönderdiniz."},
-                                    status=status.HTTP_400_BAD_REQUEST)
+                    # İstek durumunu kontrol et
+                    request_status = event_request.status
+                    status_message = {
+                        'pending': 'Bu etkinlik için zaten bir katılım isteği gönderdiniz. Onay bekleniyor.',
+                        'approved': 'Bu etkinliğe zaten katılıyorsunuz.',
+                        'rejected': 'Bu etkinlik için gönderdiğiniz istek reddedilmiş. Yeni bir istek gönderebilirsiniz.'
+                    }
+                    
+                    return Response({
+                        "error": status_message.get(request_status, "Bu etkinlik için zaten bir istek gönderdiniz."),
+                        "error_type": "request_exists",
+                        "request_status": request_status
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Bildirim gönder
                 try:
@@ -173,13 +192,19 @@ class EventViewSet(viewsets.ModelViewSet):
                     print(f"Bildirim gönderme hatası: {str(e)}")
                     # Bildirim hatası etkinlik katılımını engellemez
                 
-                return Response({"message": "Katılım isteği gönderildi. Onay bekleniyor."},
-                                status=status.HTTP_200_OK)
+                return Response({
+                    "message": "Katılım isteği gönderildi. Onay bekleniyor.",
+                    "request_created": True,
+                    "event": self.get_serializer(event).data
+                }, status=status.HTTP_200_OK)
             else:
                 # Onay gerektirmiyorsa direkt katıl
                 event.participants.add(user)
                 serializer = self.get_serializer(event)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response({
+                    "message": "Etkinliğe başarıyla katıldınız.",
+                    "event": serializer.data
+                }, status=status.HTTP_200_OK)
                 
         except Exception as e:
             print(f"Join event hatası: {str(e)}")

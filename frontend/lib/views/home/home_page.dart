@@ -10,6 +10,7 @@ import '../notifications/notifications_page.dart';
 import '../search/search_page.dart';
 import '../leaderboard/leaderboard_page.dart';
 import '../../widgets/common/modern_fab.dart';
+import '../../widgets/connection_status_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

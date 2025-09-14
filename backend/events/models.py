@@ -71,6 +71,20 @@ class Event(models.Model):
         except Exception as e:
             print(f"is_full hatası: {str(e)}")
             return False
+    
+    def get_user_request_status(self, user):
+        """Kullanıcının bu etkinlik için istek durumunu döndürür"""
+        try:
+            if not self.requires_approval:
+                return None
+            
+            request = EventRequest.objects.filter(event=self, user=user).first()
+            if request:
+                return request.status
+            return None
+        except Exception as e:
+            print(f"get_user_request_status hatası: {str(e)}")
+            return None
 
 
 class EventRequest(models.Model):

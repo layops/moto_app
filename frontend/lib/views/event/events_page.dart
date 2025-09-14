@@ -106,8 +106,12 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<Map<String, dynamic>?> _joinEvent(int eventId, {String? message}) async {
     try {
-      final updatedEvent = await _service.joinEvent(eventId, message: message);
+      final result = await _service.joinEvent(eventId, message: message);
       if (!mounted) return null;
+      
+      // Backend'ten gelen event verisini kullan
+      final updatedEvent = result['event'] ?? result;
+      
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);
         if (index != -1) {
@@ -116,9 +120,8 @@ class _EventsPageState extends State<EventsPage> {
       });
       return updatedEvent;
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Katılamadı: $e')));
-      return null;
+      // Hata mesajı EventCard'da gösterilecek
+      rethrow;
     }
   }
 

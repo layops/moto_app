@@ -8,6 +8,7 @@ class MessageInput extends StatefulWidget {
   final VoidCallback? onCancelReply;
   final VoidCallback? onAttachFile;
   final VoidCallback? onAttachImage;
+  final Function(String)? onTextChanged;
 
   const MessageInput({
     super.key,
@@ -18,6 +19,7 @@ class MessageInput extends StatefulWidget {
     this.onCancelReply,
     this.onAttachFile,
     this.onAttachImage,
+    this.onTextChanged,
   });
 
   @override
@@ -105,6 +107,8 @@ class _MessageInputState extends State<MessageInput> {
                               _isExpanded = true;
                             });
                           }
+                          // Call external onTextChanged if provided
+                          widget.onTextChanged?.call(value);
                         },
                       ),
                     ),

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/chat/chat_service.dart';
+import '../../services/chat/chat_websocket_service.dart';
 import '../../services/service_locator.dart';
 import '../../widgets/new_message_dialog.dart';
 import '../../widgets/message_bubble.dart';
@@ -23,6 +25,7 @@ class ChatDetailPage extends StatefulWidget {
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final ChatService _chatService = ChatService();
+  final ChatWebSocketService _webSocketService = ServiceLocator.chatWebSocket;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   
@@ -34,6 +37,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Set<int> _readMessageIds = {}; // Okunan mesaj ID'lerini tut
   bool _hasMarkedAsRead = false; // İlk yüklemede okundu işaretleme kontrolü
 
+  // Real-time chat özellikleri
+  bool _isConnected = false;
+  String? _typingUser;
+  Timer? _typingTimer;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +51,80 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Future<void> _initializePage() async {
     await _getCurrentUserId();
     await _loadMessages();
+    _initializeWebSocket();
+  }
+
+  /// WebSocket bağlantısını başlat
+  void _initializeWebSocket() {
+    if (_currentUserId == null) return;
+
+    // WebSocket mesaj dinleyicilerini başlat
+    _webSocketService.messageStream.listen(_handleWebSocketMessage);
+    _webSocketService.connectionStatusStream.listen(_handleConnectionStatus);
+    _webSocketService.typingStream.listen(_handleTypingIndicator);
+
+    // Özel sohbet WebSocket bağlantısını başlat
+    _webSocketService.connectToPrivateChat(_currentUserId!, widget.otherUser.id);
+  }
+
+  /// WebSocket mesajlarını işle
+  void _handleWebSocketMessage(Map<String, dynamic> message) {
+    if (!mounted) return;
+
+    // Yeni mesajı listeye ekle
+    final newMessage = PrivateMessage(
+      id: message['id'] ?? DateTime.now().millisecondsSinceEpoch,
+      sender: User.fromJson(message['sender'] ?? {}),
+      receiver: User.fromJson(message['receiver'] ?? {}),
+      message: message['message'] ?? '',
+      timestamp: DateTime.tryParse(message['timestamp'] ?? '') ?? DateTime.now(),
+      isRead: message['is_read'] ?? false,
+    );
+
+    setState(() {
+      _messages.add(newMessage);
+    });
+    _scrollToBottom();
+
+    // Parent widget'a mesaj alındığını bildir
+    widget.onMessageSent?.call();
+  }
+
+  /// Bağlantı durumunu işle
+  void _handleConnectionStatus(bool isConnected) {
+    if (!mounted) return;
+
+    setState(() {
+      _isConnected = isConnected;
+    });
+
+    if (isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Real-time mesajlaşma aktif'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// Typing indicator'ı işle
+  void _handleTypingIndicator(String username) {
+    if (!mounted) return;
+
+    setState(() {
+      _typingUser = username;
+    });
+
+    // 3 saniye sonra typing indicator'ı temizle
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _typingUser = null;
+        });
+      }
+    });
   }
 
   @override
@@ -111,8 +193,48 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _typingTimer?.cancel();
+    _webSocketService.disconnect();
     // Dispose sırasında callback çağırmayalım çünkü parent widget da dispose ediliyor olabilir
     super.dispose();
+  }
+
+  /// Text değişikliği handler'ı - typing indicator için
+  void _onTextChanged(String text) {
+    if (text.isNotEmpty && _isConnected) {
+      _webSocketService.sendTypingIndicator();
+    }
+  }
+
+  /// Typing indicator widget'ı
+  Widget _buildTypingIndicator() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: colorScheme.primary.withOpacity(0.1),
+            child: Icon(
+              Icons.person,
+              size: 16,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$_typingUser yazıyor...',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.7),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadMessages() async {
@@ -154,22 +276,50 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() => _isSending = true);
 
     try {
-      final newMessage = await _chatService.sendPrivateMessage(
-        receiverId: widget.otherUser.id,
-        message: messageText,
-      );
-      
-      if (mounted) {
+      // WebSocket bağlantısı varsa önce WebSocket ile gönder
+      if (_isConnected) {
+        await _webSocketService.sendPrivateMessage(messageText, widget.otherUser.id);
+        
+        // Optimistic update - mesajı hemen UI'a ekle
+        final optimisticMessage = PrivateMessage(
+          id: DateTime.now().millisecondsSinceEpoch,
+          sender: User(
+            id: _currentUserId!,
+            username: 'Sen', // TODO: Gerçek kullanıcı adını al
+            firstName: null,
+            lastName: null,
+            profilePicture: null,
+          ),
+          receiver: widget.otherUser,
+          message: messageText,
+          timestamp: DateTime.now(),
+          isRead: false,
+        );
+
+        setState(() {
+          _messages.add(optimisticMessage);
+          _messageController.clear();
+          _isSending = false;
+        });
+        _scrollToBottom();
+      } else {
+        // WebSocket yoksa HTTP API ile gönder
+        final newMessage = await _chatService.sendPrivateMessage(
+          receiverId: widget.otherUser.id,
+          message: messageText,
+        );
+        
         setState(() {
           _messages.add(newMessage);
           _messageController.clear();
           _isSending = false;
         });
         _scrollToBottom();
-        
-        // MessagesPage'e mesaj gönderildiğini bildir
-        widget.onMessageSent?.call();
       }
+      
+      // MessagesPage'e mesaj gönderildiğini bildir
+      widget.onMessageSent?.call();
+      
     } catch (e) {
       if (mounted) {
         setState(() => _isSending = false);
@@ -297,6 +447,31 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         actions: [
+          // Bağlantı durumu göstergesi
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isConnected ? Colors.green : Colors.red,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _isConnected ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _isConnected ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             onPressed: () {
@@ -311,11 +486,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           Expanded(
             child: _buildMessagesList(),
           ),
+          // Typing Indicator
+          if (_typingUser != null)
+            _buildTypingIndicator(),
           // Message Input
           MessageInput(
             controller: _messageController,
             onSend: _sendMessage,
             isSending: _isSending,
+            onTextChanged: _onTextChanged,
           ),
         ],
       ),

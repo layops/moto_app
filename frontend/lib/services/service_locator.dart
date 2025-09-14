@@ -13,9 +13,11 @@ import 'notifications/notifications_service.dart';
 import 'search/search_service.dart';
 import 'gamification_service.dart';
 import 'chat/chat_service.dart';
+import 'chat/chat_websocket_service.dart';
 import 'chat/group_chat_service.dart';
 import 'group/group_service.dart';
 import 'location/location_service.dart';
+import 'connection/connection_manager.dart';
 import '../config/supabase_config.dart';
 
 class ServiceLocator {
@@ -41,9 +43,11 @@ class ServiceLocator {
   late final SearchService _searchService;
   late final GamificationService _gamificationService;
   late final ChatService _chatService;
+  late final ChatWebSocketService _chatWebSocketService;
   late final GroupChatService _groupChatService;
   late final GroupService _groupService;
   late final LocationService _locationService;
+  late final ConnectionManager _connectionManager;
   late final supabase_client.SupabaseClient _supabaseClient;
 
   // Private constructor
@@ -128,7 +132,10 @@ class ServiceLocator {
       // 13. Initialize chat service
       instance._chatService = ChatService();
 
-      // 14. Initialize group chat service
+      // 14. Initialize chat WebSocket service
+      instance._chatWebSocketService = ChatWebSocketService();
+
+      // 15. Initialize group chat service
       instance._groupChatService = GroupChatService();
 
       // 15. Initialize group service
@@ -136,6 +143,10 @@ class ServiceLocator {
 
       // 16. Initialize location service
       instance._locationService = LocationService();
+
+      // 17. Initialize connection manager
+      instance._connectionManager = ConnectionManager();
+      await instance._connectionManager.initialize();
 
       _isInitialized = true;
     } catch (e, stackTrace) {
@@ -166,6 +177,7 @@ class ServiceLocator {
       _instance._groupService.clearCache();
       _instance._eventService.clearCache();
       _instance._locationService.clearCache();
+      _instance._connectionManager.dispose();
       
       _isInitialized = false;
     } catch (e, stackTrace) {
@@ -188,9 +200,11 @@ class ServiceLocator {
   static SearchService get search => _instance._searchService;
   static GamificationService get gamification => _instance._gamificationService;
   static ChatService get chat => _instance._chatService;
+  static ChatWebSocketService get chatWebSocket => _instance._chatWebSocketService;
   static GroupChatService get groupChat => _instance._groupChatService;
   static GroupService get group => _instance._groupService;
   static LocationService get location => _instance._locationService;
+  static ConnectionManager get connection => _instance._connectionManager;
   static LocalStorage get storage => _instance._localStorage;
 
   // Supabase helper
