@@ -477,6 +477,36 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
+        """Bildirim gönder"""
+        try:
+            from notifications.models import Notification
+            from django.contrib.contenttypes.models import ContentType
+            
+            print(f"Bildirim gönderiliyor - Recipient: {recipient.username}, Sender: {sender.username}, Type: {notification_type}")
+            
+            # ContentType'ı manuel olarak ayarla
+            content_type = None
+            object_id = None
+            if content_object:
+                content_type = ContentType.objects.get_for_model(content_object)
+                object_id = content_object.id
+                print(f"ContentType: {content_type}, Object ID: {object_id}")
+            
+            notification = Notification.objects.create(
+                recipient=recipient,
+                sender=sender,
+                notification_type=notification_type,
+                message=message,
+                content_type=content_type,
+                object_id=object_id
+            )
+            print(f"Bildirim oluşturuldu - ID: {notification.id}")
+        except Exception as e:
+            print(f"Bildirim gönderme hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
 
 class EventRequestDetailView(generics.RetrieveAPIView):
     """EventRequest detay bilgilerini getir"""
@@ -508,33 +538,3 @@ class EventRequestDetailView(generics.RetrieveAPIView):
         except EventRequest.DoesNotExist:
             print(f"DEBUG: EventRequest bulunamadı - ID: {request_id}")
             raise Http404(f"EventRequest ID {request_id} bulunamadı. Mevcut EventRequest ID'leri: {existing_request_ids}")
-
-    def _send_notification(self, recipient, sender, notification_type, message, content_object=None):
-        """Bildirim gönder"""
-        try:
-            from notifications.models import Notification
-            from django.contrib.contenttypes.models import ContentType
-            
-            print(f"Bildirim gönderiliyor - Recipient: {recipient.username}, Sender: {sender.username}, Type: {notification_type}")
-            
-            # ContentType'ı manuel olarak ayarla
-            content_type = None
-            object_id = None
-            if content_object:
-                content_type = ContentType.objects.get_for_model(content_object)
-                object_id = content_object.id
-                print(f"ContentType: {content_type}, Object ID: {object_id}")
-            
-            notification = Notification.objects.create(
-                recipient=recipient,
-                sender=sender,
-                notification_type=notification_type,
-                message=message,
-                content_type=content_type,
-                object_id=object_id
-            )
-            print(f"Bildirim gönderildi: {notification}")
-        except Exception as e:
-            print(f"Bildirim gönderme hatası: {str(e)}")
-            import traceback
-            traceback.print_exc()
