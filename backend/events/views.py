@@ -320,6 +320,55 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    # Yeni eklenen action - Katılımcıları getir
+    @action(detail=True, methods=['get'])
+    def participants(self, request, pk=None):
+        try:
+            print(f"DEBUG: Participants action çağrıldı - Event ID: {pk}, User: {request.user.username}")
+            print(f"DEBUG: Request method: {request.method}")
+            print(f"DEBUG: Request path: {request.path}")
+            
+            # Event ID'yi kwargs'dan al
+            event_id = pk or request.kwargs.get('event_id')
+            print(f"DEBUG: Event ID from kwargs: {event_id}")
+            
+            if not event_id:
+                return Response(
+                    {"error": "Event ID bulunamadı"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Event'i bul
+            try:
+                event = Event.objects.get(id=event_id)
+                print(f"DEBUG: Event bulundu: {event.title}")
+            except Event.DoesNotExist:
+                print(f"DEBUG: Event bulunamadı - ID: {event_id}")
+                # Mevcut Event ID'lerini de log'la
+                existing_ids = list(Event.objects.values_list('id', flat=True))
+                print(f"DEBUG: Mevcut Event ID'leri: {existing_ids}")
+                return Response(
+                    {"error": f"Event ID {event_id} bulunamadı. Mevcut Event ID'leri: {existing_ids}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            participants = event.participants.all()
+            print(f"DEBUG: {participants.count()} adet katılımcı bulundu")
+            
+            # UserSerializer'ı lazy import et
+            UserSerializer = get_user_serializer()
+            serializer = UserSerializer(participants, many=True)
+            print(f"DEBUG: Serializer başarılı, {len(serializer.data)} item döndürülüyor")
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Participants getirme hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": "Katılımcılar getirilirken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class EventRequestDetailView(generics.RetrieveAPIView):
     """EventRequest detay bilgilerini getir"""
@@ -451,52 +500,3 @@ class EventRequestDetailView(generics.RetrieveAPIView):
             print(f"Bildirim gönderme hatası: {str(e)}")
             import traceback
             traceback.print_exc()
-
-    # Yeni eklenen action - Katılımcıları getir
-    @action(detail=True, methods=['get'])
-    def participants(self, request, pk=None):
-        try:
-            print(f"DEBUG: Participants action çağrıldı - Event ID: {pk}, User: {request.user.username}")
-            print(f"DEBUG: Request method: {request.method}")
-            print(f"DEBUG: Request path: {request.path}")
-            
-            # Event ID'yi kwargs'dan al
-            event_id = pk or request.kwargs.get('event_id')
-            print(f"DEBUG: Event ID from kwargs: {event_id}")
-            
-            if not event_id:
-                return Response(
-                    {"error": "Event ID bulunamadı"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Event'i bul
-            try:
-                event = Event.objects.get(id=event_id)
-                print(f"DEBUG: Event bulundu: {event.title}")
-            except Event.DoesNotExist:
-                print(f"DEBUG: Event bulunamadı - ID: {event_id}")
-                # Mevcut Event ID'lerini de log'la
-                existing_ids = list(Event.objects.values_list('id', flat=True))
-                print(f"DEBUG: Mevcut Event ID'leri: {existing_ids}")
-                return Response(
-                    {"error": f"Event ID {event_id} bulunamadı. Mevcut Event ID'leri: {existing_ids}"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            participants = event.participants.all()
-            print(f"DEBUG: {participants.count()} adet katılımcı bulundu")
-            
-            # UserSerializer'ı lazy import et
-            UserSerializer = get_user_serializer()
-            serializer = UserSerializer(participants, many=True)
-            print(f"DEBUG: Serializer başarılı, {len(serializer.data)} item döndürülüyor")
-            return Response(serializer.data)
-        except Exception as e:
-            print(f"Participants getirme hatası: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return Response(
-                {"error": "Katılımcılar getirilirken bir hata oluştu"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
