@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from groups.models import Group
 
 class Event(models.Model):
@@ -49,6 +50,58 @@ class Event(models.Model):
     def __str__(self):
         grp = self.group.name if self.group else "Personal"
         return f"Event: {self.title} in {grp} by {self.organizer.username}"
+    
+    @property
+    def is_expired(self):
+        """Event'in süresi geçmiş mi kontrol et"""
+        now = timezone.now()
+        # end_time varsa onu kullan, yoksa start_time'ı kullan
+        event_end = self.end_time if self.end_time else self.start_time
+        return event_end < now
+    
+    @property
+    def days_since_end(self):
+        """Event bitiş tarihinden kaç gün geçmiş"""
+        if self.is_expired:
+            now = timezone.now()
+            event_end = self.end_time if self.end_time else self.start_time
+            return (now - event_end).days
+        return 0
+    
+    @classmethod
+    def get_expired_events(cls, days_after=7):
+        """Süresi geçmiş event'leri getir"""
+        now = timezone.now()
+        cutoff_date = now - timezone.timedelta(days=days_after)
+        
+        return cls.objects.filter(
+            models.Q(
+                models.Q(end_time__isnull=False, end_time__lt=cutoff_date) |
+                models.Q(end_time__isnull=True, start_time__lt=cutoff_date)
+            )
+        )
+    
+    @classmethod
+    def cleanup_expired(cls, days_after=7, dry_run=False):
+        """Süresi geçmiş event'leri temizle"""
+        expired_events = cls.get_expired_events(days_after)
+        count = expired_events.count()
+        
+        if dry_run:
+            return count, []
+        
+        deleted_events = []
+        for event in expired_events:
+            deleted_events.append({
+                'id': event.id,
+                'title': event.title,
+                'organizer': event.organizer.username,
+                'start_time': event.start_time,
+                'end_time': event.end_time
+            })
+            event.delete()
+        
+        return count, deleted_events
     
     @property
     def current_participant_count(self):

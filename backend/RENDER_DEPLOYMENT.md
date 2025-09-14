@@ -30,13 +30,21 @@ Render.com'da aşağıdaki environment variables'ları ayarlayın:
 ## Build Settings
 
 - **Build Command**: `pip install -r requirements.txt && python manage.py migrate --noinput`
-- **Start Command**: `python manage.py collectstatic --noinput && python manage.py create_achievements --verbosity=2 && python manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); User.objects.create_superuser('superuser','superuser@spiride.com','326598') if not User.objects.filter(username='superuser').exists() else print('Superuser already exists')" && uvicorn core_api.asgi:application --host 0.0.0.0 --port $PORT --workers 2`
+- **Start Command**: `python manage.py collectstatic --noinput && python manage.py create_achievements --verbosity=2 && python manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); User.objects.create_superuser('superuser','superuser@spiride.com','326598') if not User.objects.filter(username='superuser').exists() else print('Superuser already exists')" && python manage.py cleanup_expired_events --days-after 7 && uvicorn core_api.asgi:application --host 0.0.0.0 --port $PORT --workers 2`
 
 ## Services Needed
 
 1. **Web Service**: Django backend
 2. **Supabase**: PostgreSQL Database + Storage + Realtime
 3. **Redis**: Cache ve WebSocket için (opsiyonel - Supabase Realtime kullanılabilir)
+
+## Automatic Cleanup
+
+Sistem otomatik olarak süresi geçmiş event'leri temizler:
+- Her deploy'da süresi geçmiş event'ler silinir
+- Event bitiş tarihinden 7 gün sonra silinir
+- Manuel temizleme için: `python manage.py cleanup_expired_events --dry-run` (test)
+- Manuel temizleme için: `python manage.py cleanup_expired_events --days-after 3` (3 gün sonra sil)
 
 ## Troubleshooting
 

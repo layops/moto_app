@@ -77,6 +77,14 @@ class EventViewSet(viewsets.ModelViewSet):
             all_events = Event.objects.all().order_by('start_time')
             print(f"Tüm etkinlikler: {all_events.count()}")
             
+            # Mevcut Event ID'lerini log'la
+            event_ids = list(all_events.values_list('id', flat=True))
+            print(f"Mevcut Event ID'leri: {event_ids}")
+            
+            # Her event'in detaylarını log'la
+            for event in all_events:
+                print(f"Event ID: {event.id}, Title: {event.title}, Start: {event.start_time}, End: {event.end_time}")
+            
             return all_events
             
         except Exception as e:
@@ -445,9 +453,34 @@ class EventRequestDetailView(generics.RetrieveAPIView):
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
         try:
-            print(f"DEBUG: Participants endpoint çağrıldı - Event ID: {pk}, User: {request.user.username}")
-            event = self.get_object()
-            print(f"DEBUG: Event bulundu: {event.title}")
+            print(f"DEBUG: Participants action çağrıldı - Event ID: {pk}, User: {request.user.username}")
+            print(f"DEBUG: Request method: {request.method}")
+            print(f"DEBUG: Request path: {request.path}")
+            
+            # Event ID'yi kwargs'dan al
+            event_id = pk or request.kwargs.get('event_id')
+            print(f"DEBUG: Event ID from kwargs: {event_id}")
+            
+            if not event_id:
+                return Response(
+                    {"error": "Event ID bulunamadı"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Event'i bul
+            try:
+                event = Event.objects.get(id=event_id)
+                print(f"DEBUG: Event bulundu: {event.title}")
+            except Event.DoesNotExist:
+                print(f"DEBUG: Event bulunamadı - ID: {event_id}")
+                # Mevcut Event ID'lerini de log'la
+                existing_ids = list(Event.objects.values_list('id', flat=True))
+                print(f"DEBUG: Mevcut Event ID'leri: {existing_ids}")
+                return Response(
+                    {"error": f"Event ID {event_id} bulunamadı. Mevcut Event ID'leri: {existing_ids}"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
             participants = event.participants.all()
             print(f"DEBUG: {participants.count()} adet katılımcı bulundu")
             serializer = UserSerializer(participants, many=True)

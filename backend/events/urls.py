@@ -9,4 +9,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # EventRequest için ayrı endpoint
     path('event-requests/<int:pk>/', EventRequestDetailView.as_view(), name='event-request-detail'),
+    # Participants için ayrı endpoint (DRF action çalışmazsa)
+    path('<int:event_id>/participants/', EventViewSet.as_view({'get': 'participants'}), name='event-participants'),
 ]
