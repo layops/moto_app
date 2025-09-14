@@ -320,8 +320,14 @@ class EventService {
     try {
       final token = await authService.getToken();
       final endpoint = approved ? 'approve_request' : 'reject_request';
+      final url = '$kBaseUrl/api/events/$eventId/$endpoint/';
+      
+      print('DEBUG: Handle join request - Event ID: $eventId, Request ID: $requestId, Approved: $approved');
+      print('DEBUG: URL: $url');
+      print('DEBUG: Data: {request_id: $requestId}');
+      
       await _dio.post(
-        '$kBaseUrl/api/events/$eventId/$endpoint/',
+        url,
         data: {
           'request_id': requestId,
         },
@@ -331,7 +337,9 @@ class EventService {
           },
         ),
       );
+      print('DEBUG: Join request handled successfully');
     } catch (e) {
+      print('DEBUG: Handle join request error: $e');
       throw Exception('Failed to handle join request: $e');
     }
   }

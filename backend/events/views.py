@@ -376,13 +376,23 @@ class EventViewSet(viewsets.ModelViewSet):
     def approve_request(self, request, pk=None):
         """Etkinlik katılım isteğini onayla"""
         try:
+            print(f"DEBUG: Approve request çağrıldı - Event ID: {pk}, User: {request.user.username}")
+            print(f"DEBUG: Request data: {request.data}")
+            print(f"DEBUG: Request method: {request.method}")
+            
             event = self.get_object()
+            print(f"DEBUG: Event bulundu: {event.title}")
+            
             if request.user != event.organizer:
+                print(f"DEBUG: Yetki hatası - User: {request.user.username}, Organizer: {event.organizer.username}")
                 return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
                                 status=status.HTTP_403_FORBIDDEN)
             
             request_id = request.data.get('request_id')
+            print(f"DEBUG: Request ID: {request_id}")
+            
             if not request_id:
+                print("DEBUG: Request ID bulunamadı")
                 return Response({"error": "İstek ID gerekli."},
                                 status=status.HTTP_400_BAD_REQUEST)
             
@@ -420,13 +430,23 @@ class EventViewSet(viewsets.ModelViewSet):
     def reject_request(self, request, pk=None):
         """Etkinlik katılım isteğini reddet"""
         try:
+            print(f"DEBUG: Reject request çağrıldı - Event ID: {pk}, User: {request.user.username}")
+            print(f"DEBUG: Request data: {request.data}")
+            print(f"DEBUG: Request method: {request.method}")
+            
             event = self.get_object()
+            print(f"DEBUG: Event bulundu: {event.title}")
+            
             if request.user != event.organizer:
+                print(f"DEBUG: Yetki hatası - User: {request.user.username}, Organizer: {event.organizer.username}")
                 return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
                                 status=status.HTTP_403_FORBIDDEN)
             
             request_id = request.data.get('request_id')
+            print(f"DEBUG: Request ID: {request_id}")
+            
             if not request_id:
+                print("DEBUG: Request ID bulunamadı")
                 return Response({"error": "İstek ID gerekli."},
                                 status=status.HTTP_400_BAD_REQUEST)
             
