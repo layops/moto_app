@@ -293,14 +293,18 @@ class EventService {
   Future<List<dynamic>> getEventJoinRequests(int eventId) async {
     try {
       final token = await authService.getToken();
+      final url = '$kBaseUrl/api/events/$eventId/requests/';
+      print('DEBUG: Event join requests URL: $url');
+      
       final response = await _dio.get(
-        '$kBaseUrl/api/events/$eventId/requests/',
+        url,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
           },
         ),
       );
+      print('DEBUG: Event join requests response: ${response.statusCode}');
       return response.data as List<dynamic>;
     } catch (e) {
       throw Exception('Failed to get event join requests: $e');

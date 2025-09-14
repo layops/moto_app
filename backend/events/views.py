@@ -237,16 +237,26 @@ class EventViewSet(viewsets.ModelViewSet):
     def requests(self, request, pk=None):
         """Etkinlik katılım isteklerini getir"""
         try:
+            print(f"DEBUG: Event requests endpoint çağrıldı - Event ID: {pk}, User: {request.user.username}")
             event = self.get_object()
+            print(f"DEBUG: Event bulundu: {event.title}")
+            
             if request.user != event.organizer:
+                print(f"DEBUG: Kullanıcı organizatör değil: {request.user.username} != {event.organizer.username}")
                 return Response({"error": "Bu etkinliğin organizatörü değilsiniz."},
                                 status=status.HTTP_403_FORBIDDEN)
             
             requests = EventRequest.objects.filter(event=event, status='pending')
+            print(f"DEBUG: {requests.count()} adet pending request bulundu")
+            
             serializer = EventRequestSerializer(requests, many=True)
+            print(f"DEBUG: Serializer başarılı, {len(serializer.data)} item döndürülüyor")
+            
             return Response(serializer.data)
         except Exception as e:
             print(f"Event requests hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"error": "İstekler getirilirken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
