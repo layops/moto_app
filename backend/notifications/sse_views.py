@@ -1,7 +1,6 @@
 from django.http import StreamingHttpResponse
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 import json
 import time
@@ -9,8 +8,7 @@ from .models import Notification
 
 User = get_user_model()
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@login_required
 def notification_stream(request):
     """
     Server-Sent Events ile gerçek zamanlı bildirim akışı

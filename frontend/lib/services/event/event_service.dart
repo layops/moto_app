@@ -331,6 +331,25 @@ class EventService {
     }
   }
 
+  // EventRequest ID'sinden EventRequest bilgisini al
+  Future<Map<String, dynamic>?> getEventRequestById(int eventRequestId) async {
+    try {
+      final token = await authService.getToken();
+      final response = await _dio.get(
+        '$kBaseUrl/api/event-requests/$eventRequestId/',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      print('EventRequest bilgisi alınamadı: $e');
+      return null;
+    }
+  }
+
   // Eski metodlar (geriye uyumluluk için)
   Future<List<dynamic>> getEventRequests(int eventId) async {
     return getEventJoinRequests(eventId);

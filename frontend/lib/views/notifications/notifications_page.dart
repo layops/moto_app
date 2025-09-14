@@ -224,15 +224,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
       case 'event_join_request':
         // Etkinlik katılım isteği - katılım istekleri sayfasına git
         if (contentObjectId != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EventRequestsPage(
-                eventId: contentObjectId,
-                eventTitle: 'Etkinlik', // TODO: Etkinlik başlığını al
-              ),
-            ),
-          );
+          // contentObjectId EventRequest ID'si, Event ID'sini almak için API çağrısı yap
+          _navigateToEventRequestsPage(contentObjectId);
         } else {
           _showNavigationError('Etkinlik bilgisi bulunamadı');
         }
@@ -340,6 +333,30 @@ class _NotificationsPageState extends State<NotificationsPage> {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  /// EventRequest ID'sinden Event ID'sini al ve EventRequestsPage'e git
+  Future<void> _navigateToEventRequestsPage(int eventRequestId) async {
+    try {
+      // EventRequest ID'sinden Event ID'sini al
+      final eventRequest = await ServiceLocator.event.getEventRequestById(eventRequestId);
+      if (eventRequest != null && eventRequest['event_id'] != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventRequestsPage(
+              eventId: eventRequest['event_id'],
+              eventTitle: eventRequest['event_title'] ?? 'Etkinlik',
+            ),
+          ),
+        );
+      } else {
+        _showNavigationError('Etkinlik bilgisi bulunamadı');
+      }
+    } catch (e) {
+      print('EventRequest bilgisi alınamadı: $e');
+      _showNavigationError('Etkinlik bilgisi alınamadı');
+    }
   }
 
   @override
