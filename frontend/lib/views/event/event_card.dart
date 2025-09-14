@@ -129,6 +129,14 @@ class _EventCardState extends State<EventCard> {
                           ),
                           backgroundColor: Colors.orange,
                         ),
+                      if (requestStatus == 'pending')
+                        Chip(
+                          label: const Text(
+                            'İsteğiniz Bekleniyor',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                          backgroundColor: Colors.blue,
+                        ),
                       const Spacer(),
                       if (buttonState.showButton)
                         TextButton(
@@ -233,9 +241,9 @@ class _EventCardState extends State<EventCard> {
       switch (requestStatus) {
         case 'pending':
           return ButtonState(
-            showButton: true,
+            showButton: false, // Button gösterme
             enabled: false,
-            text: 'Onay Bekleniyor',
+            text: '',
             onPressed: null,
           );
         case 'rejected':

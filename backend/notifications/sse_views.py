@@ -15,6 +15,15 @@ def notification_stream(request):
     """
     Server-Sent Events ile gerçek zamanlı bildirim akışı
     """
+    # Accept header kontrolü
+    accept_header = request.META.get('HTTP_ACCEPT', '')
+    if 'text/event-stream' not in accept_header and '*/*' not in accept_header:
+        from rest_framework.response import Response
+        from rest_framework import status
+        return Response(
+            {"error": "Bu endpoint Server-Sent Events için tasarlanmıştır. Accept: text/event-stream header'ı gerekli."},
+            status=status.HTTP_406_NOT_ACCEPTABLE
+        )
     def event_stream():
         last_check = timezone.now()
         

@@ -900,6 +900,37 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       return const SizedBox.shrink();
     }
 
+    // Eğer istek gönderilmişse buton gösterme
+    if (_requestSent) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.hourglass_empty, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'İsteğiniz Bekleniyor',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SizedBox(
@@ -924,11 +955,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   String _getButtonText(bool requiresApproval) {
-    if (requiresApproval && _requestSent) {
-      return 'İsteğiniz Gönderildi';
-    } else {
-      return 'Gruba Katıl';
-    }
+    return 'Gruba Katıl';
   }
 
   Future<void> _joinGroup() async {
