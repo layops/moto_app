@@ -240,12 +240,17 @@ class EventService {
   Future<List<dynamic>> fetchEventParticipants(int eventId) async {
     try {
       final token = await authService.getToken();
+      final url = '$kBaseUrl/api/events/$eventId/participants/';
+      print('DEBUG: Fetch participants URL: $url');
+      
       final response = await _dio.get(
-        '$kBaseUrl/api/events/$eventId/participants/',
+        url,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
+      print('DEBUG: Fetch participants response: ${response.statusCode}');
       return response.data;
     } on DioException catch (e) {
+      print('DEBUG: Fetch participants error: ${e.message}');
       throw Exception('Failed to fetch participants: ${e.message}');
     }
   }
@@ -361,5 +366,27 @@ class EventService {
 
   Future<void> rejectEventRequest(int eventId, int requestId) async {
     await handleJoinRequest(eventId, requestId, false);
+  }
+
+  // Event silme
+  Future<void> deleteEvent(int eventId) async {
+    try {
+      final token = await authService.getToken();
+      final url = '$kBaseUrl/api/events/$eventId/';
+      print('DEBUG: Delete event URL: $url');
+      
+      await _dio.delete(
+        url,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      print('DEBUG: Event deleted successfully');
+    } catch (e) {
+      print('DEBUG: Delete event error: $e');
+      throw Exception('Failed to delete event: $e');
+    }
   }
 }

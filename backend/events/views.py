@@ -26,6 +26,44 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = (JSONParser, MultiPartParser, FormParser)
+    
+    def get_permissions(self):
+        """
+        Event silme işlemi için sadece organizatör izni
+        """
+        if self.action == 'destroy':
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Event silme - sadece organizatör silebilir
+        """
+        try:
+            event = self.get_object()
+            if request.user != event.organizer:
+                return Response(
+                    {"error": "Bu etkinliği sadece organizatör silebilir."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            print(f"DEBUG: Event siliniyor - ID: {event.id}, Title: {event.title}, Organizer: {event.organizer.username}")
+            
+            # Event'i sil
+            event.delete()
+            
+            return Response(
+                {"message": "Etkinlik başarıyla silindi."},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(f"Event silme hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": "Etkinlik silinirken bir hata oluştu"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get_queryset(self):
         user = self.request.user
@@ -407,12 +445,18 @@ class EventRequestDetailView(generics.RetrieveAPIView):
     @action(detail=True, methods=['get'])
     def participants(self, request, pk=None):
         try:
+            print(f"DEBUG: Participants endpoint çağrıldı - Event ID: {pk}, User: {request.user.username}")
             event = self.get_object()
+            print(f"DEBUG: Event bulundu: {event.title}")
             participants = event.participants.all()
+            print(f"DEBUG: {participants.count()} adet katılımcı bulundu")
             serializer = UserSerializer(participants, many=True)
+            print(f"DEBUG: Serializer başarılı, {len(serializer.data)} item döndürülüyor")
             return Response(serializer.data)
         except Exception as e:
             print(f"Participants getirme hatası: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"error": "Katılımcılar getirilirken bir hata oluştu"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

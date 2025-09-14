@@ -79,6 +79,15 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       pinned: true,
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
+                      actions: [
+                        // Sadece organizatör için silme butonu
+                        if (_isOrganizer())
+                          IconButton(
+                            onPressed: _showDeleteConfirmation,
+                            icon: const Icon(Icons.delete_outline),
+                            tooltip: 'Etkinliği Sil',
+                          ),
+                      ],
                       flexibleSpace: FlexibleSpaceBar(
                         title: Text(
                           widget.event['title']?.toString() ?? 'Etkinlik Detayları',
@@ -888,6 +897,91 @@ class _EventDetailPageState extends State<EventDetailPage> {
         );
       },
     );
+  }
+
+  // Organizatör kontrolü
+  bool _isOrganizer() {
+    final organizer = widget.event['organizer'];
+    if (organizer is Map<String, dynamic>) {
+      return organizer['username'] == widget.currentUsername;
+    }
+    return false;
+  }
+
+  // Silme onayı dialogu
+  Future<void> _showDeleteConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Etkinliği Sil'),
+        content: const Text(
+          'Bu etkinliği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm katılımcılar etkinlikten çıkarılacaktır.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteEvent();
+    }
+  }
+
+  // Event silme işlemi
+  Future<void> _deleteEvent() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      await _service.deleteEvent(widget.event['id']);
+      
+      if (!mounted) return;
+      
+      // Loading'i kapat
+      Navigator.of(context).pop();
+      
+      // Başarı mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Etkinlik başarıyla silindi'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Önceki sayfaya dön
+      Navigator.of(context).pop(true); // true = event silindi
+      
+    } catch (e) {
+      if (!mounted) return;
+      
+      // Loading'i kapat
+      Navigator.of(context).pop();
+      
+      // Hata mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Etkinlik silinirken hata oluştu: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildGradientBackground(ColorScheme colorScheme) {
