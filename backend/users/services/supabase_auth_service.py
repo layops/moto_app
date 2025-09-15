@@ -35,17 +35,8 @@ class SupabaseAuthService:
                 logger.warning("SUPABASE_ANON_KEY bulunamadı, auth servisi devre dışı")
                 return
             
-            # Supabase client oluştur (anon key ile)
-            try:
-                # Yeni versiyon syntax'ı (2.8.0+)
-                self.client = create_client(
-                    supabase_url=self.supabase_url,
-                    supabase_key=self.supabase_anon_key
-                )
-            except TypeError:
-                # Eski versiyon syntax'ı
-                self.client = create_client(self.supabase_url, self.supabase_anon_key)
-            
+            # Supabase client oluştur (anon key ile) - 2.1.0 ile uyumlu
+            self.client = create_client(self.supabase_url, self.supabase_anon_key)
             logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
             self.is_available = True
 

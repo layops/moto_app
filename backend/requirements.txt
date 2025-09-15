@@ -20,7 +20,7 @@ uvicorn[standard]==0.23.2
 gunicorn==23.0.0
 
 # Supabase Integration (Optimized for compatibility)
-supabase==2.3.4
+supabase==2.1.0
 
 # Supabase Dependencies (Compatible versions)
 httpx>=0.24,<0.26
