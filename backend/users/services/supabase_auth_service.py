@@ -12,6 +12,8 @@ import uuid
 import base64
 import hashlib
 import secrets
+import json
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -309,6 +311,12 @@ class SupabaseAuthService:
             # PKCE parametrelerini oluştur
             code_verifier, code_challenge = self._generate_pkce_pair()
             
+            # State parametresi oluştur (code_verifier'ı saklamak için)
+            state = base64.urlsafe_b64encode(secrets.token_bytes(16)).decode('utf-8').rstrip('=')
+            
+            # Code verifier'ı cache'de sakla (5 dakika)
+            cache.set(f"pkce_verifier_{state}", code_verifier, 300)
+            
             # Google OAuth URL oluştur
             response = self.client.auth.sign_in_with_oauth({
                 "provider": "google",
@@ -316,7 +324,8 @@ class SupabaseAuthService:
                     "redirect_to": redirect_to or settings.GOOGLE_CALLBACK_URL,
                     "query_params": {
                         "code_challenge": code_challenge,
-                        "code_challenge_method": "S256"
+                        "code_challenge_method": "S256",
+                        "state": state
                     }
                 }
             })
@@ -325,7 +334,7 @@ class SupabaseAuthService:
             return {
                 'success': True,
                 'auth_url': response.url if hasattr(response, 'url') else str(response),
-                'code_verifier': code_verifier,  # Frontend'e gönderilecek
+                'state': state,  # Frontend'e gönderilecek
                 'message': 'Google OAuth URL oluşturuldu'
             }
                 
@@ -336,11 +345,19 @@ class SupabaseAuthService:
                 'error': str(e)
             }
 
-    def handle_oauth_callback(self, code, code_verifier=None, state=None):
+    def handle_oauth_callback(self, code, state=None):
         """OAuth callback'i işle (PKCE ile)"""
         try:
             if not self._is_available():
                 raise Exception("Supabase Auth servisi kullanılamıyor")
+            
+            # State'den code_verifier'ı al
+            code_verifier = None
+            if state:
+                code_verifier = cache.get(f"pkce_verifier_{state}")
+                if code_verifier:
+                    # Cache'den sil
+                    cache.delete(f"pkce_verifier_{state}")
             
             # OAuth callback'i işle (PKCE ile)
             if code_verifier:

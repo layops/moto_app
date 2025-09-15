@@ -158,7 +158,7 @@ class GoogleAuthView(APIView):
             if result['success']:
                 return Response({
                     'auth_url': result['auth_url'],
-                    'code_verifier': result['code_verifier'],  # Frontend'e gönder
+                    'state': result['state'],  # Frontend'e gönder
                     'message': 'Google OAuth URL oluşturuldu'
                 }, status=status.HTTP_200_OK)
             else:
@@ -181,14 +181,13 @@ class GoogleCallbackView(APIView):
         if not code:
             return Response({'error': 'Authorization code bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if not code_verifier:
-            return Response({'error': 'Code verifier bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+        # Code verifier artık state'den alınacak, bu kontrolü kaldır
         
         try:
             from .services.supabase_auth_service import SupabaseAuthService
             
             supabase_auth = SupabaseAuthService()
-            result = supabase_auth.handle_oauth_callback(code, code_verifier, state)
+            result = supabase_auth.handle_oauth_callback(code, state)
             
             if result['success']:
                 # Local user'ı oluştur veya güncelle

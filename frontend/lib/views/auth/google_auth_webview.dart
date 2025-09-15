@@ -24,7 +24,7 @@ class GoogleAuthWebView extends StatefulWidget {
 
 class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   String? authUrl;
-  String? codeVerifier;
+  String? state;
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -40,7 +40,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
       if (response.statusCode == 200) {
         setState(() {
           authUrl = response.data['auth_url'];
-          codeVerifier = response.data['code_verifier']; // PKCE code verifier'ı sakla
+          state = response.data['state']; // PKCE state'i sakla
           _isLoading = false;
         });
         // URL'i otomatik olarak aç
@@ -136,10 +136,11 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
     try {
       final uri = Uri.parse(url);
       final code = uri.queryParameters['code'];
+      final stateFromUrl = uri.queryParameters['state'];
       
-      if (code != null && codeVerifier != null) {
-        // Backend'e callback gönder
-        final response = await widget.authService.handleGoogleCallback(code, codeVerifier!);
+      if (code != null && state != null) {
+        // Backend'e callback gönder - state parametresini ekle
+        final response = await widget.authService.handleGoogleCallback(code, state!);
         
         if (response.statusCode == 200) {
           final data = response.data;
@@ -177,12 +178,16 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           }
         } else {
           if (mounted) {
-            AuthCommon.showErrorSnackbar(context, 'Google giriş başarısız: ${data['error']}');
+            final errorData = response.data;
+            AuthCommon.showErrorSnackbar(context, 'Google giriş başarısız: ${errorData?['error'] ?? 'Bilinmeyen hata'}');
           }
         }
       } else {
         if (mounted) {
-          AuthCommon.showErrorSnackbar(context, 'Geçersiz callback URL');
+          String errorMsg = 'Geçersiz callback URL';
+          if (code == null) errorMsg += ' - Authorization code bulunamadı';
+          if (state == null) errorMsg += ' - State bulunamadı';
+          AuthCommon.showErrorSnackbar(context, errorMsg);
         }
       }
     } catch (e) {
