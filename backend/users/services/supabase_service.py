@@ -90,6 +90,12 @@ class SupabaseStorage:
                 self.client = None
                 return
 
+        except Exception as e:
+            logger.error(f"Supabase istemcisi oluşturulamadı: {str(e)}")
+            logger.error(f"Hata türü: {type(e).__name__}")
+            self.client = None
+            self.is_available = False
+
     def _is_available(self):
         """Supabase'in kullanılabilir olup olmadığını kontrol et"""
         return self.is_available and self.client is not None
