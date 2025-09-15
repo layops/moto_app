@@ -162,12 +162,25 @@ class GoogleAuthView(APIView):
                     'message': 'Google OAuth URL oluşturuldu'
                 }, status=status.HTTP_200_OK)
             else:
-                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                # Supabase kullanılamıyorsa, Google OAuth'u devre dışı bırak
+                return Response({
+                    'error': 'Google OAuth şu anda kullanılamıyor. Supabase servisi aktif değil.',
+                    'supabase_available': False,
+                    'message': 'Lütfen normal email/şifre ile giriş yapın'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
                 
         except ImportError:
-            return Response({'error': 'Google OAuth servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'error': 'Google OAuth servisi kullanılamıyor',
+                'supabase_available': False,
+                'message': 'Lütfen normal email/şifre ile giriş yapın'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
-            return Response({'error': f'Google OAuth URL hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'error': f'Google OAuth URL hatası: {str(e)}',
+                'supabase_available': False,
+                'message': 'Lütfen normal email/şifre ile giriş yapın'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class GoogleCallbackView(APIView):
     permission_classes = [AllowAny]
@@ -227,9 +240,17 @@ class GoogleCallbackView(APIView):
                 return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
                 
         except ImportError:
-            return Response({'error': 'Google OAuth servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'error': 'Google OAuth servisi kullanılamıyor',
+                'supabase_available': False,
+                'message': 'Supabase servisi aktif değil'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
-            return Response({'error': f'Google OAuth callback hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'error': f'Google OAuth callback hatası: {str(e)}',
+                'supabase_available': False,
+                'message': 'Supabase servisi aktif değil'
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class VerifyTokenView(APIView):
     permission_classes = [AllowAny]
