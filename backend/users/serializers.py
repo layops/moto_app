@@ -13,12 +13,94 @@ User = get_user_model()
 # Kullanıcı Kayıt ve Login
 # -------------------------------
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
     password2 = serializers.CharField(write_only=True)
+    email = serializers.EmailField(required=True)
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password', 'password2']
+
+    def validate_email(self, value):
+        """Güçlü email validasyonu"""
+        if not value:
+            raise serializers.ValidationError("Email adresi gereklidir")
+        
+        # Temel format kontrolü
+        email_pattern = re.compile(
+            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        )
+        
+        if not email_pattern.match(value):
+            raise serializers.ValidationError("Geçerli bir email adresi girin")
+        
+        # Domain kontrolü - yaygın geçersiz domain'leri kontrol et
+        invalid_domains = [
+            'example.com', 'test.com', 'localhost', 'invalid.com',
+            'fake.com', 'dummy.com', 'temp.com', 'nonexistent.com'
+        ]
+        
+        domain = value.split('@')[1].lower()
+        if domain in invalid_domains:
+            raise serializers.ValidationError("Geçerli bir email domain'i kullanın")
+        
+        # Email uzunluğu kontrolü
+        if len(value) > 254:
+            raise serializers.ValidationError("Email adresi çok uzun")
+        
+        # Kullanıcı adı kısmı kontrolü
+        username_part = value.split('@')[0]
+        if len(username_part) > 64:
+            raise serializers.ValidationError("Email kullanıcı adı çok uzun")
+        
+        # Özel karakter kontrolü
+        if not re.match(r'^[a-zA-Z0-9._%+-]+$', username_part):
+            raise serializers.ValidationError("Email kullanıcı adında geçersiz karakterler var")
+        
+        # Aynı email ile kayıt kontrolü
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Bu email adresi zaten kullanılıyor")
+        
+        return value.lower()  # Email'i küçük harfe çevir
+
+    def validate_username(self, value):
+        """Kullanıcı adı validasyonu"""
+        if not value:
+            raise serializers.ValidationError("Kullanıcı adı gereklidir")
+        
+        # Kullanıcı adı uzunluğu
+        if len(value) < 3:
+            raise serializers.ValidationError("Kullanıcı adı en az 3 karakter olmalı")
+        
+        if len(value) > 30:
+            raise serializers.ValidationError("Kullanıcı adı en fazla 30 karakter olabilir")
+        
+        # Sadece harf, rakam ve alt çizgi
+        if not re.match(r'^[a-zA-Z0-9_]+$', value):
+            raise serializers.ValidationError("Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir")
+        
+        # Aynı kullanıcı adı kontrolü
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Bu kullanıcı adı zaten kullanılıyor")
+        
+        return value
+
+    def validate_password(self, value):
+        """Şifre validasyonu"""
+        if len(value) < 8:
+            raise serializers.ValidationError("Şifre en az 8 karakter olmalı")
+        
+        # Şifre güçlülük kontrolü
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError("Şifre en az bir büyük harf içermeli")
+        
+        if not re.search(r'[a-z]', value):
+            raise serializers.ValidationError("Şifre en az bir küçük harf içermeli")
+        
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError("Şifre en az bir rakam içermeli")
+        
+        return value
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -26,13 +108,51 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email'),
-            password=validated_data['password']
-        )
-        return user
+        """Supabase Auth ile kullanıcı oluştur"""
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            password2 = validated_data.pop('password2')
+            
+            # Supabase Auth ile kayıt
+            auth_result = supabase_auth.sign_up(
+                email=validated_data['email'],
+                password=validated_data['password'],
+                user_metadata={
+                    'username': validated_data['username']
+                }
+            )
+            
+            if auth_result['success']:
+                # Supabase'de başarılı kayıt sonrası local User oluştur
+                user = User.objects.create_user(
+                    username=validated_data['username'],
+                    email=validated_data['email'],
+                    password=validated_data['password'],
+                    email_verified=False  # Email doğrulama bekleniyor
+                )
+                
+                # Supabase user ID'sini kaydet (opsiyonel)
+                if hasattr(user, 'supabase_user_id'):
+                    user.supabase_user_id = auth_result['user'].id
+                    user.save()
+                
+                return user
+            else:
+                raise serializers.ValidationError(auth_result['error'])
+                
+        except ImportError:
+            # Supabase Auth kullanılamıyorsa fallback
+            validated_data.pop('password2')
+            user = User.objects.create_user(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                password=validated_data['password']
+            )
+            return user
+        except Exception as e:
+            raise serializers.ValidationError(f"Kayıt hatası: {str(e)}")
 
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()

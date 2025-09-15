@@ -4,6 +4,13 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    # Email'i zorunlu hale getir
+    email = models.EmailField(unique=True, verbose_name="Email Adresi")
+    
+    # Email verification alanları
+    email_verified = models.BooleanField(default=False, verbose_name="Email Doğrulandı")
+    email_verification_token = models.CharField(max_length=100, blank=True, null=True, verbose_name="Email Doğrulama Token")
+    
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     profile_picture = models.URLField(blank=True, null=True, verbose_name="Profil Resmi URL")

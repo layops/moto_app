@@ -216,6 +216,7 @@ CHANNEL_LAYERS = {
 # Supabase Configuration - Environment variables kullan
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://mosiqkyyribzlvdvedet.supabase.co')
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')  # Auth için gerekli
 SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
 SUPABASE_COVER_BUCKET = os.environ.get('SUPABASE_COVER_BUCKET', 'cover_pictures')
 SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictures')

@@ -21,12 +21,10 @@ class UserRegisterView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            # refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'message': 'Kullanıcı başarıyla oluşturuldu'
-                # 'token': str(refresh.access_token),
-                # 'refresh': str(refresh)
+                'message': 'Kullanıcı başarıyla oluşturuldu! Email doğrulama linki gönderildi.',
+                'email_verification_required': True
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -51,6 +49,98 @@ class TokenRefreshView(APIView):
     
     def post(self, request):
         # Geçici olarak devre dışı
+        pass
+
+class EmailVerificationView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Email doğrulama token ile email'i doğrula"""
+        token = request.data.get('token')
+        if not token:
+            return Response({'error': 'Doğrulama token gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            result = supabase_auth.verify_email(token)
+            
+            if result['success']:
+                # Local user'ı da güncelle
+                user_email = result['user'].email
+                try:
+                    user = User.objects.get(email=user_email)
+                    user.email_verified = True
+                    user.save()
+                except User.DoesNotExist:
+                    pass
+                
+                return Response({
+                    'message': 'Email başarıyla doğrulandı!',
+                    'user': result['user'].__dict__ if hasattr(result['user'], '__dict__') else None
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({'error': 'Email doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Email doğrulama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ResendVerificationView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Email doğrulama linkini tekrar gönder"""
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email adresi gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            result = supabase_auth.resend_verification(email)
+            
+            if result['success']:
+                return Response({
+                    'message': 'Email doğrulama linki tekrar gönderildi!'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({'error': 'Email doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Email tekrar gönderme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PasswordResetView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Şifre sıfırlama linki gönder"""
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email adresi gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            result = supabase_auth.reset_password(email)
+            
+            if result['success']:
+                return Response({
+                    'message': 'Şifre sıfırlama linki email adresinize gönderildi!'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({'error': 'Şifre sıfırlama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Şifre sıfırlama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'error': 'Token refresh geçici olarak devre dışı'}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 class ProfileImageUploadView(APIView):

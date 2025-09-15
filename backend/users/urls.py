@@ -4,6 +4,9 @@ from .views import (
     UserRegisterView,
     UserLoginView,
     TokenRefreshView,
+    EmailVerificationView,
+    ResendVerificationView,
+    PasswordResetView,
     ProfileImageUploadView,
     CoverImageUploadView, # Yeni eklendi
     FollowToggleView,
@@ -22,6 +25,11 @@ urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='user-register'),
     path('login/', UserLoginView.as_view(), name='user-login'),
     path('refresh-token/', TokenRefreshView.as_view(), name='token-refresh'),
+    
+    # Email Verification
+    path('verify-email/', EmailVerificationView.as_view(), name='verify-email'),
+    path('resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
+    path('reset-password/', PasswordResetView.as_view(), name='reset-password'),
 
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
