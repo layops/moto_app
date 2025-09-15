@@ -21,7 +21,6 @@ gunicorn==23.0.0
 
 # Supabase Integration (Optimized for compatibility)
 supabase==2.3.4
-supabase_auth==2.12.3
 supabase_functions==0.10.1
 
 # Supabase Dependencies (Compatible versions)
