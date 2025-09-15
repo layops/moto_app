@@ -295,7 +295,7 @@ class SupabaseAuthService:
             response = self.client.auth.sign_in_with_oauth({
                 "provider": "google",
                 "options": {
-                    "redirect_to": redirect_to or f"{settings.BASE_URL}/api/users/auth/callback/"
+                    "redirect_to": redirect_to or settings.GOOGLE_CALLBACK_URL
                 }
             })
             

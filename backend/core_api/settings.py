@@ -7,6 +7,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = 'https://spiride.onrender.com'
+GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/users/auth/callback/')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')

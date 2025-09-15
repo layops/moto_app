@@ -299,4 +299,59 @@ class AuthService {
     // AuthService için özel cache yok, sadece placeholder
     // Gelecekte auth cache'i eklenebilir
   }
+
+  // Google OAuth metodları
+  Future<Response> getGoogleAuthUrl() async {
+    try {
+      final response = await _apiClient.get('users/auth/google/');
+      return response;
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['error'] ??
+          e.response?.data?['message'] ??
+          e.message ??
+          'Google OAuth URL alınırken hata oluştu';
+      throw Exception('Google OAuth hatası: $errorMessage');
+    }
+  }
+
+  Future<Response> handleGoogleCallback(String code) async {
+    try {
+      final response = await _apiClient.get('users/auth/callback/?code=$code');
+      return response;
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['error'] ??
+          e.response?.data?['message'] ??
+          e.message ??
+          'Google OAuth callback işlenirken hata oluştu';
+      throw Exception('Google OAuth callback hatası: $errorMessage');
+    }
+  }
+
+  Future<Response> verifyToken(String accessToken) async {
+    try {
+      final response = await _apiClient.post('users/verify-token/', {
+        'access_token': accessToken,
+      });
+      return response;
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['error'] ??
+          e.response?.data?['message'] ??
+          e.message ??
+          'Token doğrulanırken hata oluştu';
+      throw Exception('Token doğrulama hatası: $errorMessage');
+    }
+  }
+
+  Future<void> loginWithGoogle(String accessToken, String refreshToken, Map<String, dynamic> userData) async {
+    try {
+      // Token'ları kaydet
+      await _tokenService.saveAuthData(accessToken, userData['username'], refreshToken: refreshToken);
+      await _storage.setCurrentUsername(userData['username']);
+
+      // Auth state güncelle
+      _authStateController.add(true);
+    } catch (e) {
+      throw Exception('Google giriş verileri kaydedilirken hata: $e');
+    }
+  }
 }

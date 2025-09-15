@@ -18,6 +18,7 @@ import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/core/theme/color_schemes.dart';
+import 'package:motoapp_frontend/views/auth/google_auth_webview.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthService authService;
@@ -107,6 +108,28 @@ class _LoginPageState extends State<LoginPage> {
   bool _isEmail(String input) {
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     return emailRegex.hasMatch(input);
+  }
+
+  Future<void> _loginWithGoogle() async {
+    try {
+      // Google OAuth WebView'ı aç
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GoogleAuthWebView(authService: widget.authService),
+        ),
+      );
+      
+      // Eğer Google girişi başarılıysa, ana sayfaya yönlendirme
+      // GoogleAuthWebView içinde zaten yapılıyor, burada ek işlem gerekmez
+      if (result != null) {
+        // Google girişi başarılı, ana sayfaya yönlendirme zaten GoogleAuthWebView'da yapıldı
+      }
+    } catch (e) {
+      if (mounted) {
+        AuthCommon.showErrorSnackbar(context, 'Google girişi sırasında hata: $e');
+      }
+    }
   }
 
   @override
@@ -424,7 +447,7 @@ class _LoginPageState extends State<LoginPage> {
               child: SocialButton(
                 icon: Icons.g_mobiledata,
                 text: 'Google',
-                onPressed: () {},
+                onPressed: () => _loginWithGoogle(),
               ),
             ),
             SizedBox(width: 16.w),
