@@ -20,9 +20,9 @@ uvicorn[standard]==0.23.2
 gunicorn==23.0.0
 
 # Supabase Integration (Optimized for compatibility)
-supabase==2.1.0
+supabase==2.18.1
 
-# Supabase Dependencies (Compatible versions for 2.1.0)
+# Supabase Dependencies (Compatible versions for 2.18.1)
 httpx>=0.20,<0.26
 postgrest>=0.10.8,<0.14.0
 realtime>=1.0.0,<2.0.0

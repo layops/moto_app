@@ -42,7 +42,7 @@ class SupabaseStorage:
                 logger.info("Supabase storage devre dışı (USE_SUPABASE_STORAGE=false)")
                 return
             
-            # Supabase client oluştur (2.1.0 ile uyumlu)
+            # Supabase client oluştur - CLIENT_CLASS parametresi olmadan
             self.client = create_client(self.supabase_url, self.supabase_key)
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
             
