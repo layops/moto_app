@@ -36,7 +36,16 @@ class SupabaseAuthService:
                 return
             
             # Supabase client oluştur (anon key ile)
-            self.client = create_client(self.supabase_url, self.supabase_anon_key)
+            try:
+                # Yeni versiyon syntax'ı (2.8.0+)
+                self.client = create_client(
+                    supabase_url=self.supabase_url,
+                    supabase_key=self.supabase_anon_key
+                )
+            except TypeError:
+                # Eski versiyon syntax'ı
+                self.client = create_client(self.supabase_url, self.supabase_anon_key)
+            
             logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
             self.is_available = True
 
