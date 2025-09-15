@@ -7,6 +7,10 @@ from .views import (
     EmailVerificationView,
     ResendVerificationView,
     PasswordResetView,
+    GoogleAuthView,
+    GoogleCallbackView,
+    VerifyTokenView,
+    GoogleAuthTestView,
     ProfileImageUploadView,
     CoverImageUploadView, # Yeni eklendi
     FollowToggleView,
@@ -30,6 +34,12 @@ urlpatterns = [
     path('verify-email/', EmailVerificationView.as_view(), name='verify-email'),
     path('resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
     path('reset-password/', PasswordResetView.as_view(), name='reset-password'),
+    
+    # Google OAuth
+    path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
+    path('auth/callback/', GoogleCallbackView.as_view(), name='google-callback'),
+    path('verify-token/', VerifyTokenView.as_view(), name='verify-token'),
+    path('auth/test/', GoogleAuthTestView.as_view(), name='google-auth-test'),
 
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),

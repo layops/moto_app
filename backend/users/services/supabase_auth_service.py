@@ -284,3 +284,97 @@ class SupabaseAuthService:
                 'success': False,
                 'error': str(e)
             }
+
+    def get_google_auth_url(self, redirect_to=None):
+        """Google OAuth URL'i oluştur"""
+        try:
+            if not self._is_available():
+                raise Exception("Supabase Auth servisi kullanılamıyor")
+            
+            # Google OAuth URL oluştur
+            response = self.client.auth.sign_in_with_oauth({
+                "provider": "google",
+                "options": {
+                    "redirect_to": redirect_to or f"{settings.BASE_URL}/api/users/auth/callback/"
+                }
+            })
+            
+            logger.info("Google OAuth URL oluşturuldu")
+            return {
+                'success': True,
+                'auth_url': response.url if hasattr(response, 'url') else str(response),
+                'message': 'Google OAuth URL oluşturuldu'
+            }
+                
+        except Exception as e:
+            logger.error(f"Google OAuth URL oluşturma hatası: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def handle_oauth_callback(self, code, state=None):
+        """OAuth callback'i işle"""
+        try:
+            if not self._is_available():
+                raise Exception("Supabase Auth servisi kullanılamıyor")
+            
+            # OAuth callback'i işle
+            response = self.client.auth.exchange_code_for_session({
+                "auth_code": code
+            })
+            
+            if response.user and response.session:
+                logger.info(f"OAuth başarılı: {response.user.email}")
+                return {
+                    'success': True,
+                    'user': response.user,
+                    'session': response.session,
+                    'access_token': response.session.access_token,
+                    'refresh_token': response.session.refresh_token,
+                    'message': 'OAuth giriş başarılı'
+                }
+            else:
+                logger.error("OAuth callback başarısız")
+                return {
+                    'success': False,
+                    'error': 'OAuth callback başarısız'
+                }
+                
+        except Exception as e:
+            logger.error(f"OAuth callback hatası: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def get_user_from_token(self, access_token):
+        """Access token'dan kullanıcı bilgisi al"""
+        try:
+            if not self._is_available():
+                raise Exception("Supabase Auth servisi kullanılamıyor")
+            
+            # Set session with access token
+            self.client.auth.set_session(access_token, "")
+            
+            # Get user
+            user = self.client.auth.get_user()
+            
+            if user:
+                return {
+                    'success': True,
+                    'user': user,
+                    'message': 'Kullanıcı bilgisi alındı'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': 'Kullanıcı bulunamadı'
+                }
+                
+        except Exception as e:
+            logger.error(f"Token'dan kullanıcı alma hatası: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }

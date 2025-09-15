@@ -141,7 +141,177 @@ class PasswordResetView(APIView):
             return Response({'error': 'Şifre sıfırlama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'error': f'Şifre sıfırlama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({'error': 'Token refresh geçici olarak devre dışı'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+
+class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """Google OAuth URL'i döndür"""
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            redirect_to = request.query_params.get('redirect_to')
+            
+            result = supabase_auth.get_google_auth_url(redirect_to)
+            
+            if result['success']:
+                return Response({
+                    'auth_url': result['auth_url'],
+                    'message': 'Google OAuth URL oluşturuldu'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({'error': 'Google OAuth servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Google OAuth URL hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GoogleCallbackView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """Google OAuth callback'i işle"""
+        code = request.query_params.get('code')
+        state = request.query_params.get('state')
+        
+        if not code:
+            return Response({'error': 'Authorization code bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            result = supabase_auth.handle_oauth_callback(code, state)
+            
+            if result['success']:
+                # Local user'ı oluştur veya güncelle
+                supabase_user = result['user']
+                email = supabase_user.email
+                
+                try:
+                    # Mevcut kullanıcıyı bul
+                    user = User.objects.get(email=email)
+                    user.email_verified = True
+                    user.save()
+                except User.DoesNotExist:
+                    # Yeni kullanıcı oluştur
+                    username = email.split('@')[0]  # Email'den username oluştur
+                    # Username benzersizliğini kontrol et
+                    counter = 1
+                    original_username = username
+                    while User.objects.filter(username=username).exists():
+                        username = f"{original_username}_{counter}"
+                        counter += 1
+                    
+                    user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        email_verified=True,
+                        first_name=supabase_user.user_metadata.get('full_name', '').split(' ')[0] if supabase_user.user_metadata.get('full_name') else '',
+                        last_name=' '.join(supabase_user.user_metadata.get('full_name', '').split(' ')[1:]) if supabase_user.user_metadata.get('full_name') and len(supabase_user.user_metadata.get('full_name', '').split(' ')) > 1 else ''
+                    )
+                
+                return Response({
+                    'message': 'Google ile giriş başarılı!',
+                    'user': UserSerializer(user).data,
+                    'access_token': result['access_token'],
+                    'refresh_token': result['refresh_token']
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({'error': 'Google OAuth servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Google OAuth callback hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class VerifyTokenView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Access token'ı doğrula ve kullanıcı bilgisi döndür"""
+        access_token = request.data.get('access_token')
+        if not access_token:
+            return Response({'error': 'Access token gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            result = supabase_auth.get_user_from_token(access_token)
+            
+            if result['success']:
+                supabase_user = result['user']
+                email = supabase_user.email
+                
+                try:
+                    user = User.objects.get(email=email)
+                    return Response({
+                        'user': UserSerializer(user).data,
+                        'message': 'Token doğrulandı'
+                    }, status=status.HTTP_200_OK)
+                except User.DoesNotExist:
+                    return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_401_UNAUTHORIZED)
+                
+        except ImportError:
+            return Response({'error': 'Token doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': f'Token doğrulama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GoogleAuthTestView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """Google OAuth test endpoint'i"""
+        try:
+            from .services.supabase_auth_service import SupabaseAuthService
+            
+            supabase_auth = SupabaseAuthService()
+            
+            # Supabase bağlantısını test et
+            if not supabase_auth._is_available():
+                return Response({
+                    'status': 'error',
+                    'message': 'Supabase Auth servisi kullanılamıyor',
+                    'supabase_url': supabase_auth.supabase_url,
+                    'supabase_anon_key': '***' if supabase_auth.supabase_anon_key else 'YOK'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Google OAuth URL'i oluştur
+            result = supabase_auth.get_google_auth_url()
+            
+            if result['success']:
+                return Response({
+                    'status': 'success',
+                    'message': 'Google OAuth entegrasyonu hazır!',
+                    'auth_url': result['auth_url'],
+                    'supabase_url': supabase_auth.supabase_url,
+                    'test_endpoints': {
+                        'google_auth': '/api/users/auth/google/',
+                        'callback': '/api/users/auth/callback/',
+                        'verify_token': '/api/users/verify-token/'
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'status': 'error',
+                    'message': result['error']
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ImportError:
+            return Response({
+                'status': 'error',
+                'message': 'Supabase modülü bulunamadı'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': f'Test hatası: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProfileImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
