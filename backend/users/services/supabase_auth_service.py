@@ -48,13 +48,16 @@ class SupabaseAuthService:
                 logger.warning("SUPABASE_ANON_KEY bulunamadı, auth servisi devre dışı")
                 return
             
-            # Supabase client oluştur - daha güvenli parametrelerle
+            # Supabase client oluştur - minimal parametrelerle
             try:
-                # Sadece temel parametrelerle client oluştur
-                self.client = create_client(
-                    supabase_url=self.supabase_url,
-                    supabase_key=self.supabase_anon_key
-                )
+                # Proxy environment variable'larını kontrol et
+                proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy']
+                for var in proxy_vars:
+                    if os.environ.get(var):
+                        logger.warning(f"Proxy environment variable tespit edildi: {var}={os.environ.get(var)}")
+                
+                # En minimal şekilde client oluştur
+                self.client = create_client(self.supabase_url, self.supabase_anon_key)
                 logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
                 self.is_available = True
                 
