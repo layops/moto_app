@@ -1,12 +1,22 @@
 # users/services/supabase_auth_service.py
 import logging
 from django.conf import settings
+
+# Supabase import'u daha detaylı hata kontrolü ile
+SUPABASE_AVAILABLE = False
+create_client = None
+import_error = None
+
 try:
     from supabase import create_client
     SUPABASE_AVAILABLE = True
-except ImportError:
-    create_client = None
-    SUPABASE_AVAILABLE = False
+    logging.getLogger(__name__).info("Supabase modülü başarıyla yüklendi")
+except ImportError as e:
+    import_error = str(e)
+    logging.getLogger(__name__).warning(f"Supabase modülü yüklenemedi: {import_error}")
+except Exception as e:
+    import_error = str(e)
+    logging.getLogger(__name__).error(f"Supabase modülü yüklenirken beklenmeyen hata: {import_error}")
 import os
 import uuid
 import base64
@@ -28,7 +38,10 @@ class SupabaseAuthService:
         
         try:
             if not SUPABASE_AVAILABLE:
-                logger.warning("Supabase modülü bulunamadı, auth servisi oluşturulamadı")
+                if import_error:
+                    logger.warning(f"Supabase modülü bulunamadı: {import_error}")
+                else:
+                    logger.warning("Supabase modülü bulunamadı, auth servisi oluşturulamadı")
                 return
                 
             if not self.supabase_anon_key:
