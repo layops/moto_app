@@ -43,7 +43,16 @@ class SupabaseStorage:
                 return
             
             # Supabase client oluştur
-            self.client = create_client(self.supabase_url, self.supabase_key)
+            try:
+                # Yeni versiyon syntax'ı (2.3.4+)
+                self.client = create_client(
+                    supabase_url=self.supabase_url,
+                    supabase_key=self.supabase_key
+                )
+            except TypeError:
+                # Eski versiyon syntax'ı
+                self.client = create_client(self.supabase_url, self.supabase_key)
+            
             logger.info("Supabase istemcisi başarıyla oluşturuldu")
             
             # Bucket'ları kontrol et
