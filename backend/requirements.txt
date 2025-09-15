@@ -30,7 +30,7 @@ storage3==0.12.1
 
 # HTTP Libraries
 requests==2.32.3
-httpcore>=0.15.0,<0.18.0
+httpcore>=1.0.0
 
 # Security & Cryptography
 cryptography==45.0.5
