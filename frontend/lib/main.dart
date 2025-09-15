@@ -157,8 +157,15 @@ class _MotoAppState extends State<MotoApp> {
                         LoginPage(authService: ServiceLocator.auth),
                     '/notifications': (context) => const NotificationsPage(),
                     '/profile': (context) {
-                      final username =
-                          ModalRoute.of(context)!.settings.arguments as String?;
+                      final args = ModalRoute.of(context)!.settings.arguments;
+                      String? username;
+                      
+                      if (args is Map<String, dynamic>) {
+                        username = args['username'] as String?;
+                      } else if (args is String) {
+                        username = args;
+                      }
+                      
                       return ProfilePage(username: username);
                     },
                   },

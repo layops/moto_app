@@ -224,11 +224,12 @@ SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_ima
 SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID', 'mosiqkyyribzlvdvedet')
 
 # Supabase fallback - eğer Supabase çalışmıyorsa local storage kullan
-USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'false').lower() == 'true'
+USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'true').lower() == 'true'
 
-# Supabase service key kontrolü (geçici olarak devre dışı)
-# if not SUPABASE_SERVICE_KEY:
-#     raise ValueError("SUPABASE_SERVICE_KEY environment variable is required!")
+# Supabase service key kontrolü - daha esnek hale getir
+if USE_SUPABASE_STORAGE and not SUPABASE_SERVICE_KEY:
+    print("⚠️  SUPABASE_SERVICE_KEY bulunamadı, Supabase storage devre dışı")
+    USE_SUPABASE_STORAGE = False
 
 
 # Caching Configuration
