@@ -146,7 +146,7 @@ class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Google OAuth URL'i döndür"""
+        """Google OAuth URL'i döndür (PKCE ile)"""
         try:
             from .services.supabase_auth_service import SupabaseAuthService
             
@@ -158,6 +158,7 @@ class GoogleAuthView(APIView):
             if result['success']:
                 return Response({
                     'auth_url': result['auth_url'],
+                    'code_verifier': result['code_verifier'],  # Frontend'e gönder
                     'message': 'Google OAuth URL oluşturuldu'
                 }, status=status.HTTP_200_OK)
             else:
@@ -172,18 +173,22 @@ class GoogleCallbackView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Google OAuth callback'i işle"""
+        """Google OAuth callback'i işle (PKCE ile)"""
         code = request.query_params.get('code')
+        code_verifier = request.query_params.get('code_verifier')
         state = request.query_params.get('state')
         
         if not code:
             return Response({'error': 'Authorization code bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
+        if not code_verifier:
+            return Response({'error': 'Code verifier bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             from .services.supabase_auth_service import SupabaseAuthService
             
             supabase_auth = SupabaseAuthService()
-            result = supabase_auth.handle_oauth_callback(code, state)
+            result = supabase_auth.handle_oauth_callback(code, code_verifier, state)
             
             if result['success']:
                 # Local user'ı oluştur veya güncelle

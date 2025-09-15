@@ -9,6 +9,9 @@ except ImportError:
     SUPABASE_AVAILABLE = False
 import os
 import uuid
+import base64
+import hashlib
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -285,24 +288,44 @@ class SupabaseAuthService:
                 'error': str(e)
             }
 
+    def _generate_pkce_challenge(self, code_verifier):
+        """PKCE code challenge oluştur"""
+        code_challenge = hashlib.sha256(code_verifier.encode('utf-8')).digest()
+        code_challenge = base64.urlsafe_b64encode(code_challenge).decode('utf-8').rstrip('=')
+        return code_challenge
+
+    def _generate_pkce_pair(self):
+        """PKCE code verifier ve challenge çifti oluştur"""
+        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('utf-8').rstrip('=')
+        code_challenge = self._generate_pkce_challenge(code_verifier)
+        return code_verifier, code_challenge
+
     def get_google_auth_url(self, redirect_to=None):
-        """Google OAuth URL'i oluştur"""
+        """Google OAuth URL'i oluştur (PKCE ile)"""
         try:
             if not self._is_available():
                 raise Exception("Supabase Auth servisi kullanılamıyor")
+            
+            # PKCE parametrelerini oluştur
+            code_verifier, code_challenge = self._generate_pkce_pair()
             
             # Google OAuth URL oluştur
             response = self.client.auth.sign_in_with_oauth({
                 "provider": "google",
                 "options": {
-                    "redirect_to": redirect_to or settings.GOOGLE_CALLBACK_URL
+                    "redirect_to": redirect_to or settings.GOOGLE_CALLBACK_URL,
+                    "query_params": {
+                        "code_challenge": code_challenge,
+                        "code_challenge_method": "S256"
+                    }
                 }
             })
             
-            logger.info("Google OAuth URL oluşturuldu")
+            logger.info("Google OAuth URL oluşturuldu (PKCE ile)")
             return {
                 'success': True,
                 'auth_url': response.url if hasattr(response, 'url') else str(response),
+                'code_verifier': code_verifier,  # Frontend'e gönderilecek
                 'message': 'Google OAuth URL oluşturuldu'
             }
                 
@@ -313,16 +336,23 @@ class SupabaseAuthService:
                 'error': str(e)
             }
 
-    def handle_oauth_callback(self, code, state=None):
-        """OAuth callback'i işle"""
+    def handle_oauth_callback(self, code, code_verifier=None, state=None):
+        """OAuth callback'i işle (PKCE ile)"""
         try:
             if not self._is_available():
                 raise Exception("Supabase Auth servisi kullanılamıyor")
             
-            # OAuth callback'i işle
-            response = self.client.auth.exchange_code_for_session({
-                "auth_code": code
-            })
+            # OAuth callback'i işle (PKCE ile)
+            if code_verifier:
+                response = self.client.auth.exchange_code_for_session({
+                    "auth_code": code,
+                    "code_verifier": code_verifier
+                })
+            else:
+                # Fallback: PKCE olmadan
+                response = self.client.auth.exchange_code_for_session({
+                    "auth_code": code
+                })
             
             if response.user and response.session:
                 logger.info(f"OAuth başarılı: {response.user.email}")

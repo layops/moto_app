@@ -11,6 +11,7 @@ import 'package:motoapp_frontend/views/groups/group_page.dart';
 import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
+import 'package:motoapp_frontend/config.dart';
 
 class GoogleAuthWebView extends StatefulWidget {
   final AuthService authService;
@@ -23,6 +24,7 @@ class GoogleAuthWebView extends StatefulWidget {
 
 class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   String? authUrl;
+  String? codeVerifier;
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -38,6 +40,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
       if (response.statusCode == 200) {
         setState(() {
           authUrl = response.data['auth_url'];
+          codeVerifier = response.data['code_verifier']; // PKCE code verifier'ı sakla
           _isLoading = false;
         });
         // URL'i otomatik olarak aç
@@ -61,7 +64,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
       try {
         final uri = Uri.parse(authUrl!);
         
-        // canLaunchUrl kontrolünü kaldır, direkt launchUrl kullan
+        // External browser yerine WebView kullanarak callback'i yakala
         await launchUrl(
           uri, 
           mode: LaunchMode.externalApplication,
@@ -74,11 +77,117 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           _errorMessage = '';
         });
         
+        // Kullanıcıya callback URL'yi manuel olarak girmesini söyle
+        _showCallbackInstructions();
+        
       } catch (e) {
         setState(() {
           _errorMessage = 'Google OAuth URL açılırken hata: $e';
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  void _showCallbackInstructions() {
+    final TextEditingController urlController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Google Giriş Tamamlandı'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Google ile giriş yaptıktan sonra, tarayıcıda görünen URL\'yi buraya yapıştırın:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(
+                labelText: 'Callback URL',
+                hintText: 'https://spiride.onrender.com/api/users/auth/callback/?code=...',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (url) => _handleCallbackUrl(url),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final url = urlController.text.trim();
+              if (url.isNotEmpty) {
+                _handleCallbackUrl(url);
+              }
+            },
+            child: const Text('Devam Et'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleCallbackUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final code = uri.queryParameters['code'];
+      
+      if (code != null && codeVerifier != null) {
+        // Backend'e callback gönder
+        final response = await widget.authService.handleGoogleCallback(code, codeVerifier!);
+        
+        if (response.statusCode == 200) {
+          final data = response.data;
+          
+          // Token'ları kaydet
+          await widget.authService.loginWithGoogle(
+            data['access_token'],
+            data['refresh_token'],
+            data['user'],
+          );
+          
+          // Ana sayfaya yönlendir
+          if (mounted) {
+            Navigator.pop(context); // Dialog'u kapat
+            
+            final pages = [
+              const HomePage(),
+              const MapPage(allowSelection: true),
+              const GroupsPage(),
+              const EventsPage(),
+              const MessagesPage(),
+              ProfilePage(username: data['user']['username']),
+            ];
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainWrapperNew(
+                  pages: pages,
+                  navItems: NavigationItems.items,
+                ),
+              ),
+              (route) => false,
+            );
+          }
+        } else {
+          if (mounted) {
+            AuthCommon.showErrorSnackbar(context, 'Google giriş başarısız: ${data['error']}');
+          }
+        }
+      } else {
+        if (mounted) {
+          AuthCommon.showErrorSnackbar(context, 'Geçersiz callback URL');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AuthCommon.showErrorSnackbar(context, 'Callback işlenirken hata: $e');
       }
     }
   }

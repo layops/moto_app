@@ -314,9 +314,9 @@ class AuthService {
     }
   }
 
-  Future<Response> handleGoogleCallback(String code) async {
+  Future<Response> handleGoogleCallback(String code, String codeVerifier) async {
     try {
-      final response = await _apiClient.get('users/auth/callback/?code=$code');
+      final response = await _apiClient.get('users/auth/callback/?code=$code&code_verifier=$codeVerifier');
       return response;
     } on DioException catch (e) {
       final errorMessage = e.response?.data?['error'] ??
