@@ -23,7 +23,7 @@ gunicorn==23.0.0
 supabase==2.18.1
 
 # Supabase Dependencies (Compatible versions for 2.18.1)
-httpx>=0.20,<0.26
+httpx>=0.26,<0.29
 postgrest==1.1.1
 realtime==2.7.0
 storage3==0.12.1
