@@ -19,14 +19,8 @@ redis==6.2.0
 uvicorn[standard]==0.23.2
 gunicorn==23.0.0
 
-# Supabase Integration (Optimized for compatibility)
-supabase==2.8.0
-
-# Supabase Dependencies (Compatible versions for 2.8.0)
-httpx>=0.24.0,<0.26.0
-postgrest>=1.0.0,<1.1.0
-realtime>=2.0.0,<2.1.0
-storage3>=0.7.0,<0.8.0
+# Supabase Integration (Stable version with minimal dependencies)
+supabase==2.3.4
 
 # HTTP Libraries
 requests==2.32.3
