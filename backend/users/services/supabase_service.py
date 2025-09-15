@@ -55,32 +55,40 @@ class SupabaseStorage:
                 logger.info("Supabase storage devre dışı (USE_SUPABASE_STORAGE=false)")
                 return
             
-            # Supabase client oluştur - CLIENT_CLASS parametresi olmadan
-            self.client = create_client(self.supabase_url, self.supabase_key)
-            logger.info("Supabase istemcisi başarıyla oluşturuldu")
-            
-            # Bucket'ları kontrol et
-            if self.client:
-                buckets = [b.name for b in self.client.storage.list_buckets()]
-                required_buckets = [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket, self.posts_bucket]
+            # Supabase client oluştur - daha güvenli parametrelerle
+            try:
+                # Sadece temel parametrelerle client oluştur
+                self.client = create_client(
+                    supabase_url=self.supabase_url,
+                    supabase_key=self.supabase_key
+                )
+                logger.info("Supabase istemcisi başarıyla oluşturuldu")
                 
-                missing_buckets = [bucket for bucket in required_buckets if bucket not in buckets]
-                if missing_buckets:
-                    logger.warning(f"Eksik bucket'lar: {missing_buckets}")
-                    # Kritik bucket'lar eksikse Supabase'i devre dışı bırak
-                    if self.profile_bucket in missing_buckets:
-                        logger.error("Profil bucket'ı eksik, Supabase devre dışı")
-                        self.client = None
-                        return
-                else:
-                    logger.info(f"Tüm bucket'lar mevcut: {required_buckets}")
-                    self.is_available = True
-
-        except Exception as e:
-            logger.error(f"Supabase istemcisi oluşturulamadı: {str(e)}")
-            logger.error(f"Hata türü: {type(e).__name__}")
-            self.client = None
-            self.is_available = False
+                # Bucket'ları kontrol et
+                if self.client:
+                    buckets = [b.name for b in self.client.storage.list_buckets()]
+                    required_buckets = [self.profile_bucket, self.cover_bucket, self.events_bucket, self.groups_bucket, self.posts_bucket]
+                    
+                    missing_buckets = [bucket for bucket in required_buckets if bucket not in buckets]
+                    if missing_buckets:
+                        logger.warning(f"Eksik bucket'lar: {missing_buckets}")
+                        # Kritik bucket'lar eksikse Supabase'i devre dışı bırak
+                        if self.profile_bucket in missing_buckets:
+                            logger.error("Profil bucket'ı eksik, Supabase devre dışı")
+                            self.client = None
+                            return
+                    else:
+                        logger.info(f"Tüm bucket'lar mevcut: {required_buckets}")
+                        self.is_available = True
+                        
+            except Exception as client_error:
+                logger.error(f"Supabase client oluşturma hatası: {str(client_error)}")
+                logger.error(f"Hata detayı: {type(client_error).__name__}")
+                # Proxy hatası kontrolü
+                if "proxy" in str(client_error).lower():
+                    logger.error("Proxy parametresi hatası tespit edildi - Supabase kütüphanesi proxy desteklemiyor")
+                self.client = None
+                return
 
     def _is_available(self):
         """Supabase'in kullanılabilir olup olmadığını kontrol et"""

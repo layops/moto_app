@@ -48,15 +48,24 @@ class SupabaseAuthService:
                 logger.warning("SUPABASE_ANON_KEY bulunamadı, auth servisi devre dışı")
                 return
             
-            # Supabase client oluştur (anon key ile) - CLIENT_CLASS parametresi olmadan
-            self.client = create_client(self.supabase_url, self.supabase_anon_key)
-            logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
-            self.is_available = True
-
-        except Exception as e:
-            logger.error(f"Supabase Auth istemcisi oluşturulamadı: {str(e)}")
-            self.client = None
-            self.is_available = False
+            # Supabase client oluştur - daha güvenli parametrelerle
+            try:
+                # Sadece temel parametrelerle client oluştur
+                self.client = create_client(
+                    supabase_url=self.supabase_url,
+                    supabase_key=self.supabase_anon_key
+                )
+                logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
+                self.is_available = True
+                
+            except Exception as client_error:
+                logger.error(f"Supabase Auth client oluşturma hatası: {str(client_error)}")
+                logger.error(f"Hata detayı: {type(client_error).__name__}")
+                # Proxy hatası kontrolü
+                if "proxy" in str(client_error).lower():
+                    logger.error("Proxy parametresi hatası tespit edildi - Supabase kütüphanesi proxy desteklemiyor")
+                self.client = None
+                return
 
     def _is_available(self):
         """Supabase Auth'un kullanılabilir olup olmadığını kontrol et"""
