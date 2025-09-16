@@ -44,29 +44,19 @@ class GoogleOAuthService:
             if not self.is_available:
                 raise Exception("Google OAuth servisi kullanılamıyor - credentials eksik")
             
-            # PKCE parametrelerini oluştur
-            code_verifier, code_challenge = self._generate_pkce_pair()
+            # PKCE'yi geçici olarak devre dışı bırak - worker isolation sorunu nedeniyle
+            # code_verifier, code_challenge = self._generate_pkce_pair()
             
             # State parametresi oluştur
             state = base64.urlsafe_b64encode(secrets.token_bytes(16)).decode('utf-8').rstrip('=')
             
-            # Code verifier'ı cache'de sakla (5 dakika) - Redis bağlantı sorunları için try-catch
-            try:
-                cache.set(f"google_pkce_verifier_{state}", code_verifier, 300)
-                logger.info(f"Code verifier cached successfully: {code_verifier[:10]}...")
-            except Exception as cache_error:
-                logger.warning(f"Cache set error (non-critical): {cache_error}")
-                # Cache hatası kritik değil, devam et
-            
-            # OAuth parametreleri
+            # OAuth parametreleri (PKCE olmadan)
             params = {
                 'client_id': self.client_id,
                 'redirect_uri': self.redirect_uri,
                 'scope': 'openid email profile',
                 'response_type': 'code',
                 'state': state,
-                'code_challenge': code_challenge,
-                'code_challenge_method': 'S256',
                 'access_type': 'offline',
                 'prompt': 'consent'
             }
@@ -99,19 +89,8 @@ class GoogleOAuthService:
             if not self.is_available:
                 raise Exception("Google OAuth servisi kullanılamıyor - credentials eksik")
             
-            # State'den code_verifier'ı al - Redis bağlantı sorunları için try-catch
+            # PKCE'yi geçici olarak devre dışı bırak - worker isolation sorunu nedeniyle
             code_verifier = None
-            if state:
-                try:
-                    code_verifier = cache.get(f"google_pkce_verifier_{state}")
-                    if code_verifier:
-                        logger.info(f"Code verifier retrieved successfully: {code_verifier[:10]}...")
-                        cache.delete(f"google_pkce_verifier_{state}")
-                    else:
-                        logger.warning(f"Code verifier not found for state: {state}")
-                except Exception as cache_error:
-                    logger.warning(f"Cache get/delete error (non-critical): {cache_error}")
-                    # Cache hatası kritik değil, devam et
             
             # Access token al - code'u URL decode et
             decoded_code = unquote(code)
