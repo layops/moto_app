@@ -148,12 +148,12 @@ class GoogleAuthView(APIView):
     def get(self, request):
         """Google OAuth URL'i döndür (PKCE ile)"""
         try:
-            from .services.supabase_auth_service import SupabaseAuthService
+            from .services.google_oauth_service import GoogleOAuthService
             
-            supabase_auth = SupabaseAuthService()
+            google_auth = GoogleOAuthService()
             redirect_to = request.query_params.get('redirect_to')
             
-            result = supabase_auth.get_google_auth_url(redirect_to)
+            result = google_auth.get_auth_url(redirect_to)
             
             if result['success']:
                 return Response({
@@ -162,23 +162,14 @@ class GoogleAuthView(APIView):
                     'message': 'Google OAuth URL oluşturuldu'
                 }, status=status.HTTP_200_OK)
             else:
-                # Supabase kullanılamıyorsa, Google OAuth'u devre dışı bırak
                 return Response({
                     'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
-                    'supabase_available': False,
                     'message': 'Lütfen normal email/şifre ile giriş yapın'
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
                 
-        except ImportError:
-            return Response({
-                'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
-                'supabase_available': False,
-                'message': 'Lütfen normal email/şifre ile giriş yapın'
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             return Response({
                 'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
-                'supabase_available': False,
                 'message': 'Lütfen normal email/şifre ile giriş yapın'
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
@@ -188,47 +179,19 @@ class GoogleCallbackView(APIView):
     def get(self, request):
         """Google OAuth callback'i işle (PKCE ile)"""
         code = request.query_params.get('code')
-        code_verifier = request.query_params.get('code_verifier')
         state = request.query_params.get('state')
         
         if not code:
             return Response({'error': 'Authorization code bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Code verifier artık state'den alınacak, bu kontrolü kaldır
-        
         try:
-            from .services.supabase_auth_service import SupabaseAuthService
+            from .services.google_oauth_service import GoogleOAuthService
             
-            supabase_auth = SupabaseAuthService()
-            result = supabase_auth.handle_oauth_callback(code, state)
+            google_auth = GoogleOAuthService()
+            result = google_auth.handle_callback(code, state)
             
             if result['success']:
-                # Local user'ı oluştur veya güncelle
-                supabase_user = result['user']
-                email = supabase_user.email
-                
-                try:
-                    # Mevcut kullanıcıyı bul
-                    user = User.objects.get(email=email)
-                    user.email_verified = True
-                    user.save()
-                except User.DoesNotExist:
-                    # Yeni kullanıcı oluştur
-                    username = email.split('@')[0]  # Email'den username oluştur
-                    # Username benzersizliğini kontrol et
-                    counter = 1
-                    original_username = username
-                    while User.objects.filter(username=username).exists():
-                        username = f"{original_username}_{counter}"
-                        counter += 1
-                    
-                    user = User.objects.create_user(
-                        username=username,
-                        email=email,
-                        email_verified=True,
-                        first_name=supabase_user.user_metadata.get('full_name', '').split(' ')[0] if supabase_user.user_metadata.get('full_name') else '',
-                        last_name=' '.join(supabase_user.user_metadata.get('full_name', '').split(' ')[1:]) if supabase_user.user_metadata.get('full_name') and len(supabase_user.user_metadata.get('full_name', '').split(' ')) > 1 else ''
-                    )
+                user = result['user']
                 
                 return Response({
                     'message': 'Google ile giriş başarılı!',
@@ -239,17 +202,10 @@ class GoogleCallbackView(APIView):
             else:
                 return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
                 
-        except ImportError:
-            return Response({
-                'error': 'Google OAuth servisi kullanılamıyor',
-                'supabase_available': False,
-                'message': 'Supabase servisi aktif değil'
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             return Response({
                 'error': f'Google OAuth callback hatası: {str(e)}',
-                'supabase_available': False,
-                'message': 'Supabase servisi aktif değil'
+                'message': 'Google OAuth servisi aktif değil'
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class VerifyTokenView(APIView):
@@ -262,28 +218,20 @@ class VerifyTokenView(APIView):
             return Response({'error': 'Access token gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            from .services.supabase_auth_service import SupabaseAuthService
+            from .services.google_oauth_service import GoogleOAuthService
             
-            supabase_auth = SupabaseAuthService()
-            result = supabase_auth.get_user_from_token(access_token)
+            google_auth = GoogleOAuthService()
+            result = google_auth.verify_token(access_token)
             
             if result['success']:
-                supabase_user = result['user']
-                email = supabase_user.email
-                
-                try:
-                    user = User.objects.get(email=email)
-                    return Response({
-                        'user': UserSerializer(user).data,
-                        'message': 'Token doğrulandı'
-                    }, status=status.HTTP_200_OK)
-                except User.DoesNotExist:
-                    return Response({'error': 'Kullanıcı bulunamadı'}, status=status.HTTP_404_NOT_FOUND)
+                user = result['user']
+                return Response({
+                    'user': UserSerializer(user).data,
+                    'message': 'Token doğrulandı'
+                }, status=status.HTTP_200_OK)
             else:
                 return Response({'error': result['error']}, status=status.HTTP_401_UNAUTHORIZED)
                 
-        except ImportError:
-            return Response({'error': 'Token doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'error': f'Token doğrulama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -293,33 +241,30 @@ class GoogleAuthTestView(APIView):
     def get(self, request):
         """Google OAuth test endpoint'i"""
         try:
-            from .services.supabase_auth_service import SupabaseAuthService
+            from .services.google_oauth_service import GoogleOAuthService
             
-            supabase_auth = SupabaseAuthService()
+            google_auth = GoogleOAuthService()
             
-            # Supabase bağlantısını test et
-            if not supabase_auth._is_available():
+            # Google OAuth servisini test et
+            if not google_auth.is_available:
                 return Response({
                     'status': 'error',
-                    'message': 'Supabase Auth servisi kullanılamıyor',
-                    'supabase_url': supabase_auth.supabase_url,
-                    'supabase_anon_key': '***' if supabase_auth.supabase_anon_key else 'YOK',
+                    'message': 'Google OAuth servisi kullanılamıyor',
                     'environment_check': {
-                        'SUPABASE_URL': bool(supabase_auth.supabase_url),
-                        'SUPABASE_ANON_KEY': bool(supabase_auth.supabase_anon_key),
-                        'SUPABASE_SERVICE_KEY': bool(supabase_auth.supabase_service_key),
+                        'GOOGLE_CLIENT_ID': bool(google_auth.client_id),
+                        'GOOGLE_CLIENT_SECRET': bool(google_auth.client_secret),
+                        'GOOGLE_REDIRECT_URI': bool(google_auth.redirect_uri),
                     }
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Google OAuth URL'i oluştur
-            result = supabase_auth.get_google_auth_url()
+            result = google_auth.get_auth_url()
             
             if result['success']:
                 return Response({
                     'status': 'success',
                     'message': 'Google OAuth entegrasyonu hazır!',
                     'auth_url': result['auth_url'],
-                    'supabase_url': supabase_auth.supabase_url,
                     'test_endpoints': {
                         'google_auth': '/api/users/auth/google/',
                         'callback': '/api/users/auth/callback/',
@@ -332,11 +277,6 @@ class GoogleAuthTestView(APIView):
                     'message': result['error']
                 }, status=status.HTTP_400_BAD_REQUEST)
                 
-        except ImportError:
-            return Response({
-                'status': 'error',
-                'message': 'Supabase modülü bulunamadı'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({
                 'status': 'error',
