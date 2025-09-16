@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 class GoogleOAuthService:
     def __init__(self):
-        self.client_id = os.environ.get('GOOGLE_CLIENT_ID')
-        self.client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
-        self.redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI', f'{settings.BASE_URL}/api/users/auth/callback/')
+        self.client_id = settings.GOOGLE_CLIENT_ID
+        self.client_secret = settings.GOOGLE_CLIENT_SECRET
+        self.redirect_uri = settings.GOOGLE_REDIRECT_URI
         
         # Google OAuth endpoints
         self.auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'

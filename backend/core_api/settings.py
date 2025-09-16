@@ -7,6 +7,11 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = 'https://spiride.onrender.com'
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', f'{BASE_URL}/api/users/auth/callback/')
 GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/users/auth/callback/')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
