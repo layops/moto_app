@@ -62,29 +62,24 @@ class DeepLinkService {
             return;
           }
           
-          // User data'yı güvenli şekilde al
-          Map<String, dynamic> userData;
-          if (data['user'] is Map<String, dynamic>) {
-            userData = data['user'] as Map<String, dynamic>;
+          // Backend'den gelen JSON response'u işle
+          if (data['success'] == true && data['user'] != null) {
+            final userData = data['user'] as Map<String, dynamic>;
+            
+            // Token'ları kaydet ve kullanıcıyı giriş yap
+            await authService.loginWithGoogle(
+              data['access_token']?.toString() ?? '',
+              data['refresh_token']?.toString() ?? '',
+              userData,
+            );
+            
+            // Ana sayfaya yönlendir
+            _navigateToHome();
           } else {
-            // Fallback user data
-            userData = {
-              'username': 'google_user_${DateTime.now().millisecondsSinceEpoch}',
-              'email': 'user@google.com',
-              'first_name': 'Google',
-              'last_name': 'User'
-            };
+            // Hata durumu
+            final errorMessage = data['error']?.toString() ?? 'Google giriş başarısız';
+            _showError(errorMessage);
           }
-          
-          // Token'ları kaydet ve kullanıcıyı giriş yap
-          await authService.loginWithGoogle(
-            data['access_token']?.toString() ?? '',
-            data['refresh_token']?.toString() ?? '',
-            userData,
-          );
-          
-          // Ana sayfaya yönlendir
-          _navigateToHome();
         } else {
           _showError('Google giriş başarısız: ${response.data?['error'] ?? 'Bilinmeyen hata'}');
         }

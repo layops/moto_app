@@ -155,40 +155,16 @@ class GoogleCallbackView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Google OAuth callback'i işle (PKCE ile) - Flutter için HTML sayfası döndür"""
+        """Google OAuth callback'i işle - JSON API response döndür"""
         code = request.query_params.get('code')
         state = request.query_params.get('state')
         
         if not code:
-            # Hata durumu için HTML sayfası
-            error_html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Google OAuth Hatası</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                    .error { color: #d32f2f; }
-                    .url-box { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }
-                </style>
-            </head>
-            <body>
-                <h1 class="error">Google OAuth Hatası</h1>
-                <p>Authorization code bulunamadı.</p>
-                <div class="url-box">
-                    <strong>Mevcut URL:</strong><br>
-                    <span id="currentUrl"></span>
-                </div>
-                <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
-                <script>
-                    document.getElementById('currentUrl').textContent = window.location.href;
-                </script>
-            </body>
-            </html>
-            """
-            return HttpResponse(error_html, content_type='text/html')
+            return Response({
+                'success': False,
+                'error': 'Authorization code bulunamadı',
+                'message': 'Geçersiz callback URL'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             from .services.google_oauth_service import GoogleOAuthService
@@ -199,128 +175,37 @@ class GoogleCallbackView(APIView):
             if result['success']:
                 user = result['user']
                 
-                # Başarılı callback için HTML sayfası
-                success_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Google OAuth Başarılı</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                        .success {{ color: #2e7d32; }}
-                        .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
-                        .user-info {{ background: #e8f5e8; padding: 15px; margin: 20px 0; border-radius: 8px; }}
-                        .copy-btn {{ background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }}
-                        .copy-btn:hover {{ background: #1565c0; }}
-                    </style>
-                </head>
-                <body>
-                    <h1 class="success">✅ Google ile Giriş Başarılı!</h1>
-                    <div class="user-info">
-                        <h3>Hoş geldiniz, {user.get_full_name() or user.username}!</h3>
-                        <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>Kullanıcı Adı:</strong> {user.username}</p>
-                    </div>
-                    
-                    <h3>Flutter Uygulamasına Otomatik Yönlendirme:</h3>
-                    <p>Flutter uygulamanıza otomatik olarak yönlendiriliyorsunuz...</p>
-                    <div class="url-box">
-                        <span id="callbackUrl"></span>
-                        <br><br>
-                        <button class="copy-btn" onclick="openFlutterApp()">Flutter Uygulamasını Aç</button>
-                    </div>
-                    
-                    <p><strong>Not:</strong> Eğer otomatik yönlendirme çalışmazsa, yukarıdaki butona tıklayın.</p>
-                    
-                    <script>
-                        document.getElementById('callbackUrl').textContent = window.location.href;
-                        
-                        // Otomatik Flutter uygulamasına yönlendirme
-                        function openFlutterApp() {{
-                            const currentUrl = window.location.href;
-                            const flutterUrl = 'motoapp://oauth/callback?url=' + encodeURIComponent(currentUrl);
-                            
-                            // Flutter uygulamasını açmayı dene
-                            window.location.href = flutterUrl;
-                            
-                            // Fallback: 3 saniye sonra kullanıcıyı bilgilendir
-                            setTimeout(function() {{
-                                alert('Flutter uygulaması açılmadı. Lütfen uygulamayı manuel olarak açın.');
-                            }}, 3000);
-                        }}
-                        
-                        // Sayfa yüklendiğinde otomatik yönlendirme
-                        window.onload = function() {{
-                            setTimeout(openFlutterApp, 2000); // 2 saniye sonra otomatik yönlendir
-                        }};
-                    </script>
-                </body>
-                </html>
-                """
-                return HttpResponse(success_html, content_type='text/html')
+                # Başarılı callback için JSON response
+                return Response({
+                    'success': True,
+                    'message': 'Google OAuth giriş başarılı',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'profile_picture': user.profile_picture,
+                        'email_verified': user.email_verified,
+                    },
+                    'access_token': result.get('access_token'),
+                    'refresh_token': result.get('refresh_token'),
+                }, status=status.HTTP_200_OK)
             else:
-                # Hata durumu için HTML sayfası
-                error_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Google OAuth Hatası</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                        .error {{ color: #d32f2f; }}
-                        .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
-                    </style>
-                </head>
-                <body>
-                    <h1 class="error">Google OAuth Hatası</h1>
-                    <p><strong>Hata:</strong> {result['error']}</p>
-                    <div class="url-box">
-                        <strong>Mevcut URL:</strong><br>
-                        <span id="currentUrl"></span>
-                    </div>
-                    <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
-                    <script>
-                        document.getElementById('currentUrl').textContent = window.location.href;
-                    </script>
-                </body>
-                </html>
-                """
-                return HttpResponse(error_html, content_type='text/html')
+                # Hata durumu için JSON response
+                return Response({
+                    'success': False,
+                    'error': result.get('error', 'Google OAuth callback hatası'),
+                    'message': 'Google ile giriş başarısız'
+                }, status=status.HTTP_400_BAD_REQUEST)
                 
         except Exception as e:
-            # Hata durumu için HTML sayfası
-            error_html = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Google OAuth Hatası</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                    .error {{ color: #d32f2f; }}
-                    .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
-                </style>
-            </head>
-            <body>
-                <h1 class="error">Google OAuth Hatası</h1>
-                <p><strong>Hata:</strong> {str(e)}</p>
-                <div class="url-box">
-                    <strong>Mevcut URL:</strong><br>
-                    <span id="currentUrl"></span>
-                </div>
-                <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
-                <script>
-                    document.getElementById('currentUrl').textContent = window.location.href;
-                </script>
-            </body>
-            </html>
-            """
-            return HttpResponse(error_html, content_type='text/html')
+            # Exception durumu için JSON response
+            return Response({
+                'success': False,
+                'error': f'Google OAuth callback hatası: {str(e)}',
+                'message': 'Google ile giriş sırasında beklenmeyen hata oluştu'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class VerifyTokenView(APIView):
     permission_classes = [AllowAny]

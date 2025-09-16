@@ -161,50 +161,47 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           print('Google OAuth response data: $data');
           print('Data type: ${data.runtimeType}');
           
-          // User data'yı güvenli şekilde al
-          Map<String, dynamic> userData;
-          if (data['user'] is Map<String, dynamic>) {
-            userData = data['user'] as Map<String, dynamic>;
-          } else {
-            // Fallback user data
-            userData = {
-              'username': 'google_user_${DateTime.now().millisecondsSinceEpoch}',
-              'email': 'user@google.com',
-              'first_name': 'Google',
-              'last_name': 'User'
-            };
-          }
-          
-          // Token'ları kaydet
-          await widget.authService.loginWithGoogle(
-            data['access_token']?.toString() ?? '',
-            data['refresh_token']?.toString() ?? '',
-            userData,
-          );
-          
-          // Ana sayfaya yönlendir
-          if (mounted) {
-            Navigator.pop(context); // Dialog'u kapat
+          // Backend'den gelen JSON response'u işle
+          if (data['success'] == true && data['user'] != null) {
+            final userData = data['user'] as Map<String, dynamic>;
             
-            final pages = [
-              const HomePage(),
-              const MapPage(allowSelection: true),
-              const GroupsPage(),
-              const EventsPage(),
-              const MessagesPage(),
-              ProfilePage(username: userData['username']?.toString() ?? 'google_user'),
-            ];
-
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MainWrapperNew(
-                  pages: pages,
-                  navItems: NavigationItems.items,
-                ),
-              ),
-              (route) => false,
+            // Token'ları kaydet
+            await widget.authService.loginWithGoogle(
+              data['access_token']?.toString() ?? '',
+              data['refresh_token']?.toString() ?? '',
+              userData,
             );
+            
+            // Ana sayfaya yönlendir
+            if (mounted) {
+              Navigator.pop(context); // Dialog'u kapat
+              
+              final pages = [
+                const HomePage(),
+                const MapPage(allowSelection: true),
+                const GroupsPage(),
+                const EventsPage(),
+                const MessagesPage(),
+                ProfilePage(username: userData['username']?.toString() ?? 'google_user'),
+              ];
+
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MainWrapperNew(
+                    pages: pages,
+                    navItems: NavigationItems.items,
+                  ),
+                ),
+                (route) => false,
+              );
+            }
+          } else {
+            // Hata durumu
+            if (mounted) {
+              final errorMessage = data['error']?.toString() ?? 'Google giriş başarısız';
+              AuthCommon.showErrorSnackbar(context, errorMessage);
+            }
           }
         } else {
           if (mounted) {

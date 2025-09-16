@@ -326,6 +326,7 @@ class AuthService {
         return Response(
           data: {'message': 'Callback already processed', 'cached': true},
           statusCode: 200,
+          requestOptions: RequestOptions(path: 'users/auth/callback/'),
         );
       }
       
