@@ -20,7 +20,7 @@ uvicorn[standard]==0.23.2
 gunicorn==23.0.0
 
 # Supabase Integration (Stable version with minimal dependencies)
-supabase==2.3.4
+supabase==1.0.4
 
 # HTTP Libraries
 requests==2.32.3
