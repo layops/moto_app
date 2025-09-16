@@ -5,6 +5,7 @@ import base64
 import hashlib
 import requests
 import logging
+from urllib.parse import unquote
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
@@ -108,11 +109,15 @@ class GoogleOAuthService:
                     logger.warning(f"Cache get/delete error (non-critical): {cache_error}")
                     # Cache hatası kritik değil, devam et
             
-            # Access token al
+            # Access token al - code'u URL decode et
+            decoded_code = unquote(code)
+            logger.info(f"Original code: {code}")
+            logger.info(f"Decoded code: {decoded_code}")
+            
             token_data = {
                 'client_id': self.client_id,
                 'client_secret': self.client_secret,
-                'code': code,
+                'code': decoded_code,
                 'grant_type': 'authorization_code',
                 'redirect_uri': self.redirect_uri,
             }
@@ -121,8 +126,14 @@ class GoogleOAuthService:
                 token_data['code_verifier'] = code_verifier
             
             # Token request
+            logger.info(f"Token request data: {token_data}")
             token_response = requests.post(self.token_url, data=token_data, timeout=30)
-            token_response.raise_for_status()
+            
+            if token_response.status_code != 200:
+                logger.error(f"Token request failed: {token_response.status_code}")
+                logger.error(f"Response text: {token_response.text}")
+                token_response.raise_for_status()
+            
             token_info = token_response.json()
             
             access_token = token_info.get('access_token')
