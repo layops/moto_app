@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, UserSerializer,
     FollowSerializer
@@ -154,12 +155,40 @@ class GoogleCallbackView(APIView):
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Google OAuth callback'i işle (PKCE ile)"""
+        """Google OAuth callback'i işle (PKCE ile) - Flutter için HTML sayfası döndür"""
         code = request.query_params.get('code')
         state = request.query_params.get('state')
         
         if not code:
-            return Response({'error': 'Authorization code bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
+            # Hata durumu için HTML sayfası
+            error_html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Google OAuth Hatası</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    .error { color: #d32f2f; }
+                    .url-box { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }
+                </style>
+            </head>
+            <body>
+                <h1 class="error">Google OAuth Hatası</h1>
+                <p>Authorization code bulunamadı.</p>
+                <div class="url-box">
+                    <strong>Mevcut URL:</strong><br>
+                    <span id="currentUrl"></span>
+                </div>
+                <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
+                <script>
+                    document.getElementById('currentUrl').textContent = window.location.href;
+                </script>
+            </body>
+            </html>
+            """
+            return HttpResponse(error_html, content_type='text/html')
         
         try:
             from .services.google_oauth_service import GoogleOAuthService
@@ -170,20 +199,115 @@ class GoogleCallbackView(APIView):
             if result['success']:
                 user = result['user']
                 
-                return Response({
-                    'message': 'Google ile giriş başarılı!',
-                    'user': UserSerializer(user).data,
-                    'access_token': result['access_token'],
-                    'refresh_token': result['refresh_token']
-                }, status=status.HTTP_200_OK)
+                # Başarılı callback için HTML sayfası
+                success_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Google OAuth Başarılı</title>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                        .success {{ color: #2e7d32; }}
+                        .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
+                        .user-info {{ background: #e8f5e8; padding: 15px; margin: 20px 0; border-radius: 8px; }}
+                        .copy-btn {{ background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }}
+                        .copy-btn:hover {{ background: #1565c0; }}
+                    </style>
+                </head>
+                <body>
+                    <h1 class="success">✅ Google ile Giriş Başarılı!</h1>
+                    <div class="user-info">
+                        <h3>Hoş geldiniz, {user.get_full_name() or user.username}!</h3>
+                        <p><strong>Email:</strong> {user.email}</p>
+                        <p><strong>Kullanıcı Adı:</strong> {user.username}</p>
+                    </div>
+                    
+                    <h3>Flutter Uygulamasına Dönmek İçin:</h3>
+                    <p>Bu URL'yi Flutter uygulamanızda "Callback URL" alanına yapıştırın:</p>
+                    <div class="url-box">
+                        <span id="callbackUrl"></span>
+                        <br><br>
+                        <button class="copy-btn" onclick="copyToClipboard()">URL'yi Kopyala</button>
+                    </div>
+                    
+                    <p><strong>Not:</strong> Bu URL'yi kopyaladıktan sonra Flutter uygulamanıza geri dönün ve "Callback URL" alanına yapıştırın.</p>
+                    
+                    <script>
+                        document.getElementById('callbackUrl').textContent = window.location.href;
+                        
+                        function copyToClipboard() {{
+                            navigator.clipboard.writeText(window.location.href).then(function() {{
+                                alert('URL kopyalandı! Flutter uygulamanıza geri dönün.');
+                            }});
+                        }}
+                    </script>
+                </body>
+                </html>
+                """
+                return HttpResponse(success_html, content_type='text/html')
             else:
-                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
+                # Hata durumu için HTML sayfası
+                error_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Google OAuth Hatası</title>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <style>
+                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                        .error {{ color: #d32f2f; }}
+                        .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
+                    </style>
+                </head>
+                <body>
+                    <h1 class="error">Google OAuth Hatası</h1>
+                    <p><strong>Hata:</strong> {result['error']}</p>
+                    <div class="url-box">
+                        <strong>Mevcut URL:</strong><br>
+                        <span id="currentUrl"></span>
+                    </div>
+                    <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
+                    <script>
+                        document.getElementById('currentUrl').textContent = window.location.href;
+                    </script>
+                </body>
+                </html>
+                """
+                return HttpResponse(error_html, content_type='text/html')
                 
         except Exception as e:
-            return Response({
-                'error': f'Google OAuth callback hatası: {str(e)}',
-                'message': 'Google OAuth servisi aktif değil'
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            # Hata durumu için HTML sayfası
+            error_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Google OAuth Hatası</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                    .error {{ color: #d32f2f; }}
+                    .url-box {{ background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; word-break: break-all; }}
+                </style>
+            </head>
+            <body>
+                <h1 class="error">Google OAuth Hatası</h1>
+                <p><strong>Hata:</strong> {str(e)}</p>
+                <div class="url-box">
+                    <strong>Mevcut URL:</strong><br>
+                    <span id="currentUrl"></span>
+                </div>
+                <p>Lütfen Flutter uygulamasında bu URL'yi girin.</p>
+                <script>
+                    document.getElementById('currentUrl').textContent = window.location.href;
+                </script>
+            </body>
+            </html>
+            """
+            return HttpResponse(error_html, content_type='text/html')
 
 class VerifyTokenView(APIView):
     permission_classes = [AllowAny]
