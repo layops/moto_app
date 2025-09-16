@@ -55,17 +55,46 @@ class SupabaseStorage:
                 logger.info("Supabase storage devre dışı (USE_SUPABASE_STORAGE=false)")
                 return
             
-            # Supabase client oluştur - minimal parametrelerle
+            # Supabase client oluştur - proxy parametresi olmadan
             try:
-                # Proxy environment variable'larını kontrol et
+                # Tüm proxy environment variable'larını geçici olarak temizle
                 proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy']
-                for var in proxy_vars:
-                    if os.environ.get(var):
-                        logger.warning(f"Proxy environment variable tespit edildi: {var}={os.environ.get(var)}")
+                original_proxy_values = {}
                 
-                # En minimal şekilde client oluştur
-                self.client = create_client(self.supabase_url, self.supabase_key)
-                logger.info("Supabase istemcisi başarıyla oluşturuldu")
+                # Environment'ı temizle
+                for var in proxy_vars:
+                    if var in os.environ:
+                        original_proxy_values[var] = os.environ[var]
+                        del os.environ[var]
+                        logger.info(f"Proxy environment variable temizlendi: {var}")
+                
+                # Diğer potansiyel proxy ayarlarını da temizle
+                additional_proxy_vars = ['ALL_PROXY', 'all_proxy', 'FTP_PROXY', 'ftp_proxy']
+                for var in additional_proxy_vars:
+                    if var in os.environ:
+                        original_proxy_values[var] = os.environ[var]
+                        del os.environ[var]
+                        logger.info(f"Ek proxy environment variable temizlendi: {var}")
+                
+                try:
+                    # Supabase client'ı minimal parametrelerle oluştur
+                    logger.info(f"Supabase storage client oluşturuluyor - URL: {self.supabase_url}")
+                    logger.info(f"Supabase storage client oluşturuluyor - Key: {'***' if self.supabase_key else 'YOK'}")
+                    
+                    # create_client fonksiyonunu doğrudan çağır
+                    self.client = create_client(self.supabase_url, self.supabase_key)
+                    logger.info("Supabase storage istemcisi başarıyla oluşturuldu")
+                    
+                except Exception as create_error:
+                    logger.error(f"Supabase storage client oluşturma hatası: {str(create_error)}")
+                    logger.error(f"Hata türü: {type(create_error).__name__}")
+                    raise create_error
+                    
+                finally:
+                    # Proxy environment variable'larını geri yükle
+                    for var, value in original_proxy_values.items():
+                        os.environ[var] = value
+                        logger.info(f"Proxy environment variable geri yüklendi: {var}")
                 
                 # Bucket'ları kontrol et
                 if self.client:
