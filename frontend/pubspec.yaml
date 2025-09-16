@@ -54,6 +54,9 @@ dependencies:
   cached_network_image: ^3.3.0
   http_parser: ^4.0.2
   
+  # Deep Link
+  app_links: ^6.3.2
+  
   # Supabase
   supabase_flutter: ^2.3.4
   

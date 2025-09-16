@@ -224,24 +224,37 @@ class GoogleCallbackView(APIView):
                         <p><strong>Kullanıcı Adı:</strong> {user.username}</p>
                     </div>
                     
-                    <h3>Flutter Uygulamasına Dönmek İçin:</h3>
-                    <p>Bu URL'yi Flutter uygulamanızda "Callback URL" alanına yapıştırın:</p>
+                    <h3>Flutter Uygulamasına Otomatik Yönlendirme:</h3>
+                    <p>Flutter uygulamanıza otomatik olarak yönlendiriliyorsunuz...</p>
                     <div class="url-box">
                         <span id="callbackUrl"></span>
                         <br><br>
-                        <button class="copy-btn" onclick="copyToClipboard()">URL'yi Kopyala</button>
+                        <button class="copy-btn" onclick="openFlutterApp()">Flutter Uygulamasını Aç</button>
                     </div>
                     
-                    <p><strong>Not:</strong> Bu URL'yi kopyaladıktan sonra Flutter uygulamanıza geri dönün ve "Callback URL" alanına yapıştırın.</p>
+                    <p><strong>Not:</strong> Eğer otomatik yönlendirme çalışmazsa, yukarıdaki butona tıklayın.</p>
                     
                     <script>
                         document.getElementById('callbackUrl').textContent = window.location.href;
                         
-                        function copyToClipboard() {{
-                            navigator.clipboard.writeText(window.location.href).then(function() {{
-                                alert('URL kopyalandı! Flutter uygulamanıza geri dönün.');
-                            }});
+                        // Otomatik Flutter uygulamasına yönlendirme
+                        function openFlutterApp() {{
+                            const currentUrl = window.location.href;
+                            const flutterUrl = 'motoapp://oauth/callback?url=' + encodeURIComponent(currentUrl);
+                            
+                            // Flutter uygulamasını açmayı dene
+                            window.location.href = flutterUrl;
+                            
+                            // Fallback: 3 saniye sonra kullanıcıyı bilgilendir
+                            setTimeout(function() {{
+                                alert('Flutter uygulaması açılmadı. Lütfen uygulamayı manuel olarak açın.');
+                            }}, 3000);
                         }}
+                        
+                        // Sayfa yüklendiğinde otomatik yönlendirme
+                        window.onload = function() {{
+                            setTimeout(openFlutterApp, 2000); // 2 saniye sonra otomatik yönlendir
+                        }};
                     </script>
                 </body>
                 </html>

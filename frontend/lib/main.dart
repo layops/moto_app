@@ -21,6 +21,7 @@ import 'package:motoapp_frontend/views/event/events_page.dart';
 import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 import 'package:motoapp_frontend/views/notifications/notifications_page.dart';
+import 'package:motoapp_frontend/services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,9 @@ void main() async {
     
     await ServiceLocator.init();
     await ServiceLocator.auth.initializeAuthState();
+    
+    // Deep link service'i initialize et
+    DeepLinkService.initialize();
 
     runApp(
       MultiProvider(
