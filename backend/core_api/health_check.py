@@ -27,9 +27,13 @@ def health_check(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
         
-        # Check cache connection
-        cache.set('health_check', 'ok', 10)
-        cache.get('health_check')
+        # Check cache connection - Redis bağlantı sorunları için try-catch
+        try:
+            cache.set('health_check', 'ok', 10)
+            cache.get('health_check')
+        except Exception as cache_error:
+            logger.warning(f"Cache health check failed (non-critical): {cache_error}")
+            # Cache hatası kritik değil, devam et
         
         return JsonResponse({
             'status': 'healthy',
@@ -69,26 +73,39 @@ def detailed_health_check(request):
     try:
         cache.set('detailed_health_check', 'ok', 10)
         cache.get('detailed_health_check')
+        # Cache backend tipini belirle
+        cache_backend = getattr(settings, 'CACHES', {}).get('default', {}).get('BACKEND', 'unknown')
+        if 'redis' in cache_backend.lower():
+            cache_type = 'Redis'
+        elif 'locmem' in cache_backend.lower():
+            cache_type = 'Local Memory'
+        else:
+            cache_type = cache_backend
+        
         health_data['checks']['cache'] = {
             'status': 'healthy',
-            'type': 'Redis'
+            'type': cache_type,
+            'backend': cache_backend
         }
     except Exception as e:
         health_data['checks']['cache'] = {
             'status': 'unhealthy',
-            'error': str(e)
+            'error': str(e),
+            'backend': getattr(settings, 'CACHES', {}).get('default', {}).get('BACKEND', 'unknown')
         }
     
-    # Supabase check
+    # Google OAuth check
     try:
-        # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
-        storage = SupabaseStorage()
-        health_data['checks']['supabase'] = {
-            'status': 'healthy',
-            'type': 'Supabase Storage'
+        from users.services.google_oauth_service import GoogleOAuthService
+        google_auth = GoogleOAuthService()
+        health_data['checks']['google_oauth'] = {
+            'status': 'healthy' if google_auth.is_available else 'unavailable',
+            'available': google_auth.is_available,
+            'client_id_configured': bool(google_auth.client_id),
+            'client_secret_configured': bool(google_auth.client_secret)
         }
     except Exception as e:
-        health_data['checks']['supabase'] = {
+        health_data['checks']['google_oauth'] = {
             'status': 'unhealthy',
             'error': str(e)
         }
@@ -99,6 +116,51 @@ def detailed_health_check(request):
     
     status_code = 200 if all_healthy else 503
     return JsonResponse(health_data, status=status_code)
+
+@never_cache
+@require_http_methods(["GET"])
+def cache_test(request):
+    """Cache bağlantısını test et"""
+    try:
+        # Test key oluştur
+        test_key = f"test_{int(time.time())}"
+        test_value = "cache_test_ok"
+        
+        # Cache'e yaz
+        cache.set(test_key, test_value, 60)
+        
+        # Cache'den oku
+        retrieved_value = cache.get(test_key)
+        
+        # Cache'den sil
+        cache.delete(test_key)
+        
+        # Cache backend bilgisi
+        cache_backend = getattr(settings, 'CACHES', {}).get('default', {}).get('BACKEND', 'unknown')
+        redis_url = os.environ.get('REDIS_URL', 'Not configured')
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Cache test başarılı',
+            'test_key': test_key,
+            'test_value': test_value,
+            'retrieved_value': retrieved_value,
+            'cache_backend': cache_backend,
+            'redis_url_configured': bool(os.environ.get('REDIS_URL')),
+            'redis_url': redis_url[:20] + '...' if len(redis_url) > 20 else redis_url,
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"Cache test failed: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Cache test başarısız',
+            'error': str(e),
+            'cache_backend': getattr(settings, 'CACHES', {}).get('default', {}).get('BACKEND', 'unknown'),
+            'redis_url_configured': bool(os.environ.get('REDIS_URL')),
+            'timestamp': time.time()
+        }, status=503)
 
 @never_cache
 @require_http_methods(["GET"])

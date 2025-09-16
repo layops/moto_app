@@ -224,17 +224,43 @@ CHANNEL_LAYERS = {
 
 
 # Caching Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
-        'OPTIONS': {
-            # CLIENT_CLASS parametresi kaldırıldı - Django Redis'in yeni sürümünde gerekli değil
-        },
-        'KEY_PREFIX': 'motoapp',
-        'TIMEOUT': 300,  # 5 minutes default
+# Redis URL kontrolü - Render.com'da Redis olmayabilir
+REDIS_URL = os.environ.get('REDIS_URL')
+
+if REDIS_URL:
+    # Redis mevcut ise Redis cache kullan
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                    'socket_connect_timeout': 5,
+                    'socket_timeout': 5,
+                }
+            },
+            'KEY_PREFIX': 'motoapp',
+            'TIMEOUT': 300,  # 5 minutes default
+        }
     }
-}
+    print("✅ Redis cache configured")
+else:
+    # Redis yoksa local memory cache kullan (Render.com için fallback)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+                'CULL_FREQUENCY': 3,
+            },
+            'KEY_PREFIX': 'motoapp',
+            'TIMEOUT': 300,  # 5 minutes default
+        }
+    }
+    print("⚠️ Redis not available, using local memory cache")
 
 # Cache timeout settings
 CACHE_TIMEOUTS = {

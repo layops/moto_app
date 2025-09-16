@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView,
 )
 from .views import api_root, get_csrf_token
-from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status, jwt_debug
+from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status, jwt_debug, cache_test
 
 # Swagger / Redoc için
 schema_view = get_schema_view(
@@ -76,6 +76,7 @@ urlpatterns = [
     # Health check endpoints
     path('health/', health_check, name='health-check'),
     path('health/detailed/', detailed_health_check, name='detailed-health-check'),
+    path('health/cache-test/', cache_test, name='cache-test'),
     path('metrics/', metrics, name='metrics'),
     path('ready/', readiness_check, name='readiness-check'),
     path('live/', liveness_check, name='liveness-check'),

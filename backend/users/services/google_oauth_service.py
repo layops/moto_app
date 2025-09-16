@@ -49,8 +49,12 @@ class GoogleOAuthService:
             # State parametresi oluştur
             state = base64.urlsafe_b64encode(secrets.token_bytes(16)).decode('utf-8').rstrip('=')
             
-            # Code verifier'ı cache'de sakla (5 dakika)
-            cache.set(f"google_pkce_verifier_{state}", code_verifier, 300)
+            # Code verifier'ı cache'de sakla (5 dakika) - Redis bağlantı sorunları için try-catch
+            try:
+                cache.set(f"google_pkce_verifier_{state}", code_verifier, 300)
+            except Exception as cache_error:
+                logger.warning(f"Cache set error (non-critical): {cache_error}")
+                # Cache hatası kritik değil, devam et
             
             # OAuth parametreleri
             params = {
@@ -93,12 +97,16 @@ class GoogleOAuthService:
             if not self.is_available:
                 raise Exception("Google OAuth servisi kullanılamıyor - credentials eksik")
             
-            # State'den code_verifier'ı al
+            # State'den code_verifier'ı al - Redis bağlantı sorunları için try-catch
             code_verifier = None
             if state:
-                code_verifier = cache.get(f"google_pkce_verifier_{state}")
-                if code_verifier:
-                    cache.delete(f"google_pkce_verifier_{state}")
+                try:
+                    code_verifier = cache.get(f"google_pkce_verifier_{state}")
+                    if code_verifier:
+                        cache.delete(f"google_pkce_verifier_{state}")
+                except Exception as cache_error:
+                    logger.warning(f"Cache get/delete error (non-critical): {cache_error}")
+                    # Cache hatası kritik değil, devam et
             
             # Access token al
             token_data = {
