@@ -132,19 +132,19 @@ class EventViewSet(viewsets.ModelViewSet):
             #         event.save()
             #         print("Event cover_image güncellendi")
             #         serializer = self.get_serializer(event)
-                except Exception as e:
-                    print("Resim yükleme hatası:", str(e))
-                    import traceback
-                    traceback.print_exc()
-                    # Resim yükleme hatası etkinlik oluşturmayı engellemez
-                    pass
-            elif cover_file and supabase is None:
-                print("Supabase mevcut değil, resim yüklenemiyor")
-                pass
-            elif cover_file:
-                print("Cover file var ama supabase None")
-            else:
-                print("Cover file yok")
+            #     except Exception as e:
+            #         print("Resim yükleme hatası:", str(e))
+            #         import traceback
+            #         traceback.print_exc()
+            #         # Resim yükleme hatası etkinlik oluşturmayı engellemez
+            #         pass
+            # elif cover_file and supabase is None:
+            #     print("Supabase mevcut değil, resim yüklenemiyor")
+            #     pass
+            # elif cover_file:
+            #     print("Cover file var ama supabase None")
+            # else:
+            #     print("Cover file yok")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
