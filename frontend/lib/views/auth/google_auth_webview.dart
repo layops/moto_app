@@ -145,11 +145,15 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
         if (response.statusCode == 200) {
           final data = response.data;
           
+          // Debug: Response data'yı kontrol et
+          print('Google OAuth response data: $data');
+          print('Data type: ${data.runtimeType}');
+          
           // Token'ları kaydet
           await widget.authService.loginWithGoogle(
             data['access_token'],
             data['refresh_token'],
-            data['user'],
+            data['user'] is Map<String, dynamic> ? data['user'] : {'username': 'google_user', 'email': 'user@google.com'},
           );
           
           // Ana sayfaya yönlendir

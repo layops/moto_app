@@ -53,6 +53,7 @@ class GoogleOAuthService:
             # Code verifier'ı cache'de sakla (5 dakika) - Redis bağlantı sorunları için try-catch
             try:
                 cache.set(f"google_pkce_verifier_{state}", code_verifier, 300)
+                logger.info(f"Code verifier cached successfully: {code_verifier[:10]}...")
             except Exception as cache_error:
                 logger.warning(f"Cache set error (non-critical): {cache_error}")
                 # Cache hatası kritik değil, devam et
@@ -104,7 +105,10 @@ class GoogleOAuthService:
                 try:
                     code_verifier = cache.get(f"google_pkce_verifier_{state}")
                     if code_verifier:
+                        logger.info(f"Code verifier retrieved successfully: {code_verifier[:10]}...")
                         cache.delete(f"google_pkce_verifier_{state}")
+                    else:
+                        logger.warning(f"Code verifier not found for state: {state}")
                 except Exception as cache_error:
                     logger.warning(f"Cache get/delete error (non-critical): {cache_error}")
                     # Cache hatası kritik değil, devam et
