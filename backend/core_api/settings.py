@@ -224,35 +224,23 @@ CHANNEL_LAYERS = {
 
 
 # Caching Configuration
-# Redis URL kontrolü - Render.com'da Redis olmayabilir
-REDIS_URL = os.environ.get('REDIS_URL')
+# Redis'i geçici olarak devre dışı bırak - bağlantı sorunları nedeniyle
+# REDIS_URL = os.environ.get('REDIS_URL')
 
-if REDIS_URL:
-    # Redis mevcut ise Redis cache kullan
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,
-            'KEY_PREFIX': 'motoapp',
-            'TIMEOUT': 300,  # 5 minutes default
-        }
+# Her zaman local memory cache kullan (Redis bağlantı sorunları nedeniyle)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'CULL_FREQUENCY': 3,
+        },
+        'KEY_PREFIX': 'motoapp',
+        'TIMEOUT': 300,  # 5 minutes default
     }
-    print("✅ Redis cache configured")
-else:
-    # Redis yoksa local memory cache kullan (Render.com için fallback)
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-            'OPTIONS': {
-                'MAX_ENTRIES': 1000,
-                'CULL_FREQUENCY': 3,
-            },
-            'KEY_PREFIX': 'motoapp',
-            'TIMEOUT': 300,  # 5 minutes default
-        }
-    }
-    print("⚠️ Redis not available, using local memory cache")
+}
+print("⚠️ Using local memory cache (Redis disabled due to connection issues)")
 
 # Cache timeout settings
 CACHE_TIMEOUTS = {
