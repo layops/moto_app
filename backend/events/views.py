@@ -11,15 +11,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Event, EventRequest
 from .serializers import EventSerializer, EventRequestSerializer
 from groups.models import Group
-try:
-    # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
-    supabase = SupabaseStorage()
-    print("SupabaseStorage başarıyla yüklendi")
-except Exception as e:
-    print(f"SupabaseStorage yükleme hatası: {str(e)}")
-    import traceback
-    traceback.print_exc()
-    supabase = None
+# Supabase integration removed - using direct Google OAuth
+# supabase = None
 
 # UserSerializer'ı lazy import edelim - circular import'u önlemek için
 def get_user_serializer():
@@ -129,16 +122,16 @@ class EventViewSet(viewsets.ModelViewSet):
                 # Bu hata etkinlik oluşturmayı engellemez
                 pass
             
-            # Kapak resmi varsa Supabase'e yükle
-            if cover_file and supabase is not None:
-                try:
-                    print(f"Resim yükleniyor: {cover_file.name}, boyut: {cover_file.size}")
-                    cover_url = supabase.upload_event_picture(cover_file, str(event.id))
-                    print(f"Resim URL'i alındı: {cover_url}")
-                    event.cover_image = cover_url
-                    event.save()
-                    print("Event cover_image güncellendi")
-                    serializer = self.get_serializer(event)
+            # Cover image upload temporarily disabled - Supabase removed
+            # if cover_file and supabase is not None:
+            #     try:
+            #         print(f"Resim yükleniyor: {cover_file.name}, boyut: {cover_file.size}")
+            #         cover_url = supabase.upload_event_picture(cover_file, str(event.id))
+            #         print(f"Resim URL'i alındı: {cover_url}")
+            #         event.cover_image = cover_url
+            #         event.save()
+            #         print("Event cover_image güncellendi")
+            #         serializer = self.get_serializer(event)
                 except Exception as e:
                     print("Resim yükleme hatası:", str(e))
                     import traceback

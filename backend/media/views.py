@@ -10,15 +10,8 @@ from users.models import CustomUser
 
 from rest_framework.parsers import MultiPartParser, FormParser 
 
-try:
-    # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
-    supabase = SupabaseStorage()
-    print("SupabaseStorage başarıyla yüklendi (Media)")
-except Exception as e:
-    print(f"SupabaseStorage yükleme hatası (Media): {str(e)}")
-    import traceback
-    traceback.print_exc()
-    supabase = None
+# Supabase integration removed - using direct Google OAuth
+# supabase = None
 
 
 class IsGroupMemberOrOwner(permissions.BasePermission):
@@ -70,25 +63,25 @@ class MediaListCreateView(generics.ListCreateAPIView):
             group = get_object_or_404(Group, pk=group_pk)
             media = serializer.save(uploaded_by=request.user, group=group)
             
-            # Media dosyası varsa Supabase'e yükle
-            if media_file and supabase is not None:
-                try:
-                    print(f"Media dosyası yükleniyor: {media_file.name}, boyut: {media_file.size}")
-                    # Grup medyası için Supabase bucket'ını kullan
-                    file_url = supabase._upload_file(media_file, supabase.groups_bucket, f"groups/{group_pk}/media/{media.id}/")
-                    print(f"Media URL'i alındı: {file_url}")
-                    media.file_url = file_url
-                    media.save()
-                    print("Media file_url güncellendi")
-                    serializer = self.get_serializer(media)
-                except Exception as e:
-                    print("Media yükleme hatası:", str(e))
-                    import traceback
-                    traceback.print_exc()
-                    # Dosya yükleme hatası media oluşturmayı engellemez
-                    pass
-            elif media_file and supabase is None:
-                print("Supabase mevcut değil, media yüklenemiyor")
+            # Media file upload temporarily disabled - Supabase removed
+            # if media_file and supabase is not None:
+            #     try:
+            #         print(f"Media dosyası yükleniyor: {media_file.name}, boyut: {media_file.size}")
+            #         # Grup medyası için Supabase bucket'ını kullan
+            #         file_url = supabase._upload_file(media_file, supabase.groups_bucket, f"groups/{group_pk}/media/{media.id}/")
+            #         print(f"Media URL'i alındı: {file_url}")
+            #         media.file_url = file_url
+            #         media.save()
+            #         print("Media file_url güncellendi")
+            #         serializer = self.get_serializer(media)
+            #     except Exception as e:
+            #         print("Media yükleme hatası:", str(e))
+            #         import traceback
+            #         traceback.print_exc()
+            #         # Dosya yükleme hatası media oluşturmayı engellemez
+            #         pass
+            # elif media_file and supabase is None:
+            #     print("Supabase mevcut değil, media yüklenemiyor")
                 pass
             elif media_file:
                 print("Media file var ama supabase None")
