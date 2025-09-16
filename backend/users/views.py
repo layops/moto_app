@@ -164,20 +164,20 @@ class GoogleAuthView(APIView):
             else:
                 # Supabase kullanılamıyorsa, Google OAuth'u devre dışı bırak
                 return Response({
-                    'error': 'Google OAuth şu anda kullanılamıyor. Supabase servisi aktif değil.',
+                    'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
                     'supabase_available': False,
                     'message': 'Lütfen normal email/şifre ile giriş yapın'
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
                 
         except ImportError:
             return Response({
-                'error': 'Google OAuth servisi kullanılamıyor',
+                'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
                 'supabase_available': False,
                 'message': 'Lütfen normal email/şifre ile giriş yapın'
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             return Response({
-                'error': f'Google OAuth URL hatası: {str(e)}',
+                'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
                 'supabase_available': False,
                 'message': 'Lütfen normal email/şifre ile giriş yapın'
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -303,7 +303,12 @@ class GoogleAuthTestView(APIView):
                     'status': 'error',
                     'message': 'Supabase Auth servisi kullanılamıyor',
                     'supabase_url': supabase_auth.supabase_url,
-                    'supabase_anon_key': '***' if supabase_auth.supabase_anon_key else 'YOK'
+                    'supabase_anon_key': '***' if supabase_auth.supabase_anon_key else 'YOK',
+                    'environment_check': {
+                        'SUPABASE_URL': bool(supabase_auth.supabase_url),
+                        'SUPABASE_ANON_KEY': bool(supabase_auth.supabase_anon_key),
+                        'SUPABASE_SERVICE_KEY': bool(supabase_auth.supabase_service_key),
+                    }
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Google OAuth URL'i oluştur

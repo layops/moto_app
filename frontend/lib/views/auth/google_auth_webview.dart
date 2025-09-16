@@ -53,7 +53,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Google OAuth URL alınırken hata: $e';
+        _errorMessage = 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın';
         _isLoading = false;
       });
     }
