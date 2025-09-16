@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
@@ -23,9 +24,15 @@ class DeepLinkService {
     print('Deep link received: $uri');
     
     if (uri.scheme == 'motoapp' && uri.host == 'oauth') {
-      final callbackUrl = uri.queryParameters['url'];
-      if (callbackUrl != null) {
-        _handleGoogleOAuthCallback(callbackUrl);
+      if (uri.pathSegments.contains('success')) {
+        // OAuth success deep link
+        _handleGoogleOAuthSuccess(uri);
+      } else {
+        // OAuth callback deep link
+        final callbackUrl = uri.queryParameters['url'];
+        if (callbackUrl != null) {
+          _handleGoogleOAuthCallback(callbackUrl);
+        }
       }
     }
   }
@@ -89,6 +96,43 @@ class DeepLinkService {
     } catch (e) {
       print('Deep link callback işleme hatası: $e');
       _showError('Callback işlenirken hata: $e');
+    }
+  }
+
+  static Future<void> _handleGoogleOAuthSuccess(Uri uri) async {
+    try {
+      final userDataEncoded = uri.queryParameters['user_data'];
+      final callbackUrl = uri.queryParameters['url'];
+      
+      print('Google OAuth success deep link received');
+      print('User data encoded: $userDataEncoded');
+      print('Callback URL: $callbackUrl');
+      
+      if (userDataEncoded != null) {
+        // Base64 decode user data
+        final userDataJson = String.fromCharCodes(base64Decode(userDataEncoded));
+        final userData = jsonDecode(userDataJson) as Map<String, dynamic>;
+        
+        print('Decoded user data: $userData');
+        
+        // AuthService ile giriş yap
+        final authService = ServiceLocator.auth;
+        
+        // Mock tokens (gerçek uygulamada backend'den alınmalı)
+        await authService.loginWithGoogle(
+          'mock_access_token_${DateTime.now().millisecondsSinceEpoch}',
+          'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
+          userData,
+        );
+        
+        // Ana sayfaya yönlendir
+        _navigateToHome();
+      } else {
+        _showError('User data bulunamadı');
+      }
+    } catch (e) {
+      print('Google OAuth success işleme hatası: $e');
+      _showError('Success callback işlenirken hata: $e');
     }
   }
 
