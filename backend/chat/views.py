@@ -7,7 +7,7 @@ from django.db.models import Q, Max
 from django.contrib.auth import get_user_model
 from .models import GroupMessage, PrivateMessage
 from .serializers import GroupMessageSerializer, PrivateMessageSerializer
-from users.services.supabase_service import SupabaseStorage
+# from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
 import logging
 
 logger = logging.getLogger(__name__)

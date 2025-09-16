@@ -12,7 +12,7 @@ from .serializers import (
     GroupSerializer, GroupMemberSerializer, GroupJoinRequestSerializer
 )
 from users.models import CustomUser
-from users.services.supabase_service import SupabaseStorage
+# from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
 
 # --- PERMISSIONS ---
 
@@ -91,16 +91,17 @@ class GroupCreateView(generics.ListCreateAPIView):
         # Grup sahibi aynı zamanda grup üyesi olarak eklenir
         group.members.add(request.user)
         
-        if profile_file:
-            try:
-                supabase = SupabaseStorage()
-                profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
-                group.profile_picture_url = profile_url
-                group.save()
-                serializer = self.get_serializer(group)
-            except Exception as e:
-                # Profil resmi yüklenemezse grup oluşturulmaya devam eder
-                serializer = self.get_serializer(group)
+        # Profile picture upload temporarily disabled - Supabase removed
+        # if profile_file:
+        #     try:
+        #         supabase = SupabaseStorage()
+        #         profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
+        #         group.profile_picture_url = profile_url
+        #         group.save()
+        #         serializer = self.get_serializer(group)
+        #     except Exception as e:
+        #         # Profil resmi yüklenemezse grup oluşturulmaya devam eder
+        #         serializer = self.get_serializer(group)
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -141,35 +142,36 @@ class GroupDetailView(generics.RetrieveUpdateDestroyAPIView):
         
         group = serializer.save()
         
-        if profile_file:
-            try:
-                supabase = SupabaseStorage()
-                # Eski profil fotoğrafını sil
-                if group.profile_picture_url:
-                    supabase.delete_group_profile_picture(group.profile_picture_url)
-                
-                # Yeni profil fotoğrafını yükle
-                profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
-                group.profile_picture_url = profile_url
-                group.save()
-                serializer = self.get_serializer(group)
-            except Exception as e:
-                # Profil resmi yüklenemezse grup güncellemesi devam eder
-                serializer = self.get_serializer(group)
+        # Profile picture upload temporarily disabled - Supabase removed
+        # if profile_file:
+        #     try:
+        #         supabase = SupabaseStorage()
+        #         # Eski profil fotoğrafını sil
+        #         if group.profile_picture_url:
+        #             supabase.delete_group_profile_picture(group.profile_picture_url)
+        #         
+        #         # Yeni profil fotoğrafını yükle
+        #         profile_url = supabase.upload_group_profile_picture(profile_file, str(group.id))
+        #         group.profile_picture_url = profile_url
+        #         group.save()
+        #         serializer = self.get_serializer(group)
+        #     except Exception as e:
+        #         # Profil resmi yüklenemezse grup güncellemesi devam eder
+        #         serializer = self.get_serializer(group)
         
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         
-        # Grup silinmeden önce profil fotoğrafını da sil
-        if instance.profile_picture_url:
-            try:
-                supabase = SupabaseStorage()
-                supabase.delete_group_profile_picture(instance.profile_picture_url)
-            except Exception as e:
-                # Profil resmi silinemezse grup silinmeye devam eder
-                pass
+        # Profile picture deletion temporarily disabled - Supabase removed
+        # if instance.profile_picture_url:
+        #     try:
+        #         supabase = SupabaseStorage()
+        #         supabase.delete_group_profile_picture(instance.profile_picture_url)
+        #     except Exception as e:
+        #         # Profil resmi silinemezse grup silinmeye devam eder
+        #         pass
         
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

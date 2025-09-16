@@ -81,7 +81,7 @@ def detailed_health_check(request):
     
     # Supabase check
     try:
-        from users.services.supabase_service import SupabaseStorage
+        # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
         storage = SupabaseStorage()
         health_data['checks']['supabase'] = {
             'status': 'healthy',

@@ -9,7 +9,7 @@ from groups.models import Group
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
-from users.services.supabase_service import SupabaseStorage
+# from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
 from django.db.models import Q
 import logging
 

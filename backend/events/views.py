@@ -12,7 +12,7 @@ from .models import Event, EventRequest
 from .serializers import EventSerializer, EventRequestSerializer
 from groups.models import Group
 try:
-    from users.services.supabase_service import SupabaseStorage
+    # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
     supabase = SupabaseStorage()
     print("SupabaseStorage başarıyla yüklendi")
 except Exception as e:

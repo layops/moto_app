@@ -11,7 +11,7 @@ from users.models import CustomUser
 from rest_framework.parsers import MultiPartParser, FormParser 
 
 try:
-    from users.services.supabase_service import SupabaseStorage
+    # from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
     supabase = SupabaseStorage()
     print("SupabaseStorage başarıyla yüklendi (Media)")
 except Exception as e:

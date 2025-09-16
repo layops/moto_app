@@ -4,7 +4,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from .models import Post
 from .serializers import PostSerializer
-from users.services.supabase_service import SupabaseStorage
+# from users.services.supabase_service import SupabaseStorage  # Removed - Supabase disabled
 import logging
 
 logger = logging.getLogger(__name__)
