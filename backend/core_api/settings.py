@@ -234,12 +234,7 @@ if REDIS_URL:
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
             'LOCATION': REDIS_URL,
             'OPTIONS': {
-                'CONNECTION_POOL_KWARGS': {
-                    'max_connections': 50,
-                    'retry_on_timeout': True,
-                    'socket_connect_timeout': 5,
-                    'socket_timeout': 5,
-                }
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             },
             'KEY_PREFIX': 'motoapp',
             'TIMEOUT': 300,  # 5 minutes default
