@@ -50,52 +50,71 @@ class SupabaseAuthService:
             
             # Supabase client oluştur - proxy parametresi olmadan
             try:
-                # Tüm proxy environment variable'larını geçici olarak temizle
-                proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy']
-                original_proxy_values = {}
+                # Environment'ı tamamen temizle
+                proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy', 'ALL_PROXY', 'all_proxy', 'FTP_PROXY', 'ftp_proxy']
                 
-                # Environment'ı temizle
                 for var in proxy_vars:
                     if var in os.environ:
-                        original_proxy_values[var] = os.environ[var]
                         del os.environ[var]
                         logger.info(f"Proxy environment variable temizlendi: {var}")
                 
-                # Diğer potansiyel proxy ayarlarını da temizle
-                additional_proxy_vars = ['ALL_PROXY', 'all_proxy', 'FTP_PROXY', 'ftp_proxy']
-                for var in additional_proxy_vars:
-                    if var in os.environ:
-                        original_proxy_values[var] = os.environ[var]
-                        del os.environ[var]
-                        logger.info(f"Ek proxy environment variable temizlendi: {var}")
+                # Supabase client oluşturma işlemini subprocess ile izole et
+                import subprocess
+                import sys
+                import json
                 
-                try:
-                    # Supabase client'ı minimal parametrelerle oluştur
-                    logger.info(f"Supabase client oluşturuluyor - URL: {self.supabase_url}")
-                    logger.info(f"Supabase client oluşturuluyor - Key: {'***' if self.supabase_anon_key else 'YOK'}")
-                    
-                    # create_client fonksiyonunu doğrudan çağır - proxy parametresi olmadan
-                    self.client = create_client(self.supabase_url, self.supabase_anon_key)
-                    logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
-                    self.is_available = True
-                    
-                except Exception as create_error:
-                    logger.error(f"Supabase client oluşturma hatası: {str(create_error)}")
-                    logger.error(f"Hata türü: {type(create_error).__name__}")
-                    # Proxy hatası kontrolü
-                    if "proxy" in str(create_error).lower():
-                        logger.error("Proxy parametresi hatası tespit edildi - Supabase kütüphanesi proxy desteklemiyor")
-                        # Proxy hatası durumunda client'ı None yap
+                # Test script'i oluştur
+                test_script = f"""
+import os
+import sys
+import json
+
+# Proxy ayarlarını temizle
+proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy', 'ALL_PROXY', 'all_proxy', 'FTP_PROXY', 'ftp_proxy']
+for var in proxy_vars:
+    if var in os.environ:
+        del os.environ[var]
+
+try:
+    from supabase import create_client
+    client = create_client('{self.supabase_url}', '{self.supabase_anon_key}')
+    print(json.dumps({{'status': 'success', 'message': 'Client created successfully'}}))
+except Exception as e:
+    print(json.dumps({{'status': 'error', 'message': str(e)}}))
+    sys.exit(1)
+"""
+                
+                # Script'i çalıştır
+                result = subprocess.run([sys.executable, '-c', test_script], 
+                                      capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    response = json.loads(result.stdout)
+                    if response['status'] == 'success':
+                        # Test başarılı, gerçek client'ı oluştur
+                        self.client = create_client(self.supabase_url, self.supabase_anon_key)
+                        logger.info("Supabase Auth istemcisi başarıyla oluşturuldu")
+                        self.is_available = True
+                    else:
+                        logger.error(f"Supabase client test başarısız: {response['message']}")
                         self.client = None
                         self.is_available = False
                         return
-                    raise create_error
-                    
-                finally:
-                    # Proxy environment variable'larını geri yükle
-                    for var, value in original_proxy_values.items():
-                        os.environ[var] = value
-                        logger.info(f"Proxy environment variable geri yüklendi: {var}")
+                else:
+                    logger.error(f"Supabase client test subprocess hatası: {result.stderr}")
+                    self.client = None
+                    self.is_available = False
+                    return
+                
+            except Exception as client_error:
+                logger.error(f"Supabase Auth client oluşturma hatası: {str(client_error)}")
+                logger.error(f"Hata detayı: {type(client_error).__name__}")
+                # Proxy hatası kontrolü
+                if "proxy" in str(client_error).lower():
+                    logger.error("Proxy parametresi hatası tespit edildi - Supabase kütüphanesi proxy desteklemiyor")
+                self.client = None
+                self.is_available = False
+                return
                 
             except Exception as client_error:
                 logger.error(f"Supabase Auth client oluşturma hatası: {str(client_error)}")
