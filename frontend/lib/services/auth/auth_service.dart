@@ -316,7 +316,30 @@ class AuthService {
 
   Future<Response> handleGoogleCallback(String code, String state) async {
     try {
+      // Duplicate request'leri önlemek için cache kontrolü
+      final cacheKey = 'google_callback_${code}_${state}';
+      final cachedResponse = await _storage.getString(cacheKey);
+      
+      if (cachedResponse != null) {
+        // Daha önce işlenmiş, cached response'u döndür
+        print('Google OAuth callback already processed, returning cached response');
+        return Response(
+          data: {'message': 'Callback already processed', 'cached': true},
+          statusCode: 200,
+        );
+      }
+      
       final response = await _apiClient.get('users/auth/callback/?code=$code&state=$state');
+      
+      // Başarılı response'u cache'e kaydet (5 dakika)
+      if (response.statusCode == 200) {
+        await _storage.setString(cacheKey, 'processed');
+        // 5 dakika sonra cache'i temizle
+        Future.delayed(const Duration(minutes: 5), () {
+          _storage.remove(cacheKey);
+        });
+      }
+      
       return response;
     } on DioException catch (e) {
       final errorMessage = e.response?.data?['error'] ??
@@ -344,13 +367,23 @@ class AuthService {
 
   Future<void> loginWithGoogle(String accessToken, String refreshToken, Map<String, dynamic> userData) async {
     try {
+      // User data'yı güvenli şekilde al
+      final username = userData['username']?.toString() ?? 'google_user_${DateTime.now().millisecondsSinceEpoch}';
+      
+      print('Google login - Username: $username');
+      print('Google login - Access token length: ${accessToken.length}');
+      print('Google login - Refresh token length: ${refreshToken.length}');
+      
       // Token'ları kaydet
-      await _tokenService.saveAuthData(accessToken, userData['username'], refreshToken: refreshToken);
-      await _storage.setCurrentUsername(userData['username']);
+      await _tokenService.saveAuthData(accessToken, username, refreshToken: refreshToken);
+      await _storage.setCurrentUsername(username);
 
       // Auth state güncelle
       _authStateController.add(true);
+      
+      print('Google login successful for user: $username');
     } catch (e) {
+      print('Google login error: $e');
       throw Exception('Google giriş verileri kaydedilirken hata: $e');
     }
   }

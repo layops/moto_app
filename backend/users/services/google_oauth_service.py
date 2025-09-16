@@ -50,6 +50,13 @@ class GoogleOAuthService:
             # State parametresi oluştur
             state = base64.urlsafe_b64encode(secrets.token_bytes(16)).decode('utf-8').rstrip('=')
             
+            # State'i cache'e kaydet (10 dakika TTL)
+            cache_key = f"oauth_state_{state}"
+            cache.set(cache_key, {
+                'created_at': cache.get('oauth_state_created_at', 0),
+                'redirect_to': redirect_to
+            }, timeout=600)
+            
             # OAuth parametreleri (PKCE olmadan)
             params = {
                 'client_id': self.client_id,
@@ -89,6 +96,18 @@ class GoogleOAuthService:
             if not self.is_available:
                 raise Exception("Google OAuth servisi kullanılamıyor - credentials eksik")
             
+            # State validation
+            if state:
+                cache_key_state = f"oauth_state_{state}"
+                state_data = cache.get(cache_key_state)
+                if not state_data:
+                    logger.warning(f"Invalid or expired state parameter: {state}")
+                    raise Exception("Geçersiz veya süresi dolmuş state parametresi. Lütfen yeni bir giriş denemesi yapın.")
+                
+                # State'i kullanıldıktan sonra cache'den sil
+                cache.delete(cache_key_state)
+                logger.info(f"State validated and cleared: {state}")
+            
             # PKCE'yi geçici olarak devre dışı bırak - worker isolation sorunu nedeniyle
             code_verifier = None
             
@@ -96,6 +115,15 @@ class GoogleOAuthService:
             decoded_code = unquote(code)
             logger.info(f"Original code: {code}")
             logger.info(f"Decoded code: {decoded_code}")
+            
+            # Authorization code'un daha önce kullanılıp kullanılmadığını kontrol et
+            cache_key = f"oauth_code_used_{hashlib.sha256(decoded_code.encode()).hexdigest()}"
+            if cache.get(cache_key):
+                logger.warning(f"Authorization code already used: {decoded_code[:20]}...")
+                raise Exception("Bu authorization code daha önce kullanılmış. Lütfen yeni bir giriş denemesi yapın.")
+            
+            # Code'u cache'e işaretle (5 dakika TTL)
+            cache.set(cache_key, True, timeout=300)
             
             token_data = {
                 'client_id': self.client_id,
@@ -115,6 +143,12 @@ class GoogleOAuthService:
             if token_response.status_code != 200:
                 logger.error(f"Token request failed: {token_response.status_code}")
                 logger.error(f"Response text: {token_response.text}")
+                
+                # Eğer invalid_grant hatası alırsak, cache'den kodu temizle
+                if token_response.status_code == 400 and 'invalid_grant' in token_response.text:
+                    cache.delete(cache_key)
+                    logger.warning("Invalid grant error - clearing cached code")
+                
                 token_response.raise_for_status()
             
             token_info = token_response.json()

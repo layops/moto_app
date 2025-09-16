@@ -134,9 +134,21 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
 
   Future<void> _handleCallbackUrl(String url) async {
     try {
-      final uri = Uri.parse(url);
-      final code = uri.queryParameters['code'];
-      final stateFromUrl = uri.queryParameters['state'];
+      // URL'i decode et
+      final decodedUrl = Uri.decodeFull(url);
+      final uri = Uri.parse(decodedUrl);
+      
+      // Query parametrelerini decode et
+      final code = uri.queryParameters['code'] != null 
+          ? Uri.decodeComponent(uri.queryParameters['code']!)
+          : null;
+      final stateFromUrl = uri.queryParameters['state'] != null
+          ? Uri.decodeComponent(uri.queryParameters['state']!)
+          : null;
+      
+      print('Decoded URL: $decodedUrl');
+      print('Decoded code: $code');
+      print('Decoded state: $stateFromUrl');
       
       if (code != null && state != null) {
         // Backend'e callback gönder - state parametresini ekle
@@ -149,11 +161,25 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           print('Google OAuth response data: $data');
           print('Data type: ${data.runtimeType}');
           
+          // User data'yı güvenli şekilde al
+          Map<String, dynamic> userData;
+          if (data['user'] is Map<String, dynamic>) {
+            userData = data['user'] as Map<String, dynamic>;
+          } else {
+            // Fallback user data
+            userData = {
+              'username': 'google_user_${DateTime.now().millisecondsSinceEpoch}',
+              'email': 'user@google.com',
+              'first_name': 'Google',
+              'last_name': 'User'
+            };
+          }
+          
           // Token'ları kaydet
           await widget.authService.loginWithGoogle(
-            data['access_token'],
-            data['refresh_token'],
-            data['user'] is Map<String, dynamic> ? data['user'] : {'username': 'google_user', 'email': 'user@google.com'},
+            data['access_token']?.toString() ?? '',
+            data['refresh_token']?.toString() ?? '',
+            userData,
           );
           
           // Ana sayfaya yönlendir
@@ -166,7 +192,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
               const GroupsPage(),
               const EventsPage(),
               const MessagesPage(),
-              ProfilePage(username: data['user']['username']),
+              ProfilePage(username: userData['username']?.toString() ?? 'google_user'),
             ];
 
             Navigator.pushAndRemoveUntil(
@@ -195,6 +221,7 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
         }
       }
     } catch (e) {
+      print('Callback URL işleme hatası: $e');
       if (mounted) {
         AuthCommon.showErrorSnackbar(context, 'Callback işlenirken hata: $e');
       }
