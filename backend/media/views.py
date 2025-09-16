@@ -82,11 +82,11 @@ class MediaListCreateView(generics.ListCreateAPIView):
             #         pass
             # elif media_file and supabase is None:
             #     print("Supabase mevcut değil, media yüklenemiyor")
-                pass
-            elif media_file:
-                print("Media file var ama supabase None")
-            else:
-                print("Media file yok")
+            #     pass
+            # elif media_file:
+            #     print("Media file var ama supabase None")
+            # else:
+            #     print("Media file yok")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
