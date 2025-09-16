@@ -235,9 +235,17 @@ class GoogleCallbackView(APIView):
                     import json
                     import base64
                     
-                    # User data'yı base64 encode et
+                    # User data ve token'ları base64 encode et
                     user_data_json = json.dumps(user_data)
                     user_data_encoded = base64.b64encode(user_data_json.encode()).decode()
+                    
+                    # Token'ları da encode et
+                    token_data = {
+                        'access_token': result.get('access_token'),
+                        'refresh_token': result.get('refresh_token'),
+                    }
+                    token_data_json = json.dumps(token_data)
+                    token_data_encoded = base64.b64encode(token_data_json.encode()).decode()
                     
                     success_html = f"""
                     <!DOCTYPE html>
@@ -279,7 +287,7 @@ class GoogleCallbackView(APIView):
                             // Otomatik Flutter uygulamasına yönlendirme
                             function openFlutterApp() {{
                                 const currentUrl = window.location.href;
-                                const flutterUrl = 'motoapp://oauth/success?url=' + encodeURIComponent(currentUrl) + '&user_data=' + encodeURIComponent('{user_data_encoded}');
+                                const flutterUrl = 'motoapp://oauth/success?url=' + encodeURIComponent(currentUrl) + '&user_data=' + encodeURIComponent('{user_data_encoded}') + '&token_data=' + encodeURIComponent('{token_data_encoded}');
                                 
                                 // Flutter uygulamasını açmayı dene
                                 window.location.href = flutterUrl;

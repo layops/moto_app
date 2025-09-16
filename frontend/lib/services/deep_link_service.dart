@@ -102,33 +102,39 @@ class DeepLinkService {
   static Future<void> _handleGoogleOAuthSuccess(Uri uri) async {
     try {
       final userDataEncoded = uri.queryParameters['user_data'];
+      final tokenDataEncoded = uri.queryParameters['token_data'];
       final callbackUrl = uri.queryParameters['url'];
       
       print('Google OAuth success deep link received');
       print('User data encoded: $userDataEncoded');
+      print('Token data encoded: $tokenDataEncoded');
       print('Callback URL: $callbackUrl');
       
-      if (userDataEncoded != null) {
+      if (userDataEncoded != null && tokenDataEncoded != null) {
         // Base64 decode user data
         final userDataJson = String.fromCharCodes(base64Decode(userDataEncoded));
         final userData = jsonDecode(userDataJson) as Map<String, dynamic>;
         
-        print('Decoded user data: $userData');
+        // Base64 decode token data
+        final tokenDataJson = String.fromCharCodes(base64Decode(tokenDataEncoded));
+        final tokenData = jsonDecode(tokenDataJson) as Map<String, dynamic>;
         
-        // AuthService ile giriş yap
+        print('Decoded user data: $userData');
+        print('Decoded token data: $tokenData');
+        
+        // AuthService ile giriş yap - gerçek token'ları kullan
         final authService = ServiceLocator.auth;
         
-        // Mock tokens (gerçek uygulamada backend'den alınmalı)
         await authService.loginWithGoogle(
-          'mock_access_token_${DateTime.now().millisecondsSinceEpoch}',
-          'mock_refresh_token_${DateTime.now().millisecondsSinceEpoch}',
+          tokenData['access_token']?.toString() ?? '',
+          tokenData['refresh_token']?.toString() ?? '',
           userData,
         );
         
         // Ana sayfaya yönlendir
         _navigateToHome();
       } else {
-        _showError('User data bulunamadı');
+        _showError('User data veya token data bulunamadı');
       }
     } catch (e) {
       print('Google OAuth success işleme hatası: $e');
@@ -138,8 +144,12 @@ class DeepLinkService {
 
   static void _navigateToHome() {
     // Ana sayfaya yönlendirme
-    // Bu kısım mevcut navigation yapınıza göre düzenlenebilir
     print('Google OAuth başarılı, ana sayfaya yönlendiriliyor...');
+    
+    // AuthService'in auth state controller'ı zaten true yapıldı
+    // Bu durumda main.dart'taki StreamBuilder otomatik olarak ana sayfayı gösterecek
+    // Ekstra navigation gerekmiyor çünkü authentication state değişti
+    print('Authentication state güncellendi, ana sayfa otomatik gösterilecek');
   }
 
   static void _showError(String message) {
