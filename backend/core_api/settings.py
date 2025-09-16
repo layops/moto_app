@@ -214,24 +214,8 @@ CHANNEL_LAYERS = {
 }
 
 
-# Supabase Configuration - Environment variables kullan
-SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://mosiqkyyribzlvdvedet.supabase.co')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
-SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')  # Auth için gerekli
-SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
-SUPABASE_COVER_BUCKET = os.environ.get('SUPABASE_COVER_BUCKET', 'cover_pictures')
-SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictures')
-SUPABASE_GROUPS_BUCKET = os.environ.get('SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
-SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_images')
-SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID', 'mosiqkyyribzlvdvedet')
-
-# Supabase fallback - eğer Supabase çalışmıyorsa local storage kullan
-USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'true').lower() == 'true'
-
-# Supabase service key kontrolü - daha esnek hale getir
-if USE_SUPABASE_STORAGE and not SUPABASE_SERVICE_KEY:
-    print("⚠️  SUPABASE_SERVICE_KEY bulunamadı, Supabase storage devre dışı")
-    USE_SUPABASE_STORAGE = False
+# Supabase Configuration - REMOVED (using direct Google OAuth instead)
+# All Supabase settings have been removed as we now use direct Google OAuth API
 
 
 # Caching Configuration

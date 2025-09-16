@@ -60,33 +60,11 @@ class EmailVerificationView(APIView):
         if not token:
             return Response({'error': 'Doğrulama token gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            from .services.supabase_auth_service import SupabaseAuthService
-            
-            supabase_auth = SupabaseAuthService()
-            result = supabase_auth.verify_email(token)
-            
-            if result['success']:
-                # Local user'ı da güncelle
-                user_email = result['user'].email
-                try:
-                    user = User.objects.get(email=user_email)
-                    user.email_verified = True
-                    user.save()
-                except User.DoesNotExist:
-                    pass
-                
-                return Response({
-                    'message': 'Email başarıyla doğrulandı!',
-                    'user': result['user'].__dict__ if hasattr(result['user'], '__dict__') else None
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
-                
-        except ImportError:
-            return Response({'error': 'Email doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response({'error': f'Email doğrulama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Email verification temporarily disabled - Supabase removed
+        return Response({
+            'error': 'Email doğrulama servisi geçici olarak devre dışı',
+            'message': 'Supabase kaldırıldı, email doğrulama servisi güncelleniyor'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class ResendVerificationView(APIView):
     permission_classes = [AllowAny]
@@ -97,23 +75,11 @@ class ResendVerificationView(APIView):
         if not email:
             return Response({'error': 'Email adresi gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            from .services.supabase_auth_service import SupabaseAuthService
-            
-            supabase_auth = SupabaseAuthService()
-            result = supabase_auth.resend_verification(email)
-            
-            if result['success']:
-                return Response({
-                    'message': 'Email doğrulama linki tekrar gönderildi!'
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
-                
-        except ImportError:
-            return Response({'error': 'Email doğrulama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response({'error': f'Email tekrar gönderme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Resend verification temporarily disabled - Supabase removed
+        return Response({
+            'error': 'Email tekrar gönderme servisi geçici olarak devre dışı',
+            'message': 'Supabase kaldırıldı, email servisi güncelleniyor'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class PasswordResetView(APIView):
     permission_classes = [AllowAny]
@@ -124,23 +90,11 @@ class PasswordResetView(APIView):
         if not email:
             return Response({'error': 'Email adresi gereklidir'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            from .services.supabase_auth_service import SupabaseAuthService
-            
-            supabase_auth = SupabaseAuthService()
-            result = supabase_auth.reset_password(email)
-            
-            if result['success']:
-                return Response({
-                    'message': 'Şifre sıfırlama linki email adresinize gönderildi!'
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
-                
-        except ImportError:
-            return Response({'error': 'Şifre sıfırlama servisi kullanılamıyor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response({'error': f'Şifre sıfırlama hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Password reset temporarily disabled - Supabase removed
+        return Response({
+            'error': 'Şifre sıfırlama servisi geçici olarak devre dışı',
+            'message': 'Supabase kaldırıldı, şifre sıfırlama servisi güncelleniyor'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
@@ -294,32 +248,11 @@ class ProfileImageUploadView(APIView):
         if 'profile_picture' not in request.FILES:
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            from .services.supabase_service import SupabaseStorage
-            
-            # Eski profil fotoğrafını sil
-            if user.profile_picture:
-                storage = SupabaseStorage()
-                storage.delete_profile_picture(user.profile_picture)
-            
-            # Yeni fotoğrafı yükle
-            storage = SupabaseStorage()
-            file_obj = request.FILES['profile_picture']
-            image_url = storage.upload_profile_picture(file_obj, user.id)
-            
-            # Kullanıcı modelini güncelle
-            user.profile_picture = image_url
-            user.save()
-            
-            # Güncellenmiş kullanıcı bilgilerini döndür
-            serializer = UserSerializer(user, context={'request': request})
-            return Response({
-                'message': 'Profil fotoğrafı başarıyla güncellendi',
-                'user': serializer.data
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({'error': f'Fotoğraf yükleme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Profile image upload temporarily disabled - Supabase removed
+        return Response({
+            'error': 'Profil fotoğrafı yükleme servisi geçici olarak devre dışı',
+            'message': 'Supabase kaldırıldı, dosya yükleme servisi güncelleniyor'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class CoverImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -332,32 +265,11 @@ class CoverImageUploadView(APIView):
         if 'cover_picture' not in request.FILES:
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            from .services.supabase_service import SupabaseStorage
-            
-            # Eski kapak fotoğrafını sil
-            if user.cover_picture:
-                storage = SupabaseStorage()
-                storage.delete_cover_picture(user.cover_picture)
-            
-            # Yeni fotoğrafı yükle
-            storage = SupabaseStorage()
-            file_obj = request.FILES['cover_picture']
-            image_url = storage.upload_cover_picture(file_obj, user.id)
-            
-            # Kullanıcı modelini güncelle
-            user.cover_picture = image_url
-            user.save()
-            
-            # Güncellenmiş kullanıcı bilgilerini döndür
-            serializer = UserSerializer(user, context={'request': request})
-            return Response({
-                'message': 'Kapak fotoğrafı başarıyla güncellendi',
-                'user': serializer.data
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response({'error': f'Fotoğraf yükleme hatası: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Cover image upload temporarily disabled - Supabase removed
+        return Response({
+            'error': 'Kapak fotoğrafı yükleme servisi geçici olarak devre dışı',
+            'message': 'Supabase kaldırıldı, dosya yükleme servisi güncelleniyor'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]

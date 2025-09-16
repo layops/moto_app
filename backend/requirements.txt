@@ -19,8 +19,7 @@ redis==6.2.0
 uvicorn[standard]==0.23.2
 gunicorn==23.0.0
 
-# Supabase Integration (Stable version with minimal dependencies)
-supabase==1.0.4
+# Supabase Integration - REMOVED (using direct Google OAuth instead)
 
 # HTTP Libraries
 requests==2.32.3
