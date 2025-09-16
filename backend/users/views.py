@@ -101,29 +101,52 @@ class GoogleAuthView(APIView):
     
     def get(self, request):
         """Google OAuth URL'i döndür (PKCE ile)"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
+            logger.info("Google OAuth URL isteği alındı")
             from .services.google_oauth_service import GoogleOAuthService
             
             google_auth = GoogleOAuthService()
+            logger.info(f"Google OAuth servisi oluşturuldu. Available: {google_auth.is_available}")
+            
+            if not google_auth.is_available:
+                logger.error("Google OAuth servisi kullanılamıyor - credentials eksik")
+                return Response({
+                    'error': 'Google OAuth servisi kullanılamıyor',
+                    'message': 'Google OAuth credentials eksik. Lütfen normal email/şifre ile giriş yapın',
+                    'debug': {
+                        'client_id': bool(google_auth.client_id),
+                        'client_secret': bool(google_auth.client_secret),
+                        'redirect_uri': google_auth.redirect_uri
+                    }
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
             redirect_to = request.query_params.get('redirect_to')
+            logger.info(f"Redirect_to parametresi: {redirect_to}")
             
             result = google_auth.get_google_auth_url(redirect_to)
+            logger.info(f"Google OAuth URL sonucu: {result}")
             
             if result['success']:
+                logger.info("Google OAuth URL başarıyla oluşturuldu")
                 return Response({
                     'auth_url': result['auth_url'],
                     'state': result['state'],  # Frontend'e gönder
                     'message': 'Google OAuth URL oluşturuldu'
                 }, status=status.HTTP_200_OK)
             else:
+                logger.error(f"Google OAuth URL oluşturulamadı: {result.get('error')}")
                 return Response({
-                    'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
+                    'error': result.get('error', 'Google OAuth URL oluşturulamadı'),
                     'message': 'Lütfen normal email/şifre ile giriş yapın'
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
                 
         except Exception as e:
+            logger.error(f"Google OAuth URL hatası: {str(e)}", exc_info=True)
             return Response({
-                'error': 'Google OAuth URL alınırken hata: Lütfen normal email/şifre ile giriş yapın',
+                'error': f'Google OAuth URL hatası: {str(e)}',
                 'message': 'Lütfen normal email/şifre ile giriş yapın'
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
