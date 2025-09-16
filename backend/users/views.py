@@ -107,7 +107,7 @@ class GoogleAuthView(APIView):
             google_auth = GoogleOAuthService()
             redirect_to = request.query_params.get('redirect_to')
             
-            result = google_auth.get_auth_url(redirect_to)
+            result = google_auth.get_google_auth_url(redirect_to)
             
             if result['success']:
                 return Response({
@@ -142,7 +142,7 @@ class GoogleCallbackView(APIView):
             from .services.google_oauth_service import GoogleOAuthService
             
             google_auth = GoogleOAuthService()
-            result = google_auth.handle_callback(code, state)
+            result = google_auth.handle_oauth_callback(code, state)
             
             if result['success']:
                 user = result['user']
@@ -175,7 +175,7 @@ class VerifyTokenView(APIView):
             from .services.google_oauth_service import GoogleOAuthService
             
             google_auth = GoogleOAuthService()
-            result = google_auth.verify_token(access_token)
+            result = google_auth.get_user_from_token(access_token)
             
             if result['success']:
                 user = result['user']
@@ -212,7 +212,7 @@ class GoogleAuthTestView(APIView):
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Google OAuth URL'i oluştur
-            result = google_auth.get_auth_url()
+            result = google_auth.get_google_auth_url()
             
             if result['success']:
                 return Response({
