@@ -83,6 +83,10 @@ class GoogleOAuthService:
                 'error': str(e)
             }
 
+    def get_google_auth_url(self, redirect_to=None):
+        """Google OAuth URL'i oluştur - Views ile uyumlu metod"""
+        return self.get_auth_url(redirect_to)
+
     def handle_callback(self, code, state=None):
         """OAuth callback'i işle"""
         try:
@@ -179,6 +183,10 @@ class GoogleOAuthService:
                 'error': str(e)
             }
 
+    def handle_oauth_callback(self, code, state=None):
+        """OAuth callback'i işle - Views ile uyumlu metod"""
+        return self.handle_callback(code, state)
+
     def verify_token(self, access_token):
         """Access token'ı doğrula"""
         try:
@@ -218,3 +226,7 @@ class GoogleOAuthService:
                 'success': False,
                 'error': str(e)
             }
+
+    def get_user_from_token(self, access_token):
+        """Access token'dan kullanıcı bilgisi al - Views ile uyumlu metod"""
+        return self.verify_token(access_token)
