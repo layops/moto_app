@@ -14,6 +14,7 @@ pip install -r requirements.txt
 
 # Run migrations
 echo "🗄️ Running database migrations..."
+python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
 # Collect static files
@@ -30,6 +31,19 @@ if not User.objects.filter(username='superuser').exists():
     print('Superuser created successfully')
 else:
     print('Superuser already exists')
+"
+
+# Initialize notification preferences for existing users
+echo "🔔 Initializing notification preferences..."
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+from notifications.models import NotificationPreferences
+User = get_user_model()
+users_without_prefs = User.objects.filter(notification_preferences__isnull=True)
+for user in users_without_prefs:
+    NotificationPreferences.objects.create(user=user)
+    print(f'Created notification preferences for {user.username}')
+print(f'Initialized notification preferences for {users_without_prefs.count()} users')
 "
 
 # Create achievements
