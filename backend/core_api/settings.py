@@ -90,9 +90,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-# PostgreSQL Database Configuration
+# PostgreSQL Database Configuration - OFFLINE MODE
+# Supabase bağlantı sorunları nedeniyle geçici olarak devre dışı
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and dj_database_url:
+OFFLINE_MODE = os.environ.get('OFFLINE_MODE', 'false').lower() == 'true'
+
+if OFFLINE_MODE:
+    # Offline mode - SQLite kullan (geçici)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_offline.sqlite3',
+        }
+    }
+    print("⚠️ Running in OFFLINE MODE with SQLite")
+elif DATABASE_URL and dj_database_url:
     # Supabase PostgreSQL için optimize edilmiş ayarlar
     DATABASES = {
         'default': dj_database_url.config(
@@ -109,8 +121,14 @@ if DATABASE_URL and dj_database_url:
     }
     print("✅ PostgreSQL database configured with optimized connection settings")
 else:
-    print("❌ No DATABASE_URL found")
-    raise Exception("DATABASE_URL environment variable is required")
+    print("❌ No DATABASE_URL found - using offline mode")
+    # Fallback to SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_fallback.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {

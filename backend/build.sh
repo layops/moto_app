@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Ultra minimal build script for production deployment
-# Supabase connection limit sorunları nedeniyle tüm DB işlemleri devre dışı
+# Offline mode build script for production deployment
+# Supabase bağlantı sorunları nedeniyle offline mode kullanılıyor
 set -e
 
-echo "🚀 Starting ultra minimal build process..."
+echo "🚀 Starting OFFLINE MODE build process..."
 
 # Create logs directory
 mkdir -p logs
@@ -13,11 +13,11 @@ mkdir -p logs
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# Skip collectstatic to avoid database connection
-echo "⚠️  Skipping collectstatic due to Supabase connection limits"
-echo "📁 Static files will be collected at runtime if needed"
+# Set offline mode environment variable
+export OFFLINE_MODE=true
+echo "⚠️  OFFLINE MODE activated - will use SQLite instead of Supabase"
 
-echo "✅ Ultra minimal build completed successfully!"
-echo "⚠️  All database operations skipped due to Supabase connection limits"
-echo "📝 Manual migration required - see MIGRATION_GUIDE.md"
-echo "🔧 Static files will be handled by WhiteNoise at runtime"
+echo "✅ OFFLINE MODE build completed successfully!"
+echo "🗄️  Will use SQLite database instead of Supabase"
+echo "📁 Static files will be collected at runtime"
+echo "🔧 All database operations will use local SQLite"
