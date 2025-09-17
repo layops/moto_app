@@ -190,6 +190,10 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             should_send = preferences.direct_messages
         elif notification_type == 'group_message':
             should_send = preferences.group_messages
+        elif notification_type in ['like', 'comment']:
+            should_send = preferences.likes_comments
+        elif notification_type == 'follow':
+            should_send = preferences.follows
         elif notification_type in ['ride_request', 'ride_update']:
             should_send = preferences.ride_reminders
         elif notification_type in ['event_update', 'event_join_request', 'event_join_approved', 'event_join_rejected']:

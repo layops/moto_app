@@ -37,6 +37,8 @@ class NotificationPreferencesSerializer(serializers.ModelSerializer):
         fields = [
             'direct_messages',
             'group_messages',
+            'likes_comments',
+            'follows',
             'ride_reminders',
             'event_updates',
             'group_activity',

@@ -20,6 +20,8 @@ class Notification(models.Model):
         ('group_update', 'Grup Güncellemesi'),
         ('friend_request', 'Arkadaşlık İsteği'),
         ('follow', 'Takip Bildirimi'),
+        ('like', 'Beğeni Bildirimi'),
+        ('comment', 'Yorum Bildirimi'),
         ('other', 'Diğer'),
     )
 
@@ -83,6 +85,10 @@ class NotificationPreferences(models.Model):
     direct_messages = models.BooleanField(default=True, verbose_name='Doğrudan Mesajlar')
     group_messages = models.BooleanField(default=True, verbose_name='Grup Mesajları')
     
+    # Social
+    likes_comments = models.BooleanField(default=True, verbose_name='Beğeni ve Yorumlar')
+    follows = models.BooleanField(default=True, verbose_name='Takip Bildirimleri')
+    
     # Events
     ride_reminders = models.BooleanField(default=True, verbose_name='Sürüş Hatırlatmaları')
     event_updates = models.BooleanField(default=True, verbose_name='Etkinlik Güncellemeleri')
@@ -118,6 +124,8 @@ class NotificationPreferences(models.Model):
         return {
             'direct_messages': self.direct_messages,
             'group_messages': self.group_messages,
+            'likes_comments': self.likes_comments,
+            'follows': self.follows,
             'ride_reminders': self.ride_reminders,
             'event_updates': self.event_updates,
             'group_activity': self.group_activity,

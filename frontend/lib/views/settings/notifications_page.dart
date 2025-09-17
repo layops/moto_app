@@ -12,6 +12,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   // Default values for notification toggles
   bool directMessages = true;
   bool groupMessages = true;
+  bool likesComments = true;
+  bool follows = true;
   bool rideReminders = true;
   bool eventUpdates = true;
   bool groupActivity = true;
@@ -37,6 +39,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         setState(() {
           directMessages = preferences['direct_messages'] ?? true;
           groupMessages = preferences['group_messages'] ?? true;
+          likesComments = preferences['likes_comments'] ?? true;
+          follows = preferences['follows'] ?? true;
           rideReminders = preferences['ride_reminders'] ?? true;
           eventUpdates = preferences['event_updates'] ?? true;
           groupActivity = preferences['group_activity'] ?? true;
@@ -74,6 +78,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
       final preferences = {
         'direct_messages': directMessages,
         'group_messages': groupMessages,
+        'likes_comments': likesComments,
+        'follows': follows,
         'ride_reminders': rideReminders,
         'event_updates': eventUpdates,
         'group_activity': groupActivity,
@@ -161,6 +167,39 @@ class _NotificationsPageState extends State<NotificationsPage> {
             onChanged: (value) {
               setState(() {
                 groupMessages = value;
+              });
+              _saveNotificationPreferences();
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Social Section
+          Text(
+            'Social',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildNotificationItem(
+            title: 'Likes & Comments',
+            subtitle: 'When someone likes or comments on your posts',
+            value: likesComments,
+            onChanged: (value) {
+              setState(() {
+                likesComments = value;
+              });
+              _saveNotificationPreferences();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildNotificationItem(
+            title: 'Follows',
+            subtitle: 'When someone starts following you',
+            value: follows,
+            onChanged: (value) {
+              setState(() {
+                follows = value;
               });
               _saveNotificationPreferences();
             },

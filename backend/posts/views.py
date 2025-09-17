@@ -268,6 +268,38 @@ class PostLikeToggleView(APIView):
             is_liked = True
             logger.info(f"Beğeni eklendi - Post: {post_id}, User: {request.user.username}")
             print(f"  - Beğeni eklendi")
+            
+            # Beğeni bildirimi gönder (sadece post sahibi farklıysa)
+            if post.author != request.user:
+                try:
+                    from notifications.utils import send_notification_with_preferences
+                    message_text = f"{request.user.get_full_name() or request.user.username} gönderinizi beğendi"
+                    
+                    # Bildirimi arka planda gönder (asenkron)
+                    import threading
+                    def send_like_notification_async():
+                        try:
+                            send_notification_with_preferences(
+                                recipient_user=post.author,
+                                message=message_text,
+                                notification_type='like',
+                                sender_user=request.user,
+                                content_object=post,
+                                title=f"Gönderiniz Beğenildi - {request.user.get_full_name() or request.user.username}"
+                            )
+                        except Exception as e:
+                            import logging
+                            logger = logging.getLogger(__name__)
+                            logger.error(f"Beğeni bildirimi gönderilemedi: {e}")
+                    
+                    # Arka planda bildirim gönder
+                    threading.Thread(target=send_like_notification_async, daemon=True).start()
+                    
+                except Exception as e:
+                    # Bildirim gönderme hatası kritik değil, sadece logla
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Beğeni bildirimi thread başlatılamadı: {e}")
         
         # Güncel beğeni sayısını al
         likes_count = PostLike.objects.filter(post=post).count()

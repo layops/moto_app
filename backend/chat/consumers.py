@@ -156,11 +156,42 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         print(f"DEBUG PRIVATE CONSUMER: Kullanıcı '{sender_user.username}' (ID: {sender_user.id}) '{receiver_user.username}' (ID: {receiver_user.id})'a özel mesaj gönderdi: {message_content}")
 
         # Mesajı veritabanına kaydet
-        await database_sync_to_async(PrivateMessage.objects.create)(
+        message_obj = await database_sync_to_async(PrivateMessage.objects.create)(
             sender=sender_user,
             receiver=receiver_user,
             message=message_content
         )
+
+        # Mesaj bildirimi gönder
+        try:
+            from notifications.utils import send_notification_with_preferences
+            message_text = f"{sender_user.get_full_name() or sender_user.username} size mesaj gönderdi: {message_content[:50]}..."
+            
+            # Bildirimi arka planda gönder (asenkron)
+            import threading
+            def send_message_notification_async():
+                try:
+                    send_notification_with_preferences(
+                        recipient_user=receiver_user,
+                        message=message_text,
+                        notification_type='message',
+                        sender_user=sender_user,
+                        content_object=message_obj,
+                        title=f"Yeni Mesaj - {sender_user.get_full_name() or sender_user.username}"
+                    )
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Mesaj bildirimi gönderilemedi: {e}")
+            
+            # Arka planda bildirim gönder
+            threading.Thread(target=send_message_notification_async, daemon=True).start()
+            
+        except Exception as e:
+            # Bildirim gönderme hatası kritik değil, sadece logla
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Mesaj bildirimi thread başlatılamadı: {e}")
 
         # Mesajı grup katmanına gönder
         await self.channel_layer.group_send(

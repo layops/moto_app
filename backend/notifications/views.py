@@ -90,6 +90,7 @@ class SendTestNotificationView(APIView):
             message = request.data.get('message')
             notification_type = request.data.get('notification_type', 'other')
             sender_username = request.data.get('sender_username')
+            send_push = request.data.get('send_push', True)  # Push notification gönderilsin mi?
 
             if not recipient_username or not message:
                 return Response(
@@ -115,16 +116,38 @@ class SendTestNotificationView(APIView):
                         status=status.HTTP_404_NOT_FOUND
                     )
 
-            send_realtime_notification(
-                recipient_user=recipient_user,
-                message=message,
-                notification_type=notification_type,
-                sender_user=sender_user
-            )
-            return Response(
-                {"detail": "Test bildirimi başarıyla gönderildi."}, 
-                status=status.HTTP_200_OK
-            )
+            # Push notification ile birlikte gönder
+            if send_push:
+                from .utils import send_notification_with_preferences
+                notification = send_notification_with_preferences(
+                    recipient_user=recipient_user,
+                    message=message,
+                    notification_type=notification_type,
+                    sender_user=sender_user,
+                    title=f"Test Bildirimi - {notification_type.replace('_', ' ').title()}"
+                )
+                if notification:
+                    return Response(
+                        {"detail": "Test bildirimi (push notification ile) başarıyla gönderildi.", "notification_id": notification.id}, 
+                        status=status.HTTP_200_OK
+                    )
+                else:
+                    return Response(
+                        {"detail": "Test bildirimi gönderildi ancak push notification gönderilemedi (kullanıcı tercihleri kapalı olabilir)."}, 
+                        status=status.HTTP_200_OK
+                    )
+            else:
+                # Sadece WebSocket bildirimi gönder
+                send_realtime_notification(
+                    recipient_user=recipient_user,
+                    message=message,
+                    notification_type=notification_type,
+                    sender_user=sender_user
+                )
+                return Response(
+                    {"detail": "Test bildirimi (sadece WebSocket) başarıyla gönderildi."}, 
+                    status=status.HTTP_200_OK
+                )
         except Exception as e:
             return Response(
                 {"detail": f"Test bildirimi gönderilirken hata oluştu: {str(e)}"},
