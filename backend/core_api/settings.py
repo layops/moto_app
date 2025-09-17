@@ -90,45 +90,38 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core_api.wsgi.application'
 ASGI_APPLICATION = 'core_api.asgi.application'
 
-# PostgreSQL Database Configuration - OFFLINE MODE
-# Supabase bağlantı sorunları nedeniyle geçici olarak devre dışı
+# PostgreSQL Database Configuration - Supabase Optimized
 DATABASE_URL = os.environ.get('DATABASE_URL')
-OFFLINE_MODE = os.environ.get('OFFLINE_MODE', 'false').lower() == 'true'
 
-if OFFLINE_MODE:
-    # Offline mode - SQLite kullan (geçici)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db_offline.sqlite3',
-        }
-    }
-    print("⚠️ Running in OFFLINE MODE with SQLite")
-elif DATABASE_URL and dj_database_url:
-    # Supabase PostgreSQL için optimize edilmiş ayarlar
+if DATABASE_URL and dj_database_url:
+    # Supabase PostgreSQL için özel optimizasyonlar
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=0,  # Bağlantıları hemen kapat (connection pool sorunları için)
+            conn_max_age=0,  # Bağlantıları hemen kapat
             conn_health_checks=False,  # Health check'leri devre dışı bırak
             ssl_require=True,  # Supabase SSL gerektirir
         )
     }
-    # Supabase connection pool limitlerini aşmamak için ek ayarlar
+    
+    # Supabase için özel bağlantı ayarları
     DATABASES['default']['OPTIONS'] = {
-        'connect_timeout': 10,  # Bağlantı timeout'u
-        'application_name': 'moto_app',  # Uygulama adı
+        'connect_timeout': 5,  # Kısa timeout
+        'application_name': 'moto_app_render',  # Uygulama adı
+        'sslmode': 'require',  # SSL zorunlu
+        'keepalives_idle': 30,  # Keep-alive ayarları
+        'keepalives_interval': 5,
+        'keepalives_count': 3,
     }
-    print("✅ PostgreSQL database configured with optimized connection settings")
+    
+    # Supabase connection pool ayarları
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = False
+    
+    print("✅ Supabase PostgreSQL configured with connection optimizations")
 else:
-    print("❌ No DATABASE_URL found - using offline mode")
-    # Fallback to SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db_fallback.sqlite3',
-        }
-    }
+    print("❌ No DATABASE_URL found")
+    raise Exception("DATABASE_URL environment variable is required for Supabase")
 
 AUTH_PASSWORD_VALIDATORS = [
     {

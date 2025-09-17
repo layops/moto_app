@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Offline mode build script for production deployment
-# Supabase bağlantı sorunları nedeniyle offline mode kullanılıyor
+# Supabase optimized build script for production deployment
 set -e
 
-echo "🚀 Starting OFFLINE MODE build process..."
+echo "🚀 Starting Supabase optimized build process..."
 
 # Create logs directory
 mkdir -p logs
@@ -13,11 +12,44 @@ mkdir -p logs
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# Set offline mode environment variable
-export OFFLINE_MODE=true
-echo "⚠️  OFFLINE MODE activated - will use SQLite instead of Supabase"
+# Test Supabase connection before proceeding
+echo "🔍 Testing Supabase connection..."
+if python -c "
+import os
+import psycopg2
+from urllib.parse import urlparse
 
-echo "✅ OFFLINE MODE build completed successfully!"
-echo "🗄️  Will use SQLite database instead of Supabase"
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    try:
+        # Parse connection string
+        result = urlparse(DATABASE_URL)
+        conn = psycopg2.connect(
+            host=result.hostname,
+            port=result.port,
+            database=result.path[1:],
+            user=result.username,
+            password=result.password,
+            connect_timeout=5,
+            sslmode='require'
+        )
+        conn.close()
+        print('✅ Supabase connection test successful')
+        exit(0)
+    except Exception as e:
+        print(f'❌ Supabase connection test failed: {e}')
+        exit(1)
+else:
+    print('❌ No DATABASE_URL found')
+    exit(1)
+"; then
+    echo "✅ Supabase connection verified"
+else
+    echo "❌ Supabase connection failed - check your DATABASE_URL"
+    echo "🔧 Please verify your Supabase project is active and accessible"
+    exit 1
+fi
+
+echo "✅ Supabase optimized build completed successfully!"
+echo "🗄️  Ready to use Supabase PostgreSQL"
 echo "📁 Static files will be collected at runtime"
-echo "🔧 All database operations will use local SQLite"
