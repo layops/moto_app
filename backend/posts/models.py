@@ -84,7 +84,9 @@ class PostLike(models.Model):
     class Meta:
         verbose_name = "Gönderi Beğenisi"
         verbose_name_plural = "Gönderi Beğenileri"
-        unique_together = ['post', 'user']  # Bir kullanıcı aynı postu sadece bir kez beğenebilir
+        constraints = [
+            models.UniqueConstraint(fields=['post', 'user'], name='unique_post_user_like')
+        ]
 
     def __str__(self):
         return f"{self.user.username} liked {self.post.id}"

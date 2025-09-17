@@ -103,36 +103,8 @@ def main():
                 print("⏳ Waiting 10 seconds before retry...")
                 time.sleep(10)
     
-    # Superuser oluştur (retry ile)
-    print("👤 Creating superuser...")
-    for attempt in range(3):
-        try:
-            print(f"Superuser creation attempt {attempt + 1}/3...")
-            result = subprocess.run([
-                sys.executable, 'manage.py', 'shell', '-c', '''
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(username="superuser").exists():
-    User.objects.create_superuser("superuser", "superuser@spiride.com", "326598")
-    print("Superuser created successfully")
-else:
-    print("Superuser already exists")
-'''
-            ], capture_output=True, text=True, timeout=30)
-            
-            if result.returncode == 0:
-                print("✅ Superuser creation completed")
-                break
-            else:
-                print(f"⚠️ Superuser creation attempt {attempt + 1} warning: {result.stderr}")
-                if attempt < 2:
-                    print("⏳ Waiting 5 seconds before retry...")
-                    time.sleep(5)
-        except Exception as e:
-            print(f"⚠️ Superuser creation attempt {attempt + 1} failed: {e}")
-            if attempt < 2:
-                print("⏳ Waiting 5 seconds before retry...")
-                time.sleep(5)
+    # Superuser oluşturma kaldırıldı - gerekli değil
+    print("✅ Skipping superuser creation - not needed")
     
     # Uvicorn server'ı başlat
     print("🌐 Starting Uvicorn server...")
