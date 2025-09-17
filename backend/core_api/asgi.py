@@ -29,7 +29,7 @@ class AuthTokenMiddleware:
                 print("DEBUG ASGI (WS): WebSocket upgrade detected")
             else:
                 print(f"DEBUG ASGI (WS): WebSocket upgrade başarısız")
-        # HTTP istekleri için token doğrulama ekleyelim
+        # HTTP istekleri için sadece debug log'u ekleyelim, authentication Django'ya bırakalım
         if scope['type'] == 'http':
             headers = dict(scope['headers'])
             auth_header = headers.get(b'authorization', b'').decode('utf-8')
@@ -37,42 +37,8 @@ class AuthTokenMiddleware:
             
             print(f"DEBUG ASGI (HTTP): Path: {path}, Auth: {auth_header[:20]}...")
             
-            # Bearer token veya Token formatını destekle
-            token_key = None
-            if auth_header.startswith('Bearer '):
-                token_key = auth_header[7:].strip()
-                print(f"DEBUG ASGI (HTTP): Bearer token bulundu, başlangıç: {token_key[:5]}...")
-            elif auth_header.startswith('Token '):
-                token_key = auth_header[6:].strip()
-                print(f"DEBUG ASGI (HTTP): Token bulundu, başlangıç: {token_key[:5]}...")
-            
-            if token_key:
-                # Gerekli importları burada yapıyoruz
-                from rest_framework.authtoken.models import Token
-                from django.contrib.auth.models import AnonymousUser
-                from asgiref.sync import sync_to_async
-                
-                try:
-                    # Token nesnesini eşzamansız al
-                    token_obj = await sync_to_async(Token.objects.get)(key=token_key)
-                    user = await sync_to_async(lambda: token_obj.user)()
-                    
-                    if user.is_active:
-                        scope['user'] = user
-                        print(f"DEBUG ASGI (HTTP): Kullanıcı doğrulandı: {user.username}")
-                    else:
-                        print(f"DEBUG ASGI (HTTP): Kullanıcı aktif değil: {user.username}")
-                        scope['user'] = AnonymousUser()
-                except Token.DoesNotExist:
-                    print(f"DEBUG ASGI (HTTP): Token bulunamadı: {token_key[:5]}...")
-                    scope['user'] = AnonymousUser()
-                except Exception as e:
-                    print(f"DEBUG ASGI (HTTP): Token doğrulama hatası: {e}")
-                    scope['user'] = AnonymousUser()
-            else:
-                print(f"DEBUG ASGI (HTTP): Authorization header bulunamadı veya desteklenmeyen format")
-                from django.contrib.auth.models import AnonymousUser
-                scope['user'] = AnonymousUser()
+            # Django'nun kendi authentication sistemini kullanmasına izin ver
+            # ASGI middleware'de authentication yapmıyoruz, sadece log tutuyoruz
         
         # WebSocket için orijinal doğrulama
         if scope['type'] == 'websocket':
@@ -152,7 +118,7 @@ except Exception as e:
     all_websocket_patterns = []
 
 application = ProtocolTypeRouter({
-    "http": AuthTokenMiddleware(django_asgi_app),  # HTTP için de token middleware ekledik
+    "http": django_asgi_app,  # HTTP için Django'nun kendi authentication'ını kullan
     "websocket": AuthTokenMiddleware(
         URLRouter(all_websocket_patterns)
     ),
