@@ -6,7 +6,8 @@ from django.views.generic import RedirectView
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
+import os
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -33,10 +34,21 @@ schema_view = get_schema_view(
 def index(request):
     return HttpResponse("Site çalışıyor! /api/ altında API endpointlerini kullanabilirsiniz.")
 
+# Favicon view
+def favicon(request):
+    favicon_path = os.path.join(os.path.dirname(__file__), 'static', 'favicon.ico')
+    if os.path.exists(favicon_path):
+        return FileResponse(open(favicon_path, 'rb'), content_type='image/x-icon')
+    else:
+        return HttpResponse(status=404)
+
 # URL Patterns
 urlpatterns = [
     # Ana sayfa
     path('', index, name='index'),
+    
+    # Favicon
+    path('favicon.ico', favicon, name='favicon'),
     
     # API Root
     path('api/', api_root, name='api-root'),

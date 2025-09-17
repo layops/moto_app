@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 import '../http/api_client.dart';
 import '../storage/local_storage.dart';
 import 'token_service.dart';
@@ -11,8 +12,7 @@ class AuthService {
   final ApiClient _apiClient;
   final TokenService _tokenService;
   final LocalStorage _storage;
-  final StreamController<bool> _authStateController =
-      StreamController<bool>.broadcast();
+  final BehaviorSubject<bool> _authStateController = BehaviorSubject<bool>.seeded(false);
 
   AuthService(this._apiClient, this._tokenService, this._storage);
 
@@ -71,7 +71,7 @@ class AuthService {
 
   Future<void> initializeAuthState() async {
     final loggedIn = await isLoggedIn();
-    _authStateController.add(loggedIn);
+    _authStateController.value = loggedIn;
   }
 
   Future<Response> login(String username, String password,
@@ -103,7 +103,7 @@ class AuthService {
         }
 
         // Auth state güncelle
-        _authStateController.add(true);
+        _authStateController.value = true;
         // print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
       } else {
         // print('❌ AuthService - Access token boş, login başarısız');
@@ -287,7 +287,7 @@ class AuthService {
     await ServiceLocator.reset();
 
     // Auth state sıfırla
-    _authStateController.add(false);
+    _authStateController.value = false;
   }
 
   void dispose() {
@@ -380,7 +380,7 @@ class AuthService {
       await _storage.setCurrentUsername(username);
 
       // Auth state güncelle
-      _authStateController.add(true);
+      _authStateController.value = true;
       
       print('Google login successful for user: $username');
     } catch (e) {

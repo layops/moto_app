@@ -24,6 +24,7 @@ dependencies:
   # State Management
   provider: ^6.1.5
   flutter_riverpod: ^2.4.9
+  rxdart: ^0.27.7
 
   # Network & API
   dio: ^5.3.3

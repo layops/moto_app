@@ -4,6 +4,14 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
+import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
+import 'package:motoapp_frontend/views/home/home_page.dart';
+import 'package:motoapp_frontend/views/map/map_page.dart';
+import 'package:motoapp_frontend/views/groups/group_page.dart';
+import 'package:motoapp_frontend/views/event/events_page.dart';
+import 'package:motoapp_frontend/views/messages/messages_page.dart';
+import 'package:motoapp_frontend/views/profile/profile_page.dart';
 
 class DeepLinkService {
   static final AppLinks _appLinks = AppLinks();
@@ -145,11 +153,38 @@ class DeepLinkService {
   static void _navigateToHome() {
     // Ana sayfaya yönlendirme
     print('Google OAuth başarılı, ana sayfaya yönlendiriliyor...');
-    
-    // AuthService'in auth state controller'ı zaten true yapıldı
-    // Bu durumda main.dart'taki StreamBuilder otomatik olarak ana sayfayı gösterecek
-    // Ekstra navigation gerekmiyor çünkü authentication state değişti
-    print('Authentication state güncellendi, ana sayfa otomatik gösterilecek');
+
+    // Explicit navigation - StreamBuilder'a güvenmek yerine direkt navigasyon yap
+    final navigatorKey = ServiceLocator.navigatorKey;
+    if (navigatorKey.currentContext != null) {
+      final context = navigatorKey.currentContext!;
+      
+      // Sayfaları oluştur
+      final pages = [
+        const HomePage(),
+        const MapPage(allowSelection: true),
+        const GroupsPage(),
+        const EventsPage(),
+        const MessagesPage(),
+        const ProfilePage(username: 'emre.celik.290'), // Username'i token'dan alabiliriz
+      ];
+
+      // Ana sayfaya yönlendir
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainWrapperNew(
+            pages: pages,
+            navItems: NavigationItems.items,
+          ),
+        ),
+        (route) => false,
+      );
+      
+      print('Explicit navigation to home page completed');
+    } else {
+      print('Navigator context not available, relying on StreamBuilder');
+    }
   }
 
   static void _showError(String message) {
