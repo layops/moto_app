@@ -19,11 +19,9 @@ class Bike(models.Model):
     color = models.CharField(max_length=50, null=True, blank=True) # Renk (örn: Kırmızı)
     description = models.TextField(null=True, blank=True) # Detaylı açıklama
 
-    # Resim Alanı (İsteğe bağlı)
-    # Resimler için bir klasör oluşturulacak (media/bikes/).
-    # settings.py'de MEDIA_ROOT ve MEDIA_URL ayarlarını yapmamız gerekecek.
-    # Şimdilik tek bir ana resimle başlıyoruz.
-    main_image = models.ImageField(upload_to='bikes/', null=True, blank=True)
+    # Resim Alanı (İsteğe bağlı) - Supabase Storage URL
+    # Resimler Supabase Storage'da saklanıyor
+    main_image_url = models.URLField(blank=True, null=True, verbose_name="Ana Resim URL")
 
     # Oluşturulma ve Güncellenme Tarihleri (Otomatik olarak atanır)
     created_at = models.DateTimeField(auto_now_add=True)

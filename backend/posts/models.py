@@ -20,12 +20,6 @@ class Post(models.Model):
         verbose_name="Yazar"
     )
     content = models.TextField(verbose_name="Gönderi İçeriği")
-    image = models.ImageField(
-        upload_to='posts/',
-        null=True,
-        blank=True,
-        verbose_name="Görsel"
-    )
     image_url = models.URLField(
         blank=True,
         null=True,

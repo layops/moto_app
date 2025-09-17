@@ -16,7 +16,7 @@ class PostCommentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)  # Nested serializer ile detaylı user bilgisi
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
-    image = serializers.ImageField(required=False, write_only=True)  # Sadece yazma için, okuma için değil
+    # image field kaldırıldı - artık sadece image_url kullanılıyor
     content = serializers.CharField(required=True, allow_blank=False)  # Content zorunlu ve boş olamaz
     likes_count = serializers.ReadOnlyField()
     comments_count = serializers.ReadOnlyField()
@@ -34,7 +34,7 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            'id', 'group', 'author', 'content', 'image', 'image_url', 
+            'id', 'group', 'author', 'content', 'image_url', 
             'created_at', 'updated_at', 'likes_count', 'comments_count', 
             'is_liked', 'comments'
         ]
@@ -126,9 +126,7 @@ class PostSerializer(serializers.ModelSerializer):
                 print(f"  - Author username in data: {author_data.get('username')}")
                 print(f"  - Author ID in data: {author_data.get('id')}")
         
-        # Eğer image_url varsa, image alanını None yap (frontend'de karışıklık olmasın)
-        if instance.image_url:
-            representation['image'] = None
+        # image field artık yok, sadece image_url kullanılıyor
         
         # Author verisini manuel olarak kontrol et
         if not representation.get('author') or not representation['author'].get('username'):

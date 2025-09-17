@@ -101,6 +101,6 @@ urlpatterns = [
     path('debug/create-test-data/', create_test_data, name='create-test-data'),
 ]
 
-# Geliştirme ortamında medya dosyalarını sunmak için
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Media serving kaldırıldı - Supabase Storage kullanılıyor
+# if settings.DEBUG:
+#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
