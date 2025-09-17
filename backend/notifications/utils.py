@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from .models import Notification, NotificationPreferences
 from .serializers import NotificationSerializer
+from .supabase_client import send_realtime_notification_via_supabase
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -117,9 +118,9 @@ def send_bulk_notifications(recipients, message, notification_type='other', send
         raise
 
 
-def send_fcm_notification(recipient_user, title, body, data=None, notification_type='other'):
+def send_supabase_realtime_notification(recipient_user, title, body, data=None, notification_type='other'):
     """
-    Firebase Cloud Messaging ile push notification gönderir.
+    Supabase Real-time ile push notification gönderir.
     
     Args:
         recipient_user: Bildirimi alacak kullanıcı
@@ -139,75 +140,32 @@ def send_fcm_notification(recipient_user, title, body, data=None, notification_t
             # Preferences yoksa varsayılan olarak gönder
             pass
         
-        # FCM token'ı al
-        fcm_token = None
-        try:
-            preferences = NotificationPreferences.objects.get(user=recipient_user)
-            fcm_token = preferences.fcm_token
-        except NotificationPreferences.DoesNotExist:
-            logger.warning(f"FCM token bulunamadı: {recipient_user.username}")
-            return False
+        # Supabase client ile bildirim gönder
+        notification_data = data or {}
+        notification_data['notification_type'] = notification_type
         
-        if not fcm_token:
-            logger.warning(f"FCM token boş: {recipient_user.username}")
-            return False
+        success = send_realtime_notification_via_supabase(
+            user_id=recipient_user.id,
+            title=title,
+            body=body,
+            data=notification_data
+        )
         
-        # Firebase Server Key (settings'den al)
-        server_key = getattr(settings, 'FCM_SERVER_KEY', None)
-        if not server_key:
-            logger.error("FCM_SERVER_KEY bulunamadı")
-            return False
-        
-        # FCM API endpoint
-        url = 'https://fcm.googleapis.com/fcm/send'
-        
-        # Headers
-        headers = {
-            'Authorization': f'key={server_key}',
-            'Content-Type': 'application/json',
-        }
-        
-        # Payload
-        payload = {
-            'to': fcm_token,
-            'notification': {
-                'title': title,
-                'body': body,
-                'sound': 'default',
-                'badge': 1,
-            },
-            'data': {
-                'notification_type': notification_type,
-                'user_id': str(recipient_user.id),
-                'username': recipient_user.username,
-                **(data or {}),
-            },
-            'priority': 'high',
-        }
-        
-        # Request gönder
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-        
-        if response.status_code == 200:
-            result = response.json()
-            if result.get('success') == 1:
-                logger.info(f"FCM bildirim gönderildi: {recipient_user.username}")
-                return True
-            else:
-                logger.error(f"FCM bildirim hatası: {result}")
-                return False
+        if success:
+            logger.info(f"Supabase real-time bildirim gönderildi: {recipient_user.username}")
+            return True
         else:
-            logger.error(f"FCM API hatası: {response.status_code} - {response.text}")
+            logger.error(f"Supabase bildirim gönderme başarısız: {recipient_user.username}")
             return False
             
     except Exception as e:
-        logger.error(f"FCM bildirim gönderme hatası: {e}")
+        logger.error(f"Supabase bildirim gönderme hatası: {e}")
         return False
 
 
 def send_notification_with_preferences(recipient_user, message, notification_type='other', sender_user=None, content_object=None, title=None):
     """
-    Kullanıcının tercihlerine göre bildirim gönderir (WebSocket + FCM).
+    Kullanıcının tercihlerine göre bildirim gönderir (WebSocket + Supabase Real-time).
     
     Args:
         recipient_user: Bildirimi alacak kullanıcı
@@ -215,7 +173,7 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         notification_type: Bildirim türü
         sender_user: Bildirimi gönderen kullanıcı (opsiyonel)
         content_object: İlgili nesne (opsiyonel)
-        title: FCM için başlık (opsiyonel)
+        title: Push notification için başlık (opsiyonel)
     """
     try:
         # Kullanıcının notification preferences'ını al
@@ -260,12 +218,12 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             content_object=content_object
         )
         
-        # FCM push notification gönder
-        if preferences.push_enabled and preferences.fcm_token:
-            fcm_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
-            send_fcm_notification(
+        # Supabase real-time push notification gönder
+        if preferences.push_enabled:
+            push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
+            send_supabase_realtime_notification(
                 recipient_user=recipient_user,
-                title=fcm_title,
+                title=push_title,
                 body=message,
                 data={
                     'notification_id': str(notification.id) if notification else None,

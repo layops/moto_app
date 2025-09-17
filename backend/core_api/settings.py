@@ -14,8 +14,8 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', f'{BASE_URL}/api/users/auth/callback/')
 GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/users/auth/callback/')
 
-# Firebase Cloud Messaging Configuration
-FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')
+# Supabase Real-time Notifications (Firebase FCM kaldırıldı)
+# FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')  # Firebase kaldırıldı
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
@@ -247,11 +247,30 @@ CHANNEL_LAYERS = {
 }
 
 
-# Firebase Configuration
-FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY', 'your-firebase-server-key-here')
+# Supabase Configuration
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID')
 
-# Supabase Configuration - REMOVED (using direct Google OAuth instead)
-# All Supabase settings have been removed as we now use direct Google OAuth API
+# Supabase Storage Configuration
+USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'false').lower() == 'true'
+SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
+SUPABASE_COVER_BUCKET = os.environ.get('SUPABASE_COVER_BUCKET', 'cover_pictures')
+SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictures')
+SUPABASE_GROUPS_BUCKET = os.environ.get('SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
+SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_images')
+
+# Supabase Real-time Configuration
+SUPABASE_REALTIME_URL = f"{SUPABASE_URL}/realtime/v1/websocket" if SUPABASE_URL else None
+
+if SUPABASE_URL and SUPABASE_ANON_KEY:
+    print("✅ Supabase configuration loaded successfully")
+    print(f"   URL: {SUPABASE_URL}")
+    print(f"   Storage: {'Enabled' if USE_SUPABASE_STORAGE else 'Disabled'}")
+    print(f"   Real-time: {'Enabled' if SUPABASE_REALTIME_URL else 'Disabled'}")
+else:
+    print("⚠️ Supabase configuration incomplete")
 
 
 # Caching Configuration

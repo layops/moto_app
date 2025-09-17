@@ -44,37 +44,37 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    appId: '1:123456789:web:xxxxxxxxxxxxxxxxxxxxxxx',
-    messagingSenderId: '123456789',
-    projectId: 'motoapp-firebase',
-    authDomain: 'motoapp-firebase.firebaseapp.com',
-    storageBucket: 'motoapp-firebase.appspot.com',
+    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek Web API key'i buraya yazın
+    appId: '1:123456789:web:xxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek Web App ID'yi buraya yazın
+    messagingSenderId: '123456789', // Firebase Console'dan gerçek Messaging Sender ID'yi buraya yazın
+    projectId: 'motoapp-firebase', // Firebase Console'dan gerçek Project ID'yi buraya yazın
+    authDomain: 'motoapp-firebase.firebaseapp.com', // Firebase Console'dan gerçek Auth Domain'i buraya yazın
+    storageBucket: 'motoapp-firebase.appspot.com', // Firebase Console'dan gerçek Storage Bucket'ı buraya yazın
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    appId: '1:123456789:android:xxxxxxxxxxxxxxxxxxxxxxx',
-    messagingSenderId: '123456789',
-    projectId: 'motoapp-firebase',
-    storageBucket: 'motoapp-firebase.appspot.com',
+    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek API key'i buraya yazın
+    appId: '1:123456789:android:xxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek App ID'yi buraya yazın
+    messagingSenderId: '123456789', // Firebase Console'dan gerçek Messaging Sender ID'yi buraya yazın
+    projectId: 'motoapp-firebase', // Firebase Console'dan gerçek Project ID'yi buraya yazın
+    storageBucket: 'motoapp-firebase.appspot.com', // Firebase Console'dan gerçek Storage Bucket'ı buraya yazın
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    appId: '1:123456789:ios:xxxxxxxxxxxxxxxxxxxxxxx',
-    messagingSenderId: '123456789',
-    projectId: 'motoapp-firebase',
-    storageBucket: 'motoapp-firebase.appspot.com',
-    iosBundleId: 'com.example.frontend',
+    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek iOS API key'i buraya yazın
+    appId: '1:123456789:ios:xxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek iOS App ID'yi buraya yazın
+    messagingSenderId: '123456789', // Firebase Console'dan gerçek Messaging Sender ID'yi buraya yazın
+    projectId: 'motoapp-firebase', // Firebase Console'dan gerçek Project ID'yi buraya yazın
+    storageBucket: 'motoapp-firebase.appspot.com', // Firebase Console'dan gerçek Storage Bucket'ı buraya yazın
+    iosBundleId: 'com.example.frontend', // Gerçek iOS Bundle ID'yi buraya yazın
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    appId: '1:123456789:ios:xxxxxxxxxxxxxxxxxxxxxxx',
-    messagingSenderId: '123456789',
-    projectId: 'motoapp-firebase',
-    storageBucket: 'motoapp-firebase.appspot.com',
-    iosBundleId: 'com.example.frontend',
+    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek macOS API key'i buraya yazın
+    appId: '1:123456789:ios:xxxxxxxxxxxxxxxxxxxxxxx', // Firebase Console'dan gerçek macOS App ID'yi buraya yazın
+    messagingSenderId: '123456789', // Firebase Console'dan gerçek Messaging Sender ID'yi buraya yazın
+    projectId: 'motoapp-firebase', // Firebase Console'dan gerçek Project ID'yi buraya yazın
+    storageBucket: 'motoapp-firebase.appspot.com', // Firebase Console'dan gerçek Storage Bucket'ı buraya yazın
+    iosBundleId: 'com.example.frontend', // Gerçek macOS Bundle ID'yi buraya yazın
   );
 }
