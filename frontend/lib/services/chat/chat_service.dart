@@ -147,6 +147,90 @@ class ChatService {
     }
   }
 
+  /// Room messages endpoint'i (frontend'in beklediği format)
+  Future<List<PrivateMessage>> getRoomMessages(int user1Id, int user2Id) async {
+    final cacheKey = 'room_${user1Id}_${user2Id}';
+    
+    // Cache kontrolü
+    if (_isCacheValid(cacheKey) && _messagesCache.containsKey(cacheKey)) {
+      return _messagesCache[cacheKey]!;
+    }
+    
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/chat/rooms/private_${user1Id}_${user2Id}/messages/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final messages = (data as List)
+            .map((json) => PrivateMessage.fromJson(json))
+            .toList();
+            
+        // Mesajları timestamp'e göre sırala
+        messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+            
+        // Cache'e kaydet
+        _messagesCache[cacheKey] = messages;
+        _cacheTimestamps[cacheKey] = DateTime.now();
+        
+        return messages;
+      } else {
+        throw Exception('Room messages alınamadı: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Room messages alınırken hata: $e');
+    }
+  }
+
+  /// Room'a mesaj gönder (frontend'in beklediği format)
+  Future<PrivateMessage> sendRoomMessage({
+    required int user1Id,
+    required int user2Id,
+    required String message,
+  }) async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/chat/rooms/private_${user1Id}_${user2Id}/messages/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'message': message,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final newMessage = PrivateMessage.fromJson(data);
+        
+        // Cache'i temizle
+        _clearMessageCache();
+        
+        return newMessage;
+      } else {
+        throw Exception('Room message gönderilemedi: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Room message gönderilirken hata: $e');
+    }
+  }
+
   /// Özel mesaj gönder
   Future<PrivateMessage> sendPrivateMessage({
     required int receiverId,

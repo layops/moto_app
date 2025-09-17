@@ -244,7 +244,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         _errorMessage = null;
       });
 
-      final messages = await _chatService.getConversationWithUser(widget.otherUser.id);
+      // Room messages endpoint'ini kullan (frontend'in beklediği format)
+      final messages = await _chatService.getRoomMessages(_currentUserId!, widget.otherUser.id);
       
       if (mounted) {
         setState(() {
@@ -303,9 +304,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
         });
         _scrollToBottom();
       } else {
-        // WebSocket yoksa HTTP API ile gönder
-        final newMessage = await _chatService.sendPrivateMessage(
-          receiverId: widget.otherUser.id,
+        // WebSocket yoksa HTTP API ile gönder (room messages endpoint'i kullan)
+        final newMessage = await _chatService.sendRoomMessage(
+          user1Id: _currentUserId!,
+          user2Id: widget.otherUser.id,
           message: messageText,
         );
         
