@@ -32,7 +32,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _loadNotificationPreferences() async {
     try {
-      final preferences = await ServiceLocator.notifications.getNotificationPreferences();
+      final preferences = await ServiceLocator.notification.getNotificationPreferences();
       if (mounted) {
         setState(() {
           directMessages = preferences['direct_messages'] ?? true;
@@ -84,7 +84,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         'vibration_enabled': vibration,
       };
 
-      await ServiceLocator.notifications.updateNotificationPreferences(preferences);
+      await ServiceLocator.notification.updateNotificationPreferences(preferences);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

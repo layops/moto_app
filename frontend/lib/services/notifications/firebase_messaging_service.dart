@@ -98,7 +98,7 @@ class FirebaseMessagingService {
       
       if (_fcmToken != null) {
         // Token'ı backend'e kaydet
-        await ServiceLocator.notifications.saveFCMToken(_fcmToken!);
+        await ServiceLocator.notification.saveFCMToken(_fcmToken!);
       }
     } catch (e) {
       print('❌ FCM Token alınamadı: $e');
@@ -145,7 +145,7 @@ class FirebaseMessagingService {
     print('📨 Foreground message alındı: ${message.messageId}');
     
     // Kullanıcının notification preferences'ını kontrol et
-    final preferences = await ServiceLocator.notifications.getNotificationPreferences();
+    final preferences = await ServiceLocator.notification.getNotificationPreferences();
     
     // Eğer push notifications kapalıysa, local notification gösterme
     if (preferences['push_enabled'] == false) {
@@ -221,7 +221,7 @@ class FirebaseMessagingService {
     try {
       _fcmToken = await _firebaseMessaging.getToken();
       if (_fcmToken != null) {
-        await ServiceLocator.notifications.saveFCMToken(_fcmToken!);
+        await ServiceLocator.notification.saveFCMToken(_fcmToken!);
         print('🔄 FCM Token yenilendi');
       }
     } catch (e) {
