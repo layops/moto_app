@@ -97,12 +97,17 @@ if DATABASE_URL and dj_database_url:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
+            conn_max_age=0,  # Bağlantıları hemen kapat (connection pool sorunları için)
+            conn_health_checks=False,  # Health check'leri devre dışı bırak
             ssl_require=True,  # Supabase SSL gerektirir
+            # Supabase connection pool limitlerini aşmamak için
+            options={
+                'MAX_CONNS': 1,  # Maksimum 1 bağlantı
+                'MIN_CONNS': 0,  # Minimum bağlantı yok
+            }
         )
     }
-    print("✅ PostgreSQL database configured")
+    print("✅ PostgreSQL database configured with optimized connection settings")
 else:
     print("❌ No DATABASE_URL found")
     raise Exception("DATABASE_URL environment variable is required")
