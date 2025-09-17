@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Minimal build script for production deployment
-# Supabase connection limit sorunları nedeniyle migration'lar devre dışı
+# Ultra minimal build script for production deployment
+# Supabase connection limit sorunları nedeniyle tüm DB işlemleri devre dışı
 set -e
 
-echo "🚀 Starting minimal build process..."
+echo "🚀 Starting ultra minimal build process..."
 
 # Create logs directory
 mkdir -p logs
@@ -13,10 +13,11 @@ mkdir -p logs
 echo "📦 Installing dependencies..."
 pip install -r requirements.txt
 
-# Collect static files only (no database operations)
-echo "📁 Collecting static files..."
-python manage.py collectstatic --noinput
+# Skip collectstatic to avoid database connection
+echo "⚠️  Skipping collectstatic due to Supabase connection limits"
+echo "📁 Static files will be collected at runtime if needed"
 
-echo "✅ Minimal build completed successfully!"
-echo "⚠️  Database migrations skipped due to Supabase connection limits"
+echo "✅ Ultra minimal build completed successfully!"
+echo "⚠️  All database operations skipped due to Supabase connection limits"
 echo "📝 Manual migration required - see MIGRATION_GUIDE.md"
+echo "🔧 Static files will be handled by WhiteNoise at runtime"

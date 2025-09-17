@@ -265,8 +265,8 @@ CACHE_TIMEOUTS = {
 
 
 
-# Static files optimization
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Static files optimization - WhiteNoise ile runtime'da static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files optimization
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
