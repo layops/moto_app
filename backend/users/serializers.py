@@ -210,19 +210,8 @@ class UserSerializer(serializers.ModelSerializer):
         Profil fotoğrafını tam URL olarak döner
         """
         if obj.profile_picture:
-            # Eğer zaten tam URL ise direkt döndür
-            if obj.profile_picture.startswith(('http://', 'https://')):
-                return obj.profile_picture
-            # Supabase URL'i ise direkt döndür
-            if 'supabase.co' in obj.profile_picture:
-                return obj.profile_picture
-            # Eski sistem için URL oluştur
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
-            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
-            media_url = getattr(settings, 'MEDIA_URL', '/media/')
-            return f"{base_url}{media_url}{obj.profile_picture}"
+            # URLField zaten tam URL döndürür
+            return obj.profile_picture
         return None
 
     def get_cover_photo_url(self, obj):
@@ -230,19 +219,8 @@ class UserSerializer(serializers.ModelSerializer):
         Kapak fotoğrafını tam URL olarak döner
         """
         if obj.cover_picture:
-            # Eğer zaten tam URL ise direkt döndür
-            if obj.cover_picture.startswith(('http://', 'https://')):
-                return obj.cover_picture
-            # Supabase URL'i ise direkt döndür
-            if 'supabase.co' in obj.cover_picture:
-                return obj.cover_picture
-            # Eski sistem için URL oluştur
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(settings.MEDIA_URL + str(obj.cover_picture))
-            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
-            media_url = getattr(settings, 'MEDIA_URL', '/media/')
-            return f"{base_url}{media_url}{obj.cover_picture}"
+            # URLField zaten tam URL döndürür
+            return obj.cover_picture
         return None
 
     def get_join_date(self, obj):

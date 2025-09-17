@@ -243,7 +243,7 @@ class _ProfilePageState extends State<ProfilePage> {
       username: _currentUsername!,
       firstName: _profileData!['first_name'],
       lastName: _profileData!['last_name'],
-      profilePicture: _profileData!['profile_picture'],
+      profilePicture: _profileData!['profile_photo_url'],
     );
     
     // Chat detail sayfasına git
@@ -261,14 +261,14 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Profil Fotoğrafı Yükle'),
         content: ProfilePhotoUploader(
           type: PhotoType.profile, // <-- type eklendi
-          networkImageUrl: _profileData?['profile_photo_url'] ?? _profileData?['profile_picture'],
+          networkImageUrl: _profileData?['profile_photo_url'],
           onImageSelected: (File image) => setState(() => _avatarFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) async {
             // Cache'leri temizle
             await _clearProfileCache();
             
             setState(() {
-              _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'] ?? updatedUser['profile_picture'];
+              _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'];
               _avatarFile = null;
             });
             ScaffoldMessenger.of(context).showSnackBar(
@@ -515,9 +515,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   margin: const EdgeInsets.only(top: 100), // AppBar için boşluk
                   child: ProfileHeader(
                     avatarFile: _avatarFile,
-                    avatarUrl: _profileData?['profile_photo_url'] ?? _profileData?['profile_picture'],
+                    avatarUrl: _profileData?['profile_photo_url'],
                     coverFile: _coverFile,
-                    coverUrl: _profileData?['cover_photo_url'] ?? _profileData?['cover_picture'],
+                    coverUrl: _profileData?['cover_photo_url'],
                     followerCount: _followerCount,
                     followingCount: _profileData?['following_count'] ?? 0,
                     username: _currentUsername!,
@@ -586,7 +586,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       PostsTab(
                         posts: _posts ?? [],
                         username: _currentUsername!,
-                        avatarUrl: _profileData?['profile_photo'],
+                        avatarUrl: _profileData?['profile_photo_url'],
                         displayName: _profileData?['display_name'],
                         error: _postsError,
                       ),

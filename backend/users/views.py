@@ -482,11 +482,59 @@ class ProfileImageUploadView(APIView):
         if 'profile_picture' not in request.FILES:
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Profile image upload temporarily disabled - Supabase removed
-        return Response({
-            'error': 'Profil fotoğrafı yükleme servisi geçici olarak devre dışı',
-            'message': 'Supabase kaldırıldı, dosya yükleme servisi güncelleniyor'
-        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        try:
+            # Dosya boyutu kontrolü (5MB limit)
+            profile_picture = request.FILES['profile_picture']
+            if profile_picture.size > 5 * 1024 * 1024:  # 5MB
+                return Response({'error': 'Dosya boyutu çok büyük. Maksimum 5MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Dosya formatı kontrolü
+            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+            if profile_picture.content_type not in allowed_formats:
+                return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Supabase Storage'a yükle
+            from .services.supabase_storage_service import SupabaseStorageService
+            storage_service = SupabaseStorageService()
+            
+            if not storage_service.is_available:
+                return Response({
+                    'error': 'Dosya yükleme servisi kullanılamıyor',
+                    'message': 'Supabase Storage servisi yapılandırılmamış'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            # Dosyayı Supabase'e yükle
+            upload_result = storage_service.upload_profile_picture(profile_picture, username)
+            
+            if not upload_result['success']:
+                return Response({
+                    'error': upload_result['error']
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Eski profil fotoğrafını sil (Supabase'den)
+            if user.profile_picture and 'supabase.co' in user.profile_picture:
+                try:
+                    # URL'den dosya adını çıkar
+                    old_file_name = user.profile_picture.split('/')[-1]
+                    storage_service.delete_file(storage_service.profile_bucket, f"{username}/{old_file_name}")
+                except:
+                    pass  # Silinemezse devam et
+            
+            # Yeni profil fotoğrafı URL'ini kaydet
+            user.profile_picture = upload_result['url']
+            user.save()
+            
+            # Kullanıcı bilgilerini döndür
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                'user': serializer.data,
+                'message': 'Profil fotoğrafı başarıyla güncellendi'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Profil fotoğrafı yükleme hatası: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CoverImageUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -499,11 +547,59 @@ class CoverImageUploadView(APIView):
         if 'cover_picture' not in request.FILES:
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Cover image upload temporarily disabled - Supabase removed
-        return Response({
-            'error': 'Kapak fotoğrafı yükleme servisi geçici olarak devre dışı',
-            'message': 'Supabase kaldırıldı, dosya yükleme servisi güncelleniyor'
-        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        try:
+            # Dosya boyutu kontrolü (10MB limit - kapak fotoğrafı daha büyük olabilir)
+            cover_picture = request.FILES['cover_picture']
+            if cover_picture.size > 10 * 1024 * 1024:  # 10MB
+                return Response({'error': 'Dosya boyutu çok büyük. Maksimum 10MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Dosya formatı kontrolü
+            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+            if cover_picture.content_type not in allowed_formats:
+                return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Supabase Storage'a yükle
+            from .services.supabase_storage_service import SupabaseStorageService
+            storage_service = SupabaseStorageService()
+            
+            if not storage_service.is_available:
+                return Response({
+                    'error': 'Dosya yükleme servisi kullanılamıyor',
+                    'message': 'Supabase Storage servisi yapılandırılmamış'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            # Dosyayı Supabase'e yükle
+            upload_result = storage_service.upload_cover_picture(cover_picture, username)
+            
+            if not upload_result['success']:
+                return Response({
+                    'error': upload_result['error']
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Eski kapak fotoğrafını sil (Supabase'den)
+            if user.cover_picture and 'supabase.co' in user.cover_picture:
+                try:
+                    # URL'den dosya adını çıkar
+                    old_file_name = user.cover_picture.split('/')[-1]
+                    storage_service.delete_file(storage_service.cover_bucket, f"{username}/{old_file_name}")
+                except:
+                    pass  # Silinemezse devam et
+            
+            # Yeni kapak fotoğrafı URL'ini kaydet
+            user.cover_picture = upload_result['url']
+            user.save()
+            
+            # Kullanıcı bilgilerini döndür
+            serializer = UserSerializer(user, context={'request': request})
+            return Response({
+                'user': serializer.data,
+                'message': 'Kapak fotoğrafı başarıyla güncellendi'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Kapak fotoğrafı yükleme hatası: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]

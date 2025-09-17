@@ -23,8 +23,8 @@ class ProfileDrawer extends StatelessWidget {
         content: ProfilePhotoUploader(
           type: type,
           networkImageUrl: type == PhotoType.profile
-              ? profileData['profile_photo_url'] ?? profileData['profile_picture'] ?? ''
-              : profileData['cover_photo_url'] ?? profileData['cover_picture'] ?? '',
+              ? profileData['profile_photo_url'] ?? ''
+              : profileData['cover_photo_url'] ?? '',
           onUploadSuccess: (userData) {
             // Upload sonrası profileData güncellemesi yapılabilir
           },

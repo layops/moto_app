@@ -14,6 +14,18 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', f'{BASE_URL}/api/users/auth/callback/')
 GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/users/auth/callback/')
 
+# Supabase Configuration
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
+SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
+
+# Supabase Storage Buckets
+SUPABASE_BUCKET = 'profile_pictures'
+SUPABASE_COVER_BUCKET = 'cover_pictures'
+SUPABASE_EVENTS_BUCKET = 'events_pictures'
+SUPABASE_GROUPS_BUCKET = 'groups_profile_pictures'
+SUPABASE_POSTS_BUCKET = 'group_posts_images'
+
 # Supabase Real-time Notifications (Firebase FCM kaldırıldı)
 # FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')  # Firebase kaldırıldı
 MEDIA_URL = '/media/'
