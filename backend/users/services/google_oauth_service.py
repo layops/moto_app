@@ -205,11 +205,24 @@ class GoogleOAuthService:
                 )
             
             logger.info(f"Google OAuth başarılı: {email}")
+            logger.info(f"Access token length: {len(access_token) if access_token else 0}")
+            logger.info(f"Refresh token length: {len(refresh_token) if refresh_token else 0}")
+            
+            # JWT token oluştur (Google token'ları yerine kendi token'ımızı kullan)
+            from rest_framework_simplejwt.tokens import RefreshToken
+            
+            refresh = RefreshToken.for_user(user)
+            jwt_access_token = str(refresh.access_token)
+            jwt_refresh_token = str(refresh)
+            
+            logger.info(f"JWT access token length: {len(jwt_access_token)}")
+            logger.info(f"JWT refresh token length: {len(jwt_refresh_token)}")
+            
             return {
                 'success': True,
                 'user': user,
-                'access_token': access_token,
-                'refresh_token': refresh_token,
+                'access_token': jwt_access_token,  # JWT token kullan
+                'refresh_token': jwt_refresh_token,  # JWT refresh token kullan
                 'message': 'Google OAuth giriş başarılı'
             }
             

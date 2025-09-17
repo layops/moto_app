@@ -244,8 +244,12 @@ class GoogleCallbackView(APIView):
                         'access_token': result.get('access_token'),
                         'refresh_token': result.get('refresh_token'),
                     }
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f"Token data before encode: {token_data}")
                     token_data_json = json.dumps(token_data)
                     token_data_encoded = base64.b64encode(token_data_json.encode()).decode()
+                    logger.info(f"Token data encoded length: {len(token_data_encoded)}")
                     
                     success_html = f"""
                     <!DOCTYPE html>
