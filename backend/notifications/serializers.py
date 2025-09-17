@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Notification
+from .models import Notification, NotificationPreferences
 from users.serializers import UserSerializer
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -29,3 +29,27 @@ class NotificationMarkReadSerializer(serializers.Serializer):
         min_length=1,
         write_only=True
     )
+
+
+class NotificationPreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationPreferences
+        fields = [
+            'direct_messages',
+            'group_messages',
+            'ride_reminders',
+            'event_updates',
+            'group_activity',
+            'new_members',
+            'challenges_rewards',
+            'leaderboard_updates',
+            'sound_enabled',
+            'vibration_enabled',
+            'push_enabled',
+            'fcm_token',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class FCMTokenSerializer(serializers.Serializer):
+    fcm_token = serializers.CharField(max_length=1000, required=True)

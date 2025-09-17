@@ -1,5 +1,12 @@
 from django.urls import path
-from .views import NotificationListView, NotificationMarkReadView, NotificationDeleteView, SendTestNotificationView
+from .views import (
+    NotificationListView, 
+    NotificationMarkReadView, 
+    NotificationDeleteView, 
+    SendTestNotificationView,
+    NotificationPreferencesView,
+    FCMTokenView
+)
 from .sse_views import notification_stream
 
 urlpatterns = [
@@ -8,4 +15,6 @@ urlpatterns = [
     path('<int:pk>/', NotificationDeleteView.as_view(), name='notification-delete'),
     path('send_test_notification/', SendTestNotificationView.as_view(), name='send-test-notification'),
     path('stream/', notification_stream, name='notification-stream'),
+    path('preferences/', NotificationPreferencesView.as_view(), name='notification-preferences'),
+    path('fcm-token/', FCMTokenView.as_view(), name='fcm-token'),
 ]

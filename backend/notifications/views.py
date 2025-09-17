@@ -4,8 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from .models import Notification
-from .serializers import NotificationSerializer
+from .models import Notification, NotificationPreferences
+from .serializers import NotificationSerializer, NotificationPreferencesSerializer, FCMTokenSerializer
 from .utils import send_realtime_notification
 
 User = get_user_model()
@@ -128,5 +128,83 @@ class SendTestNotificationView(APIView):
         except Exception as e:
             return Response(
                 {"detail": f"Test bildirimi gönderilirken hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class NotificationPreferencesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Kullanıcının bildirim tercihlerini getir"""
+        try:
+            preferences, created = NotificationPreferences.objects.get_or_create(
+                user=request.user
+            )
+            serializer = NotificationPreferencesSerializer(preferences)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"detail": f"Bildirim tercihleri alınırken hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def patch(self, request):
+        """Kullanıcının bildirim tercihlerini güncelle"""
+        try:
+            preferences, created = NotificationPreferences.objects.get_or_create(
+                user=request.user
+            )
+            serializer = NotificationPreferencesSerializer(
+                preferences, 
+                data=request.data, 
+                partial=True
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "detail": "Bildirim tercihleri başarıyla güncellendi.",
+                    "preferences": serializer.data
+                })
+            else:
+                return Response(
+                    {"detail": "Geçersiz veri", "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            return Response(
+                {"detail": f"Bildirim tercihleri güncellenirken hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class FCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """FCM token'ı kaydet"""
+        try:
+            serializer = FCMTokenSerializer(data=request.data)
+            if serializer.is_valid():
+                fcm_token = serializer.validated_data['fcm_token']
+                
+                preferences, created = NotificationPreferences.objects.get_or_create(
+                    user=request.user
+                )
+                preferences.fcm_token = fcm_token
+                preferences.save()
+                
+                return Response({
+                    "detail": "FCM token başarıyla kaydedildi."
+                })
+            else:
+                return Response(
+                    {"detail": "Geçersiz token", "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except Exception as e:
+            return Response(
+                {"detail": f"FCM token kaydedilirken hata oluştu: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

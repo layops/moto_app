@@ -46,6 +46,10 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	
+	<!-- Firebase Cloud Messaging -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	
 	<!-- Deep Link for Google OAuth Callback -->
 	<key>CFBundleURLTypes</key>
 	<array>

@@ -488,6 +488,105 @@ class NotificationsService {
     }
   }
 
+  /// Kullanıcının bildirim tercihlerini getirir
+  Future<Map<String, dynamic>> getNotificationPreferences() async {
+    final token = await ServiceLocator.token.getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final uri = Uri.parse('$_restApiBaseUrl/notifications/preferences/');
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      } else if (response.statusCode == 401) {
+        throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
+      } else {
+        throw Exception('Bildirim tercihleri alınamadı: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Ağ hatası: $e');
+    }
+  }
+
+  /// Kullanıcının bildirim tercihlerini günceller
+  Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, dynamic> preferences) async {
+    final token = await ServiceLocator.token.getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final uri = Uri.parse('$_restApiBaseUrl/notifications/preferences/');
+      final response = await http.patch(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(preferences),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+        return responseData['preferences'] ?? responseData;
+      } else if (response.statusCode == 401) {
+        throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
+      } else {
+        throw Exception('Bildirim tercihleri güncellenemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Ağ hatası: $e');
+    }
+  }
+
+  /// FCM token'ı kaydeder
+  Future<void> saveFCMToken(String fcmToken) async {
+    final token = await ServiceLocator.token.getToken();
+    if (token == null) {
+      throw Exception('Token bulunamadı');
+    }
+
+    try {
+      final uri = Uri.parse('$_restApiBaseUrl/notifications/fcm-token/');
+      final response = await http.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ FCM token başarıyla kaydedildi');
+      } else if (response.statusCode == 401) {
+        throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
+      } else {
+        throw Exception('FCM token kaydedilemedi: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Ağ hatası: $e');
+    }
+  }
+
   /// Cache'i temizler
   void clearCache() {
     // NotificationsService için özel cache yok, sadece placeholder

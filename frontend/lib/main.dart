@@ -13,6 +13,7 @@ import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 import 'package:motoapp_frontend/config/supabase_config.dart';
+import 'package:motoapp_frontend/services/notifications/firebase_messaging_service.dart';
 
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
@@ -35,6 +36,9 @@ void main() async {
     
     await ServiceLocator.init();
     await ServiceLocator.auth.initializeAuthState();
+    
+    // Firebase Messaging'i initialize et
+    await FirebaseMessagingService().initialize();
     
     // Deep link service'i initialize et
     DeepLinkService.initialize();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/service_locator.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -19,10 +20,112 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool leaderboardUpdates = true;
   bool sound = true;
   bool vibration = true;
+  
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationPreferences();
+  }
+
+  Future<void> _loadNotificationPreferences() async {
+    try {
+      final preferences = await ServiceLocator.notifications.getNotificationPreferences();
+      if (mounted) {
+        setState(() {
+          directMessages = preferences['direct_messages'] ?? true;
+          groupMessages = preferences['group_messages'] ?? true;
+          rideReminders = preferences['ride_reminders'] ?? true;
+          eventUpdates = preferences['event_updates'] ?? true;
+          groupActivity = preferences['group_activity'] ?? true;
+          newMembers = preferences['new_members'] ?? true;
+          challengesRewards = preferences['challenges_rewards'] ?? true;
+          leaderboardUpdates = preferences['leaderboard_updates'] ?? true;
+          sound = preferences['sound_enabled'] ?? true;
+          vibration = preferences['vibration_enabled'] ?? true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bildirim tercihleri yüklenirken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveNotificationPreferences() async {
+    if (_isSaving) return;
+    
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final preferences = {
+        'direct_messages': directMessages,
+        'group_messages': groupMessages,
+        'ride_reminders': rideReminders,
+        'event_updates': eventUpdates,
+        'group_activity': groupActivity,
+        'new_members': newMembers,
+        'challenges_rewards': challengesRewards,
+        'leaderboard_updates': leaderboardUpdates,
+        'sound_enabled': sound,
+        'vibration_enabled': vibration,
+      };
+
+      await ServiceLocator.notifications.updateNotificationPreferences(preferences);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bildirim tercihleri başarıyla güncellendi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bildirim tercihleri güncellenirken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Notifications'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -47,6 +150,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 directMessages = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 12),
@@ -58,6 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 groupMessages = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 24),
@@ -78,6 +183,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 rideReminders = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 12),
@@ -89,6 +195,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 eventUpdates = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 24),
@@ -109,6 +216,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 groupActivity = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 12),
@@ -120,6 +228,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 newMembers = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 24),
@@ -140,6 +249,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 challengesRewards = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 12),
@@ -151,6 +261,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 leaderboardUpdates = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 24),
@@ -170,6 +281,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 sound = value;
               });
+              _saveNotificationPreferences();
             },
           ),
           const SizedBox(height: 12),
@@ -180,6 +292,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               setState(() {
                 vibration = value;
               });
+              _saveNotificationPreferences();
             },
           ),
         ],

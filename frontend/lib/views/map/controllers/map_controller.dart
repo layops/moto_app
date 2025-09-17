@@ -10,7 +10,7 @@ import '../services/route_service.dart';
 import '../services/search_service.dart';
 
 /// Ana map controller sınıfı
-class MapController extends ChangeNotifier {
+class CustomMapController extends ChangeNotifier {
   final MapController _mapController = MapController();
   final LocationService _locationService = LocationService();
   final RouteService _routeService = RouteService();
@@ -46,7 +46,7 @@ class MapController extends ChangeNotifier {
     'Sokak'
   ];
 
-  MapController() {
+  CustomMapController() {
     _initializeController();
   }
 
@@ -333,7 +333,7 @@ class MapController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _searchController.removeAndRotateListener(_searchControllerListener);
+    _searchController.removeListener(_searchControllerListener);
     _searchController.dispose();
     _labelController.dispose();
     _searchDebounce?.cancel();

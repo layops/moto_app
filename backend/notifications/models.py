@@ -67,3 +67,64 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Bildirim: {self.notification_type} - Alıcı: {self.recipient.username}"
+
+
+class NotificationPreferences(models.Model):
+    """Kullanıcıların bildirim tercihlerini saklar"""
+    
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notification_preferences',
+        verbose_name='Kullanıcı'
+    )
+    
+    # Messages
+    direct_messages = models.BooleanField(default=True, verbose_name='Doğrudan Mesajlar')
+    group_messages = models.BooleanField(default=True, verbose_name='Grup Mesajları')
+    
+    # Events
+    ride_reminders = models.BooleanField(default=True, verbose_name='Sürüş Hatırlatmaları')
+    event_updates = models.BooleanField(default=True, verbose_name='Etkinlik Güncellemeleri')
+    
+    # Groups
+    group_activity = models.BooleanField(default=True, verbose_name='Grup Aktivitesi')
+    new_members = models.BooleanField(default=True, verbose_name='Yeni Üyeler')
+    
+    # Gamification
+    challenges_rewards = models.BooleanField(default=True, verbose_name='Meydan Okumalar ve Ödüller')
+    leaderboard_updates = models.BooleanField(default=True, verbose_name='Liderlik Tablosu Güncellemeleri')
+    
+    # Sound & Vibration
+    sound_enabled = models.BooleanField(default=True, verbose_name='Ses Açık')
+    vibration_enabled = models.BooleanField(default=True, verbose_name='Titreşim Açık')
+    
+    # Push notification settings
+    push_enabled = models.BooleanField(default=True, verbose_name='Push Bildirimleri Açık')
+    fcm_token = models.TextField(blank=True, null=True, verbose_name='FCM Token')
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Oluşturulma Tarihi')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Güncellenme Tarihi')
+
+    class Meta:
+        verbose_name = 'Bildirim Tercihi'
+        verbose_name_plural = 'Bildirim Tercihleri'
+
+    def __str__(self):
+        return f"{self.user.username} - Bildirim Tercihleri"
+    
+    def get_preferences_dict(self):
+        """Tercihleri dictionary olarak döndürür"""
+        return {
+            'direct_messages': self.direct_messages,
+            'group_messages': self.group_messages,
+            'ride_reminders': self.ride_reminders,
+            'event_updates': self.event_updates,
+            'group_activity': self.group_activity,
+            'new_members': self.new_members,
+            'challenges_rewards': self.challenges_rewards,
+            'leaderboard_updates': self.leaderboard_updates,
+            'sound_enabled': self.sound_enabled,
+            'vibration_enabled': self.vibration_enabled,
+            'push_enabled': self.push_enabled,
+        }
