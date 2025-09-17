@@ -188,6 +188,9 @@ class AuthService {
               username, 
               refreshToken: newRefreshToken.isNotEmpty ? newRefreshToken : refreshToken
             );
+            
+            // Auth state'i güncelle
+            _authStateController.value = true;
             // print('🔑 AuthService - Token başarıyla yenilendi');
             return true;
           }

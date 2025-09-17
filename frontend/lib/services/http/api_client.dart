@@ -158,6 +158,9 @@ class ApiClient {
             await _tokenService.getCurrentUsername() ?? '', 
             refreshToken: newRefreshToken ?? refreshToken
           );
+          
+          // Auth state'i güncelle (public method kullan)
+          await ServiceLocator.auth.initializeAuthState();
         } else {
           throw Exception('Yeni access token alınamadı');
         }

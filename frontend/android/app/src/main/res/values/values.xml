@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Firebase Configuration -->
+    <!-- Bu dosya Firebase için gerekli, ancak gerçek Firebase projesi olmadığı için boş bırakıldı -->
+    <!-- Firebase kullanmak istiyorsanız, Firebase Console'dan google-services.json dosyasını indirip -->
+    <!-- android/app/ klasörüne koymanız ve bu dosyayı Firebase configuration ile güncellemeniz gerekir -->
+</resources>

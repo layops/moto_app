@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/services/post/post_service.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +30,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Firebase'i initialize et
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
     // Supabase'i initialize et
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
@@ -64,27 +71,26 @@ void _runFallbackApp(Object error, StackTrace stackTrace) {
       home: Scaffold(
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24.w),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48.w, color: Colors.red),
-                SizedBox(height: 16.h),
-                Text(
+                const Icon(Icons.error_outline, size: 48.0, color: Colors.red),
+                const SizedBox(height: 16.0),
+                const Text(
                   'Uygulama başlatılamadı',
-                  style:
-                      TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 8.h),
+                const SizedBox(height: 8.0),
                 Text(
                   'Hata: ${error.toString()}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14.sp),
+                  style: const TextStyle(fontSize: 14.0),
                 ),
-                SizedBox(height: 24.h),
+                const SizedBox(height: 24.0),
                 ElevatedButton(
                   onPressed: () => main(),
-                  child: Text('Tekrar Dene', style: TextStyle(fontSize: 16.sp)),
+                  child: const Text('Tekrar Dene', style: TextStyle(fontSize: 16.0)),
                 ),
               ],
             ),

@@ -223,6 +223,9 @@ CHANNEL_LAYERS = {
 }
 
 
+# Firebase Configuration
+FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY', 'your-firebase-server-key-here')
+
 # Supabase Configuration - REMOVED (using direct Google OAuth instead)
 # All Supabase settings have been removed as we now use direct Google OAuth API
 
