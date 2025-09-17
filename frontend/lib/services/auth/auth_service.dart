@@ -78,7 +78,7 @@ class AuthService {
       {bool rememberMe = false}) async {
     try {
       // print('🔑 AuthService - JWT Login başlatılıyor: $username');
-      final response = await _apiClient.post('token/', {
+      final response = await _apiClient.post('users/login/', {
         'username': username,
         'password': password,
       });

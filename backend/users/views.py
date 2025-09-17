@@ -10,7 +10,7 @@ from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, UserSerializer,
     FollowSerializer
 )
-# from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 import json
 
 User = get_user_model()
@@ -36,12 +36,12 @@ class UserLoginView(APIView):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            # refresh = RefreshToken.for_user(user)
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'user': UserSerializer(user).data,
-                'message': 'Giriş başarılı'
-                # 'token': str(refresh.access_token),
-                # 'refresh': str(refresh)
+                'message': 'Giriş başarılı',
+                'access': str(refresh.access_token),
+                'refresh': str(refresh)
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
