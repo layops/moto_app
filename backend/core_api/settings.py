@@ -100,12 +100,12 @@ if DATABASE_URL and dj_database_url:
             conn_max_age=0,  # Bağlantıları hemen kapat (connection pool sorunları için)
             conn_health_checks=False,  # Health check'leri devre dışı bırak
             ssl_require=True,  # Supabase SSL gerektirir
-            # Supabase connection pool limitlerini aşmamak için
-            options={
-                'MAX_CONNS': 1,  # Maksimum 1 bağlantı
-                'MIN_CONNS': 0,  # Minimum bağlantı yok
-            }
         )
+    }
+    # Supabase connection pool limitlerini aşmamak için ek ayarlar
+    DATABASES['default']['OPTIONS'] = {
+        'connect_timeout': 10,  # Bağlantı timeout'u
+        'application_name': 'moto_app',  # Uygulama adı
     }
     print("✅ PostgreSQL database configured with optimized connection settings")
 else:
