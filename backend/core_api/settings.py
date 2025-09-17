@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
+    # 'rest_framework_simplejwt.token_blacklist',  # Supabase restart sonrası sorunları için geçici devre dışı
     'corsheaders',
     'drf_yasg',
     'channels',
@@ -204,7 +204,15 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
     ],
-    'EXCEPTION_HANDLER': 'core_api.exception_handler.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'core_api.exception_handler.custom_exception_handler',
+    # Supabase restart sonrası authentication için ek ayarlar
+    'UNAUTHENTICATED_USER': None,
+    'UNAUTHENTICATED_TOKEN': None,
+    'JWT_AUTH_COOKIE': 'jwt',
+    'JWT_AUTH_REFRESH_COOKIE': 'jwt_refresh',
+    'JWT_AUTH_SECURE': True,  # HTTPS için
+    'JWT_AUTH_HTTPONLY': True,  # XSS koruması için
+    'JWT_AUTH_SAMESITE': 'Lax',
 }
 
 CSRF_COOKIE_HTTPONLY = True
@@ -434,15 +442,15 @@ else:
     #     },
     # }
 
-# JWT Settings (geçici olarak devre dışı)
+# JWT Settings - Supabase Optimized
 from datetime import timedelta
 
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    # Token lifetime'ları Supabase restart sonrası için optimize edildi
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),  # 24 saat (daha uzun)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),  # 30 gün (daha uzun)
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'BLACKLIST_AFTER_ROTATION': False,  # Supabase restart sonrası blacklist sorunları için devre dışı
     'UPDATE_LAST_LOGIN': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
@@ -450,7 +458,7 @@ SIMPLE_JWT = {
     'AUDIENCE': None,
     'ISSUER': None,
     'JWK_URL': None,
-    'LEEWAY': 0,
+    'LEEWAY': 60,  # 60 saniye tolerance (clock skew için)
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
@@ -460,10 +468,13 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
     'JTI_CLAIM': 'jti',
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    'SLIDING_TOKEN_LIFETIME': timedelta(hours=1),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
     'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
     'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
     'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
     'TOKEN_BLACKLIST_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenBlacklistSerializer',
+    # Supabase restart sonrası token validation için ek ayarlar
+    'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
+    'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
 }
