@@ -25,6 +25,8 @@ def send_realtime_notification(recipient_user, message, notification_type='other
         content_object: İlgili nesne (opsiyonel)
     """
     try:
+        logger.info(f"🔔 Bildirim gönderiliyor: {recipient_user.username} - {notification_type} - {message[:50]}...")
+        
         # Çift bildirim kontrolü - son 5 dakika içinde aynı bildirim var mı?
         from django.utils import timezone
         from datetime import timedelta
@@ -41,7 +43,7 @@ def send_realtime_notification(recipient_user, message, notification_type='other
         ).first()
         
         if existing_notification:
-            logger.info(f"Çift bildirim engellendi: {recipient_user.username} - {notification_type}")
+            logger.info(f"⚠️ Çift bildirim engellendi: {recipient_user.username} - {notification_type}")
             return existing_notification
         
         # Bildirimi veritabanına kaydet
@@ -54,18 +56,27 @@ def send_realtime_notification(recipient_user, message, notification_type='other
             object_id=content_object.pk if content_object else None,
             is_read=False
         )
+        
+        logger.info(f"✅ Bildirim veritabanına kaydedildi: ID {notification.id}")
 
         # WebSocket üzerinden gerçek zamanlı bildirim gönder
-        serialized_notification = NotificationSerializer(notification).data
-        channel_layer = get_channel_layer()
-        group_name = f'user_notifications_{recipient_user.id}'
+        try:
+            serialized_notification = NotificationSerializer(notification).data
+            channel_layer = get_channel_layer()
+            group_name = f'user_notifications_{recipient_user.id}'
+            
+            logger.info(f"📡 WebSocket bildirimi gönderiliyor: {group_name}")
+            
+            async_to_sync(channel_layer.group_send)(group_name, {
+                'type': 'send_notification',
+                'notification': serialized_notification,
+            })
+            
+            logger.info(f"✅ WebSocket bildirimi gönderildi: {recipient_user.username} - {notification_type}")
+        except Exception as e:
+            logger.error(f"❌ WebSocket bildirimi hatası: {e}")
         
-        async_to_sync(channel_layer.group_send)(group_name, {
-            'type': 'send_notification',
-            'notification': serialized_notification,
-        })
-        
-        logger.info(f"Bildirim gönderildi: {recipient_user.username} - {notification_type}")
+        logger.info(f"🎉 Bildirim başarıyla gönderildi: {recipient_user.username} - {notification_type}")
         
     except Exception as e:
         logger.error(f"Bildirim gönderme hatası: {e}")
@@ -222,19 +233,17 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             content_object=content_object
         )
         
-        # Supabase real-time push notification gönder
-        if preferences.push_enabled:
-            push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
-            send_supabase_realtime_notification(
-                recipient_user=recipient_user,
-                title=push_title,
-                body=message,
-                data={
-                    'notification_id': str(notification.id) if notification else None,
-                    'sender_username': sender_user.username if sender_user else None,
-                },
-                notification_type=notification_type
-            )
+        # FCM push notification gönder (eğer FCM token varsa)
+        if preferences.push_enabled and preferences.fcm_token:
+            try:
+                # FCM token varsa push notification gönder
+                push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
+                # TODO: FCM ile push notification gönderme implementasyonu
+                logger.info(f"FCM push notification gönderilecek: {recipient_user.username} - {push_title}")
+            except Exception as e:
+                logger.error(f"FCM push notification hatası: {e}")
+        else:
+            logger.info(f"Push notification gönderilmedi - FCM token yok veya kapalı: {recipient_user.username}")
         
         return notification
         

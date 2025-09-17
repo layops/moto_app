@@ -21,7 +21,7 @@ class EventsPage extends StatefulWidget {
 }
 
 class _EventsPageState extends State<EventsPage> {
-  late final EventService _service;
+  EventService? _service;
   bool _loading = true;
   List<dynamic> _events = [];
   String? _error;
@@ -33,15 +33,22 @@ class _EventsPageState extends State<EventsPage> {
   void initState() {
     super.initState();
     _isGeneralPage = widget.groupId == null;
+    _initializeService();
+  }
+
+  void _initializeService() {
+    if (_service == null) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      _service = EventService(authService: authService);
+      _loadCurrentUsername();
+      _loadEvents();
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final authService = Provider.of<AuthService>(context, listen: false);
-    _service = EventService(authService: authService);
-    _loadCurrentUsername();
-    _loadEvents();
+    _initializeService();
   }
 
   Future<void> _loadCurrentUsername() async {
@@ -51,14 +58,16 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<void> _loadEvents() async {
+    if (_service == null) return;
+    
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       List<dynamic> fetchedEvents = _isGeneralPage
-          ? await _service.fetchAllEvents()
-          : await _service.fetchGroupEvents(widget.groupId!);
+          ? await _service!.fetchAllEvents()
+          : await _service!.fetchGroupEvents(widget.groupId!);
 
       final now = DateTime.now();
       if (!mounted) return;
@@ -105,8 +114,10 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<Map<String, dynamic>?> _joinEvent(int eventId, {String? message}) async {
+    if (_service == null) return null;
+    
     try {
-      final result = await _service.joinEvent(eventId, message: message);
+      final result = await _service!.joinEvent(eventId, message: message);
       if (!mounted) return null;
       
       // Backend'ten gelen event verisini kullan
@@ -126,8 +137,10 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<void> _leaveEvent(int eventId) async {
+    if (_service == null) return;
+    
     try {
-      final updatedEvent = await _service.leaveEvent(eventId);
+      final updatedEvent = await _service!.leaveEvent(eventId);
       if (!mounted) return;
       setState(() {
         final index = _events.indexWhere((e) => e['id'] == eventId);

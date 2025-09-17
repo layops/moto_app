@@ -154,6 +154,30 @@ class SendTestNotificationView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def get(self, request, *args, **kwargs):
+        """Test bildirimi gönderme endpoint'i için basit test"""
+        try:
+            # Kendine test bildirimi gönder
+            from .utils import send_realtime_notification
+            
+            send_realtime_notification(
+                recipient_user=request.user,
+                message="Bu bir test bildirimidir!",
+                notification_type='other',
+                sender_user=request.user
+            )
+            
+            return Response({
+                "detail": f"Test bildirimi '{request.user.username}' kullanıcısına gönderildi.",
+                "user": request.user.username,
+                "message": "Bu bir test bildirimidir!"
+            })
+        except Exception as e:
+            return Response(
+                {"detail": f"Test bildirimi gönderilirken hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class NotificationPreferencesView(APIView):
     permission_classes = [IsAuthenticated]
