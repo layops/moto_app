@@ -164,7 +164,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Image.asset(
           'assets/images/spiride_logo.png',
-          height: 50,
+          height: 60, // 50'den 60'a büyütüldü
         ),
         centerTitle: true,
         elevation: 0,

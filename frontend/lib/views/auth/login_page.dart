@@ -235,7 +235,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          child: const AuthLogo(size: 100),
+          child: const AuthLogo(size: 150), // 100'den 150'e büyütüldü
         ),
         
         SizedBox(height: 20.h),

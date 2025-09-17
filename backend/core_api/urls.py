@@ -34,11 +34,28 @@ schema_view = get_schema_view(
 def index(request):
     return HttpResponse("Site çalışıyor! /api/ altında API endpointlerini kullanabilirsiniz.")
 
-# Favicon view
+# Favicon views
 def favicon(request):
+    """Ana favicon - 32x32 boyutunda"""
     favicon_path = os.path.join(os.path.dirname(__file__), 'static', 'favicon.ico')
     if os.path.exists(favicon_path):
         return FileResponse(open(favicon_path, 'rb'), content_type='image/x-icon')
+    else:
+        return HttpResponse(status=404)
+
+def favicon_192(request):
+    """Büyük favicon - 192x192 boyutunda"""
+    favicon_path = os.path.join(os.path.dirname(__file__), 'static', 'favicon-192.png')
+    if os.path.exists(favicon_path):
+        return FileResponse(open(favicon_path, 'rb'), content_type='image/png')
+    else:
+        return HttpResponse(status=404)
+
+def favicon_512(request):
+    """En büyük favicon - 512x512 boyutunda"""
+    favicon_path = os.path.join(os.path.dirname(__file__), 'static', 'favicon-512.png')
+    if os.path.exists(favicon_path):
+        return FileResponse(open(favicon_path, 'rb'), content_type='image/png')
     else:
         return HttpResponse(status=404)
 
@@ -47,8 +64,10 @@ urlpatterns = [
     # Ana sayfa
     path('', index, name='index'),
     
-    # Favicon
+    # Favicons - farklı boyutlarda
     path('favicon.ico', favicon, name='favicon'),
+    path('favicon-192.png', favicon_192, name='favicon-192'),
+    path('favicon-512.png', favicon_512, name='favicon-512'),
     
     # API Root
     path('api/', api_root, name='api-root'),
