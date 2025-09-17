@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Max
 from django.contrib.auth import get_user_model
@@ -281,3 +282,86 @@ class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
             })
         
         return Response(conversation_list)
+
+
+class RoomMessagesView(APIView):
+    """Frontend'in beklediği room messages endpoint'i"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, user1_id, user2_id):
+        """İki kullanıcı arasındaki mesajları getir"""
+        try:
+            user = request.user
+            
+            # Kullanıcının bu konuşmaya erişim yetkisi var mı kontrol et
+            if user.id not in [user1_id, user2_id]:
+                return Response(
+                    {'detail': 'Bu konuşmaya erişim yetkiniz yok.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Diğer kullanıcıyı belirle
+            other_user_id = user2_id if user.id == user1_id else user1_id
+            other_user = get_object_or_404(User, id=other_user_id)
+            
+            # İki kullanıcı arasındaki mesajları getir
+            messages = PrivateMessage.objects.filter(
+                Q(sender=user, receiver=other_user) | 
+                Q(sender=other_user, receiver=user)
+            ).order_by('timestamp')
+            
+            serializer = PrivateMessageSerializer(messages, many=True)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Room messages error: {e}")
+            return Response(
+                {'detail': f'Mesajlar alınırken hata: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def post(self, request, user1_id, user2_id):
+        """Yeni mesaj gönder"""
+        try:
+            user = request.user
+            
+            # Kullanıcının bu konuşmaya erişim yetkisi var mı kontrol et
+            if user.id not in [user1_id, user2_id]:
+                return Response(
+                    {'detail': 'Bu konuşmaya erişim yetkiniz yok.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Diğer kullanıcıyı belirle
+            other_user_id = user2_id if user.id == user1_id else user1_id
+            other_user = get_object_or_404(User, id=other_user_id)
+            
+            # Mesajı oluştur
+            serializer = PrivateMessageSerializer(data=request.data)
+            if serializer.is_valid():
+                message = serializer.save(sender=user, receiver=other_user)
+                
+                # Mesaj alıcısına bildirim oluştur
+                try:
+                    from notifications.utils import send_notification_with_preferences
+                    send_notification_with_preferences(
+                        recipient_user=other_user,
+                        message=f"{user.first_name or user.username} size mesaj gönderdi: {message.message[:50]}...",
+                        notification_type='message',
+                        sender_user=user,
+                        title=f"Yeni Mesaj - {user.first_name or user.username}"
+                    )
+                    logger.info(f"Message notification sent to user {other_user.id}")
+                except Exception as e:
+                    logger.error(f"Error sending message notification: {e}")
+                
+                return Response(PrivateMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            logger.error(f"Send message error: {e}")
+            return Response(
+                {'detail': f'Mesaj gönderilirken hata: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
