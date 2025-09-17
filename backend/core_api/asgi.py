@@ -29,16 +29,11 @@ class AuthTokenMiddleware:
                 print("DEBUG ASGI (WS): WebSocket upgrade detected")
             else:
                 print(f"DEBUG ASGI (WS): WebSocket upgrade başarısız")
-        # HTTP istekleri için sadece debug log'u ekleyelim, authentication Django'ya bırakalım
+        # HTTP istekleri için minimal debug log
         if scope['type'] == 'http':
-            headers = dict(scope['headers'])
-            auth_header = headers.get(b'authorization', b'').decode('utf-8')
             path = scope.get('path', '')
-            
-            print(f"DEBUG ASGI (HTTP): Path: {path}, Auth: {auth_header[:20]}...")
-            
-            # Django'nun kendi authentication sistemini kullanmasına izin ver
-            # ASGI middleware'de authentication yapmıyoruz, sadece log tutuyoruz
+            if '/api/chat/rooms/' in path:
+                print(f"DEBUG ASGI (HTTP): Chat room request: {path}")
         
         # WebSocket için orijinal doğrulama
         if scope['type'] == 'websocket':
