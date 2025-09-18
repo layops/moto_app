@@ -29,19 +29,25 @@ class DeepLinkService {
   }
 
   static void _handleDeepLink(Uri uri) {
-    print('Deep link received: $uri');
+    print('🔗 Deep link received: $uri');
     
     if (uri.scheme == 'motoapp' && uri.host == 'oauth') {
       if (uri.pathSegments.contains('success')) {
         // OAuth success deep link
+        print('🔗 Processing OAuth success deep link');
         _handleGoogleOAuthSuccess(uri);
       } else {
         // OAuth callback deep link
+        print('🔗 Processing OAuth callback deep link');
         final callbackUrl = uri.queryParameters['url'];
         if (callbackUrl != null) {
           _handleGoogleOAuthCallback(callbackUrl);
         }
       }
+    } else if (uri.scheme == 'https' && uri.host == 'spiride.onrender.com' && uri.path.startsWith('/api/users/auth/callback/')) {
+      // Direct HTTPS callback URL
+      print('🔗 Processing direct HTTPS callback URL');
+      _handleGoogleOAuthCallback(uri.toString());
     }
   }
 
@@ -111,12 +117,10 @@ class DeepLinkService {
     try {
       final userDataEncoded = uri.queryParameters['user_data'];
       final tokenDataEncoded = uri.queryParameters['token_data'];
-      final callbackUrl = uri.queryParameters['url'];
       
-      print('Google OAuth success deep link received');
-      print('User data encoded: $userDataEncoded');
-      print('Token data encoded: $tokenDataEncoded');
-      print('Callback URL: $callbackUrl');
+      print('🔗 Google OAuth success deep link received');
+      print('🔗 User data encoded length: ${userDataEncoded?.length ?? 0}');
+      print('🔗 Token data encoded length: ${tokenDataEncoded?.length ?? 0}');
       
       if (userDataEncoded != null && tokenDataEncoded != null) {
         // Base64 decode user data
@@ -127,8 +131,8 @@ class DeepLinkService {
         final tokenDataJson = String.fromCharCodes(base64Decode(tokenDataEncoded));
         final tokenData = jsonDecode(tokenDataJson) as Map<String, dynamic>;
         
-        print('Decoded user data: $userData');
-        print('Decoded token data: $tokenData');
+        print('🔗 Decoded user data: ${userData['username']} (${userData['email']})');
+        print('🔗 Token data available: ${tokenData.containsKey('access_token')}');
         
         // AuthService ile giriş yap - gerçek token'ları kullan
         final authService = ServiceLocator.auth;
@@ -139,13 +143,15 @@ class DeepLinkService {
           userData,
         );
         
+        print('🔗 Google OAuth login completed, navigating to home...');
+        
         // Ana sayfaya yönlendir
         _navigateToHome();
       } else {
         _showError('User data veya token data bulunamadı');
       }
     } catch (e) {
-      print('Google OAuth success işleme hatası: $e');
+      print('🔗 Google OAuth success işleme hatası: $e');
       _showError('Success callback işlenirken hata: $e');
     }
   }

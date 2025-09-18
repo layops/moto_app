@@ -293,6 +293,43 @@ class AuthService {
     _authStateController.value = false;
   }
 
+  // Google OAuth ile giriş yapma
+  Future<void> loginWithGoogle(String accessToken, String refreshToken, Map<String, dynamic> userData) async {
+    try {
+      print('🔑 AuthService - Google OAuth login başlatılıyor: ${userData['username']}');
+      
+      // Token'ları kaydet
+      await _tokenService.saveAuthData(accessToken, userData['username'], refreshToken: refreshToken);
+      await _storage.setCurrentUsername(userData['username']);
+      
+      // Auth state güncelle
+      _authStateController.value = true;
+      
+      print('🔑 AuthService - Google OAuth login başarılı, auth state güncellendi');
+    } catch (e) {
+      print('❌ AuthService - Google OAuth login hatası: $e');
+      rethrow;
+    }
+  }
+
+  // Google OAuth callback'i işleme
+  Future<Response> handleGoogleCallback(String code, String state) async {
+    try {
+      print('🔑 AuthService - Google OAuth callback işleniyor');
+      
+      final response = await _apiClient.get('users/auth/callback/', queryParameters: {
+        'code': code,
+        'state': state,
+      });
+      
+      print('🔑 AuthService - Google OAuth callback response: ${response.statusCode}');
+      return response;
+    } catch (e) {
+      print('❌ AuthService - Google OAuth callback hatası: $e');
+      rethrow;
+    }
+  }
+
   void dispose() {
     _authStateController.close();
   }

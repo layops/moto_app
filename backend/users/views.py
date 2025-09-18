@@ -302,21 +302,37 @@ class GoogleCallbackView(APIView):
                             // Otomatik Flutter uygulamasına yönlendirme
                             function openFlutterApp() {{
                                 const currentUrl = window.location.href;
-                                const flutterUrl = 'motoapp://oauth/success?url=' + encodeURIComponent(currentUrl) + '&user_data=' + encodeURIComponent('{user_data_encoded}') + '&token_data=' + encodeURIComponent('{token_data_encoded}');
+                                const flutterUrl = 'motoapp://oauth/success?user_data=' + encodeURIComponent('{user_data_encoded}') + '&token_data=' + encodeURIComponent('{token_data_encoded}');
+                                
+                                console.log('Attempting to open Flutter app with URL:', flutterUrl);
                                 
                                 // Flutter uygulamasını açmayı dene
                                 window.location.href = flutterUrl;
                                 
-                                // Fallback: 3 saniye sonra kullanıcıyı bilgilendir
+                                // Fallback: 2 saniye sonra kullanıcıyı bilgilendir
                                 setTimeout(function() {{
                                     alert('Flutter uygulaması açılmadı. Lütfen uygulamayı manuel olarak açın.');
-                                }}, 3000);
+                                }}, 2000);
                             }}
                             
                             // Sayfa yüklendiğinde otomatik yönlendirme
                             window.onload = function() {{
-                                setTimeout(openFlutterApp, 2000); // 2 saniye sonra otomatik yönlendir
+                                // Hemen dene
+                                openFlutterApp();
+                                
+                                // 1 saniye sonra tekrar dene
+                                setTimeout(openFlutterApp, 1000);
+                                
+                                // 2 saniye sonra son kez dene
+                                setTimeout(openFlutterApp, 2000);
                             }};
+                            
+                            // Sayfa görünür olduğunda da dene (visibility API)
+                            document.addEventListener('visibilitychange', function() {{
+                                if (!document.hidden) {{
+                                    openFlutterApp();
+                                }}
+                            }});
                         </script>
                     </body>
                     </html>
