@@ -6,18 +6,9 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('notifications', '0003_create_notification_preferences'),
+        ('notifications', '0004_notification_types_update'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='notificationpreferences',
-            name='likes_comments',
-            field=models.BooleanField(default=True, verbose_name='Beğeni ve Yorumlar'),
-        ),
-        migrations.AddField(
-            model_name='notificationpreferences',
-            name='follows',
-            field=models.BooleanField(default=True, verbose_name='Takip Bildirimleri'),
-        ),
+        # Geçici olarak boş - migration conflict çözülene kadar
     ]
