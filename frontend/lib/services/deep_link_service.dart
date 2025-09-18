@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
@@ -14,32 +14,37 @@ import 'package:motoapp_frontend/views/messages/messages_page.dart';
 import 'package:motoapp_frontend/views/profile/profile_page.dart';
 
 class DeepLinkService {
-  static final AppLinks _appLinks = AppLinks();
-  static StreamSubscription<Uri>? _linkSubscription;
+  static const MethodChannel _channel = MethodChannel('deep_links');
+  static StreamSubscription? _linkSubscription;
 
   static void initialize() {
-    print('🔗 DeepLinkService initializing...');
-    _linkSubscription = _appLinks.uriLinkStream.listen(
-      (Uri uri) {
-        print('🔗 Raw deep link received: $uri');
-        _handleDeepLink(uri);
-      },
-      onError: (err) {
-        print('🔗 Deep link error: $err');
-      },
-    );
+    print('🔗 DeepLinkService initializing with native method...');
     
-    // Initial link check
-    _appLinks.getInitialLink().then((Uri? uri) {
-      if (uri != null) {
-        print('🔗 Initial deep link found: $uri');
-        _handleDeepLink(uri);
+    // Native deep link channel setup
+    _channel.setMethodCallHandler((MethodCall call) async {
+      if (call.method == 'onDeepLink') {
+        final String url = call.arguments as String;
+        print('🔗 Native deep link received: $url');
+        _handleDeepLink(Uri.parse(url));
+      }
+    });
+    
+    // Get initial link
+    _getInitialLink();
+  }
+  
+  static Future<void> _getInitialLink() async {
+    try {
+      final String? initialLink = await _channel.invokeMethod('getInitialLink');
+      if (initialLink != null) {
+        print('🔗 Initial deep link found: $initialLink');
+        _handleDeepLink(Uri.parse(initialLink));
       } else {
         print('🔗 No initial deep link found');
       }
-    }).catchError((err) {
-      print('🔗 Initial link error: $err');
-    });
+    } catch (e) {
+      print('🔗 Initial link error: $e');
+    }
   }
 
   static void _handleDeepLink(Uri uri) {

@@ -333,11 +333,11 @@ class GoogleCallbackView(APIView):
                             </div>
                         </div>
                         
-                        <div id="instructions" style="display: none;">
-                            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 16px; margin: 16px 0;">
-                                <h4 style="color: #856404; margin: 0 0 12px 0;">⚠️ Otomatik yönlendirme çalışmadı</h4>
-                                <p style="color: #856404; margin: 0 0 12px 0;"><strong>Manuel yöntem:</strong></p>
-                                <ol style="color: #856404; margin: 0; padding-left: 20px;">
+                        <div id="instructions" style="display: block;">
+                            <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                                <h4 style="color: #0c5460; margin: 0 0 12px 0;">📱 Flutter Uygulamasına Yönlendirme</h4>
+                                <p style="color: #0c5460; margin: 0 0 12px 0;"><strong>Otomatik yönlendirme denendi, manuel yöntem:</strong></p>
+                                <ol style="color: #0c5460; margin: 0; padding-left: 20px;">
                                     <li><strong>URL'yi Kopyala</strong> butonuna tıklayın</li>
                                     <li>Flutter uygulamasını açın</li>
                                     <li>Google giriş sayfasında "URL'yi Yapıştır" seçeneğini kullanın</li>

@@ -55,8 +55,8 @@ void main() async {
           print('❌ Kullanıcı giriş yapmamış, FCM initialize edilmiyor');
         }
         
-        // Deep link service'i initialize et
-        DeepLinkService.initialize();
+        // Deep link service'i initialize et (geçici olarak devre dışı)
+        // DeepLinkService.initialize();
 
     runApp(
       MultiProvider(
