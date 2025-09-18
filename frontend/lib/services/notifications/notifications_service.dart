@@ -554,38 +554,11 @@ class NotificationsService {
     }
   }
 
-  /// FCM token'ı kaydeder
-  Future<void> saveFCMToken(String fcmToken) async {
-    final token = await ServiceLocator.token.getToken();
-    if (token == null) {
-      throw Exception('Token bulunamadı');
-    }
-
-    try {
-      final uri = Uri.parse('$_restApiBaseUrl/notifications/fcm-token/');
-      final response = await http.post(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'fcm_token': fcmToken}),
-      );
-
-      if (response.statusCode == 200) {
-        print('✅ FCM token başarıyla kaydedildi');
-      } else if (response.statusCode == 401) {
-        throw Exception('Yetkilendirme hatası. Lütfen tekrar giriş yapın.');
-      } else {
-        throw Exception('FCM token kaydedilemedi: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-      throw Exception('Ağ hatası: $e');
-    }
-  }
+  /// FCM token kaydetme kaldırıldı - Supabase push notifications kullanılıyor
+  // Future<void> saveFCMToken(String fcmToken) async {
+  //   // FCM token kaydetme kaldırıldı - Supabase push notifications kullanılıyor
+  //   print('⚠️ FCM token kaydetme kaldırıldı - Supabase push notifications kullanılıyor');
+  // }
 
   /// Cache'i temizler
   void clearCache() {

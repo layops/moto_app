@@ -108,7 +108,8 @@ class NotificationPreferences(models.Model):
     
     # Push notification settings
     push_enabled = models.BooleanField(default=True, verbose_name='Push Bildirimleri Açık')
-    fcm_token = models.TextField(blank=True, null=True, verbose_name='FCM Token')
+    # FCM token kaldırıldı - Supabase push notifications kullanılıyor
+    # fcm_token = models.TextField(blank=True, null=True, verbose_name='FCM Token')
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Oluşturulma Tarihi')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Güncellenme Tarihi')

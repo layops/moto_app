@@ -226,35 +226,14 @@ class NotificationPreferencesView(APIView):
             )
 
 
-class FCMTokenView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        """FCM token'ı kaydet"""
-        try:
-            serializer = FCMTokenSerializer(data=request.data)
-            if serializer.is_valid():
-                fcm_token = serializer.validated_data['fcm_token']
-                
-                preferences, created = NotificationPreferences.objects.get_or_create(
-                    user=request.user
-                )
-                preferences.fcm_token = fcm_token
-                preferences.save()
-                
-                return Response({
-                    "detail": "FCM token başarıyla kaydedildi."
-                })
-            else:
-                return Response(
-                    {"detail": "Geçersiz token", "errors": serializer.errors},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        except Exception as e:
-            return Response(
-                {"detail": f"FCM token kaydedilirken hata oluştu: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+# FCM Token View kaldırıldı - Supabase push notifications kullanılıyor
+# class FCMTokenView(APIView):
+#     permission_classes = [IsAuthenticated]
+# 
+#     def post(self, request):
+#         """FCM token'ı kaydet"""
+#         # FCM token kaydetme kaldırıldı - Supabase push notifications kullanılıyor
+#         pass
 
 
 class SupabaseTestView(APIView):

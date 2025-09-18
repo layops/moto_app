@@ -48,10 +48,11 @@ class NotificationPreferencesSerializer(serializers.ModelSerializer):
             'sound_enabled',
             'vibration_enabled',
             'push_enabled',
-            'fcm_token',
+            # 'fcm_token', # FCM kaldırıldı - Supabase push notifications kullanılıyor
         ]
         read_only_fields = ['created_at', 'updated_at']
 
 
-class FCMTokenSerializer(serializers.Serializer):
-    fcm_token = serializers.CharField(max_length=1000, required=True)
+# FCM Token Serializer kaldırıldı - Supabase push notifications kullanılıyor
+# class FCMTokenSerializer(serializers.Serializer):
+#     fcm_token = serializers.CharField(max_length=1000, required=True)

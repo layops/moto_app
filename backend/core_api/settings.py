@@ -33,8 +33,10 @@ SUPABASE_BIKES_BUCKET = 'bikes_images'
 SUPABASE_REALTIME_URL = f"{SUPABASE_URL}/realtime/v1/websocket" if SUPABASE_URL else None
 
 # Firebase Cloud Messaging (FCM) Configuration
-FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')
-FCM_PROJECT_ID = os.environ.get('FCM_PROJECT_ID')
+# FCM kaldırıldı - Supabase push notifications kullanılıyor
+# FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')
+# FCM_PROJECT_ID kaldırıldı - Supabase push notifications kullanılıyor
+# FCM_PROJECT_ID = os.environ.get('FCM_PROJECT_ID')
 # MEDIA_URL ve MEDIA_ROOT kaldırıldı - Supabase Storage kullanılıyor
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
