@@ -100,14 +100,20 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Google ile giriş yaptıktan sonra, tarayıcıda görünen URL\'yi buraya yapıştırın:'),
+            const Text('Google ile giriş yaptıktan sonra:'),
+            const SizedBox(height: 8),
+            const Text('1. Tarayıcıda görünen URL\'yi kopyalayın'),
+            const Text('2. URL\'yi aşağıdaki alana yapıştırın'),
+            const Text('3. "Devam Et" butonuna tıklayın'),
             const SizedBox(height: 16),
             TextField(
               controller: urlController,
+              maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Callback URL',
                 hintText: 'https://spiride.onrender.com/api/users/auth/callback/?code=...',
                 border: OutlineInputBorder(),
+                helperText: 'URL\'yi tam olarak kopyalayıp yapıştırın',
               ),
               onSubmitted: (url) => _handleCallbackUrl(url),
             ),

@@ -292,9 +292,16 @@ class GoogleCallbackView(APIView):
                             <span id="callbackUrl"></span>
                             <br><br>
                             <button class="copy-btn" onclick="openFlutterApp()">Flutter Uygulamasını Aç</button>
+                            <br><br>
+                            <button class="copy-btn" onclick="copyUrl()" style="background-color: #6c757d;">URL'yi Kopyala</button>
                         </div>
                         
-                        <p><strong>Not:</strong> Eğer otomatik yönlendirme çalışmazsa, yukarıdaki butona tıklayın.</p>
+                        <p><strong>Not:</strong> Eğer otomatik yönlendirme çalışmazsa:</p>
+                        <ol>
+                            <li>Yukarıdaki "Flutter Uygulamasını Aç" butonuna tıklayın</li>
+                            <li>Hala çalışmazsa "URL'yi Kopyala" butonuna tıklayın</li>
+                            <li>Kopyalanan URL'yi Flutter uygulamasına yapıştırın</li>
+                        </ol>
                         
                         <script>
                             document.getElementById('callbackUrl').textContent = window.location.href;
@@ -307,12 +314,35 @@ class GoogleCallbackView(APIView):
                                 console.log('Attempting to open Flutter app with URL:', flutterUrl);
                                 
                                 // Flutter uygulamasını açmayı dene
-                                window.location.href = flutterUrl;
+                                const link = document.createElement('a');
+                                link.href = flutterUrl;
+                                link.style.display = 'none';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
                                 
-                                // Fallback: 2 saniye sonra kullanıcıyı bilgilendir
+                                // Fallback: 3 saniye sonra kullanıcıyı bilgilendir
                                 setTimeout(function() {{
                                     alert('Flutter uygulaması açılmadı. Lütfen uygulamayı manuel olarak açın.');
-                                }}, 2000);
+                                }}, 3000);
+                            }}
+                            
+                            // URL'yi kopyalama fonksiyonu
+                            function copyUrl() {{
+                                const url = window.location.href;
+                                navigator.clipboard.writeText(url).then(function() {{
+                                    alert('URL panoya kopyalandı! Flutter uygulamasına yapıştırabilirsiniz.');
+                                }}).catch(function(err) {{
+                                    console.error('URL kopyalama hatası:', err);
+                                    // Fallback: textarea kullanarak kopyala
+                                    const textArea = document.createElement('textarea');
+                                    textArea.value = url;
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    document.execCommand('copy');
+                                    document.body.removeChild(textArea);
+                                    alert('URL panoya kopyalandı! Flutter uygulamasına yapıştırabilirsiniz.');
+                                }});
                             }}
                             
                             // Sayfa yüklendiğinde otomatik yönlendirme

@@ -30,24 +30,31 @@ class DeepLinkService {
 
   static void _handleDeepLink(Uri uri) {
     print('🔗 Deep link received: $uri');
+    print('🔗 Scheme: ${uri.scheme}, Host: ${uri.host}, Path: ${uri.path}');
     
-    if (uri.scheme == 'motoapp' && uri.host == 'oauth') {
-      if (uri.pathSegments.contains('success')) {
-        // OAuth success deep link
-        print('🔗 Processing OAuth success deep link');
-        _handleGoogleOAuthSuccess(uri);
-      } else {
-        // OAuth callback deep link
-        print('🔗 Processing OAuth callback deep link');
-        final callbackUrl = uri.queryParameters['url'];
-        if (callbackUrl != null) {
-          _handleGoogleOAuthCallback(callbackUrl);
+    if (uri.scheme == 'motoapp') {
+      if (uri.host == 'oauth') {
+        if (uri.pathSegments.contains('success')) {
+          // OAuth success deep link
+          print('🔗 Processing OAuth success deep link');
+          _handleGoogleOAuthSuccess(uri);
+        } else {
+          // OAuth callback deep link
+          print('🔗 Processing OAuth callback deep link');
+          final callbackUrl = uri.queryParameters['url'];
+          if (callbackUrl != null) {
+            _handleGoogleOAuthCallback(callbackUrl);
+          }
         }
+      } else {
+        print('🔗 Unknown motoapp host: ${uri.host}');
       }
     } else if (uri.scheme == 'https' && uri.host == 'spiride.onrender.com' && uri.path.startsWith('/api/users/auth/callback/')) {
       // Direct HTTPS callback URL
       print('🔗 Processing direct HTTPS callback URL');
       _handleGoogleOAuthCallback(uri.toString());
+    } else {
+      print('🔗 Deep link not handled - Scheme: ${uri.scheme}, Host: ${uri.host}');
     }
   }
 
