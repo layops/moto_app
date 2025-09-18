@@ -10,6 +10,7 @@ import 'follow/follow_service.dart';
 import 'post/post_service.dart';
 import 'event/event_service.dart'; // Yeni eklenen import
 import 'notifications/notifications_service.dart';
+import 'notifications/fcm_service.dart';
 import 'search/search_service.dart';
 import 'gamification_service.dart';
 import 'chat/chat_service.dart';
@@ -40,6 +41,7 @@ class ServiceLocator {
   late final PostService _postService;
   late final EventService _eventService; // Yeni eklenen service
   late final NotificationsService _notificationService;
+  late final FCMService _fcmService;
   late final SearchService _searchService;
   late final GamificationService _gamificationService;
   late final ChatService _chatService;
@@ -123,7 +125,10 @@ class ServiceLocator {
       // 10. Initialize notification service
       instance._notificationService = NotificationsService();
 
-      // 11. Initialize search service
+      // 11. Initialize FCM service
+      instance._fcmService = FCMService();
+
+      // 12. Initialize search service
       instance._searchService = SearchService(instance._localStorage);
 
       // 12. Initialize gamification service
@@ -197,6 +202,7 @@ class ServiceLocator {
   static EventService get event => _instance._eventService; // Yeni getter
   static NotificationsService get notification =>
       _instance._notificationService;
+  static FCMService get fcm => _instance._fcmService;
   static SearchService get search => _instance._searchService;
   static GamificationService get gamification => _instance._gamificationService;
   static ChatService get chat => _instance._chatService;

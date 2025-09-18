@@ -104,6 +104,10 @@ class AuthService {
 
         // Auth state güncelle
         _authStateController.value = true;
+        
+        // FCM'i initialize et
+        await _initializeFCM();
+        
         // print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
       } else {
         // print('❌ AuthService - Access token boş, login başarısız');
@@ -305,6 +309,9 @@ class AuthService {
       // Auth state güncelle
       _authStateController.value = true;
       
+      // FCM'i initialize et
+      await _initializeFCM();
+      
       print('🔑 AuthService - Google OAuth login başarılı, auth state güncellendi');
     } catch (e) {
       print('❌ AuthService - Google OAuth login hatası: $e');
@@ -327,6 +334,22 @@ class AuthService {
     } catch (e) {
       print('❌ AuthService - Google OAuth callback hatası: $e');
       rethrow;
+    }
+  }
+
+  // FCM'i initialize et
+  Future<void> _initializeFCM() async {
+    try {
+      print('🔑 AuthService - FCM initialize ediliyor...');
+      final fcmService = ServiceLocator.fcm;
+      if (fcmService != null) {
+        await fcmService.initialize();
+        print('🔑 AuthService - FCM başarıyla initialize edildi');
+      } else {
+        print('❌ AuthService - FCM service bulunamadı');
+      }
+    } catch (e) {
+      print('❌ AuthService - FCM initialize hatası: $e');
     }
   }
 

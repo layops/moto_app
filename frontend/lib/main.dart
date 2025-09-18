@@ -45,15 +45,14 @@ void main() async {
         // Supabase Push Service'i initialize et (geçici olarak devre dışı)
         // await SupabasePushService().initialize();
         
-        // FCM Service'i initialize et
-        await FCMService().initialize();
-        
-        // Mevcut kullanıcıyı kontrol et
+        // Mevcut kullanıcıyı kontrol et ve FCM initialize et
         final currentUser = await ServiceLocator.auth.currentUser;
         if (currentUser != null) {
           print('🔑 Mevcut kullanıcı: ${currentUser['username']} (ID: ${currentUser['id']})');
+          print('🔑 Kullanıcı giriş yapmış, FCM initialize ediliyor...');
+          await FCMService().initialize();
         } else {
-          print('❌ Kullanıcı giriş yapmamış');
+          print('❌ Kullanıcı giriş yapmamış, FCM initialize edilmiyor');
         }
         
         // Deep link service'i initialize et
