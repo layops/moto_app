@@ -15,6 +15,10 @@ pip install -r requirements.txt
 # Skip connection test - migrations will handle connection
 echo "✅ Skipping connection test - will connect during migrations"
 
+# Create migrations for any model changes
+echo "📝 Creating migrations..."
+python manage.py makemigrations --noinput
+
 # Run migrations
 echo "🗄️ Running migrations..."
 python manage.py migrate --noinput
