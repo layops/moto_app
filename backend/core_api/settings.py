@@ -583,4 +583,4 @@ SIMPLE_JWT = {
 }
 
 # Firebase Cloud Messaging (FCM) Settings
-FCM_SERVER_KEY = env('FCM_SERVER_KEY', default='')
+FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY', '')
