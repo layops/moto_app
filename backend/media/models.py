@@ -17,4 +17,4 @@ class Media(models.Model):
 
 
     def __str__(self):
-        return f"{self.group.name} - {self.file.name}"
+        return f"{self.group.name if self.group else 'No Group'} - {self.file_url or 'No File'}"
