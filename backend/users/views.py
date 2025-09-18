@@ -34,11 +34,6 @@ class UserLoginView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        # Debug: Gelen veriyi logla
-        print(f"DEBUG: Login request data: {request.data}")
-        print(f"DEBUG: Username: {request.data.get('username')}")
-        print(f"DEBUG: Password: {'*' * len(str(request.data.get('password', '')))}")
-        
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']

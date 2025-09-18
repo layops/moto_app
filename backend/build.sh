@@ -23,6 +23,10 @@ python manage.py makemigrations --noinput
 echo "🗄️ Running migrations..."
 python manage.py migrate --noinput
 
+# Collect static files for production
+echo "📁 Collecting static files..."
+python manage.py collectstatic --noinput
+
 echo "✅ Supabase optimized build completed successfully!"
 echo "🗄️  Ready to use Supabase PostgreSQL"
-echo "📁 Static files will be collected at runtime"
+echo "📁 Static files collected successfully"
