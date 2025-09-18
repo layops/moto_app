@@ -7,7 +7,7 @@ from .views import (
     NotificationPreferencesView,
     FCMTokenView,
     SupabaseTestView,
-    FCMTestView,
+    SupabasePushTestView,
     PushNotificationStatusView
 )
 from .sse_views import notification_stream
@@ -22,6 +22,6 @@ urlpatterns = [
     path('preferences/', NotificationPreferencesView.as_view(), name='notification-preferences'),
     path('fcm-token/', FCMTokenView.as_view(), name='fcm-token'),
     path('supabase-test/', SupabaseTestView.as_view(), name='supabase-test'),
-    path('fcm-test/', FCMTestView.as_view(), name='fcm-test'),
+    path('supabase-push-test/', SupabasePushTestView.as_view(), name='supabase-push-test'),
     path('status/', PushNotificationStatusView.as_view(), name='push-notification-status'),
 ]

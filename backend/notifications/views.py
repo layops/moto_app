@@ -297,24 +297,24 @@ class SupabaseTestView(APIView):
             )
 
 
-class FCMTestView(APIView):
+class SupabasePushTestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """FCM push notification test endpoint'i"""
+        """Supabase push notification test endpoint'i"""
         try:
-            from .fcm_service import send_fcm_notification
+            from .supabase_client import send_supabase_push_notification
             
             # Test bildirimi gönder
-            title = "MotoApp FCM Test"
-            body = f"Merhaba {request.user.username}! Bu bir FCM test bildirimidir."
+            title = "MotoApp Supabase Push Test"
+            body = f"Merhaba {request.user.username}! Bu bir Supabase push test bildirimidir."
             data = {
                 'test': True,
                 'timestamp': str(timezone.now())
             }
             
-            success = send_fcm_notification(
-                user=request.user,
+            success = send_supabase_push_notification(
+                user_id=request.user.id,
                 title=title,
                 body=body,
                 data=data
@@ -322,20 +322,20 @@ class FCMTestView(APIView):
             
             if success:
                 return Response({
-                    "detail": "FCM test bildirimi başarıyla gönderildi!",
+                    "detail": "Supabase push test bildirimi başarıyla gönderildi!",
                     "title": title,
                     "body": body,
                     "user": request.user.username
                 })
             else:
                 return Response(
-                    {"detail": "FCM test bildirimi gönderilemedi. FCM token ve konfigürasyonu kontrol edin."},
+                    {"detail": "Supabase push test bildirimi gönderilemedi. Supabase konfigürasyonu kontrol edin."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
                 
         except Exception as e:
             return Response(
-                {"detail": f"FCM test hatası: {str(e)}"},
+                {"detail": f"Supabase push test hatası: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

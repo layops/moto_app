@@ -57,6 +57,50 @@ def send_realtime_notification_via_supabase(user_id: int, title: str, body: str,
         logger.error(f"Supabase real-time bildirim hatası: {e}")
         return False
 
+def send_supabase_push_notification(user_id: int, title: str, body: str, data: dict = None):
+    """
+    Supabase push notification gönderir (hem real-time hem de push)
+    """
+    try:
+        client = get_supabase_client()
+        
+        # 1. Real-time notification gönder
+        realtime_success = send_realtime_notification_via_supabase(user_id, title, body, data)
+        
+        # 2. Push notification için Supabase Edge Functions kullan
+        # Bu fonksiyon Supabase'in push notification servisini çağırır
+        push_data = {
+            'user_id': user_id,
+            'title': title,
+            'body': body,
+            'data': data or {},
+            'type': 'push_notification'
+        }
+        
+        # Supabase Edge Function çağır (push-notification function)
+        try:
+            response = client.functions.invoke(
+                'push-notification',
+                {
+                    'body': push_data
+                }
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Supabase push notification gönderildi: user_id={user_id}")
+                return True
+            else:
+                logger.warning(f"Supabase push notification başarısız: {response.status_code}")
+                return realtime_success  # En azından real-time çalıştıysa True döndür
+                
+        except Exception as push_error:
+            logger.warning(f"Supabase push notification hatası: {push_error}")
+            return realtime_success  # En azından real-time çalıştıysa True döndür
+            
+    except Exception as e:
+        logger.error(f"Supabase push notification genel hatası: {e}")
+        return False
+
 def create_notifications_table_if_not_exists():
     """
     Supabase'de notifications tablosunun varlığını kontrol eder
