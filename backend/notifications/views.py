@@ -255,3 +255,62 @@ class FCMTokenView(APIView):
                 {"detail": f"FCM token kaydedilirken hata oluştu: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class FCMTestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """FCM push notification test endpoint'i"""
+        try:
+            from .fcm_service import send_fcm_notification
+            
+            # Kullanıcının FCM token'ını al
+            try:
+                preferences = NotificationPreferences.objects.get(user=request.user)
+                fcm_token = preferences.fcm_token
+                
+                if not fcm_token:
+                    return Response(
+                        {"detail": "FCM token bulunamadı. Önce FCM token kaydedin."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except NotificationPreferences.DoesNotExist:
+                return Response(
+                    {"detail": "Notification preferences bulunamadı. Önce FCM token kaydedin."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Test bildirimi gönder
+            title = "MotoApp Test Bildirimi"
+            body = f"Merhaba {request.user.username}! Bu bir test bildirimidir."
+            data = {
+                'test': 'true',
+                'timestamp': str(timezone.now().isoformat())
+            }
+            
+            success = send_fcm_notification(
+                fcm_token=fcm_token,
+                title=title,
+                body=body,
+                data=data,
+                notification_type='test'
+            )
+            
+            if success:
+                return Response({
+                    "detail": "FCM test bildirimi başarıyla gönderildi!",
+                    "title": title,
+                    "body": body
+                })
+            else:
+                return Response(
+                    {"detail": "FCM test bildirimi gönderilemedi. FCM konfigürasyonunu kontrol edin."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+        except Exception as e:
+            return Response(
+                {"detail": f"FCM test hatası: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

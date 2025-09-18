@@ -623,19 +623,15 @@ class FollowToggleView(APIView):
             
             # Takip bildirimi gönder (asenkron olarak)
             try:
-                from notifications.utils import send_notification_with_preferences
-                message = f"{request.user.get_full_name() or request.user.username} sizi takip etmeye başladı"
+                from notifications.utils import send_follow_notification
                 
                 # Bildirimi arka planda gönder (asenkron)
                 import threading
                 def send_notification_async():
                     try:
-                        send_notification_with_preferences(
-                            recipient_user=target_user,
-                            message=message,
-                            notification_type='follow',
-                            sender_user=request.user,
-                            title=f"Yeni Takipçi - {request.user.get_full_name() or request.user.username}"
+                        send_follow_notification(
+                            follower_user=request.user,
+                            followed_user=target_user
                         )
                     except Exception as e:
                         import logging

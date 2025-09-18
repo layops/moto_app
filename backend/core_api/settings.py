@@ -14,11 +14,12 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', f'{BASE_URL}/api/users/auth/callback/')
 GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/users/auth/callback/')
 
-# Supabase Configuration
+# Supabase Configuration - Tek konfigürasyon
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://mosiqkyyribzlvdvedet.supabase.co')
 SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID')
 
 # Supabase Storage Buckets
 SUPABASE_BUCKET = 'profile_pictures'
@@ -28,8 +29,12 @@ SUPABASE_GROUPS_BUCKET = 'groups_profile_pictures'
 SUPABASE_POSTS_BUCKET = 'group_posts_images'
 SUPABASE_BIKES_BUCKET = 'bikes_images'
 
-# Supabase Real-time Notifications (Firebase FCM kaldırıldı)
-# FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')  # Firebase kaldırıldı
+# Supabase Real-time Configuration
+SUPABASE_REALTIME_URL = f"{SUPABASE_URL}/realtime/v1/websocket" if SUPABASE_URL else None
+
+# Firebase Cloud Messaging (FCM) Configuration
+FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')
+FCM_PROJECT_ID = os.environ.get('FCM_PROJECT_ID')
 # MEDIA_URL ve MEDIA_ROOT kaldırıldı - Supabase Storage kullanılıyor
 # MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / 'media'
@@ -262,22 +267,8 @@ CHANNEL_LAYERS = {
 }
 
 
-# Supabase Configuration
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
-SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
-SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID')
-
 # Supabase Storage Configuration
-USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'false').lower() == 'true'
-SUPABASE_BUCKET = os.environ.get('SUPABASE_BUCKET', 'profile_pictures')
-SUPABASE_COVER_BUCKET = os.environ.get('SUPABASE_COVER_BUCKET', 'cover_pictures')
-SUPABASE_EVENTS_BUCKET = os.environ.get('SUPABASE_EVENTS_BUCKET', 'events_pictures')
-SUPABASE_GROUPS_BUCKET = os.environ.get('SUPABASE_GROUPS_BUCKET', 'groups_profile_pictures')
-SUPABASE_POSTS_BUCKET = os.environ.get('SUPABASE_POSTS_BUCKET', 'group_posts_images')
-
-# Supabase Real-time Configuration
-SUPABASE_REALTIME_URL = f"{SUPABASE_URL}/realtime/v1/websocket" if SUPABASE_URL else None
+USE_SUPABASE_STORAGE = os.environ.get('USE_SUPABASE_STORAGE', 'true').lower() == 'true'
 
 if SUPABASE_URL and SUPABASE_ANON_KEY:
     print("✅ Supabase configuration loaded successfully")

@@ -1,8 +1,12 @@
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .models import Notification
 from .serializers import NotificationSerializer
 
@@ -23,13 +27,18 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close(code=4001)
             return
 
-        # Kullanıcı authentication kontrolü
-        if not hasattr(self.scope, 'user') or not self.scope["user"].is_authenticated:
-            logger.warning("WebSocket bağlantısı reddedildi: Kullanıcı kimlik doğrulaması başarısız")
+        # Token'ı çıkar
+        token_value = token.split('token=')[1].split('&')[0]
+        
+        # Token'ı doğrula ve kullanıcıyı al
+        user = await self.get_user_from_token(token_value)
+        
+        if not user or isinstance(user, AnonymousUser):
+            logger.warning("WebSocket bağlantısı reddedildi: Geçersiz token")
             await self.close(code=4001)
             return
 
-        self.user = self.scope["user"]
+        self.user = user
         self.user_group_name = f'user_notifications_{self.user.id}'
 
         try:
@@ -39,6 +48,18 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.error(f"WebSocket bağlantı hatası: {e}")
             await self.close(code=4000)
+
+    @database_sync_to_async
+    def get_user_from_token(self, token_value):
+        """Token'dan kullanıcıyı al"""
+        try:
+            access_token = AccessToken(token_value)
+            user_id = access_token['user_id']
+            user = User.objects.get(id=user_id)
+            return user
+        except (InvalidToken, TokenError, User.DoesNotExist) as e:
+            logger.error(f"Token doğrulama hatası: {e}")
+            return None
 
     async def disconnect(self, close_code):
         try:

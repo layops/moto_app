@@ -236,10 +236,28 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         # FCM push notification gönder (eğer FCM token varsa)
         if preferences.push_enabled and preferences.fcm_token:
             try:
-                # FCM token varsa push notification gönder
+                from .fcm_service import send_fcm_notification
+                
                 push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
-                # TODO: FCM ile push notification gönderme implementasyonu
-                logger.info(f"FCM push notification gönderilecek: {recipient_user.username} - {push_title}")
+                push_data = {
+                    'notification_id': str(notification.id),
+                    'sender_id': str(sender_user.id) if sender_user else None,
+                    'sender_username': sender_user.username if sender_user else None,
+                }
+                
+                success = send_fcm_notification(
+                    fcm_token=preferences.fcm_token,
+                    title=push_title,
+                    body=message,
+                    data=push_data,
+                    notification_type=notification_type
+                )
+                
+                if success:
+                    logger.info(f"FCM push notification gönderildi: {recipient_user.username} - {push_title}")
+                else:
+                    logger.warning(f"FCM push notification gönderilemedi: {recipient_user.username}")
+                    
             except Exception as e:
                 logger.error(f"FCM push notification hatası: {e}")
         else:
@@ -249,4 +267,104 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         
     except Exception as e:
         logger.error(f"Tercihli bildirim gönderme hatası: {e}")
-        raise
+
+
+def send_follow_notification(follower_user, followed_user):
+    """
+    Takip bildirimi gönderir - hem WebSocket hem de push notification
+    
+    Args:
+        follower_user: Takip eden kullanıcı
+        followed_user: Takip edilen kullanıcı
+    """
+    try:
+        message = f"{follower_user.username} sizi takip etmeye başladı!"
+        notification_type = 'follow'
+        
+        # Takip bildirimi gönder (WebSocket + Push notification)
+        notification = send_notification_with_preferences(
+            recipient_user=followed_user,
+            message=message,
+            notification_type=notification_type,
+            sender_user=follower_user,
+            title="Yeni Takipçi!"
+        )
+        
+        if notification:
+            logger.info(f"Takip bildirimi gönderildi: {follower_user.username} -> {followed_user.username}")
+            return notification
+        else:
+            logger.warning(f"Takip bildirimi gönderilemedi: {follower_user.username} -> {followed_user.username}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Takip bildirimi hatası: {e}")
+        return None
+
+
+def send_like_notification(liker_user, post_owner, post_title=None):
+    """
+    Beğeni bildirimi gönderir
+    
+    Args:
+        liker_user: Beğenen kullanıcı
+        post_owner: Post sahibi
+        post_title: Post başlığı (opsiyonel)
+    """
+    try:
+        post_info = f" '{post_title}'" if post_title else ""
+        message = f"{liker_user.username} gönderinizi{post_info} beğendi!"
+        notification_type = 'like'
+        
+        notification = send_notification_with_preferences(
+            recipient_user=post_owner,
+            message=message,
+            notification_type=notification_type,
+            sender_user=liker_user,
+            title="Gönderiniz Beğenildi!"
+        )
+        
+        if notification:
+            logger.info(f"Beğeni bildirimi gönderildi: {liker_user.username} -> {post_owner.username}")
+            return notification
+        else:
+            logger.warning(f"Beğeni bildirimi gönderilemedi: {liker_user.username} -> {post_owner.username}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Beğeni bildirimi hatası: {e}")
+        return None
+
+
+def send_comment_notification(commenter_user, post_owner, post_title=None):
+    """
+    Yorum bildirimi gönderir
+    
+    Args:
+        commenter_user: Yorum yapan kullanıcı
+        post_owner: Post sahibi
+        post_title: Post başlığı (opsiyonel)
+    """
+    try:
+        post_info = f" '{post_title}'" if post_title else ""
+        message = f"{commenter_user.username} gönderinize{post_info} yorum yaptı!"
+        notification_type = 'comment'
+        
+        notification = send_notification_with_preferences(
+            recipient_user=post_owner,
+            message=message,
+            notification_type=notification_type,
+            sender_user=commenter_user,
+            title="Gönderinize Yorum Yapıldı!"
+        )
+        
+        if notification:
+            logger.info(f"Yorum bildirimi gönderildi: {commenter_user.username} -> {post_owner.username}")
+            return notification
+        else:
+            logger.warning(f"Yorum bildirimi gönderilemedi: {commenter_user.username} -> {post_owner.username}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Yorum bildirimi hatası: {e}")
+        return None
