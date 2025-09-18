@@ -59,11 +59,9 @@ dependencies:
   app_links: ^6.3.2
   
   # Supabase
-  supabase_flutter: ^2.3.4
+  supabase_flutter: ^2.5.6
   
-  # Firebase & Push Notifications
-  firebase_core: ^2.24.2
-  firebase_messaging: ^14.7.10
+  # Local Notifications
   flutter_local_notifications: ^17.2.3
   
   # Utilities

@@ -233,20 +233,19 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             content_object=content_object
         )
         
-        # FCM push notification gönder (eğer FCM token varsa)
-        if preferences.push_enabled and preferences.fcm_token:
+        # Supabase Realtime notification gönder
+        if preferences.push_enabled:
             try:
-                from .fcm_service import send_fcm_notification
-                
                 push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
                 push_data = {
                     'notification_id': str(notification.id),
                     'sender_id': str(sender_user.id) if sender_user else None,
                     'sender_username': sender_user.username if sender_user else None,
+                    'notification_type': notification_type,
                 }
                 
-                success = send_fcm_notification(
-                    fcm_token=preferences.fcm_token,
+                success = send_supabase_realtime_notification(
+                    recipient_user=recipient_user,
                     title=push_title,
                     body=message,
                     data=push_data,
@@ -254,14 +253,14 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                 )
                 
                 if success:
-                    logger.info(f"FCM push notification gönderildi: {recipient_user.username} - {push_title}")
+                    logger.info(f"Supabase realtime notification gönderildi: {recipient_user.username} - {push_title}")
                 else:
-                    logger.warning(f"FCM push notification gönderilemedi: {recipient_user.username}")
+                    logger.warning(f"Supabase realtime notification gönderilemedi: {recipient_user.username}")
                     
             except Exception as e:
-                logger.error(f"FCM push notification hatası: {e}")
+                logger.error(f"Supabase realtime notification hatası: {e}")
         else:
-            logger.info(f"Push notification gönderilmedi - FCM token yok veya kapalı: {recipient_user.username}")
+            logger.info(f"Push notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
         
         return notification
         

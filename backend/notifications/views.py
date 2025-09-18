@@ -257,60 +257,41 @@ class FCMTokenView(APIView):
             )
 
 
-class FCMTestView(APIView):
+class SupabaseTestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """FCM push notification test endpoint'i"""
+        """Supabase realtime notification test endpoint'i"""
         try:
-            from .fcm_service import send_fcm_notification
-            
-            # Kullanıcının FCM token'ını al
-            try:
-                preferences = NotificationPreferences.objects.get(user=request.user)
-                fcm_token = preferences.fcm_token
-                
-                if not fcm_token:
-                    return Response(
-                        {"detail": "FCM token bulunamadı. Önce FCM token kaydedin."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            except NotificationPreferences.DoesNotExist:
-                return Response(
-                    {"detail": "Notification preferences bulunamadı. Önce FCM token kaydedin."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            from .utils import send_notification_with_preferences
             
             # Test bildirimi gönder
             title = "MotoApp Test Bildirimi"
-            body = f"Merhaba {request.user.username}! Bu bir test bildirimidir."
-            data = {
-                'test': 'true',
-                'timestamp': str(timezone.now().isoformat())
-            }
+            body = f"Merhaba {request.user.username}! Bu bir Supabase test bildirimidir."
             
-            success = send_fcm_notification(
-                fcm_token=fcm_token,
-                title=title,
-                body=body,
-                data=data,
-                notification_type='test'
+            notification = send_notification_with_preferences(
+                recipient_user=request.user,
+                message=body,
+                notification_type='test',
+                sender_user=request.user,
+                title=title
             )
             
-            if success:
+            if notification:
                 return Response({
-                    "detail": "FCM test bildirimi başarıyla gönderildi!",
+                    "detail": "Supabase test bildirimi başarıyla gönderildi!",
                     "title": title,
-                    "body": body
+                    "body": body,
+                    "notification_id": notification.id
                 })
             else:
                 return Response(
-                    {"detail": "FCM test bildirimi gönderilemedi. FCM konfigürasyonunu kontrol edin."},
+                    {"detail": "Supabase test bildirimi gönderilemedi. Supabase konfigürasyonunu kontrol edin."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
                 
         except Exception as e:
             return Response(
-                {"detail": f"FCM test hatası: {str(e)}"},
+                {"detail": f"Supabase test hatası: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

@@ -57,6 +57,55 @@ def send_realtime_notification_via_supabase(user_id: int, title: str, body: str,
         logger.error(f"Supabase real-time bildirim hatası: {e}")
         return False
 
+def create_notifications_table_if_not_exists():
+    """
+    Supabase'de notifications tablosunu oluşturur (eğer yoksa)
+    """
+    try:
+        client = get_supabase_client()
+        
+        # SQL ile tablo oluştur
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS notifications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            data JSONB DEFAULT '{}',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            is_read BOOLEAN DEFAULT FALSE
+        );
+        
+        -- Index ekle
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+        CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+        
+        -- RLS (Row Level Security) aktif et
+        ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+        
+        -- Policy: Kullanıcılar sadece kendi bildirimlerini görebilir
+        CREATE POLICY IF NOT EXISTS "Users can view own notifications" ON notifications
+            FOR SELECT USING (auth.uid()::text = user_id::text);
+            
+        -- Policy: Sistem bildirim ekleyebilir
+        CREATE POLICY IF NOT EXISTS "System can insert notifications" ON notifications
+            FOR INSERT WITH CHECK (true);
+        """
+        
+        # SQL'i çalıştır
+        result = client.rpc('exec_sql', {'sql': create_table_sql}).execute()
+        
+        if result.data:
+            logger.info("✅ Supabase notifications tablosu oluşturuldu/kontrol edildi")
+            return True
+        else:
+            logger.error(f"❌ Supabase tablo oluşturma hatası: {result}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Supabase tablo oluşturma hatası: {e}")
+        return False
+
 def subscribe_to_notifications(user_id: int):
     """
     Kullanıcının bildirimlerine subscribe olur
