@@ -101,9 +101,13 @@ class FCMService {
       
       if (_fcmToken != null) {
         debugPrint('🔑 FCM Token: $_fcmToken');
+        print('🔑 FCM Token (Console): $_fcmToken'); // Console'a da yazdır
         
         // Backend'e FCM token'ı gönder
         await _sendFCMTokenToBackend(_fcmToken!);
+      } else {
+        debugPrint('❌ FCM Token alınamadı');
+        print('❌ FCM Token alınamadı');
       }
       
     } catch (e) {
