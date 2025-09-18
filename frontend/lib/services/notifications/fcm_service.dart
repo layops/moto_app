@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../service_locator.dart';
 import '../http/api_client.dart';
+import '../../firebase_options.dart';
 
 /// Firebase Cloud Messaging Service
 class FCMService {
@@ -21,7 +22,9 @@ class FCMService {
   Future<void> initialize() async {
     try {
       // Firebase'i initialize et
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       
       _messaging = FirebaseMessaging.instance;
       

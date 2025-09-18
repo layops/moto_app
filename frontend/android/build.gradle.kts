@@ -1,3 +1,8 @@
+plugins {
+    id("com.android.application") version "8.0.2" apply false
+    id("com.google.gms.google-services") version "4.4.3" apply false
+}
+
 buildscript {
     repositories {
         google()
@@ -5,6 +10,7 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.0.2")
+        classpath("com.google.gms:google-services:4.3.15")
     }
 }
 

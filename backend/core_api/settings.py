@@ -584,4 +584,6 @@ SIMPLE_JWT = {
     'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
 }
 
-# Supabase Push Notifications (FCM yerine Supabase kullanıyoruz)
+# Firebase Cloud Messaging (FCM) Configuration
+FCM_SERVER_KEY = os.environ.get('FCM_SERVER_KEY')
+FCM_PROJECT_ID = os.environ.get('FCM_PROJECT_ID', 'spiride-4a107')

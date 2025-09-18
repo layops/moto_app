@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "715702701601",
+    "project_id": "spiride-4a107",
+    "storage_bucket": "spiride-4a107.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715702701601:android:44c5c91ee42a5a7ac1dd60",
+        "android_client_info": {
+          "package_name": "com.example.motoapp_frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCik6UuZO1rRt9QayAVXWIZrmmQ5vYtqa8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
