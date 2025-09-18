@@ -25,8 +25,4 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Gizlenen Konuşmalar',
             },
         ),
-        migrations.AddConstraint(
-            model_name='hiddenconversation',
-            constraint=models.UniqueConstraint(fields=('user', 'other_user'), name='unique_hidden_conversation'),
-        ),
     ]
