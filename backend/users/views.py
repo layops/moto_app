@@ -12,6 +12,7 @@ from .serializers import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
+import os
 
 User = get_user_model()
 
@@ -121,13 +122,21 @@ class GoogleAuthView(APIView):
             
             if not google_auth.is_available:
                 logger.error("Google OAuth servisi kullanılamıyor - credentials eksik")
+                logger.error(f"Environment variables:")
+                logger.error(f"  GOOGLE_CLIENT_ID: {os.environ.get('GOOGLE_CLIENT_ID', 'NOT_SET')}")
+                logger.error(f"  GOOGLE_CLIENT_SECRET: {'SET' if os.environ.get('GOOGLE_CLIENT_SECRET') else 'NOT_SET'}")
+                logger.error(f"  GOOGLE_REDIRECT_URI: {os.environ.get('GOOGLE_REDIRECT_URI', 'NOT_SET')}")
+                
                 return Response({
                     'error': 'Google OAuth servisi kullanılamıyor',
                     'message': 'Google OAuth credentials eksik. Lütfen normal email/şifre ile giriş yapın',
                     'debug': {
                         'client_id': bool(google_auth.client_id),
                         'client_secret': bool(google_auth.client_secret),
-                        'redirect_uri': google_auth.redirect_uri
+                        'redirect_uri': google_auth.redirect_uri,
+                        'env_client_id': bool(os.environ.get('GOOGLE_CLIENT_ID')),
+                        'env_client_secret': bool(os.environ.get('GOOGLE_CLIENT_SECRET')),
+                        'env_redirect_uri': bool(os.environ.get('GOOGLE_REDIRECT_URI'))
                     }
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
@@ -433,6 +442,14 @@ class GoogleAuthTestView(APIView):
             
             google_auth = GoogleOAuthService()
             
+            # Environment variables'ları detaylı kontrol et
+            env_debug = {
+                'GOOGLE_CLIENT_ID': os.environ.get('GOOGLE_CLIENT_ID', 'NOT_SET'),
+                'GOOGLE_CLIENT_SECRET': 'SET' if os.environ.get('GOOGLE_CLIENT_SECRET') else 'NOT_SET',
+                'GOOGLE_REDIRECT_URI': os.environ.get('GOOGLE_REDIRECT_URI', 'NOT_SET'),
+                'GOOGLE_CALLBACK_URL': os.environ.get('GOOGLE_CALLBACK_URL', 'NOT_SET'),
+            }
+            
             # Google OAuth servisini test et
             if not google_auth.is_available:
                 return Response({
@@ -442,6 +459,11 @@ class GoogleAuthTestView(APIView):
                         'GOOGLE_CLIENT_ID': bool(google_auth.client_id),
                         'GOOGLE_CLIENT_SECRET': bool(google_auth.client_secret),
                         'GOOGLE_REDIRECT_URI': bool(google_auth.redirect_uri),
+                    },
+                    'environment_variables': env_debug,
+                    'debug_info': {
+                        'client_id_value': google_auth.client_id[:20] + '...' if google_auth.client_id else None,
+                        'redirect_uri_value': google_auth.redirect_uri,
                     }
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             

@@ -19,6 +19,12 @@ class GoogleOAuthService:
         self.client_secret = settings.GOOGLE_CLIENT_SECRET
         self.redirect_uri = settings.GOOGLE_REDIRECT_URI
         
+        # Debug: Environment variables'ları logla
+        logger.info(f"Google OAuth Debug:")
+        logger.info(f"  CLIENT_ID: {self.client_id[:20] if self.client_id else 'None'}...")
+        logger.info(f"  CLIENT_SECRET: {'***' if self.client_secret else 'None'}")
+        logger.info(f"  REDIRECT_URI: {self.redirect_uri}")
+        
         # Google OAuth endpoints
         self.auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'
         self.token_url = 'https://oauth2.googleapis.com/token'
@@ -27,9 +33,11 @@ class GoogleOAuthService:
         self.is_available = bool(self.client_id and self.client_secret)
         
         if not self.is_available:
-            logger.warning("Google OAuth credentials not found - service disabled")
+            logger.error("Google OAuth credentials not found - service disabled")
+            logger.error(f"  CLIENT_ID exists: {bool(self.client_id)}")
+            logger.error(f"  CLIENT_SECRET exists: {bool(self.client_secret)}")
         else:
-            logger.info("Google OAuth service initialized successfully")
+            logger.info("✅ Google OAuth service initialized successfully")
 
     def _generate_pkce_pair(self):
         """PKCE code verifier ve challenge çifti oluştur"""
