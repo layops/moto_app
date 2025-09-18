@@ -257,15 +257,42 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-# Channel Layers Configuration - geçici olarak devre dışı
-print("⚠️ Redis Channel Layers geçici olarak devre dışı - InMemory Channel Layer kullanılıyor")
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-        "capacity": 1500,
-        "expiry": 10,
-    },
-}
+# Channel Layers Configuration - kalıcı çözüm
+if REDIS_URL:
+    try:
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {
+                    "hosts": [REDIS_URL],
+                    "capacity": 1500,
+                    "expiry": 10,
+                    "symmetric_encryption_keys": [SECRET_KEY],
+                },
+            },
+        }
+        print("✅ Redis Channel Layers aktif")
+    except Exception as e:
+        print(f"⚠️ Redis Channel Layers hatası: {e}")
+        # Fallback: In-memory channel layer
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels.layers.InMemoryChannelLayer",
+                "capacity": 1500,
+                "expiry": 10,
+            },
+        }
+        print("⚠️ Redis Channel Layers sorunu - InMemory Channel Layer kullanılıyor")
+else:
+    # Redis yoksa in-memory channel layer kullan
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+            "capacity": 1500,
+            "expiry": 10,
+        },
+    }
+    print("⚠️ Redis Channel Layers yok - InMemory Channel Layer kullanılıyor")
 
 
 # Supabase Storage Configuration
@@ -283,20 +310,58 @@ else:
 # Caching Configuration
 REDIS_URL = os.environ.get('REDIS_URL')
 
-# Redis cache konfigürasyonu - geçici olarak devre dışı
-print("⚠️ Redis cache geçici olarak devre dışı - Local memory cache kullanılıyor")
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
-            'CULL_FREQUENCY': 3,
-        },
-        'KEY_PREFIX': 'motoapp',
-        'TIMEOUT': 300,
+if REDIS_URL:
+    try:
+        # Redis cache konfigürasyonu - doğru konfigürasyon
+        CACHES = {
+            'default': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': REDIS_URL,
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                    'CONNECTION_POOL_KWARGS': {
+                        'max_connections': 50,
+                        'retry_on_timeout': True,
+                        'socket_connect_timeout': 5,
+                        'socket_timeout': 5,
+                    },
+                },
+                'KEY_PREFIX': 'motoapp',
+                'TIMEOUT': 300,
+            }
+        }
+        print("✅ Redis cache aktif")
+    except Exception as e:
+        print(f"⚠️ Redis bağlantı hatası: {e}")
+        # Fallback: Local memory cache
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'unique-snowflake',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 1000,
+                    'CULL_FREQUENCY': 3,
+                },
+                'KEY_PREFIX': 'motoapp',
+                'TIMEOUT': 300,
+            }
+        }
+        print("⚠️ Redis bağlantı sorunu - Local memory cache kullanılıyor")
+else:
+    # Redis URL yoksa local memory cache kullan
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+                'CULL_FREQUENCY': 3,
+            },
+            'KEY_PREFIX': 'motoapp',
+            'TIMEOUT': 300,
+        }
     }
-}
+    print("⚠️ REDIS_URL bulunamadı - Local memory cache kullanılıyor")
 
 # Cache timeout settings
 CACHE_TIMEOUTS = {
