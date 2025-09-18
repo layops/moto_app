@@ -141,19 +141,25 @@ def send_supabase_realtime_notification(recipient_user, title, body, data=None, 
         notification_type: Bildirim türü
     """
     try:
+        logger.info(f"🚀 Supabase realtime notification başlatılıyor: {recipient_user.username}")
+        
         # Kullanıcının notification preferences'ını kontrol et
         try:
             preferences = NotificationPreferences.objects.get(user=recipient_user)
+            logger.info(f"📋 Preferences bulundu: push_enabled={preferences.push_enabled}")
             if not preferences.push_enabled:
-                logger.info(f"Push notifications kapalı: {recipient_user.username}")
+                logger.info(f"🚫 Push notifications kapalı: {recipient_user.username}")
                 return False
         except NotificationPreferences.DoesNotExist:
             # Preferences yoksa varsayılan olarak gönder
+            logger.info(f"⚠️ Preferences bulunamadı, varsayılan olarak gönderiliyor: {recipient_user.username}")
             pass
         
         # Supabase client ile bildirim gönder
         notification_data = data or {}
         notification_data['notification_type'] = notification_type
+        
+        logger.info(f"📤 Supabase'e gönderiliyor: user_id={recipient_user.id}, title={title}")
         
         success = send_realtime_notification_via_supabase(
             user_id=recipient_user.id,
@@ -163,14 +169,14 @@ def send_supabase_realtime_notification(recipient_user, title, body, data=None, 
         )
         
         if success:
-            logger.info(f"Supabase real-time bildirim gönderildi: {recipient_user.username}")
+            logger.info(f"✅ Supabase real-time bildirim gönderildi: {recipient_user.username}")
             return True
         else:
-            logger.error(f"Supabase bildirim gönderme başarısız: {recipient_user.username}")
+            logger.error(f"❌ Supabase bildirim gönderme başarısız: {recipient_user.username}")
             return False
             
     except Exception as e:
-        logger.error(f"Supabase bildirim gönderme hatası: {e}")
+        logger.error(f"💥 Supabase bildirim gönderme hatası: {e}")
         return False
 
 
@@ -234,6 +240,8 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         )
         
         # Supabase Realtime notification gönder
+        logger.info(f"🔔 Push notification kontrolü: {recipient_user.username} - push_enabled: {preferences.push_enabled}")
+        
         if preferences.push_enabled:
             try:
                 push_title = title or f"MotoApp - {notification_type.replace('_', ' ').title()}"
@@ -244,6 +252,8 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                     'notification_type': notification_type,
                 }
                 
+                logger.info(f"📱 Supabase realtime notification gönderiliyor: {recipient_user.username} - {push_title}")
+                
                 success = send_supabase_realtime_notification(
                     recipient_user=recipient_user,
                     title=push_title,
@@ -253,14 +263,14 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                 )
                 
                 if success:
-                    logger.info(f"Supabase realtime notification gönderildi: {recipient_user.username} - {push_title}")
+                    logger.info(f"✅ Supabase realtime notification gönderildi: {recipient_user.username} - {push_title}")
                 else:
-                    logger.warning(f"Supabase realtime notification gönderilemedi: {recipient_user.username}")
+                    logger.warning(f"❌ Supabase realtime notification gönderilemedi: {recipient_user.username}")
                     
             except Exception as e:
-                logger.error(f"Supabase realtime notification hatası: {e}")
+                logger.error(f"💥 Supabase realtime notification hatası: {e}")
         else:
-            logger.info(f"Push notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
+            logger.info(f"🚫 Push notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
         
         return notification
         
