@@ -38,12 +38,28 @@ class GoogleOAuthService:
         
         self.is_available = bool(self.client_id and self.client_secret)
         
+        # Memory fallback için instance variables
+        self._memory_states = {}
+        self._used_codes = set()
+        
         if not self.is_available:
             logger.error("Google OAuth credentials not found - service disabled")
             logger.error(f"  CLIENT_ID exists: {bool(self.client_id)}")
             logger.error(f"  CLIENT_SECRET exists: {bool(self.client_secret)}")
         else:
             logger.info("✅ Google OAuth service initialized successfully")
+    
+    def _check_cache_health(self):
+        """Cache bağlantısını test et"""
+        try:
+            test_key = "cache_health_test"
+            cache.set(test_key, "test", timeout=10)
+            cache.get(test_key)
+            cache.delete(test_key)
+            return True
+        except Exception as e:
+            logger.warning(f"Cache health check failed: {e}")
+            return False
 
     def _generate_pkce_pair(self):
         """PKCE code verifier ve challenge çifti oluştur"""
@@ -66,15 +82,27 @@ class GoogleOAuthService:
             
             # State'i cache'e kaydet (10 dakika TTL) - Redis bağlantı sorunu varsa skip et
             cache_key = f"oauth_state_{state}"
-            try:
-                cache.set(cache_key, {
-                    'created_at': cache.get('oauth_state_created_at', 0),
+            if self._check_cache_health():
+                try:
+                    cache.set(cache_key, {
+                        'created_at': cache.get('oauth_state_created_at', 0),
+                        'redirect_to': redirect_to
+                    }, timeout=600)
+                    logger.debug(f"State cache'e kaydedildi: {state}")
+                except Exception as cache_error:
+                    logger.warning(f"Cache hatası, state kaydedilemedi: {cache_error}")
+                    logger.info("Cache olmadan devam ediliyor - bu normal bir durum")
+                    # Cache hatası durumunda state'i memory'de sakla (geçici çözüm)
+                    self._memory_states[state] = {
+                        'created_at': 0,
+                        'redirect_to': redirect_to
+                    }
+            else:
+                logger.info("Cache sağlıksız - state memory'de saklanıyor")
+                self._memory_states[state] = {
+                    'created_at': 0,
                     'redirect_to': redirect_to
-                }, timeout=600)
-                logger.debug(f"State cache'e kaydedildi: {state}")
-            except Exception as cache_error:
-                logger.warning(f"Cache hatası, state kaydedilemedi: {cache_error}")
-                logger.info("Cache olmadan devam ediliyor - bu normal bir durum")
+                }
             
             # OAuth parametreleri (PKCE olmadan)
             params = {
@@ -118,19 +146,38 @@ class GoogleOAuthService:
             # State validation (gevşetilmiş) - geçici olarak devre dışı
             if state:
                 cache_key_state = f"oauth_state_{state}"
-                try:
-                    state_data = cache.get(cache_key_state)
-                    if not state_data:
-                        logger.warning(f"Invalid or expired state parameter: {state}")
-                        # State validation'ı gevşetelim - sadece warning verelim, hata vermeyelim
-                        logger.info(f"State validation bypassed for: {state}")
+                state_data = None
+                
+                if self._check_cache_health():
+                    try:
+                        state_data = cache.get(cache_key_state)
+                        if state_data:
+                            # State'i kullanıldıktan sonra cache'den sil
+                            cache.delete(cache_key_state)
+                            logger.info(f"State validated and cleared: {state}")
+                        else:
+                            # Memory'deki state'leri kontrol et
+                            if state in self._memory_states:
+                                state_data = self._memory_states.pop(state)
+                                logger.info(f"State validated from memory and cleared: {state}")
+                            else:
+                                logger.warning(f"Invalid or expired state parameter: {state}")
+                                logger.info(f"State validation bypassed for: {state}")
+                    except Exception as cache_error:
+                        logger.warning(f"Cache hatası, state validation atlandı: {cache_error}")
+                        logger.info("State validation cache olmadan devam ediliyor")
+                        # Memory'deki state'leri kontrol et
+                        if state in self._memory_states:
+                            state_data = self._memory_states.pop(state)
+                            logger.info(f"State validated from memory after cache error: {state}")
+                else:
+                    logger.info("Cache sağlıksız - state validation memory'de yapılıyor")
+                    if state in self._memory_states:
+                        state_data = self._memory_states.pop(state)
+                        logger.info(f"State validated from memory: {state}")
                     else:
-                        # State'i kullanıldıktan sonra cache'den sil
-                        cache.delete(cache_key_state)
-                        logger.info(f"State validated and cleared: {state}")
-                except Exception as cache_error:
-                    logger.warning(f"Cache hatası, state validation atlandı: {cache_error}")
-                    logger.info("State validation cache olmadan devam ediliyor")
+                        logger.warning(f"Invalid or expired state parameter: {state}")
+                        logger.info(f"State validation bypassed for: {state}")
             
             # PKCE'yi geçici olarak devre dışı bırak - worker isolation sorunu nedeniyle
             code_verifier = None
@@ -142,16 +189,30 @@ class GoogleOAuthService:
             
             # Authorization code'un daha önce kullanılıp kullanılmadığını kontrol et - geçici olarak devre dışı
             cache_key = f"oauth_code_used_{hashlib.sha256(decoded_code.encode()).hexdigest()}"
-            try:
-                if cache.get(cache_key):
-                    logger.warning(f"Authorization code already used: {decoded_code[:20]}...")
+            code_hash = hashlib.sha256(decoded_code.encode()).hexdigest()
+            
+            if self._check_cache_health():
+                try:
+                    if cache.get(cache_key):
+                        logger.warning(f"Authorization code already used: {decoded_code[:20]}...")
+                        raise Exception("Bu authorization code daha önce kullanılmış. Lütfen yeni bir giriş denemesi yapın.")
+                    
+                    # Code'u cache'e işaretle (5 dakika TTL)
+                    cache.set(cache_key, True, timeout=300)
+                except Exception as cache_error:
+                    logger.warning(f"Cache hatası, code validation atlandı: {cache_error}")
+                    logger.info("Code validation cache olmadan devam ediliyor")
+                    # Cache hatası durumunda memory'de kontrol et
+                    if code_hash in self._used_codes:
+                        logger.warning(f"Authorization code already used (memory): {decoded_code[:20]}...")
+                        raise Exception("Bu authorization code daha önce kullanılmış. Lütfen yeni bir giriş denemesi yapın.")
+                    self._used_codes.add(code_hash)
+            else:
+                logger.info("Cache sağlıksız - code validation memory'de yapılıyor")
+                if code_hash in self._used_codes:
+                    logger.warning(f"Authorization code already used (memory): {decoded_code[:20]}...")
                     raise Exception("Bu authorization code daha önce kullanılmış. Lütfen yeni bir giriş denemesi yapın.")
-                
-                # Code'u cache'e işaretle (5 dakika TTL)
-                cache.set(cache_key, True, timeout=300)
-            except Exception as cache_error:
-                logger.warning(f"Cache hatası, code validation atlandı: {cache_error}")
-                logger.info("Code validation cache olmadan devam ediliyor")
+                self._used_codes.add(code_hash)
             
             token_data = {
                 'client_id': self.client_id,
@@ -174,11 +235,15 @@ class GoogleOAuthService:
                 
                 # Eğer invalid_grant hatası alırsak, cache'den kodu temizle
                 if token_response.status_code == 400 and 'invalid_grant' in token_response.text:
-                    try:
-                        cache.delete(cache_key)
-                        logger.warning("Invalid grant error - clearing cached code")
-                    except Exception as cache_error:
-                        logger.warning(f"Cache temizleme hatası: {cache_error}")
+                    if self._check_cache_health():
+                        try:
+                            cache.delete(cache_key)
+                            logger.warning("Invalid grant error - clearing cached code")
+                        except Exception as cache_error:
+                            logger.warning(f"Cache temizleme hatası: {cache_error}")
+                    # Memory'den de temizle
+                    self._used_codes.discard(code_hash)
+                    logger.warning("Invalid grant error - clearing memory cached code")
                 
                 token_response.raise_for_status()
             

@@ -326,9 +326,12 @@ if REDIS_URL:
                     'CONNECTION_POOL_KWARGS': {
                         'max_connections': 20,  # Daha az bağlantı
                         'retry_on_timeout': True,
-                        'socket_connect_timeout': 3,  # Daha kısa timeout
-                        'socket_timeout': 3,
+                        'socket_connect_timeout': 5,  # Biraz daha uzun timeout
+                        'socket_timeout': 5,
                         'health_check_interval': 30,  # Health check ekle
+                        'retry_on_error': [ConnectionError, TimeoutError, OSError],
+                        'socket_keepalive': True,
+                        'socket_keepalive_options': {},
                     },
                 },
                 'KEY_PREFIX': 'motoapp',

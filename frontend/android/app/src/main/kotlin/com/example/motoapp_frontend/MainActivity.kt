@@ -1,4 +1,4 @@
-package com.example.frontend
+package com.example.motoapp_frontend
 
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
