@@ -48,6 +48,18 @@
 -keep class javax.microedition.khronos.** { *; }
 -keep class com.google.android.gms.games.** { *; }
 
+# EGL optimizations to fix HWUI warnings
+-keep class android.opengl.EGL14 { *; }
+-keep class android.opengl.EGLConfig { *; }
+-keep class android.opengl.EGLContext { *; }
+-keep class android.opengl.EGLDisplay { *; }
+-keep class android.opengl.EGLSurface { *; }
+-keep class android.opengl.GLES20 { *; }
+-keep class android.opengl.GLES30 { *; }
+-keep class android.opengl.GLES31 { *; }
+-keep class android.opengl.GLES32 { *; }
+
 # Suppress graphics warnings
 -dontwarn android.opengl.**
 -dontwarn javax.microedition.khronos.**
+-dontwarn android.hardware.graphics.**

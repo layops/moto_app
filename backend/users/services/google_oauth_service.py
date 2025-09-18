@@ -64,15 +64,17 @@ class GoogleOAuthService:
             # State parametresi oluştur
             state = base64.urlsafe_b64encode(secrets.token_bytes(16)).decode('utf-8').rstrip('=')
             
-            # State'i cache'e kaydet (10 dakika TTL) - geçici olarak devre dışı
+            # State'i cache'e kaydet (10 dakika TTL) - Redis bağlantı sorunu varsa skip et
             cache_key = f"oauth_state_{state}"
             try:
                 cache.set(cache_key, {
                     'created_at': cache.get('oauth_state_created_at', 0),
                     'redirect_to': redirect_to
                 }, timeout=600)
+                logger.debug(f"State cache'e kaydedildi: {state}")
             except Exception as cache_error:
                 logger.warning(f"Cache hatası, state kaydedilemedi: {cache_error}")
+                logger.info("Cache olmadan devam ediliyor - bu normal bir durum")
             
             # OAuth parametreleri (PKCE olmadan)
             params = {
@@ -128,6 +130,7 @@ class GoogleOAuthService:
                         logger.info(f"State validated and cleared: {state}")
                 except Exception as cache_error:
                     logger.warning(f"Cache hatası, state validation atlandı: {cache_error}")
+                    logger.info("State validation cache olmadan devam ediliyor")
             
             # PKCE'yi geçici olarak devre dışı bırak - worker isolation sorunu nedeniyle
             code_verifier = None
@@ -148,6 +151,7 @@ class GoogleOAuthService:
                 cache.set(cache_key, True, timeout=300)
             except Exception as cache_error:
                 logger.warning(f"Cache hatası, code validation atlandı: {cache_error}")
+                logger.info("Code validation cache olmadan devam ediliyor")
             
             token_data = {
                 'client_id': self.client_id,

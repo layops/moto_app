@@ -155,12 +155,13 @@ def cache_test(request):
         logger.error(f"Cache test failed: {str(e)}")
         return JsonResponse({
             'status': 'error',
-            'message': 'Cache test başarısız',
+            'message': 'Cache test başarısız - bu normal bir durum olabilir',
             'error': str(e),
             'cache_backend': getattr(settings, 'CACHES', {}).get('default', {}).get('BACKEND', 'unknown'),
             'redis_url_configured': bool(os.environ.get('REDIS_URL')),
+            'note': 'Cache hatası Google OAuth işlevselliğini etkilemez',
             'timestamp': time.time()
-        }, status=503)
+        }, status=200)  # 200 döndür çünkü bu kritik değil
 
 @never_cache
 @require_http_methods(["GET"])

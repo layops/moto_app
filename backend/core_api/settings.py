@@ -322,10 +322,11 @@ if REDIS_URL:
                 'OPTIONS': {
                     'CLIENT_CLASS': 'django_redis.client.DefaultClient',
                     'CONNECTION_POOL_KWARGS': {
-                        'max_connections': 50,
+                        'max_connections': 20,  # Daha az bağlantı
                         'retry_on_timeout': True,
-                        'socket_connect_timeout': 5,
-                        'socket_timeout': 5,
+                        'socket_connect_timeout': 3,  # Daha kısa timeout
+                        'socket_timeout': 3,
+                        'health_check_interval': 30,  # Health check ekle
                     },
                 },
                 'KEY_PREFIX': 'motoapp',

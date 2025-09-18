@@ -39,6 +39,9 @@ android {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
         
+        // EGL optimizations to fix HWUI warnings
+        manifestPlaceholders["android.hardware.opengles.aep"] = "true"
+        
         // Proguard optimizations
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }

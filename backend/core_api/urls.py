@@ -59,6 +59,14 @@ def favicon_512(request):
     else:
         return HttpResponse(status=404)
 
+def assetlinks(request):
+    """Android App Links için assetlinks.json dosyasını serve et"""
+    assetlinks_path = os.path.join(os.path.dirname(__file__), '.well-known', 'assetlinks.json')
+    if os.path.exists(assetlinks_path):
+        return FileResponse(open(assetlinks_path, 'rb'), content_type='application/json')
+    else:
+        return HttpResponse(status=404)
+
 # URL Patterns
 urlpatterns = [
     # Ana sayfa
@@ -68,6 +76,9 @@ urlpatterns = [
     path('favicon.ico', favicon, name='favicon'),
     path('favicon-192.png', favicon_192, name='favicon-192'),
     path('favicon-512.png', favicon_512, name='favicon-512'),
+    
+    # Android App Links
+    path('.well-known/assetlinks.json', assetlinks, name='assetlinks'),
     
     # API Root
     path('api/', api_root, name='api-root'),

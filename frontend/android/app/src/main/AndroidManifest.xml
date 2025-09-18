@@ -9,6 +9,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Graphics and EGL optimizations -->
+    <uses-feature android:name="android.hardware.opengles.aep" android:required="false" />
+    <uses-feature android:name="android.hardware.vulkan.level" android:required="false" />
+    <uses-feature android:name="android.hardware.vulkan.version" android:required="false" />
 
     <application
         android:enableOnBackInvokedCallback="true"
@@ -29,7 +34,8 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize"
             android:screenOrientation="portrait"
-            android:resizeableActivity="false">
+            android:resizeableActivity="false"
+            android:enableOnBackInvokedCallback="true">
             
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
