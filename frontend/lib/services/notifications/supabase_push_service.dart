@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:realtime_client/realtime_client.dart';
 import '../service_locator.dart';
 
 /// Supabase push notification service
@@ -14,7 +15,7 @@ class SupabasePushService {
 
   SupabaseClient? _supabaseClient;
   RealtimeChannel? _notificationChannel;
-  StreamSubscription<RealtimePayload>? _subscription;
+  StreamSubscription? _subscription;
   FlutterLocalNotificationsPlugin? _localNotifications;
 
   /// Initialize Supabase push notifications
@@ -259,7 +260,7 @@ class SupabasePushService {
       
       // Supabase real-time channel'a mesaj gönder
       final response = await _supabaseClient!.channel('notifications').send(
-        type: 'broadcast',
+        type: RealtimeListenTypes.broadcast,
         event: 'notification',
         payload: {
           'user_id': userId,

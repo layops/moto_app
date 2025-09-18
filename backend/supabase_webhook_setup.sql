@@ -5,7 +5,7 @@
 -- Supabase Dashboard > Database > Webhooks > Create new hook
 
 -- Webhook Configuration:
--- Table: notifications
+-- Table: notifications_notification
 -- Events: Insert
 -- Type: Supabase Edge Functions
 -- Function: push
@@ -31,19 +31,20 @@ INSERT INTO notifications_notification (
 -- 3. Webhook'un çalışıp çalışmadığını kontrol et
 -- Supabase Dashboard > Edge Functions > push function logs'u kontrol et
 
--- 4. FCM token'ların doğru kaydedildiğini kontrol et
+-- 4. Notification preferences'ları kontrol et
 SELECT 
     np.user_id,
-    u.username,
-    np.fcm_token,
-    np.push_enabled
+    np.push_enabled,
+    np.direct_messages,
+    np.group_messages,
+    np.likes_comments,
+    np.follows
 FROM notifications_notificationpreferences np
-JOIN auth_user u ON np.user_id = u.id
-WHERE np.fcm_token IS NOT NULL;
+WHERE np.user_id = 1; -- Test user ID'nizi yazın
 
 -- 5. Webhook'u aktif etmek için Supabase Dashboard'da:
 -- Database > Webhooks > Create new hook
--- Table: notifications
+-- Table: notifications_notification
 -- Events: Insert
 -- Type: Supabase Edge Functions
 -- Function: push
@@ -54,4 +55,4 @@ WHERE np.fcm_token IS NOT NULL;
 
 -- 6. Edge Function'ı deploy etmek için:
 -- supabase functions deploy push
--- supabase secrets set FCM_SERVER_KEY=your_fcm_server_key
+-- FCM gerekli değil - Supabase real-time kullanılıyor
