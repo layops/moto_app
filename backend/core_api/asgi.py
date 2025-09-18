@@ -35,7 +35,7 @@ class AuthTokenMiddleware:
             if '/api/chat/rooms/' in path:
                 print(f"DEBUG ASGI (HTTP): Chat room request: {path}")
         
-        # WebSocket için orijinal doğrulama
+        # WebSocket için JWT ve Token doğrulama
         if scope['type'] == 'websocket':
             query_string = scope.get('query_string', b'').decode('utf-8')
             query_params = parse_qs(query_string)
@@ -45,27 +45,46 @@ class AuthTokenMiddleware:
             from rest_framework.authtoken.models import Token
             from django.contrib.auth.models import AnonymousUser
             from asgiref.sync import sync_to_async
+            from rest_framework_simplejwt.tokens import AccessToken
+            from django.contrib.auth import get_user_model
 
+            User = get_user_model()
             scope['user'] = AnonymousUser()  # Default anonymous user
 
             if token_key_list:
                 token_key = token_key_list[0]
                 print(f"DEBUG ASGI (WS): Token bulundu, başlangıç: {token_key[:5]}...")
 
+                # Önce JWT token olarak dene
                 try:
-                    # Token nesnesini eşzamansız al
-                    token_obj = await sync_to_async(Token.objects.get)(key=token_key)
-                    user = await sync_to_async(lambda: token_obj.user)()
-
+                    # JWT token doğrulama
+                    access_token = AccessToken(token_key)
+                    user_id = access_token['user_id']
+                    user = await sync_to_async(User.objects.get)(id=user_id)
+                    
                     if user.is_active:
                         scope['user'] = user
-                        print(f"DEBUG ASGI (WS): Kullanıcı doğrulandı: {user.username}")
+                        print(f"DEBUG ASGI (WS): JWT Token ile kullanıcı doğrulandı: {user.username}")
                     else:
-                        print(f"DEBUG ASGI (WS): Token geçerli ama kullanıcı aktif değil: {user.username}")
-                except Token.DoesNotExist:
-                    print(f"DEBUG ASGI (WS): Token veritabanında bulunamadı: {token_key[:5]}...")
-                except Exception as e:
-                    print(f"DEBUG ASGI (WS): Token doğrulama hatası: {e}")
+                        print(f"DEBUG ASGI (WS): JWT Token geçerli ama kullanıcı aktif değil: {user.username}")
+                        
+                except Exception as jwt_error:
+                    print(f"DEBUG ASGI (WS): JWT Token doğrulama başarısız: {jwt_error}")
+                    
+                    # JWT başarısız olursa DRF Token olarak dene
+                    try:
+                        token_obj = await sync_to_async(Token.objects.get)(key=token_key)
+                        user = await sync_to_async(lambda: token_obj.user)()
+
+                        if user.is_active:
+                            scope['user'] = user
+                            print(f"DEBUG ASGI (WS): DRF Token ile kullanıcı doğrulandı: {user.username}")
+                        else:
+                            print(f"DEBUG ASGI (WS): DRF Token geçerli ama kullanıcı aktif değil: {user.username}")
+                    except Token.DoesNotExist:
+                        print(f"DEBUG ASGI (WS): DRF Token veritabanında bulunamadı: {token_key[:5]}...")
+                    except Exception as drf_error:
+                        print(f"DEBUG ASGI (WS): DRF Token doğrulama hatası: {drf_error}")
             else:
                 print("DEBUG ASGI (WS): Sorgu parametrelerinde 'token' bulunamadı.")
 
