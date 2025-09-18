@@ -257,6 +257,9 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
+# Redis URL tanımı - Channel Layers'dan önce
+REDIS_URL = os.environ.get('REDIS_URL')
+
 # Channel Layers Configuration - kalıcı çözüm
 if REDIS_URL:
     try:
@@ -308,7 +311,6 @@ else:
 
 
 # Caching Configuration
-REDIS_URL = os.environ.get('REDIS_URL')
 
 if REDIS_URL:
     try:
