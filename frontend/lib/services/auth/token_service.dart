@@ -68,6 +68,19 @@ class TokenService {
     }
   }
 
+  Future<int?> getUserIdFromToken() async {
+    try {
+      final tokenData = await getTokenData();
+      if (tokenData?['user_id'] != null) {
+        return int.tryParse(tokenData!['user_id'].toString());
+      }
+      return null;
+    } catch (e) {
+      // print('Token\'dan user ID alma hatası: $e');
+      return null;
+    }
+  }
+
   Future<String?> getCurrentUsername() async {
     return _storage.getCurrentUsername();
   }

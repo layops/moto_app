@@ -22,6 +22,7 @@ class Notification(models.Model):
         ('follow', 'Takip Bildirimi'),
         ('like', 'Beğeni Bildirimi'),
         ('comment', 'Yorum Bildirimi'),
+        ('test', 'Test Bildirimi'),
         ('other', 'Diğer'),
     )
 

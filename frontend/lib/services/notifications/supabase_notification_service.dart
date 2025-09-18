@@ -210,7 +210,7 @@ class SupabaseNotificationService {
       }
 
       // Backend'e test notification isteği gönder
-      final response = await ServiceLocator.api.post('/api/notifications/fcm-test/');
+      final response = await ServiceLocator.api.post('notifications/supabase-test/', {});
       
       if (response.statusCode == 200) {
         debugPrint('✅ Test notification isteği gönderildi');

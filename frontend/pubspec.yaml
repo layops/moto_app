@@ -61,6 +61,9 @@ dependencies:
   # Supabase
   supabase_flutter: ^2.5.6
   
+  # Google OAuth
+  google_sign_in: ^6.2.1
+  
   # Local Notifications
   flutter_local_notifications: ^17.2.3
   
