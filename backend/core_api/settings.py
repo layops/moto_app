@@ -257,14 +257,31 @@ REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379')],
+# Channel Layers Configuration
+REDIS_URL = os.environ.get('REDIS_URL')
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "capacity": 1500,
+                "expiry": 10,
+            },
         },
-    },
-}
+    }
+    print("✅ Redis Channel Layers aktif")
+else:
+    # Redis yoksa in-memory channel layer kullan
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+            "capacity": 1500,
+            "expiry": 10,
+        },
+    }
+    print("⚠️ Redis Channel Layers yok - InMemory Channel Layer kullanılıyor")
 
 
 # Supabase Storage Configuration
@@ -280,23 +297,59 @@ else:
 
 
 # Caching Configuration
-# Redis'i geçici olarak devre dışı bırak - bağlantı sorunları nedeniyle
-# REDIS_URL = os.environ.get('REDIS_URL')
+REDIS_URL = os.environ.get('REDIS_URL')
 
-# Her zaman local memory cache kullan (Redis bağlantı sorunları nedeniyle)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000,
-            'CULL_FREQUENCY': 3,
-        },
-        'KEY_PREFIX': 'motoapp',
-        'TIMEOUT': 300,  # 5 minutes default
+# Redis cache konfigürasyonu - bağlantı sorunları için fallback
+if REDIS_URL:
+    try:
+        # Redis cache konfigürasyonu
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': REDIS_URL,
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                    'CONNECTION_POOL_KWARGS': {
+                        'max_connections': 50,
+                        'retry_on_timeout': True,
+                    },
+                },
+                'KEY_PREFIX': 'motoapp',
+                'TIMEOUT': 300,  # 5 minutes default
+            }
+        }
+        print("✅ Redis cache aktif")
+    except Exception as e:
+        print(f"⚠️ Redis bağlantı hatası: {e}")
+        # Fallback: Local memory cache
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'unique-snowflake',
+                'OPTIONS': {
+                    'MAX_ENTRIES': 1000,
+                    'CULL_FREQUENCY': 3,
+                },
+                'KEY_PREFIX': 'motoapp',
+                'TIMEOUT': 300,  # 5 minutes default
+            }
+        }
+        print("⚠️ Redis bağlantı sorunu - Local memory cache kullanılıyor")
+else:
+    # Redis URL yoksa local memory cache kullan
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+                'CULL_FREQUENCY': 3,
+            },
+            'KEY_PREFIX': 'motoapp',
+            'TIMEOUT': 300,  # 5 minutes default
+        }
     }
-}
-print("⚠️ Using local memory cache (Redis disabled due to connection issues)")
+    print("⚠️ REDIS_URL bulunamadı - Local memory cache kullanılıyor")
 
 # Cache timeout settings
 CACHE_TIMEOUTS = {

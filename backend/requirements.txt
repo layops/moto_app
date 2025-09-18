@@ -14,6 +14,7 @@ channels==4.2.2
 channels_redis==4.3.0
 daphne==4.2.1
 redis==6.2.0
+django-redis==5.4.0
 
 # ASGI Server
 uvicorn[standard]==0.23.2
