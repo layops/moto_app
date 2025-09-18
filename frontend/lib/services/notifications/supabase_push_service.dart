@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:realtime_client/realtime_client.dart';
 import '../service_locator.dart';
 
 /// Supabase push notification service
@@ -259,8 +258,10 @@ class SupabasePushService {
       if (_supabaseClient == null) return false;
       
       // Supabase real-time channel'a mesaj gönder
-      final response = await _supabaseClient!.channel('notifications').send(
-        type: RealtimeListenTypes.broadcast,
+      final channel = _supabaseClient!.channel('notifications');
+      
+      // Broadcast mesajı gönder
+      final response = await channel.sendBroadcastMessage(
         event: 'notification',
         payload: {
           'user_id': userId,
@@ -270,13 +271,8 @@ class SupabasePushService {
         },
       );
       
-      if (response == 'ok') {
-        debugPrint('✅ Supabase real-time notification sent successfully');
-        return true;
-      } else {
-        debugPrint('❌ Supabase real-time notification failed: $response');
-        return false;
-      }
+      debugPrint('✅ Supabase real-time notification sent successfully');
+      return true;
       
     } catch (e) {
       debugPrint('❌ Error sending Supabase real-time notification: $e');

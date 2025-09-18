@@ -41,11 +41,19 @@ void main() async {
     // Supabase Notification Service'i initialize et
     await SupabaseNotificationService().initialize();
     
-    // Supabase Push Service'i initialize et
-    await SupabasePushService().initialize();
-    
-    // Deep link service'i initialize et
-    DeepLinkService.initialize();
+        // Supabase Push Service'i initialize et
+        await SupabasePushService().initialize();
+        
+        // Mevcut kullanıcıyı kontrol et
+        final currentUser = await ServiceLocator.auth.currentUser;
+        if (currentUser != null) {
+          print('🔑 Mevcut kullanıcı: ${currentUser['username']} (ID: ${currentUser['id']})');
+        } else {
+          print('❌ Kullanıcı giriş yapmamış');
+        }
+        
+        // Deep link service'i initialize et
+        DeepLinkService.initialize();
 
     runApp(
       MultiProvider(
