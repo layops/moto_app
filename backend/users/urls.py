@@ -21,6 +21,7 @@ from .views import (
     UserMediaView,
     UserEventsView,
     UserLogoutView,
+    ChangePasswordView,  # Yeni eklendi
     create_test_users  # Geçici test endpoint'i
 )
 
@@ -65,6 +66,9 @@ urlpatterns = [
     
     #Users Logout
     path('logout/', UserLogoutView.as_view(), name='user-logout'),
+    
+    # Change Password
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     
     # Geçici test endpoint'i
     path('create-test-users/', create_test_users, name='create-test-users'),

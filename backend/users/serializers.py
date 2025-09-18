@@ -329,3 +329,54 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'description', 'date']
+
+
+# -------------------------------
+# Password Change Serializer
+# -------------------------------
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        """Mevcut şifreyi doğrula"""
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Mevcut şifre yanlış")
+        return value
+
+    def validate_new_password(self, value):
+        """Yeni şifre validasyonu"""
+        if len(value) < 8:
+            raise serializers.ValidationError("Şifre en az 8 karakter olmalı")
+        
+        # Şifre güçlülük kontrolü
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError("Şifre en az bir büyük harf içermeli")
+        
+        if not re.search(r'[a-z]', value):
+            raise serializers.ValidationError("Şifre en az bir küçük harf içermeli")
+        
+        if not re.search(r'\d', value):
+            raise serializers.ValidationError("Şifre en az bir rakam içermeli")
+        
+        return value
+
+    def validate(self, data):
+        """Şifrelerin eşleşip eşleşmediğini kontrol et"""
+        if data['new_password'] != data['new_password2']:
+            raise serializers.ValidationError("Yeni şifreler eşleşmiyor")
+        
+        # Mevcut şifre ile yeni şifre aynı olmamalı
+        if data['current_password'] == data['new_password']:
+            raise serializers.ValidationError("Yeni şifre mevcut şifre ile aynı olamaz")
+        
+        return data
+
+    def save(self):
+        """Şifreyi güncelle"""
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user

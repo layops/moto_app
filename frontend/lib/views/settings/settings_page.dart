@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/theme_provider.dart';
 import 'notifications_page.dart'; // Add this import
+import '../auth/change_password_page.dart'; // Add this import
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -116,7 +117,12 @@ class SettingsPage extends StatelessWidget {
             context,
             title: 'Change Password',
             onTap: () {
-              // Navigate to change password
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordPage(),
+                ),
+              );
             },
           ),
           const Divider(height: 1),

@@ -391,4 +391,25 @@ class AuthService {
       throw Exception('Google giriş verileri kaydedilirken hata: $e');
     }
   }
+
+  Future<Response> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiClient.post('users/change-password/', {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password2': newPassword,
+      });
+      return response;
+    } on DioException catch (e) {
+      final errorMessage = e.response?.data?['error'] ??
+          e.response?.data?['message'] ??
+          e.response?.data?['detail'] ??
+          e.message ??
+          'Şifre değiştirme işlemi sırasında bir hata oluştu';
+      throw Exception('Şifre değiştirme hatası: $errorMessage');
+    }
+  }
 }

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, UserSerializer,
-    FollowSerializer
+    FollowSerializer, ChangePasswordSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
@@ -731,6 +731,28 @@ class UserLogoutView(APIView):
             return Response({'message': 'Başarıyla çıkış yapıldı'}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({'error': 'Çıkış yapılamadı'}, status=status.HTTP_400_BAD_REQUEST)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Kullanıcının şifresini değiştir"""
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            try:
+                user = serializer.save()
+                return Response({
+                    'message': 'Şifre başarıyla değiştirildi',
+                    'user': UserSerializer(user).data
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({
+                    'error': 'Şifre değiştirilemedi',
+                    'detail': str(e)
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Geçici test endpoint'i
 from rest_framework.decorators import api_view, permission_classes
