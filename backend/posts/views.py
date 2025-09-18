@@ -288,9 +288,10 @@ class PostLikeToggleView(APIView):
                                 title=f"Gönderiniz Beğenildi - {request.user.get_full_name() or request.user.username}"
                             )
                         except Exception as e:
+                            # Logger'ı fonksiyon içinde tanımla
                             import logging
-                            logger = logging.getLogger(__name__)
-                            logger.error(f"Beğeni bildirimi gönderilemedi: {e}")
+                            async_logger = logging.getLogger(__name__)
+                            async_logger.error(f"Beğeni bildirimi gönderilemedi: {e}")
                     
                     # Arka planda bildirim gönder
                     threading.Thread(target=send_like_notification_async, daemon=True).start()
