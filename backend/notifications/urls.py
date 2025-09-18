@@ -5,7 +5,7 @@ from .views import (
     NotificationDeleteView, 
     SendTestNotificationView,
     NotificationPreferencesView,
-    # FCMTokenView kaldırıldı - Supabase push notifications kullanılıyor
+    FCMTokenView,
     SupabaseTestView,
     SupabasePushTestView,
     PushNotificationStatusView
@@ -20,7 +20,7 @@ urlpatterns = [
     path('test/', SendTestNotificationView.as_view(), name='test-notification'),  # GET için basit test
     path('stream/', notification_stream, name='notification-stream'),
     path('preferences/', NotificationPreferencesView.as_view(), name='notification-preferences'),
-    # path('fcm-token/', FCMTokenView.as_view(), name='fcm-token'), # FCM kaldırıldı
+    path('fcm-token/', FCMTokenView.as_view(), name='fcm-token'),
     path('supabase-test/', SupabaseTestView.as_view(), name='supabase-test'),
     path('supabase-push-test/', SupabasePushTestView.as_view(), name='supabase-push-test'),
     path('status/', PushNotificationStatusView.as_view(), name='push-notification-status'),

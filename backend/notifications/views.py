@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Notification, NotificationPreferences
-from .serializers import NotificationSerializer, NotificationPreferencesSerializer
+from .serializers import NotificationSerializer, NotificationPreferencesSerializer, FCMTokenSerializer
 from .utils import send_realtime_notification
 
 User = get_user_model()
@@ -226,14 +226,31 @@ class NotificationPreferencesView(APIView):
             )
 
 
-# FCM Token View kaldırıldı - Supabase push notifications kullanılıyor
-# class FCMTokenView(APIView):
-#     permission_classes = [IsAuthenticated]
-# 
-#     def post(self, request):
-#         """FCM token'ı kaydet"""
-#         # FCM token kaydetme kaldırıldı - Supabase push notifications kullanılıyor
-#         pass
+class FCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """FCM token'ı kaydet"""
+        serializer = FCMTokenSerializer(data=request.data)
+        if serializer.is_valid():
+            fcm_token = serializer.validated_data['fcm_token']
+            
+            # Kullanıcının notification preferences'ını al veya oluştur
+            preferences, created = NotificationPreferences.objects.get_or_create(
+                user=request.user,
+                defaults={'push_enabled': True}
+            )
+            
+            # FCM token'ı kaydet
+            preferences.fcm_token = fcm_token
+            preferences.save()
+            
+            return Response({
+                'success': True,
+                'message': 'FCM token kaydedildi'
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SupabaseTestView(APIView):

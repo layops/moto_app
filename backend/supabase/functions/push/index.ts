@@ -22,6 +22,9 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 
+// FCM Server Key
+const FCM_SERVER_KEY = Deno.env.get('FCM_SERVER_KEY')
+
 Deno.serve(async (req) => {
   try {
     const payload: WebhookPayload = await req.json()
@@ -38,7 +41,7 @@ Deno.serve(async (req) => {
     // Kullanıcının push notification tercihlerini kontrol et
     const { data: preferences, error } = await supabase
       .from('notifications_notificationpreferences')
-      .select('push_enabled')
+      .select('push_enabled, fcm_token')
       .eq('user_id', notification.recipient_id)
       .single()
 
@@ -53,7 +56,49 @@ Deno.serve(async (req) => {
       return new Response('Push notification disabled', { status: 200 })
     }
 
-    // Supabase real-time notification gönder
+    // FCM token varsa gerçek push notification gönder
+    if (preferences.fcm_token && FCM_SERVER_KEY) {
+      try {
+        const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `key=${FCM_SERVER_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: preferences.fcm_token,
+            notification: {
+              title: 'MotoApp',
+              body: notification.message,
+              icon: 'ic_launcher',
+              sound: 'default',
+            },
+            data: {
+              notification_id: notification.id,
+              notification_type: notification.notification_type,
+              sender_id: notification.sender_id || '',
+            },
+          }),
+        })
+
+        if (fcmResponse.ok) {
+          console.log('FCM push notification sent successfully')
+          return new Response(JSON.stringify({
+            success: true,
+            notification_id: notification.id,
+            method: 'fcm_push'
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+          })
+        } else {
+          console.error('FCM push notification failed:', await fcmResponse.text())
+        }
+      } catch (fcmError) {
+        console.error('FCM push notification error:', fcmError)
+      }
+    }
+
+    // FCM başarısız olursa Supabase real-time notification gönder
     const realtimeResponse = await supabase
       .channel('notifications')
       .send({

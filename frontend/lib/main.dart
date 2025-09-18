@@ -15,6 +15,7 @@ import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 import 'package:motoapp_frontend/config/supabase_config.dart';
 import 'package:motoapp_frontend/services/notifications/supabase_notification_service.dart';
 import 'package:motoapp_frontend/services/notifications/supabase_push_service.dart';
+import 'package:motoapp_frontend/services/notifications/fcm_service.dart';
 
 import 'package:motoapp_frontend/views/home/home_page.dart';
 import 'package:motoapp_frontend/views/map/map_page.dart';
@@ -43,6 +44,9 @@ void main() async {
     
         // Supabase Push Service'i initialize et
         await SupabasePushService().initialize();
+        
+        // FCM Service'i initialize et
+        await FCMService().initialize();
         
         // Mevcut kullanıcıyı kontrol et
         final currentUser = await ServiceLocator.auth.currentUser;
