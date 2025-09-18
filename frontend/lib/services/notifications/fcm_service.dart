@@ -114,7 +114,7 @@ class FCMService {
   /// FCM token'ı backend'e gönder
   Future<void> _sendFCMTokenToBackend(String fcmToken) async {
     try {
-      final apiClient = ServiceLocator.apiClient;
+      final apiClient = ServiceLocator.api;
       
       final response = await apiClient.post(
         'notifications/fcm-token/',
