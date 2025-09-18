@@ -302,17 +302,13 @@ REDIS_URL = os.environ.get('REDIS_URL')
 # Redis cache konfigürasyonu - bağlantı sorunları için fallback
 if REDIS_URL:
     try:
-        # Redis cache konfigürasyonu
+        # Redis cache konfigürasyonu - django-redis ile
         CACHES = {
             'default': {
-                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'BACKEND': 'django_redis.cache.RedisCache',
                 'LOCATION': REDIS_URL,
                 'OPTIONS': {
                     'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                    'CONNECTION_POOL_KWARGS': {
-                        'max_connections': 50,
-                        'retry_on_timeout': True,
-                    },
                 },
                 'KEY_PREFIX': 'motoapp',
                 'TIMEOUT': 300,  # 5 minutes default
