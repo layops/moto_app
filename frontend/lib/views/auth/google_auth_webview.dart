@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/views/auth/auth_common.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
@@ -28,40 +27,11 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   String? state;
   bool _isLoading = true;
   String _errorMessage = '';
-  late final WebViewController _webViewController;
 
   @override
   void initState() {
     super.initState();
-    _initializeWebView();
     _getAuthUrl();
-  }
-
-  void _initializeWebView() {
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            print('🔗 WebView page started: $url');
-          },
-          onPageFinished: (String url) {
-            print('🔗 WebView page finished: $url');
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            print('🔗 WebView navigation request: ${request.url}');
-            
-            // Callback URL'yi yakala
-            if (request.url.contains('/api/users/auth/callback/')) {
-              print('🔗 Callback URL detected in WebView: ${request.url}');
-              _handleCallbackUrl(request.url);
-              return NavigationDecision.prevent;
-            }
-            
-            return NavigationDecision.navigate;
-          },
-        ),
-      );
   }
 
   Future<void> _getAuthUrl() async {
@@ -92,13 +62,21 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   Future<void> _launchGoogleAuth() async {
     if (authUrl != null) {
       try {
-        // WebView'da Google OAuth URL'ini yükle
-        await _webViewController.loadRequest(Uri.parse(authUrl!));
+        final uri = Uri.parse(authUrl!);
+        
+        // External browser'da aç - Google'ın güvenlik politikası nedeniyle
+        await launchUrl(
+          uri, 
+          mode: LaunchMode.externalApplication,
+        );
         
         setState(() {
           _isLoading = false;
           _errorMessage = '';
         });
+        
+        // Kullanıcıya callback URL'yi girmesini söyle
+        _showCallbackInstructions();
         
       } catch (e) {
         setState(() {
@@ -122,9 +100,9 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           children: [
             const Text('Google ile giriş yaptıktan sonra:'),
             const SizedBox(height: 8),
-            const Text('1. Tarayıcıda görünen URL\'yi kopyalayın'),
-            const Text('2. URL\'yi aşağıdaki alana yapıştırın'),
-            const Text('3. "Devam Et" butonuna tıklayın'),
+            const Text('1. Tarayıcıda "Flutter Uygulamasını Aç" butonuna tıklayın'),
+            const Text('2. Çalışmazsa "URL\'yi Kopyala" butonuna tıklayın'),
+            const Text('3. URL\'yi aşağıdaki alana yapıştırın'),
             const SizedBox(height: 16),
             TextField(
               controller: urlController,

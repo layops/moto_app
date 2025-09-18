@@ -58,6 +58,9 @@ dependencies:
   # Deep Link
   app_links: ^6.3.2
   
+  # WebView
+  webview_flutter: ^4.4.2
+  
   # Supabase
   supabase_flutter: ^2.5.6
   

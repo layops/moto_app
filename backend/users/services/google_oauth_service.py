@@ -104,7 +104,7 @@ class GoogleOAuthService:
                     'redirect_to': redirect_to
                 }
             
-            # OAuth parametreleri (PKCE olmadan)
+            # OAuth parametreleri - Google'ın güvenlik politikalarına uygun
             params = {
                 'client_id': self.client_id,
                 'redirect_uri': self.redirect_uri,
@@ -112,8 +112,13 @@ class GoogleOAuthService:
                 'response_type': 'code',
                 'state': state,
                 'access_type': 'offline',
-                'prompt': 'consent'
+                'prompt': 'select_account',  # consent yerine select_account
+                'include_granted_scopes': 'true',
+                'hd': None,  # Hosted domain (opsiyonel)
             }
+            
+            # None değerlerini filtrele
+            params = {k: v for k, v in params.items() if v is not None}
             
             # URL oluştur
             auth_url = f"{self.auth_url}?" + "&".join([f"{k}={v}" for k, v in params.items()])
