@@ -237,6 +237,9 @@ class PostLikeToggleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, post_id):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         post = get_object_or_404(Post, id=post_id)
         
         # Post'a erişim kontrolü
@@ -298,8 +301,6 @@ class PostLikeToggleView(APIView):
                     
                 except Exception as e:
                     # Bildirim gönderme hatası kritik değil, sadece logla
-                    import logging
-                    logger = logging.getLogger(__name__)
                     logger.error(f"Beğeni bildirimi thread başlatılamadı: {e}")
         
         # Güncel beğeni sayısını al

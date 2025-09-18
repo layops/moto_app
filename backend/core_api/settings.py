@@ -449,6 +449,11 @@ if not DEBUG:
                 'level': 'ERROR',
                 'propagate': False,
             },
+            'django.server': {
+                'handlers': [],
+                'level': 'WARNING',
+                'propagate': False,
+            },
             'moto_app': {
                 'handlers': ['console', 'file'],
                 'level': 'INFO',
@@ -487,6 +492,11 @@ else:
             'django.request': {
                 'handlers': ['console'],
                 'level': 'ERROR',
+                'propagate': False,
+            },
+            'django.server': {
+                'handlers': [],
+                'level': 'WARNING',
                 'propagate': False,
             },
             'moto_app': {

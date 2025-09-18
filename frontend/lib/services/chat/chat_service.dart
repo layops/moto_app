@@ -16,6 +16,19 @@ class ChatService {
     return await ServiceLocator.token.getToken();
   }
 
+  Future<int?> _getCurrentUserId() async {
+    try {
+      final currentUser = await ServiceLocator.user.getCurrentUsername();
+      if (currentUser != null) {
+        final profileData = await ServiceLocator.profile.getProfile(currentUser);
+        return profileData?['id'];
+      }
+    } catch (e) {
+      // Hata durumunda sessizce devam et
+    }
+    return null;
+  }
+
   /// Özel mesajları getir
   Future<List<PrivateMessage>> getPrivateMessages() async {
     const cacheKey = 'private_messages';
@@ -204,6 +217,10 @@ class ChatService {
     }
 
     try {
+      // Alıcı kullanıcıyı belirle (gönderen kullanıcı user1Id ise alıcı user2Id, değilse user1Id)
+      final currentUserId = await _getCurrentUserId();
+      final receiverId = currentUserId == user1Id ? user2Id : user1Id;
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/rooms/private_${user1Id}_${user2Id}/messages/'),
         headers: {
@@ -212,6 +229,7 @@ class ChatService {
         },
         body: jsonEncode({
           'message': message,
+          'receiver_id': receiverId,
         }),
       );
 
