@@ -23,6 +23,10 @@ python manage.py makemigrations --noinput
 echo "🗄️ Running migrations..."
 python manage.py migrate --noinput
 
+# Fake apply problematic migrations if needed
+echo "🔧 Checking for problematic migrations..."
+python manage.py migrate chat 0003 --fake
+
 echo "✅ Supabase optimized build completed successfully!"
 echo "🗄️  Ready to use Supabase PostgreSQL"
 echo "📁 Static files will be collected at runtime"
