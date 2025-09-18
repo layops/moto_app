@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.application") version "8.7.3" apply false
+    id("com.android.application") version "8.6.0" apply false
     id("com.google.gms.google-services") version "4.4.3" apply false
 }
 
@@ -9,7 +9,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.7.3")
+        classpath("com.android.tools.build:gradle:8.6.0")
         classpath("com.google.gms:google-services:4.4.3")
     }
 }

@@ -8,17 +8,12 @@ plugins {
 android {
     namespace = "com.example.motoapp_frontend"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "26.1.10909125"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
-    }
-    
-    // Suppress Java version warnings
-    tasks.withType<JavaCompile> {
-        options.compilerArgs.addAll(listOf("-Xlint:-unchecked"))
     }
 
     kotlinOptions {
