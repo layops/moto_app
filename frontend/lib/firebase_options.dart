@@ -53,11 +53,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', // Bu bilgiyi Firebase Console'dan alın
+    apiKey: 'AIzaSyCik6UuZO1rRt9QayAVXWIZrmmQ5vYtqa8',
     appId: '1:715702701601:android:44c5c91ee42a5a7ac1dd60',
     messagingSenderId: '715702701601',
     projectId: 'spiride-4a107',
-    storageBucket: 'spiride-4a107.appspot.com',
+    storageBucket: 'spiride-4a107.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

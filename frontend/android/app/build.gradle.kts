@@ -18,7 +18,7 @@ android {
     
     // Suppress Java version warnings
     tasks.withType<JavaCompile> {
-        options.compilerArgs.addAll(listOf("-Xlint:-options"))
+        options.compilerArgs.addAll(listOf("-Xlint:-unchecked"))
     }
 
     kotlinOptions {
