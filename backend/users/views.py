@@ -438,11 +438,7 @@ class GoogleAuthTestView(APIView):
     def get(self, request):
         """Google OAuth test endpoint'i"""
         try:
-            from .services.google_oauth_service import GoogleOAuthService
-            
-            google_auth = GoogleOAuthService()
-            
-            # Environment variables'ları detaylı kontrol et
+            # Environment variables'ları direkt kontrol et
             env_debug = {
                 'GOOGLE_CLIENT_ID': os.environ.get('GOOGLE_CLIENT_ID', 'NOT_SET'),
                 'GOOGLE_CLIENT_SECRET': 'SET' if os.environ.get('GOOGLE_CLIENT_SECRET') else 'NOT_SET',
@@ -450,17 +446,29 @@ class GoogleAuthTestView(APIView):
                 'GOOGLE_CALLBACK_URL': os.environ.get('GOOGLE_CALLBACK_URL', 'NOT_SET'),
             }
             
+            # Settings'den de kontrol et
+            from django.conf import settings
+            settings_debug = {
+                'GOOGLE_CLIENT_ID': settings.GOOGLE_CLIENT_ID[:20] + '...' if settings.GOOGLE_CLIENT_ID else 'None',
+                'GOOGLE_CLIENT_SECRET': 'SET' if settings.GOOGLE_CLIENT_SECRET else 'None',
+                'GOOGLE_REDIRECT_URI': settings.GOOGLE_REDIRECT_URI,
+            }
+            
+            from .services.google_oauth_service import GoogleOAuthService
+            google_auth = GoogleOAuthService()
+            
             # Google OAuth servisini test et
             if not google_auth.is_available:
                 return Response({
                     'status': 'error',
                     'message': 'Google OAuth servisi kullanılamıyor',
-                    'environment_check': {
+                    'environment_variables': env_debug,
+                    'settings_variables': settings_debug,
+                    'service_check': {
                         'GOOGLE_CLIENT_ID': bool(google_auth.client_id),
                         'GOOGLE_CLIENT_SECRET': bool(google_auth.client_secret),
                         'GOOGLE_REDIRECT_URI': bool(google_auth.redirect_uri),
                     },
-                    'environment_variables': env_debug,
                     'debug_info': {
                         'client_id_value': google_auth.client_id[:20] + '...' if google_auth.client_id else None,
                         'redirect_uri_value': google_auth.redirect_uri,

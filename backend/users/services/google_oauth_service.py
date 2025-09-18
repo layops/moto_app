@@ -25,6 +25,12 @@ class GoogleOAuthService:
         logger.info(f"  CLIENT_SECRET: {'***' if self.client_secret else 'None'}")
         logger.info(f"  REDIRECT_URI: {self.redirect_uri}")
         
+        # Environment variables'ları direkt kontrol et
+        import os
+        logger.info(f"  ENV CLIENT_ID: {os.environ.get('GOOGLE_CLIENT_ID', 'NOT_SET')[:20]}...")
+        logger.info(f"  ENV CLIENT_SECRET: {'SET' if os.environ.get('GOOGLE_CLIENT_SECRET') else 'NOT_SET'}")
+        logger.info(f"  ENV REDIRECT_URI: {os.environ.get('GOOGLE_REDIRECT_URI', 'NOT_SET')}")
+        
         # Google OAuth endpoints
         self.auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'
         self.token_url = 'https://oauth2.googleapis.com/token'
