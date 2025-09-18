@@ -98,7 +98,6 @@ class HiddenConversation(models.Model):
     hidden_at = models.DateTimeField(auto_now_add=True, verbose_name="Gizlenme Tarihi")
     
     class Meta:
-        unique_together = ['user', 'other_user']
         verbose_name = "Gizlenen Konuşma"
         verbose_name_plural = "Gizlenen Konuşmalar"
     
