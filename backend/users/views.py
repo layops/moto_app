@@ -242,6 +242,36 @@ class GoogleCallbackView(APIView):
                         'refresh_token': result.get('refresh_token'),
                     }, status=status.HTTP_200_OK)
                 else:
+                    # Auto redirect kontrolü
+                    auto_redirect = request.GET.get('auto_redirect', 'false').lower() == 'true'
+                    
+                    if auto_redirect:
+                        # Token data'yı hazırla
+                        import json
+                        import base64
+                        token_data = {
+                            'access_token': result.get('access_token'),
+                            'refresh_token': result.get('refresh_token'),
+                        }
+                        # Doğrudan Flutter uygulamasına yönlendir
+                        flutter_url = f'motoapp://oauth/success?user_data={base64.b64encode(json.dumps(user_data).encode()).decode()}&token_data={base64.b64encode(json.dumps(token_data).encode()).decode()}'
+                        return HttpResponse(f'''
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Flutter Uygulamasına Yönlendiriliyor</title>
+                        </head>
+                        <body>
+                            <script>
+                                window.location.href = '{flutter_url}';
+                            </script>
+                            <p>Flutter uygulamasına yönlendiriliyorsunuz...</p>
+                        </body>
+                        </html>
+                        ''', content_type='text/html')
+                    
                     # Tarayıcı için HTML sayfası + Deep Link
                     import json
                     import base64
@@ -288,20 +318,30 @@ class GoogleCallbackView(APIView):
                         
                         <h3>Flutter Uygulamasına Otomatik Yönlendirme:</h3>
                         <p>Flutter uygulamanıza otomatik olarak yönlendiriliyorsunuz...</p>
-                        <div class="url-box">
-                            <span id="callbackUrl"></span>
-                            <br><br>
-                            <button class="copy-btn" onclick="openFlutterApp()">Flutter Uygulamasını Aç</button>
-                            <br><br>
-                            <button class="copy-btn" onclick="copyUrl()" style="background-color: #6c757d;">URL'yi Kopyala</button>
+                        
+                        <div id="loadingIndicator" style="display: block;">
+                            <p>🔄 Flutter uygulaması açılmaya çalışılıyor...</p>
                         </div>
                         
-                        <p><strong>Not:</strong> Eğer otomatik yönlendirme çalışmazsa:</p>
-                        <ol>
-                            <li>Yukarıdaki "Flutter Uygulamasını Aç" butonuna tıklayın</li>
-                            <li>Hala çalışmazsa "URL'yi Kopyala" butonuna tıklayın</li>
-                            <li>Kopyalanan URL'yi Flutter uygulamasına yapıştırın</li>
-                        </ol>
+                        <div id="manualActions" style="display: none;">
+                            <div class="url-box">
+                                <span id="callbackUrl"></span>
+                                <br><br>
+                                <button class="copy-btn" onclick="openFlutterApp()">Flutter Uygulamasını Aç</button>
+                                <br><br>
+                                <button class="copy-btn" onclick="copyUrl()" style="background-color: #6c757d;">URL'yi Kopyala</button>
+                            </div>
+                        </div>
+                        
+                        <div id="instructions" style="display: none;">
+                            <p><strong>Otomatik yönlendirme çalışmadı. Manuel yöntem:</strong></p>
+                            <ol>
+                                <li><strong>URL'yi Kopyala</strong> butonuna tıklayın</li>
+                                <li>Flutter uygulamasını açın</li>
+                                <li>Google giriş sayfasında "URL'yi Yapıştır" seçeneğini kullanın</li>
+                                <li>Kopyalanan URL'yi yapıştırın ve "Devam Et" butonuna tıklayın</li>
+                            </ol>
+                        </div>
                         
                         <script>
                             document.getElementById('callbackUrl').textContent = window.location.href;
@@ -309,52 +349,86 @@ class GoogleCallbackView(APIView):
                             // Otomatik Flutter uygulamasına yönlendirme
                             function openFlutterApp() {{
                                 const currentUrl = window.location.href;
+                                
+                                // Önce HTTPS redirect ile dene (daha güvenilir)
+                                const httpsRedirectUrl = 'https://spiride.onrender.com/api/users/auth/callback/?code=' + 
+                                    encodeURIComponent('{code}') + '&state=' + encodeURIComponent('{state}') + '&auto_redirect=true';
+                                
+                                console.log('Attempting HTTPS redirect:', httpsRedirectUrl);
+                                
+                                // HTTPS redirect ile dene
+                                window.location.href = httpsRedirectUrl;
+                            }}
+                            
+                            // Custom scheme ile deneme
+                            function tryCustomScheme() {{
                                 const flutterUrl = 'motoapp://oauth/success?user_data=' + encodeURIComponent('{user_data_encoded}') + '&token_data=' + encodeURIComponent('{token_data_encoded}');
+                                console.log('Attempting custom scheme:', flutterUrl);
                                 
-                                console.log('Attempting to open Flutter app with URL:', flutterUrl);
+                                // Hidden iframe ile dene
+                                const iframe = document.createElement('iframe');
+                                iframe.style.display = 'none';
+                                iframe.src = flutterUrl;
+                                document.body.appendChild(iframe);
                                 
-                                // Flutter uygulamasını açmayı dene
-                                const link = document.createElement('a');
-                                link.href = flutterUrl;
-                                link.style.display = 'none';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                
-                                // Fallback: 3 saniye sonra kullanıcıyı bilgilendir
+                                // 2 saniye sonra iframe'i temizle
                                 setTimeout(function() {{
-                                    alert('Flutter uygulaması açılmadı. Lütfen uygulamayı manuel olarak açın.');
-                                }}, 3000);
+                                    document.body.removeChild(iframe);
+                                }}, 2000);
                             }}
                             
                             // URL'yi kopyalama fonksiyonu
                             function copyUrl() {{
                                 const url = window.location.href;
-                                navigator.clipboard.writeText(url).then(function() {{
-                                    alert('URL panoya kopyalandı! Flutter uygulamasına yapıştırabilirsiniz.');
-                                }}).catch(function(err) {{
-                                    console.error('URL kopyalama hatası:', err);
-                                    // Fallback: textarea kullanarak kopyala
-                                    const textArea = document.createElement('textarea');
-                                    textArea.value = url;
-                                    document.body.appendChild(textArea);
-                                    textArea.select();
-                                    document.execCommand('copy');
-                                    document.body.removeChild(textArea);
-                                    alert('URL panoya kopyalandı! Flutter uygulamasına yapıştırabilirsiniz.');
-                                }});
+                                console.log('Copying URL:', url);
+                                
+                                if (navigator.clipboard && window.isSecureContext) {{
+                                    navigator.clipboard.writeText(url).then(function() {{
+                                        alert('✅ URL panoya kopyalandı!\\n\\nŞimdi:\\n1. Flutter uygulamasını açın\\n2. Google giriş sayfasında URL\'yi yapıştırın');
+                                    }}).catch(function(err) {{
+                                        console.error('Clipboard API error:', err);
+                                        fallbackCopy(url);
+                                    }});
+                                }} else {{
+                                    fallbackCopy(url);
+                                }}
+                            }}
+                            
+                            function fallbackCopy(url) {{
+                                const textArea = document.createElement('textarea');
+                                textArea.value = url;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                textArea.style.top = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.focus();
+                                textArea.select();
+                                
+                                try {{
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {{
+                                        alert('✅ URL panoya kopyalandı!\\n\\nŞimdi:\\n1. Flutter uygulamasını açın\\n2. Google giriş sayfasında URL\'yi yapıştırın');
+                                    }} else {{
+                                        alert('❌ URL kopyalanamadı. Lütfen URL\'yi manuel olarak kopyalayın:\\n\\n' + url);
+                                    }}
+                                }} catch (err) {{
+                                    console.error('Fallback copy error:', err);
+                                    alert('❌ URL kopyalanamadı. Lütfen URL\'yi manuel olarak kopyalayın:\\n\\n' + url);
+                                }}
+                                
+                                document.body.removeChild(textArea);
                             }}
                             
                             // Sayfa yüklendiğinde otomatik yönlendirme
                             window.onload = function() {{
-                                // Hemen dene
+                                // Hemen HTTPS redirect ile dene
                                 openFlutterApp();
                                 
-                                // 1 saniye sonra tekrar dene
-                                setTimeout(openFlutterApp, 1000);
+                                // 1 saniye sonra custom scheme ile dene
+                                setTimeout(tryCustomScheme, 1000);
                                 
-                                // 2 saniye sonra son kez dene
-                                setTimeout(openFlutterApp, 2000);
+                                // 3 saniye sonra tekrar HTTPS redirect dene
+                                setTimeout(openFlutterApp, 3000);
                             }};
                             
                             // Sayfa görünür olduğunda da dene (visibility API)

@@ -18,14 +18,28 @@ class DeepLinkService {
   static StreamSubscription<Uri>? _linkSubscription;
 
   static void initialize() {
+    print('🔗 DeepLinkService initializing...');
     _linkSubscription = _appLinks.uriLinkStream.listen(
       (Uri uri) {
+        print('🔗 Raw deep link received: $uri');
         _handleDeepLink(uri);
       },
       onError: (err) {
-        print('Deep link error: $err');
+        print('🔗 Deep link error: $err');
       },
     );
+    
+    // Initial link check
+    _appLinks.getInitialLink().then((Uri? uri) {
+      if (uri != null) {
+        print('🔗 Initial deep link found: $uri');
+        _handleDeepLink(uri);
+      } else {
+        print('🔗 No initial deep link found');
+      }
+    }).catchError((err) {
+      print('🔗 Initial link error: $err');
+    });
   }
 
   static void _handleDeepLink(Uri uri) {
@@ -52,7 +66,16 @@ class DeepLinkService {
     } else if (uri.scheme == 'https' && uri.host == 'spiride.onrender.com' && uri.path.startsWith('/api/users/auth/callback/')) {
       // Direct HTTPS callback URL
       print('🔗 Processing direct HTTPS callback URL');
-      _handleGoogleOAuthCallback(uri.toString());
+      
+      // Auto redirect parametresi var mı kontrol et
+      final autoRedirect = uri.queryParameters['auto_redirect'];
+      if (autoRedirect == 'true') {
+        print('🔗 Auto redirect detected, processing immediately');
+        _handleGoogleOAuthCallback(uri.toString());
+      } else {
+        print('🔗 Regular HTTPS callback, processing normally');
+        _handleGoogleOAuthCallback(uri.toString());
+      }
     } else {
       print('🔗 Deep link not handled - Scheme: ${uri.scheme}, Host: ${uri.host}');
     }

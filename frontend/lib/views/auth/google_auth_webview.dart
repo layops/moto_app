@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/views/auth/auth_common.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
@@ -27,11 +28,40 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   String? state;
   bool _isLoading = true;
   String _errorMessage = '';
+  late final WebViewController _webViewController;
 
   @override
   void initState() {
     super.initState();
+    _initializeWebView();
     _getAuthUrl();
+  }
+
+  void _initializeWebView() {
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (String url) {
+            print('🔗 WebView page started: $url');
+          },
+          onPageFinished: (String url) {
+            print('🔗 WebView page finished: $url');
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            print('🔗 WebView navigation request: ${request.url}');
+            
+            // Callback URL'yi yakala
+            if (request.url.contains('/api/users/auth/callback/')) {
+              print('🔗 Callback URL detected in WebView: ${request.url}');
+              _handleCallbackUrl(request.url);
+              return NavigationDecision.prevent;
+            }
+            
+            return NavigationDecision.navigate;
+          },
+        ),
+      );
   }
 
   Future<void> _getAuthUrl() async {
@@ -62,23 +92,13 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
   Future<void> _launchGoogleAuth() async {
     if (authUrl != null) {
       try {
-        final uri = Uri.parse(authUrl!);
+        // WebView'da Google OAuth URL'ini yükle
+        await _webViewController.loadRequest(Uri.parse(authUrl!));
         
-        // External browser yerine WebView kullanarak callback'i yakala
-        await launchUrl(
-          uri, 
-          mode: LaunchMode.externalApplication,
-          webOnlyWindowName: '_blank',
-        );
-        
-        // URL başarıyla açıldı, success state'e geç
         setState(() {
           _isLoading = false;
           _errorMessage = '';
         });
-        
-        // Kullanıcıya callback URL'yi manuel olarak girmesini söyle
-        _showCallbackInstructions();
         
       } catch (e) {
         setState(() {
@@ -140,6 +160,8 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
 
   Future<void> _handleCallbackUrl(String url) async {
     try {
+      print('🔗 Processing callback URL: $url');
+      
       // URL'i decode et
       final decodedUrl = Uri.decodeFull(url);
       final uri = Uri.parse(decodedUrl);
@@ -152,11 +174,13 @@ class _GoogleAuthWebViewState extends State<GoogleAuthWebView> {
           ? Uri.decodeComponent(uri.queryParameters['state']!)
           : null;
       
-      print('Decoded URL: $decodedUrl');
-      print('Decoded code: $code');
-      print('Decoded state: $stateFromUrl');
+      print('🔗 Decoded URL: $decodedUrl');
+      print('🔗 Decoded code: ${code?.substring(0, 20)}...');
+      print('🔗 Decoded state: $stateFromUrl');
+      print('🔗 Stored state: $state');
       
       if (code != null && state != null) {
+        print('🔗 Both code and state found, processing callback...');
         // Backend'e callback gönder - state parametresini ekle
         final response = await widget.authService.handleGoogleCallback(code, state!);
         
