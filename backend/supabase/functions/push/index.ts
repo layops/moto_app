@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     console.log('Push notification webhook triggered:', payload.type, payload.table)
 
     // Sadece INSERT event'lerini işle
-    if (payload.type !== 'INSERT' || payload.table !== 'notifications') {
+    if (payload.type !== 'INSERT' || payload.table !== 'notifications_notification') {
       return new Response('Event not handled', { status: 200 })
     }
 

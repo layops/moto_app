@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .models import Notification, NotificationPreferences
-from .serializers import NotificationSerializer, NotificationPreferencesSerializer, FCMTokenSerializer
+from .serializers import NotificationSerializer, NotificationPreferencesSerializer
 from .utils import send_realtime_notification
 
 User = get_user_model()

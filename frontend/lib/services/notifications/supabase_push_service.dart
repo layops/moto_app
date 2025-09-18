@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../service_locator.dart';
 
 /// Supabase push notification service
@@ -14,11 +15,15 @@ class SupabasePushService {
   SupabaseClient? _supabaseClient;
   RealtimeChannel? _notificationChannel;
   StreamSubscription<RealtimePayload>? _subscription;
+  FlutterLocalNotificationsPlugin? _localNotifications;
 
   /// Initialize Supabase push notifications
   Future<void> initialize() async {
     try {
       _supabaseClient = Supabase.instance.client;
+      
+      // Local notifications plugin'ini initialize et
+      await _initializeLocalNotifications();
       
       // Supabase real-time notifications için subscribe ol
       await _subscribeToNotifications();
@@ -27,6 +32,59 @@ class SupabasePushService {
       
     } catch (e) {
       debugPrint('❌ Supabase Push Service initialization failed: $e');
+    }
+  }
+
+  /// Local notifications plugin'ini initialize et
+  Future<void> _initializeLocalNotifications() async {
+    try {
+      _localNotifications = FlutterLocalNotificationsPlugin();
+      
+      // Android initialization settings
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      
+      // iOS initialization settings
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      
+      // Initialization settings
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+      
+      // Initialize plugin
+      await _localNotifications!.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+      
+      debugPrint('✅ Local notifications initialized successfully');
+      
+    } catch (e) {
+      debugPrint('❌ Local notifications initialization failed: $e');
+    }
+  }
+
+  /// Notification tap handler
+  void _onNotificationTapped(NotificationResponse response) {
+    debugPrint('📱 Notification tapped: ${response.payload}');
+    
+    // Notification payload'ından bilgileri al
+    if (response.payload != null) {
+      try {
+        final payload = response.payload!.split('|');
+        if (payload.length >= 2) {
+          final notificationId = payload[0];
+          final notificationType = payload[1];
+          navigateToNotification(notificationId, notificationType);
+        }
+      } catch (e) {
+        debugPrint('❌ Error parsing notification payload: $e');
+      }
     }
   }
 
@@ -70,7 +128,7 @@ class SupabasePushService {
       final notification = payload.newRecord;
       debugPrint('📱 New notification received: ${notification['message']}');
       
-      // Local notification göster
+      // Local notification göster (async ama await etmiyoruz)
       _showLocalNotification(notification);
       
       // Notification stream'e gönder (mevcut NotificationsService'e)
@@ -82,7 +140,7 @@ class SupabasePushService {
   }
 
   /// Local notification göster
-  void _showLocalNotification(Map<String, dynamic> notification) {
+  Future<void> _showLocalNotification(Map<String, dynamic> notification) async {
     final title = notification['title'] ?? 'MotoApp';
     final body = notification['message'] ?? '';
     final notificationType = notification['notification_type'] ?? 'other';
@@ -90,7 +148,7 @@ class SupabasePushService {
     debugPrint('🔔 Showing local notification: $title - $body');
     
     // flutter_local_notifications kullanarak local notification göster
-    _showLocalNotificationWithPlugin(
+    await _showLocalNotificationWithPlugin(
       title: title,
       body: body,
       notificationType: notificationType,
@@ -99,18 +157,63 @@ class SupabasePushService {
   }
 
   /// flutter_local_notifications ile local notification göster
-  void _showLocalNotificationWithPlugin({
+  Future<void> _showLocalNotificationWithPlugin({
     required String title,
     required String body,
     required String notificationType,
     String? notificationId,
-  }) {
-    // flutter_local_notifications implementasyonu
-    // Bu kısım flutter_local_notifications plugin'i gerektirir
-    debugPrint('📱 Local notification: $title - $body ($notificationType)');
+  }) async {
+    if (_localNotifications == null) {
+      debugPrint('❌ Local notifications not initialized');
+      return;
+    }
     
-    // Gelecekte flutter_local_notifications implementasyonu eklenebilir
-    // Şimdilik sadece log yazdırıyoruz
+    try {
+      // Notification ID'si oluştur
+      final id = notificationId != null ? int.tryParse(notificationId) ?? DateTime.now().millisecondsSinceEpoch : DateTime.now().millisecondsSinceEpoch;
+      
+      // Payload oluştur (notificationId|notificationType)
+      final payload = '${notificationId ?? id}|$notificationType';
+      
+      // Android notification details
+      const androidDetails = AndroidNotificationDetails(
+        'motoapp_notifications',
+        'MotoApp Notifications',
+        channelDescription: 'MotoApp push notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        enableVibration: true,
+        playSound: true,
+      );
+      
+      // iOS notification details
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+      
+      // Notification details
+      const notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+      
+      // Notification göster
+      await _localNotifications!.show(
+        id,
+        title,
+        body,
+        notificationDetails,
+        payload: payload,
+      );
+      
+      debugPrint('📱 Local notification shown: $title - $body ($notificationType)');
+      
+    } catch (e) {
+      debugPrint('❌ Error showing local notification: $e');
+    }
   }
 
   /// Notification'ı mevcut NotificationsService stream'ine gönder
