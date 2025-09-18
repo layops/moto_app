@@ -351,33 +351,67 @@ class GoogleCallbackView(APIView):
                             
                             // Otomatik Flutter uygulamasına yönlendirme
                             function openFlutterApp() {{
-                                const currentUrl = window.location.href;
+                                console.log('Attempting to open Flutter app...');
                                 
-                                // Önce HTTPS redirect ile dene (daha güvenilir)
-                                const httpsRedirectUrl = 'https://spiride.onrender.com/api/users/auth/callback/?code=' + 
-                                    encodeURIComponent('{code}') + '&state=' + encodeURIComponent('{state}') + '&auto_redirect=true';
+                                // Custom scheme URL'i oluştur - daha basit format
+                                const userData = '{user_data_encoded}';
+                                const tokenData = '{token_data_encoded}';
+                                const flutterUrl = 'motoapp://?user_data=' + encodeURIComponent(userData) + '&token_data=' + encodeURIComponent(tokenData);
                                 
-                                console.log('Attempting HTTPS redirect:', httpsRedirectUrl);
+                                console.log('Flutter URL:', flutterUrl);
                                 
-                                // HTTPS redirect ile dene
-                                window.location.href = httpsRedirectUrl;
-                            }}
-                            
-                            // Custom scheme ile deneme
-                            function tryCustomScheme() {{
-                                const flutterUrl = 'motoapp://oauth/success?user_data=' + encodeURIComponent('{user_data_encoded}') + '&token_data=' + encodeURIComponent('{token_data_encoded}');
-                                console.log('Attempting custom scheme:', flutterUrl);
+                                // Try multiple methods
+                                let success = false;
                                 
-                                // Hidden iframe ile dene
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                iframe.src = flutterUrl;
-                                document.body.appendChild(iframe);
+                                // Method 1: Direct location change
+                                try {{
+                                    window.location.href = flutterUrl;
+                                    success = true;
+                                    console.log('Method 1: Direct location change');
+                                }} catch(e) {{
+                                    console.log('Method 1 failed:', e);
+                                }}
                                 
-                                // 2 saniye sonra iframe'i temizle
-                                setTimeout(function() {{
-                                    document.body.removeChild(iframe);
-                                }}, 2000);
+                                // Method 2: Hidden iframe (most reliable)
+                                if (!success) {{
+                                    try {{
+                                        const iframe = document.createElement('iframe');
+                                        iframe.style.display = 'none';
+                                        iframe.style.width = '0';
+                                        iframe.style.height = '0';
+                                        iframe.src = flutterUrl;
+                                        document.body.appendChild(iframe);
+                                        
+                                        setTimeout(function() {{
+                                            if (iframe.parentNode) {{
+                                                document.body.removeChild(iframe);
+                                            }}
+                                        }}, 2000);
+                                        
+                                        console.log('Method 2: Hidden iframe');
+                                        success = true;
+                                    }} catch(e) {{
+                                        console.log('Method 2 failed:', e);
+                                    }}
+                                }}
+                                
+                                // Method 3: Create and click link
+                                if (!success) {{
+                                    try {{
+                                        const link = document.createElement('a');
+                                        link.href = flutterUrl;
+                                        link.style.display = 'none';
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        console.log('Method 3: Programmatic link click');
+                                        success = true;
+                                    }} catch(e) {{
+                                        console.log('Method 3 failed:', e);
+                                    }}
+                                }}
+                                
+                                return success;
                             }}
                             
                             // URL'yi kopyalama fonksiyonu
@@ -424,14 +458,20 @@ class GoogleCallbackView(APIView):
                             
                             // Sayfa yüklendiğinde otomatik yönlendirme
                             window.onload = function() {{
-                                // Hemen HTTPS redirect ile dene
-                                openFlutterApp();
+                                // Hemen dene
+                                const success = openFlutterApp();
                                 
-                                // 1 saniye sonra custom scheme ile dene
-                                setTimeout(tryCustomScheme, 1000);
+                                // 2 saniye sonra tekrar dene
+                                setTimeout(function() {{
+                                    openFlutterApp();
+                                }}, 2000);
                                 
-                                // 3 saniye sonra tekrar HTTPS redirect dene
-                                setTimeout(openFlutterApp, 3000);
+                                // 4 saniye sonra manuel seçenekleri göster
+                                setTimeout(function() {{
+                                    document.getElementById('loadingIndicator').style.display = 'none';
+                                    document.getElementById('manualActions').style.display = 'block';
+                                    document.getElementById('instructions').style.display = 'block';
+                                }}, 4000);
                             }};
                             
                             // Sayfa görünür olduğunda da dene (visibility API)
