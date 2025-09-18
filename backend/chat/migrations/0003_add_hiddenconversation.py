@@ -18,25 +18,30 @@ def create_hiddenconversation_table(apps, schema_editor):
         """)
         table_exists = cursor.fetchone()[0]
         
-        if not table_exists:
-            # Create table manually
-            cursor.execute("""
-                CREATE TABLE chat_hiddenconversation (
-                    id BIGSERIAL PRIMARY KEY,
-                    hidden_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-                    other_user_id BIGINT NOT NULL,
-                    user_id BIGINT NOT NULL,
-                    CONSTRAINT chat_hiddenconversation_user_id_fkey 
-                        FOREIGN KEY (user_id) REFERENCES auth_user (id) ON DELETE CASCADE,
-                    CONSTRAINT chat_hiddenconversation_other_user_id_fkey 
-                        FOREIGN KEY (other_user_id) REFERENCES auth_user (id) ON DELETE CASCADE,
-                    CONSTRAINT unique_hidden_conversation UNIQUE (user_id, other_user_id)
-                );
-            """)
-            
-            # Create indexes
-            cursor.execute("CREATE INDEX chat_hiddenconversation_user_id_idx ON chat_hiddenconversation (user_id);")
-            cursor.execute("CREATE INDEX chat_hiddenconversation_other_user_id_idx ON chat_hiddenconversation (other_user_id);")
+        if table_exists:
+            # Table already exists, skip creation
+            print("✅ chat_hiddenconversation table already exists, skipping creation")
+            return
+        
+        # Create table manually
+        cursor.execute("""
+            CREATE TABLE chat_hiddenconversation (
+                id BIGSERIAL PRIMARY KEY,
+                hidden_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+                other_user_id BIGINT NOT NULL,
+                user_id BIGINT NOT NULL,
+                CONSTRAINT chat_hiddenconversation_user_id_fkey 
+                    FOREIGN KEY (user_id) REFERENCES auth_user (id) ON DELETE CASCADE,
+                CONSTRAINT chat_hiddenconversation_other_user_id_fkey 
+                    FOREIGN KEY (other_user_id) REFERENCES auth_user (id) ON DELETE CASCADE,
+                CONSTRAINT unique_hidden_conversation UNIQUE (user_id, other_user_id)
+            );
+        """)
+        
+        # Create indexes
+        cursor.execute("CREATE INDEX chat_hiddenconversation_user_id_idx ON chat_hiddenconversation (user_id);")
+        cursor.execute("CREATE INDEX chat_hiddenconversation_other_user_id_idx ON chat_hiddenconversation (other_user_id);")
+        print("✅ chat_hiddenconversation table created successfully")
 
 
 def reverse_create_hiddenconversation_table(apps, schema_editor):
