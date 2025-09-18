@@ -295,3 +295,91 @@ class SupabaseTestView(APIView):
                 {"detail": f"Supabase test hatası: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class FCMTestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """FCM push notification test endpoint'i"""
+        try:
+            from .fcm_service import send_fcm_notification
+            
+            # Test bildirimi gönder
+            title = "MotoApp FCM Test"
+            body = f"Merhaba {request.user.username}! Bu bir FCM test bildirimidir."
+            data = {
+                'test': True,
+                'timestamp': str(timezone.now())
+            }
+            
+            success = send_fcm_notification(
+                user=request.user,
+                title=title,
+                body=body,
+                data=data
+            )
+            
+            if success:
+                return Response({
+                    "detail": "FCM test bildirimi başarıyla gönderildi!",
+                    "title": title,
+                    "body": body,
+                    "user": request.user.username
+                })
+            else:
+                return Response(
+                    {"detail": "FCM test bildirimi gönderilemedi. FCM token ve konfigürasyonu kontrol edin."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+        except Exception as e:
+            return Response(
+                {"detail": f"FCM test hatası: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class PushNotificationStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Kullanıcının push notification durumunu kontrol et"""
+        try:
+            from .models import NotificationPreferences
+            
+            preferences, created = NotificationPreferences.objects.get_or_create(
+                user=request.user
+            )
+            
+            status_info = {
+                'user_id': request.user.id,
+                'username': request.user.username,
+                'push_enabled': preferences.push_enabled,
+                'fcm_token_exists': bool(preferences.fcm_token),
+                'fcm_token_length': len(preferences.fcm_token) if preferences.fcm_token else 0,
+                'preferences_created': created,
+                'all_preferences': {
+                    'direct_messages': preferences.direct_messages,
+                    'group_messages': preferences.group_messages,
+                    'likes_comments': preferences.likes_comments,
+                    'follows': preferences.follows,
+                    'ride_reminders': preferences.ride_reminders,
+                    'event_updates': preferences.event_updates,
+                    'group_activity': preferences.group_activity,
+                    'new_members': preferences.new_members,
+                    'challenges_rewards': preferences.challenges_rewards,
+                    'leaderboard_updates': preferences.leaderboard_updates,
+                    'sound_enabled': preferences.sound_enabled,
+                    'vibration_enabled': preferences.vibration_enabled,
+                    'push_enabled': preferences.push_enabled,
+                }
+            }
+            
+            return Response(status_info)
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Push notification durumu kontrol edilirken hata oluştu: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

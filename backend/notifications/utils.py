@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from .models import Notification, NotificationPreferences
 from .serializers import NotificationSerializer
 from .supabase_client import send_realtime_notification_via_supabase
+from .fcm_service import send_fcm_notification
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -239,7 +240,7 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             content_object=content_object
         )
         
-        # Supabase Realtime notification gönder
+        # Push notification gönder (Supabase + FCM)
         logger.info(f"🔔 Push notification kontrolü: {recipient_user.username} - push_enabled: {preferences.push_enabled}")
         
         if preferences.push_enabled:
@@ -252,9 +253,10 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                     'notification_type': notification_type,
                 }
                 
+                # 1. Supabase Realtime notification gönder
                 logger.info(f"📱 Supabase realtime notification gönderiliyor: {recipient_user.username} - {push_title}")
                 
-                success = send_supabase_realtime_notification(
+                supabase_success = send_supabase_realtime_notification(
                     recipient_user=recipient_user,
                     title=push_title,
                     body=message,
@@ -262,13 +264,28 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                     notification_type=notification_type
                 )
                 
-                if success:
+                if supabase_success:
                     logger.info(f"✅ Supabase realtime notification gönderildi: {recipient_user.username} - {push_title}")
                 else:
                     logger.warning(f"❌ Supabase realtime notification gönderilemedi: {recipient_user.username}")
+                
+                # 2. FCM notification gönder
+                logger.info(f"📱 FCM notification gönderiliyor: {recipient_user.username} - {push_title}")
+                
+                fcm_success = send_fcm_notification(
+                    user=recipient_user,
+                    title=push_title,
+                    body=message,
+                    data=push_data
+                )
+                
+                if fcm_success:
+                    logger.info(f"✅ FCM notification gönderildi: {recipient_user.username} - {push_title}")
+                else:
+                    logger.warning(f"❌ FCM notification gönderilemedi: {recipient_user.username}")
                     
             except Exception as e:
-                logger.error(f"💥 Supabase realtime notification hatası: {e}")
+                logger.error(f"💥 Push notification hatası: {e}")
         else:
             logger.info(f"🚫 Push notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
         

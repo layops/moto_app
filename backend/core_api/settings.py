@@ -581,3 +581,6 @@ SIMPLE_JWT = {
     'TOKEN_REFRESH_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenRefreshSerializer',
     'TOKEN_VERIFY_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenVerifySerializer',
 }
+
+# Firebase Cloud Messaging (FCM) Settings
+FCM_SERVER_KEY = env('FCM_SERVER_KEY', default='')
