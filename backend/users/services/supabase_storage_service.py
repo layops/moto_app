@@ -91,10 +91,39 @@ class SupabaseStorageService:
             file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
             file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
             
+            # Dosya içeriğini güvenli şekilde oku
+            try:
+                # Dosya pozisyonunu başa al
+                if hasattr(file, 'seek'):
+                    file.seek(0)
+                
+                file_content = file.read()
+                
+                # Eğer boolean döndürürse alternatif yöntem dene
+                if isinstance(file_content, bool):
+                    if hasattr(file, 'file') and hasattr(file.file, 'read'):
+                        file.file.seek(0)
+                        file_content = file.file.read()
+                    elif hasattr(file, 'chunks'):
+                        chunks = []
+                        for chunk in file.chunks():
+                            chunks.append(chunk)
+                        file_content = b''.join(chunks)
+                    else:
+                        return {
+                            'success': False,
+                            'error': 'Dosya okuma hatası: file.read() boolean döndürdü'
+                        }
+            except Exception as read_error:
+                return {
+                    'success': False,
+                    'error': f'Dosya okuma hatası: {str(read_error)}'
+                }
+            
             # Dosyayı yükle
             result = self.client.storage.from_(self.events_bucket).upload(
                 file_name,
-                file.read(),
+                file_content,
                 file_options={
                     "content-type": file.content_type,
                     "upsert": True
