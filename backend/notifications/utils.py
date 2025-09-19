@@ -8,7 +8,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from .models import Notification, NotificationPreferences
 from .serializers import NotificationSerializer
-from .supabase_client import send_realtime_notification_via_supabase, send_supabase_push_notification
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
