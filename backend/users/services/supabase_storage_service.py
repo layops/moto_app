@@ -20,6 +20,7 @@ class SupabaseStorageService:
             self.supabase_service_key = getattr(settings, 'SUPABASE_SERVICE_KEY', None)
             self.profile_bucket = getattr(settings, 'SUPABASE_BUCKET', 'profile_pictures')
             self.cover_bucket = getattr(settings, 'SUPABASE_COVER_BUCKET', 'cover_pictures')
+            self.events_bucket = getattr(settings, 'SUPABASE_EVENTS_BUCKET', 'events_pictures')
             
             if self.supabase_url and self.supabase_service_key:
                 self.client = create_client(self.supabase_url, self.supabase_service_key)
@@ -140,8 +141,8 @@ class SupabaseStorageService:
             file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
             file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
             
-            # Dosyayı yükle
-            result = self.client.storage.from_(self.cover_bucket).upload(
+            # Dosyayı yükle - events_bucket kullan
+            result = self.client.storage.from_(self.events_bucket).upload(
                 file_name,
                 file.read(),
                 file_options={
@@ -151,8 +152,8 @@ class SupabaseStorageService:
             )
             
             if result:
-                # Public URL'i al
-                public_url = self.client.storage.from_(self.cover_bucket).get_public_url(file_name)
+                # Public URL'i al - events_bucket kullan
+                public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
                 
                 logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
                 return public_url
