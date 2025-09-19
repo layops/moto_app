@@ -336,15 +336,85 @@ class SupabaseStorageService:
                 print(f"Content-type: {content_type}")
                 print(f"Upload options: content-type={content_type}, upsert=True")
                 
-                # Supabase upload'u dene
-                result = self.client.storage.from_(self.events_bucket).upload(
-                    file_name,
-                    file_content,
-                    file_options={
-                        "content-type": content_type,
-                        "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                # Supabase upload'u dene - farklı yaklaşımlar
+                result = None
+                
+                # Yaklaşım 1: Normal upload
+                try:
+                    print("Yaklaşım 1: Normal upload deneniyor...")
+                    result = self.client.storage.from_(self.events_bucket).upload(
+                        file_name,
+                        file_content,
+                        file_options={
+                            "content-type": content_type,
+                            "upsert": True
+                        }
+                    )
+                    print("✅ Yaklaşım 1 başarılı")
+                except Exception as e1:
+                    print(f"❌ Yaklaşım 1 başarısız: {e1}")
+                    
+                    # Yaklaşım 2: BytesIO kullan
+                    try:
+                        print("Yaklaşım 2: BytesIO ile upload deneniyor...")
+                        from io import BytesIO
+                        file_buffer = BytesIO(file_content)
+                        result = self.client.storage.from_(self.events_bucket).upload(
+                            file_name,
+                            file_buffer.getvalue(),
+                            file_options={
+                                "content-type": content_type,
+                                "upsert": True
+                            }
+                        )
+                        print("✅ Yaklaşım 2 başarılı")
+                    except Exception as e2:
+                        print(f"❌ Yaklaşım 2 başarısız: {e2}")
+                        
+                        # Yaklaşım 3: Base64 encode
+                        try:
+                            print("Yaklaşım 3: Base64 encode ile upload deneniyor...")
+                            import base64
+                            encoded_content = base64.b64encode(file_content).decode('utf-8')
+                            result = self.client.storage.from_(self.events_bucket).upload(
+                                file_name,
+                                encoded_content,
+                                file_options={
+                                    "content-type": content_type,
+                                    "upsert": True
+                                }
+                            )
+                            print("✅ Yaklaşım 3 başarılı")
+                        except Exception as e3:
+                            print(f"❌ Yaklaşım 3 başarısız: {e3}")
+                            
+                            # Yaklaşım 4: String olarak gönder
+                            try:
+                                print("Yaklaşım 4: String olarak upload deneniyor...")
+                                string_content = file_content.decode('latin-1')
+                                result = self.client.storage.from_(self.events_bucket).upload(
+                                    file_name,
+                                    string_content,
+                                    file_options={
+                                        "content-type": content_type,
+                                        "upsert": True
+                                    }
+                                )
+                                print("✅ Yaklaşım 4 başarılı")
+                            except Exception as e4:
+                                print(f"❌ Yaklaşım 4 başarısız: {e4}")
+                                
+                                # Tüm yaklaşımlar başarısız
+                                print("❌ Tüm upload yaklaşımları başarısız")
+                                raise e1  # İlk hatayı fırlat
+                # Result kontrolü
+                if result is None:
+                    print("❌ Upload result None döndü")
+                    return {
+                        'success': False,
+                        'error': 'Upload işlemi başarısız - result None'
                     }
-                )
+                
                 print(f"Upload result: {result}")
                 print(f"Upload result type: {type(result)}")
                 
