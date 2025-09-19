@@ -75,6 +75,13 @@ class SupabaseStorageService:
                 else:
                     print(f"✅ Bucket mevcut: {bucket_name}")
                     
+                    # Bucket'ın public olup olmadığını kontrol et
+                    try:
+                        bucket_info = self.client.storage.get_bucket(bucket_name)
+                        print(f"Bucket {bucket_name} bilgileri: {bucket_info}")
+                    except Exception as e:
+                        print(f"Bucket {bucket_name} bilgileri alınamadı: {e}")
+                    
         except Exception as e:
             print(f"❌ Bucket kontrol hatası: {e}")
 
@@ -200,27 +207,58 @@ class SupabaseStorageService:
             
             # Dosyayı yükle - events_bucket kullan
             print(f"Supabase'e yükleme başlıyor...")
-            result = self.client.storage.from_(self.events_bucket).upload(
-                file_name,
-                file.read(),
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
-                }
-            )
-            print(f"Upload result: {result}")
+            
+            # File pointer'ı başa al
+            file.seek(0)
+            file_content = file.read()
+            print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes")
+            
+            try:
+                result = self.client.storage.from_(self.events_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                    }
+                )
+                print(f"Upload result: {result}")
+                print(f"Upload result type: {type(result)}")
+                
+                # Result'un detaylarını kontrol et
+                if hasattr(result, 'data'):
+                    print(f"Upload result data: {result.data}")
+                if hasattr(result, 'status_code'):
+                    print(f"Upload status code: {result.status_code}")
+                    
+            except Exception as upload_error:
+                print(f"❌ Upload işlemi sırasında hata: {str(upload_error)}")
+                print(f"❌ Upload error type: {type(upload_error)}")
+                import traceback
+                traceback.print_exc()
+                raise upload_error
             
             if result:
-                # Public URL'i al - events_bucket kullan
-                public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
-                print(f"Public URL oluşturuldu: {public_url}")
-                
-                logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
-                return {
-                    'success': True,
-                    'url': public_url,
-                    'file_name': file_name
-                }
+                try:
+                    # Public URL'i al - events_bucket kullan
+                    public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
+                    print(f"Public URL oluşturuldu: {public_url}")
+                    
+                    logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
+                    return {
+                        'success': True,
+                        'url': public_url,
+                        'file_name': file_name
+                    }
+                except Exception as url_error:
+                    print(f"❌ Public URL oluşturma hatası: {str(url_error)}")
+                    # URL oluşturulamasa bile dosya yüklenmiş olabilir
+                    return {
+                        'success': True,
+                        'url': None,
+                        'file_name': file_name,
+                        'warning': f'Dosya yüklendi ama URL oluşturulamadı: {str(url_error)}'
+                    }
             else:
                 print("❌ Upload result False döndü")
                 return {

@@ -135,6 +135,21 @@ class EventViewSet(viewsets.ModelViewSet):
                 print(f"  - Size: {event_image_file.size}")
                 print(f"  - Content-Type: {event_image_file.content_type}")
                 
+                # Dosya boyutu kontrolü (10MB limit)
+                if event_image_file.size > 10 * 1024 * 1024:  # 10MB
+                    print("❌ Dosya boyutu çok büyük. Maksimum 10MB olmalı.")
+                    return Response({
+                        'error': 'Dosya boyutu çok büyük. Maksimum 10MB olmalı.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Dosya formatı kontrolü
+                allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+                if event_image_file.content_type not in allowed_formats:
+                    print(f"❌ Geçersiz dosya formatı: {event_image_file.content_type}")
+                    return Response({
+                        'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
                 try:
                     from users.services.supabase_storage_service import SupabaseStorageService
                     print("SupabaseStorageService import edildi")
@@ -149,12 +164,18 @@ class EventViewSet(viewsets.ModelViewSet):
                         if upload_result.get('success'):
                             event_image_url = upload_result.get('url')
                             print(f"Event resmi URL'i alındı: {event_image_url}")
-                            event.event_image = event_image_url
-                            event.save()
-                            print("Event event_image güncellendi")
-                            serializer = self.get_serializer(event)
+                            
+                            if event_image_url:
+                                event.event_image = event_image_url
+                                event.save()
+                                print("Event event_image güncellendi")
+                            else:
+                                print("⚠️ Event resmi yüklendi ama URL oluşturulamadı")
+                                if upload_result.get('warning'):
+                                    print(f"⚠️ Uyarı: {upload_result.get('warning')}")
                         else:
-                            print(f"Event resmi yükleme başarısız: {upload_result.get('error')}")
+                            print(f"❌ Event resmi yükleme başarısız: {upload_result.get('error')}")
+                            # Resim yükleme başarısız olsa bile event oluşturulmuş olmalı
                     else:
                         print("❌ Supabase Storage servisi kullanılamıyor")
                         print("Supabase credentials kontrol edilmeli")
@@ -168,8 +189,10 @@ class EventViewSet(viewsets.ModelViewSet):
                 print("❌ Event image file yok - FILES dict'inde event_image bulunamadı")
                 print("Mevcut FILES keys:", list(request.FILES.keys()))
             
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            # Event'i güncel haliyle serialize et
+            final_serializer = self.get_serializer(event)
+            headers = self.get_success_headers(final_serializer.data)
+            return Response(final_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             
         except Exception as e:
             print("Etkinlik oluşturma hatası:", str(e))
