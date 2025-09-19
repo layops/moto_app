@@ -58,6 +58,39 @@ class SupabaseStorageService:
             logger.error(f"❌ Supabase Storage servisi başlatılamadı: {e}")
             self.is_available = False
 
+    def test_connection(self) -> Dict[str, Any]:
+        """Supabase bağlantısını test et"""
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Bucket listesi al
+            buckets = self.client.storage.list_buckets()
+            bucket_names = [bucket.name for bucket in buckets]
+            
+            return {
+                'success': True,
+                'buckets': bucket_names,
+                'total_buckets': len(buckets),
+                'required_buckets': [
+                    self.profile_bucket,
+                    self.events_bucket,
+                    self.cover_bucket,
+                    self.groups_bucket,
+                    self.posts_bucket,
+                    self.bikes_bucket
+                ]
+            }
+        except Exception as e:
+            logger.error(f"❌ Supabase connection test hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Connection test failed: {str(e)}'
+            }
+
     def _check_buckets(self):
         """Bucket'ların varlığını kontrol et"""
         try:

@@ -18,7 +18,7 @@ GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', f'{BASE_URL}/api/use
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://mosiqkyyribzlvdvedet.supabase.co')
 SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_SERVICE_KEY')
 SUPABASE_PROJECT_ID = os.environ.get('SUPABASE_PROJECT_ID')
 
 # Supabase Storage Buckets
@@ -176,7 +176,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # Sadece development'ta True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://yourdomain.com",  # Production domain'inizi buraya ekleyin
+    "https://moto-app-vvrs.onrender.com",  # Production domain
 ] if not DEBUG else []
 
 # WebSocket için CORS ayarları

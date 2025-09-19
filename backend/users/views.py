@@ -682,13 +682,29 @@ class ProfileImageUploadView(APIView):
                 return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Supabase Storage'a yükle
-            from .services.supabase_storage_service import SupabaseStorageService
-            storage_service = SupabaseStorageService()
-            
-            if not storage_service.is_available:
+            try:
+                from .services.supabase_storage_service import SupabaseStorageService
+                storage_service = SupabaseStorageService()
+                
+                if not storage_service.is_available:
+                    return Response({
+                        'error': 'Dosya yükleme servisi kullanılamıyor',
+                        'message': 'Supabase Storage servisi yapılandırılmamış',
+                        'debug_info': 'SupabaseStorageService.is_available = False'
+                    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                    
+            except ImportError as import_error:
                 return Response({
-                    'error': 'Dosya yükleme servisi kullanılamıyor',
-                    'message': 'Supabase Storage servisi yapılandırılmamış'
+                    'error': 'Supabase modülü bulunamadı',
+                    'message': 'Supabase Python paketi yüklü değil',
+                    'debug_info': f'ImportError: {str(import_error)}',
+                    'solution': 'pip install supabase'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except Exception as service_error:
+                return Response({
+                    'error': 'Supabase Storage servisi başlatılamadı',
+                    'message': 'Supabase konfigürasyon hatası',
+                    'debug_info': f'ServiceError: {str(service_error)}'
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             # Dosyayı Supabase'e yükle
@@ -749,13 +765,29 @@ class CoverImageUploadView(APIView):
                 return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Supabase Storage'a yükle
-            from .services.supabase_storage_service import SupabaseStorageService
-            storage_service = SupabaseStorageService()
-            
-            if not storage_service.is_available:
+            try:
+                from .services.supabase_storage_service import SupabaseStorageService
+                storage_service = SupabaseStorageService()
+                
+                if not storage_service.is_available:
+                    return Response({
+                        'error': 'Dosya yükleme servisi kullanılamıyor',
+                        'message': 'Supabase Storage servisi yapılandırılmamış',
+                        'debug_info': 'SupabaseStorageService.is_available = False'
+                    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                    
+            except ImportError as import_error:
                 return Response({
-                    'error': 'Dosya yükleme servisi kullanılamıyor',
-                    'message': 'Supabase Storage servisi yapılandırılmamış'
+                    'error': 'Supabase modülü bulunamadı',
+                    'message': 'Supabase Python paketi yüklü değil',
+                    'debug_info': f'ImportError: {str(import_error)}',
+                    'solution': 'pip install supabase'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except Exception as service_error:
+                return Response({
+                    'error': 'Supabase Storage servisi başlatılamadı',
+                    'message': 'Supabase konfigürasyon hatası',
+                    'debug_info': f'ServiceError: {str(service_error)}'
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             # Dosyayı Supabase'e yükle
