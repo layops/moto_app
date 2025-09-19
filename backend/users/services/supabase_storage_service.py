@@ -30,15 +30,29 @@ class SupabaseStorageService:
             logger.info(f"Supabase Key: {'VAR' if supabase_key else 'YOK'}")
             
             if supabase_url and supabase_key:
-                self.client = create_client(supabase_url, supabase_key)
-                self.is_available = True
-                logger.info("✅ Supabase Storage servisi başlatıldı")
-                
-                # Bucket'ları kontrol et
-                self._check_buckets()
+                # Supabase client'ı oluştur
+                try:
+                    self.client = create_client(supabase_url, supabase_key)
+                    self.is_available = True
+                    logger.info("✅ Supabase Storage servisi başlatıldı")
+                    
+                    # Bucket'ları kontrol et (opsiyonel - hata olursa devam et)
+                    try:
+                        self._check_buckets()
+                    except Exception as bucket_error:
+                        logger.warning(f"⚠️ Bucket kontrolü başarısız ama servis aktif: {bucket_error}")
+                        
+                except ImportError as import_error:
+                    logger.error(f"❌ Supabase modülü bulunamadı: {import_error}")
+                    logger.error("💡 Çözüm: pip install supabase")
+                    self.is_available = False
+                except Exception as client_error:
+                    logger.error(f"❌ Supabase client oluşturma hatası: {client_error}")
+                    self.is_available = False
             else:
                 logger.warning("❌ Supabase konfigürasyonu bulunamadı")
                 logger.warning(f"URL: {supabase_url}, Key: {'VAR' if supabase_key else 'YOK'}")
+                self.is_available = False
                 
         except Exception as e:
             logger.error(f"❌ Supabase Storage servisi başlatılamadı: {e}")
@@ -129,14 +143,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.profile_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+            try:
+                result = self.client.storage.from_(self.profile_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
@@ -181,14 +202,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.events_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True
+            try:
+                result = self.client.storage.from_(self.events_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase event upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase event upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
@@ -233,14 +261,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.cover_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True
+            try:
+                result = self.client.storage.from_(self.cover_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase cover upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase cover upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
@@ -285,14 +320,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.groups_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True
+            try:
+                result = self.client.storage.from_(self.groups_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase group upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase group upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
@@ -337,14 +379,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.posts_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True
+            try:
+                result = self.client.storage.from_(self.posts_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase post upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase post upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
@@ -389,14 +438,21 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.bikes_bucket).upload(
-                file_name,
-                file_content,
-                file_options={
-                    "content-type": file.content_type,
-                    "upsert": True
+            try:
+                result = self.client.storage.from_(self.bikes_bucket).upload(
+                    file_name,
+                    file_content,
+                    file_options={
+                        "content-type": file.content_type,
+                        "upsert": True
+                    }
+                )
+            except Exception as upload_error:
+                logger.error(f"❌ Supabase bike upload API hatası: {upload_error}")
+                return {
+                    'success': False,
+                    'error': f'Supabase bike upload hatası: {str(upload_error)}'
                 }
-            )
             
             if result:
                 # Public URL'i al
