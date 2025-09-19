@@ -164,12 +164,12 @@ class SendTestNotificationView(APIView):
                 recipient_user=request.user,
                 message="Bu bir test bildirimidir!",
                 notification_type='other',
-                sender_user=request.user
+                sender_user=request.user if request.user and request.user.is_authenticated else None
             )
             
             return Response({
-                "detail": f"Test bildirimi '{request.user.username}' kullanıcısına gönderildi.",
-                "user": request.user.username,
+                "detail": f"Test bildirimi '{request.user.username if request.user else 'unknown'}' kullanıcısına gönderildi.",
+                "user": request.user.username if request.user else 'unknown',
                 "message": "Bu bir test bildirimidir!"
             })
         except Exception as e:
@@ -236,7 +236,7 @@ class FCMTokenView(APIView):
             fcm_token = serializer.validated_data['fcm_token']
             
             # Kullanıcı bilgisi varsa kaydet, yoksa sadece token'ı logla
-            if request.user.is_authenticated:
+            if request.user and request.user.is_authenticated:
                 # Kullanıcının notification preferences'ını al veya oluştur
                 preferences, created = NotificationPreferences.objects.get_or_create(
                     user=request.user,
@@ -272,7 +272,7 @@ class SupabaseTestView(APIView):
             
             # Test bildirimi gönder
             title = "MotoApp Test Bildirimi"
-            body = f"Merhaba {request.user.username}! Bu bir Supabase test bildirimidir."
+            body = f"Merhaba {request.user.username if request.user else 'User'}! Bu bir Supabase test bildirimidir."
             
             notification = send_notification_with_preferences(
                 recipient_user=request.user,
@@ -312,14 +312,14 @@ class SupabasePushTestView(APIView):
             
             # Test bildirimi gönder
             title = "MotoApp Supabase Push Test"
-            body = f"Merhaba {request.user.username}! Bu bir Supabase push test bildirimidir."
+            body = f"Merhaba {request.user.username if request.user else 'User'}! Bu bir Supabase push test bildirimidir."
             data = {
                 'test': True,
                 'timestamp': str(timezone.now())
             }
             
             success = send_supabase_push_notification(
-                user_id=request.user.id,
+                user_id=request.user.id if request.user else None,
                 title=title,
                 body=body,
                 data=data
@@ -330,7 +330,7 @@ class SupabasePushTestView(APIView):
                     "detail": "Supabase push test bildirimi başarıyla gönderildi!",
                     "title": title,
                     "body": body,
-                    "user": request.user.username
+                    "user": request.user.username if request.user else 'unknown'
                 })
             else:
                 return Response(
@@ -358,8 +358,8 @@ class PushNotificationStatusView(APIView):
             )
             
             status_info = {
-                'user_id': request.user.id,
-                'username': request.user.username,
+                'user_id': request.user.id if request.user else None,
+                'username': request.user.username if request.user else 'unknown',
                 'push_enabled': preferences.push_enabled,
                 'fcm_token_exists': bool(preferences.fcm_token),
                 'fcm_token_length': len(preferences.fcm_token) if preferences.fcm_token else 0,
