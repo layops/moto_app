@@ -14,6 +14,7 @@ from .views import (
     ProfileImageUploadView,
     CoverImageUploadView, # Yeni eklendi
     SupabaseStorageTestView,  # Supabase test endpoint'i
+    UploadTestView,  # Upload test endpoint'i
     FollowToggleView,
     FollowersListView,
     FollowingListView,
@@ -49,6 +50,7 @@ urlpatterns = [
     
     # Supabase Storage Test
     path('test-supabase-storage/', SupabaseStorageTestView.as_view(), name='test-supabase-storage'),
+    path('test-upload/', UploadTestView.as_view(), name='test-upload'),
 
     # Follow / Followers / Following
     path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-username'),
