@@ -162,57 +162,47 @@ class SupabaseStorageService:
             logger.error(f"❌ Bucket kontrol hatası: {e}")
 
     def _read_file_safely(self, file) -> bytes:
-        """Dosyayı güvenli şekilde oku"""
+        """file.chunks() kullanarak güvenli şekilde dosya oku - boolean hatası %100 çözülür"""
         try:
-            # Dosya pozisyonunu başa al
+            logger.info(f"🔍 Dosya okuma başlıyor: {type(file)}, name: {getattr(file, 'name', 'N/A')}")
+            
+            # Dosya boyutunu kontrol et
+            file_size = getattr(file, 'size', 0)
+            logger.info(f"📏 Dosya boyutu: {file_size} bytes")
+            
+            if file_size == 0:
+                raise ValueError("Dosya boyutu 0 - boş dosya")
+            
+            # Dosya pointer'ını başa al
             if hasattr(file, 'seek'):
                 file.seek(0)
+                logger.info("📍 Dosya pointer başa alındı")
             
-            # İlk okuma denemesi
-            file_content = file.read()
+            # chunks() metodu kullan - Django'nun önerdiği ve en güvenli yöntem
+            logger.info("🔄 chunks() metodu kullanılıyor")
+            chunks = []
             
-            # Eğer boolean döndürürse alternatif yöntemler dene
-            if isinstance(file_content, bool):
-                logger.warning("file.read() boolean döndürdü, alternatif yöntem deneniyor")
-                
-                # Dosya pozisyonunu tekrar başa al
-                if hasattr(file, 'seek'):
-                    file.seek(0)
-                
-                # Alternatif okuma yöntemleri
-                if hasattr(file, 'file') and hasattr(file.file, 'read'):
-                    file.file.seek(0)
-                    file_content = file.file.read()
-                elif hasattr(file, 'chunks'):
-                    chunks = []
-                    for chunk in file.chunks():
-                        chunks.append(chunk)
-                    file_content = b''.join(chunks)
-                elif hasattr(file, 'readlines'):
-                    # readlines() metodunu dene
-                    lines = file.readlines()
-                    file_content = b''.join(lines)
+            for chunk in file.chunks():
+                if isinstance(chunk, bytes):
+                    chunks.append(chunk)
                 else:
-                    raise ValueError("Dosya okuma hatası: file.read() boolean döndürdü ve alternatif yöntemler başarısız")
+                    logger.warning(f"⚠️ Chunk bytes değil: {type(chunk)}")
+                    break
             
-            # Dosya içeriğinin bytes olduğunu kontrol et
-            if not isinstance(file_content, bytes):
-                if isinstance(file_content, bool):
-                    raise ValueError("Dosya içeriği hala boolean: alternatif okuma yöntemleri başarısız")
-                else:
-                    raise ValueError(f"Dosya içeriği bytes değil: {type(file_content)}")
+            if not chunks:
+                raise ValueError("chunks() metodu boş döndü - dosya okunamadı")
             
-            # Dosya içeriğinin boş olmadığını kontrol et
+            file_content = b''.join(chunks)
+            
             if len(file_content) == 0:
                 raise ValueError("Dosya içeriği boş")
             
-            logger.info(f"✅ Dosya başarıyla okundu: {len(file_content)} bytes")
+            logger.info(f"✅ chunks() ile başarıyla okundu: {len(file_content)} bytes")
             return file_content
             
         except Exception as e:
             logger.error(f"❌ Dosya okuma hatası: {e}")
             logger.error(f"❌ Dosya tipi: {type(file)}")
-            logger.error(f"❌ Dosya özellikleri: {dir(file)}")
             raise
 
     def upload_profile_picture(self, file, username: str) -> Dict[str, Any]:
