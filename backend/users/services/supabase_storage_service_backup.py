@@ -121,8 +121,8 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             result = self.client.storage.from_(self.profile_bucket).upload(
-                file_name,
-                file.read(),
+                path=file_name,
+                file=file.read(),
                 file_options={
                     "content-type": file.content_type,
                     "upsert": True  # Aynı isimde dosya varsa üzerine yaz
@@ -169,8 +169,8 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             result = self.client.storage.from_(self.cover_bucket).upload(
-                file_name,
-                file.read(),
+                path=file_name,
+                file=file.read(),
                 file_options={
                     "content-type": file.content_type,
                     "upsert": True  # Aynı isimde dosya varsa üzerine yaz
@@ -377,8 +377,8 @@ class SupabaseStorageService:
                         
                         # Dosyayı direkt upload et
                         result = self.client.storage.from_(self.events_bucket).upload(
-                            file_name, 
-                            file,  # Dosyayı direkt gönder
+                            path=file_name, 
+                            file=file,  # Dosyayı direkt gönder
                             file_options={"content-type": content_type, "upsert": True}
                         )
                         
@@ -458,8 +458,8 @@ class SupabaseStorageService:
                 try:
                     print("Yaklaşım 1: Normal upload deneniyor...")
                     result = self.client.storage.from_(self.events_bucket).upload(
-                        file_name,
-                        file_content,
+                        path=file_name,
+                        file=file_content,
                         file_options={
                             "content-type": content_type,
                             "upsert": True
@@ -475,8 +475,8 @@ class SupabaseStorageService:
                         from io import BytesIO
                         file_buffer = BytesIO(file_content)
                         result = self.client.storage.from_(self.events_bucket).upload(
-                            file_name,
-                            file_buffer.getvalue(),
+                            path=file_name,
+                            file=file_buffer.getvalue(),
                             file_options={
                                 "content-type": content_type,
                                 "upsert": True
@@ -492,8 +492,8 @@ class SupabaseStorageService:
                             import base64
                             encoded_content = base64.b64encode(file_content).decode('utf-8')
                             result = self.client.storage.from_(self.events_bucket).upload(
-                                file_name,
-                                encoded_content,
+                                path=file_name,
+                                file=encoded_content,
                                 file_options={
                                     "content-type": content_type,
                                     "upsert": True
@@ -508,8 +508,8 @@ class SupabaseStorageService:
                                 print("Yaklaşım 4: String olarak upload deneniyor...")
                                 string_content = file_content.decode('latin-1')
                                 result = self.client.storage.from_(self.events_bucket).upload(
-                                    file_name,
-                                    string_content,
+                                    path=file_name,
+                                    file=string_content,
                                     file_options={
                                         "content-type": content_type,
                                         "upsert": True
