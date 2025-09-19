@@ -227,7 +227,7 @@ class NotificationPreferencesView(APIView):
 
 
 class FCMTokenView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         """FCM token'ı kaydet"""
@@ -235,20 +235,29 @@ class FCMTokenView(APIView):
         if serializer.is_valid():
             fcm_token = serializer.validated_data['fcm_token']
             
-            # Kullanıcının notification preferences'ını al veya oluştur
-            preferences, created = NotificationPreferences.objects.get_or_create(
-                user=request.user,
-                defaults={'push_enabled': True}
-            )
-            
-            # FCM token'ı kaydet
-            preferences.fcm_token = fcm_token
-            preferences.save()
-            
-            return Response({
-                'success': True,
-                'message': 'FCM token kaydedildi'
-            })
+            # Kullanıcı bilgisi varsa kaydet, yoksa sadece token'ı logla
+            if request.user.is_authenticated:
+                # Kullanıcının notification preferences'ını al veya oluştur
+                preferences, created = NotificationPreferences.objects.get_or_create(
+                    user=request.user,
+                    defaults={'push_enabled': True}
+                )
+                
+                # FCM token'ı kaydet
+                preferences.fcm_token = fcm_token
+                preferences.save()
+                
+                return Response({
+                    'success': True,
+                    'message': 'FCM token kaydedildi'
+                })
+            else:
+                # Kullanıcı giriş yapmamışsa sadece token'ı logla
+                logger.info(f"FCM token alındı (kullanıcı giriş yapmamış): {fcm_token[:20]}...")
+                return Response({
+                    'success': True,
+                    'message': 'FCM token alındı (kullanıcı giriş yapmamış)'
+                })
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

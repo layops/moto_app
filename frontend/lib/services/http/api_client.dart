@@ -38,7 +38,8 @@ class ApiClient {
       onRequest: (options, handler) async {
         // JWT token endpoint'lerinde token ekleme
         if (options.path.contains('token/') ||
-            options.path.contains('users/register')) {
+            options.path.contains('users/register') ||
+            options.path.contains('notifications/fcm-token/')) {
           return handler.next(options);
         }
 

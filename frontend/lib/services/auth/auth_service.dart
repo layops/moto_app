@@ -19,6 +19,9 @@ class AuthService {
   Stream<bool> get authStateChanges => _authStateController.stream;
   ApiClient get apiClient => _apiClient;
   
+  // Kullanıcının giriş yapıp yapmadığını kontrol et
+  bool get isAuthenticated => _authStateController.value;
+  
   // Current user bilgisi için async getter
   Future<Map<String, dynamic>?> get currentUser async {
     // Token'dan kullanıcı bilgilerini al
@@ -107,6 +110,9 @@ class AuthService {
         
         // FCM'i initialize et
         await _initializeFCM();
+        
+        // FCM token'ı backend'e gönder
+        await _sendFCMTokenAfterLogin();
         
         // print('🔑 AuthService - JWT Login başarılı, auth state güncellendi');
       } else {
@@ -312,6 +318,9 @@ class AuthService {
       // FCM'i initialize et
       await _initializeFCM();
       
+      // FCM token'ı backend'e gönder
+      await _sendFCMTokenAfterLogin();
+      
       print('🔑 AuthService - Google OAuth login başarılı, auth state güncellendi');
     } catch (e) {
       print('❌ AuthService - Google OAuth login hatası: $e');
@@ -350,6 +359,22 @@ class AuthService {
       }
     } catch (e) {
       print('❌ AuthService - FCM initialize hatası: $e');
+    }
+  }
+
+  // Login sonrası FCM token gönder
+  Future<void> _sendFCMTokenAfterLogin() async {
+    try {
+      print('🔑 AuthService - FCM token backend\'e gönderiliyor...');
+      final fcmService = ServiceLocator.fcm;
+      if (fcmService != null) {
+        await fcmService.sendTokenAfterLogin();
+        print('🔑 AuthService - FCM token başarıyla gönderildi');
+      } else {
+        print('❌ AuthService - FCM service bulunamadı');
+      }
+    } catch (e) {
+      print('❌ AuthService - FCM token gönderme hatası: $e');
     }
   }
 

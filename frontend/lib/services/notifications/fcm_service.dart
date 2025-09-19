@@ -120,15 +120,21 @@ class FCMService {
     try {
       final apiClient = ServiceLocator.api;
       
-      final response = await apiClient.post(
-        'notifications/fcm-token/',
-        {'fcm_token': fcmToken},
-      );
-      
-      if (response.statusCode == 200) {
-        debugPrint('✅ FCM token sent to backend successfully');
+      // Kullanıcı giriş yapmışsa token'ı gönder
+      final authService = ServiceLocator.auth;
+      if (authService.isAuthenticated) {
+        final response = await apiClient.post(
+          'notifications/fcm-token/',
+          {'fcm_token': fcmToken},
+        );
+        
+        if (response.statusCode == 200) {
+          debugPrint('✅ FCM token sent to backend successfully');
+        } else {
+          debugPrint('❌ Failed to send FCM token to backend: ${response.statusCode}');
+        }
       } else {
-        debugPrint('❌ Failed to send FCM token to backend: ${response.statusCode}');
+        debugPrint('ℹ️ FCM token alındı ama kullanıcı giriş yapmamış, token gönderilmedi');
       }
       
     } catch (e) {
@@ -264,6 +270,13 @@ class FCMService {
 
   /// FCM token'ı al
   String? get fcmToken => _fcmToken;
+
+  /// Login sonrası FCM token'ı backend'e gönder
+  Future<void> sendTokenAfterLogin() async {
+    if (_fcmToken != null) {
+      await _sendFCMTokenToBackend(_fcmToken!);
+    }
+  }
 
   /// Servisi temizle
   void dispose() {
