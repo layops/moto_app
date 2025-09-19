@@ -22,16 +22,61 @@ class SupabaseStorageService:
             self.cover_bucket = getattr(settings, 'SUPABASE_COVER_BUCKET', 'cover_pictures')
             self.events_bucket = getattr(settings, 'SUPABASE_EVENTS_BUCKET', 'events_pictures')
             
+            print(f"=== SUPABASE STORAGE SERVICE INIT ===")
+            print(f"SUPABASE_URL: {self.supabase_url}")
+            print(f"SUPABASE_SERVICE_KEY: {'VAR' if self.supabase_service_key else 'YOK'}")
+            print(f"events_bucket: {self.events_bucket}")
+            
             if self.supabase_url and self.supabase_service_key:
                 self.client = create_client(self.supabase_url, self.supabase_service_key)
                 self.is_available = True
+                print("✅ Supabase Storage servisi başarıyla başlatıldı")
+                
+                # Bucket'ları kontrol et ve oluştur
+                self._ensure_buckets_exist()
+                
                 logger.info("Supabase Storage servisi başarıyla başlatıldı")
             else:
+                print("❌ Supabase Storage credentials eksik")
+                print(f"URL var mı: {bool(self.supabase_url)}")
+                print(f"SERVICE_KEY var mı: {bool(self.supabase_service_key)}")
                 logger.warning("Supabase Storage credentials eksik")
                 
         except Exception as e:
+            print(f"❌ Supabase Storage servisi başlatılamadı: {e}")
             logger.error(f"Supabase Storage servisi başlatılamadı: {e}")
             self.is_available = False
+
+    def _ensure_buckets_exist(self):
+        """Gerekli bucket'ların var olduğundan emin ol"""
+        try:
+            print("=== BUCKET KONTROL VE OLUŞTURMA ===")
+            
+            # Mevcut bucket'ları listele
+            existing_buckets = self.client.storage.list_buckets()
+            existing_bucket_names = [bucket.name for bucket in existing_buckets]
+            print(f"Mevcut bucket'lar: {existing_bucket_names}")
+            
+            # Gerekli bucket'lar
+            required_buckets = [
+                self.profile_bucket,
+                self.cover_bucket, 
+                self.events_bucket
+            ]
+            
+            for bucket_name in required_buckets:
+                if bucket_name not in existing_bucket_names:
+                    print(f"Bucket oluşturuluyor: {bucket_name}")
+                    try:
+                        self.client.storage.create_bucket(bucket_name, public=True)
+                        print(f"✅ Bucket oluşturuldu: {bucket_name}")
+                    except Exception as e:
+                        print(f"❌ Bucket oluşturulamadı {bucket_name}: {e}")
+                else:
+                    print(f"✅ Bucket mevcut: {bucket_name}")
+                    
+        except Exception as e:
+            print(f"❌ Bucket kontrol hatası: {e}")
 
     def upload_profile_picture(self, file, username: str) -> Dict[str, Any]:
         """

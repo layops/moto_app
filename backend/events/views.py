@@ -98,6 +98,8 @@ class EventViewSet(viewsets.ModelViewSet):
         print("Gelen veri:", request.data)
         print("Dosyalar:", request.FILES)
         print("Content-Type:", request.content_type)
+        print("FILES keys:", list(request.FILES.keys()))
+        print("FILES values:", list(request.FILES.values()))
         
         try:
             data = request.data.copy()
