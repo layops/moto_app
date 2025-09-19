@@ -133,7 +133,13 @@ class SupabaseStorageService:
         """
         Event kapak fotoğrafını Supabase Storage'a yükler
         """
+        print(f"=== SUPABASE STORAGE UPLOAD BAŞLADI ===")
+        print(f"is_available: {self.is_available}")
+        print(f"events_bucket: {self.events_bucket}")
+        print(f"event_id: {event_id}")
+        
         if not self.is_available:
+            print("❌ Supabase Storage servisi kullanılamıyor")
             return {
                 'success': False,
                 'error': 'Supabase Storage servisi kullanılamıyor'
@@ -143,8 +149,12 @@ class SupabaseStorageService:
             # Dosya adını oluştur
             file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
             file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
+            print(f"Dosya adı oluşturuldu: {file_name}")
+            print(f"Dosya boyutu: {file.size} bytes")
+            print(f"Content-Type: {file.content_type}")
             
             # Dosyayı yükle - events_bucket kullan
+            print(f"Supabase'e yükleme başlıyor...")
             result = self.client.storage.from_(self.events_bucket).upload(
                 file_name,
                 file.read(),
@@ -153,10 +163,12 @@ class SupabaseStorageService:
                     "upsert": True  # Aynı isimde dosya varsa üzerine yaz
                 }
             )
+            print(f"Upload result: {result}")
             
             if result:
                 # Public URL'i al - events_bucket kullan
                 public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
+                print(f"Public URL oluşturuldu: {public_url}")
                 
                 logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
                 return {
@@ -165,12 +177,14 @@ class SupabaseStorageService:
                     'file_name': file_name
                 }
             else:
+                print("❌ Upload result False döndü")
                 return {
                     'success': False,
                     'error': 'Dosya yükleme başarısız'
                 }
                 
         except Exception as e:
+            print(f"❌ Exception oluştu: {str(e)}")
             logger.error(f"Event kapak fotoğrafı yükleme hatası: {e}")
             return {
                 'success': False,

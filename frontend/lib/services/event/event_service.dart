@@ -134,7 +134,7 @@ class EventService {
         final fileExtension = mimeType?.split('/')[1] ?? 'jpg';
 
         formData.files.add(MapEntry(
-          'cover_image',
+          'event_image',
           await MultipartFile.fromFile(
             coverImageFile.path,
             contentType: MediaType('image', fileExtension),

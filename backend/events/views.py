@@ -94,8 +94,10 @@ class EventViewSet(viewsets.ModelViewSet):
             return Event.objects.none()
 
     def create(self, request, *args, **kwargs):
+        print("=== EVENT OLUŞTURMA BAŞLADI ===")
         print("Gelen veri:", request.data)
         print("Dosyalar:", request.FILES)
+        print("Content-Type:", request.content_type)
         
         try:
             data = request.data.copy()
@@ -123,10 +125,19 @@ class EventViewSet(viewsets.ModelViewSet):
                 pass
             
             # Event image upload to Supabase
+            print(f"=== EVENT IMAGE UPLOAD KONTROL ===")
+            print(f"event_image_file var mı: {event_image_file is not None}")
             if event_image_file:
+                print(f"Event image file detayları:")
+                print(f"  - Name: {event_image_file.name}")
+                print(f"  - Size: {event_image_file.size}")
+                print(f"  - Content-Type: {event_image_file.content_type}")
+                
                 try:
                     from users.services.supabase_storage_service import SupabaseStorageService
+                    print("SupabaseStorageService import edildi")
                     storage_service = SupabaseStorageService()
+                    print(f"Storage service oluşturuldu, is_available: {storage_service.is_available}")
                     
                     if storage_service.is_available:
                         print(f"Event resmi yükleniyor: {event_image_file.name}, boyut: {event_image_file.size}")
@@ -143,15 +154,17 @@ class EventViewSet(viewsets.ModelViewSet):
                         else:
                             print(f"Event resmi yükleme başarısız: {upload_result.get('error')}")
                     else:
-                        print("Supabase Storage servisi kullanılamıyor")
+                        print("❌ Supabase Storage servisi kullanılamıyor")
+                        print("Supabase credentials kontrol edilmeli")
                 except Exception as e:
-                    print("Event resmi yükleme hatası:", str(e))
+                    print("❌ Event resmi yükleme hatası:", str(e))
                     import traceback
                     traceback.print_exc()
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
                     pass
             else:
-                print("Event image file yok")
+                print("❌ Event image file yok - FILES dict'inde event_image bulunamadı")
+                print("Mevcut FILES keys:", list(request.FILES.keys()))
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

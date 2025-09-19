@@ -64,7 +64,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
     final organizerEmail = organizer?['email'] ?? '';
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final coverImageUrl = widget.event['cover_image'] as String?;
+    final eventImageUrl = widget.event['event_image'] as String?;
 
     return Scaffold(
       body: _loading
@@ -106,10 +106,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         background: Stack(
                           fit: StackFit.expand,
                           children: [
-                            // Cover Image or Gradient Background
-                            if (coverImageUrl != null && coverImageUrl.isNotEmpty)
+                            // Event Image or Gradient Background
+                            if (eventImageUrl != null && eventImageUrl.isNotEmpty)
                               Image.network(
-                                coverImageUrl,
+                                eventImageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => _buildGradientBackground(colorScheme),
                               )
