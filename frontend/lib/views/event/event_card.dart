@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'event_helpers.dart';
-import 'event_detail_page.dart'; // Yeni sayfa için import
-import '../../core/theme/color_schemes.dart';
+import 'event_detail_page.dart';
+import '../../core/theme/theme_constants.dart';
 
 class ButtonState {
   final bool showButton;
@@ -74,32 +74,46 @@ class _EventCardState extends State<EventCard> {
           ),
         );
       },
-      child: Card(
-        elevation: 3,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Kapak resmi
             if (coverImageUrl != null && coverImageUrl.isNotEmpty)
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(ThemeConstants.borderRadiusLarge),
+                ),
                 child: CachedNetworkImage(
                   imageUrl: coverImageUrl,
-                  height: 150,
+                  height: 120,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    height: 150,
-                    color: Colors.grey[200],
-                    child: const Center(child: CircularProgressIndicator()),
+                    height: 120,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    height: 150,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.error),
+                    height: 120,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -109,89 +123,100 @@ class _EventCardState extends State<EventCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Etiketler ve buton
                   Row(
                     children: [
-                      Chip(
-                        label: Text(
-                          _currentEvent['is_public'] == true ? 'Public' : 'Private',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: _currentEvent['is_public'] == true
-                            ? Colors.green
-                            : Colors.red,
+                      _buildStatusChip(
+                        _currentEvent['is_public'] == true ? 'Public' : 'Private',
+                        Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
-                      if (requiresApproval)
-                        Chip(
-                          label: const Text(
-                            'Onay Gerekli',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                          backgroundColor: Colors.orange,
+                      if (requiresApproval) ...[
+                        const SizedBox(width: 6),
+                        _buildStatusChip(
+                          'Onay Gerekli',
+                          Theme.of(context).colorScheme.primary,
                         ),
-                      if (requestStatus == 'pending')
-                        Chip(
-                          label: const Text(
-                            'İsteğiniz Bekleniyor',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                          backgroundColor: Colors.blue,
+                      ],
+                      if (requestStatus == 'pending') ...[
+                        const SizedBox(width: 6),
+                        _buildStatusChip(
+                          'Bekleniyor',
+                          Theme.of(context).colorScheme.secondary,
                         ),
+                      ],
                       const Spacer(),
                       if (buttonState.showButton)
-                        TextButton(
-                          onPressed: buttonState.enabled ? buttonState.onPressed : null,
-                          child: Text(
-                            buttonState.text,
-                            style: TextStyle(
-                              color: buttonState.enabled ? null : Colors.grey,
-                            ),
-                          ),
-                        ),
+                        _buildActionButton(buttonState),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
+                  // Başlık
                   Text(
                     _currentEvent['title']?.toString() ?? 'Başlıksız Etkinlik',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  if ((_currentEvent['description']?.toString() ?? '').isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(_currentEvent['description'].toString(),
-                          style: const TextStyle(fontSize: 14)),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                  // Açıklama
+                  if ((_currentEvent['description']?.toString() ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _currentEvent['description'].toString(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   const SizedBox(height: 12),
+                  // Tarih
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today,
-                          size: 16, color: Colors.grey),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 4),
-                      Text(formatDate(_currentEvent['start_time']),
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.grey)),
+                      Text(
+                        formatDate(_currentEvent['start_time']),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
-                  if ((_currentEvent['location']?.toString() ?? '').isNotEmpty)
+                  // Konum
+                  if ((_currentEvent['location']?.toString() ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
                     LocationText(location: _currentEvent['location'].toString()),
+                  ],
                   const SizedBox(height: 12),
+                  // Katılımcı bilgisi
                   Row(
                     children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        'Katılımcılar: $participantCount / $guestLimit',
-                        style: TextStyle(
-                          fontSize: 12, 
-                          color: isFull ? Colors.red : Colors.grey,
-                          fontWeight: isFull ? FontWeight.bold : FontWeight.normal,
+                        '$participantCount / $guestLimit',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isFull 
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: isFull ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                       if (isFull) ...[
-                        const SizedBox(width: 8),
-                        const Icon(Icons.warning, size: 16, color: Colors.red),
-                        const Text(
-                          'Kontenjan Doldu',
-                          style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.warning_amber_outlined,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ],
                     ],
@@ -200,6 +225,53 @@ class _EventCardState extends State<EventCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(ButtonState buttonState) {
+    return Container(
+      height: 32,
+      child: ElevatedButton(
+        onPressed: buttonState.enabled ? buttonState.onPressed : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          minimumSize: const Size(0, 32),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          buttonState.text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -287,16 +359,16 @@ class _EventCardState extends State<EventCard> {
             });
           }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Katılım isteği gönderildi. Onay bekleniyor.'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Katılım isteği gönderildi. Onay bekleniyor.'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('İstek gönderilemedi: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -311,16 +383,16 @@ class _EventCardState extends State<EventCard> {
           });
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Etkinliğe başarıyla katıldınız!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Etkinliğe başarıyla katıldınız!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Katılamadı: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -427,15 +499,27 @@ class _LocationTextState extends State<LocationText> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+        Icon(
+          Icons.location_on_outlined,
+          size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 4),
         Expanded(
           child: _loading
-              ? const Text('Konum yükleniyor...',
-                  style: TextStyle(fontSize: 14, color: Colors.grey))
-              : Text(_displayName ?? '-',
+              ? Text(
+                  'Konum yükleniyor...',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : Text(
+                  _displayName ?? '-',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
         ),
       ],
     );

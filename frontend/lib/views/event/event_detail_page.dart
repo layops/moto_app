@@ -139,11 +139,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                 children: [
                                   _buildStatusChip(
                                     widget.event['is_public'] == true ? 'Public' : 'Private',
-                                    widget.event['is_public'] == true ? Colors.green : Colors.red,
+                                    Theme.of(context).colorScheme.primary,
                                   ),
                                   const SizedBox(width: 8),
                                   if (widget.event['requires_approval'] == true)
-                                    _buildStatusChip('Onay Gerekli', Colors.orange),
+                                    _buildStatusChip('Onay Gerekli', Theme.of(context).colorScheme.primary),
                                 ],
                               ),
                             ),
@@ -1016,8 +1016,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onPrimary,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),

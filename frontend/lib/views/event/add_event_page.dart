@@ -150,7 +150,15 @@ class _AddEventPageState extends State<AddEventPage> {
         coverImageFile: _coverImageFile,
       );
 
-      if (mounted) ServiceLocator.navigator.pop(true);
+      if (mounted) {
+        ServiceLocator.messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Etkinlik başarıyla oluşturuldu!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+        ServiceLocator.navigator.pop(true);
+      }
     } catch (e) {
       if (mounted) {
         String errorMessage = e.toString();
@@ -291,7 +299,9 @@ class _AddEventPageState extends State<AddEventPage> {
               const SizedBox(height: 16),
               EventCoverImagePicker(
                 coverImageFile: _coverImageFile,
-                onPick: (file) => setState(() => _coverImageFile = file),
+                onPick: (file) => setState(() {
+                  _coverImageFile = file;
+                }),
               ),
               const SizedBox(height: 16),
               EventPrivacyGuest(

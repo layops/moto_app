@@ -1,7 +1,6 @@
 // C:\Users\celik\OneDrive\Belgeler\Projects\moto_app\frontend\lib\views\groups\widgets\group_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:motoapp_frontend/core/theme/color_schemes.dart';
 import 'package:motoapp_frontend/core/theme/theme_constants.dart';
 import 'package:motoapp_frontend/services/auth/auth_service.dart';
 import 'package:motoapp_frontend/services/group/group_service.dart';
@@ -61,16 +60,16 @@ class _GroupCardState extends State<GroupCard> {
             _requestSent = true;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Katılım isteği gönderildi. Onay bekleniyor.'),
-              backgroundColor: Colors.orange,
+            SnackBar(
+              content: const Text('Katılım isteği gönderildi. Onay bekleniyor.'),
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Gruba başarıyla katıldınız!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Gruba başarıyla katıldınız!'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
           
@@ -92,7 +91,7 @@ class _GroupCardState extends State<GroupCard> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gruba katılırken hata oluştu: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -137,123 +136,110 @@ class _GroupCardState extends State<GroupCard> {
           ),
         );
       },
-      child: Card(
-        // ... (Kalan Card widget içeriği aynı kalacak)
-        margin: const EdgeInsets.only(bottom: 16),
-        shape: RoundedRectangleBorder(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            width: 1,
+          ),
         ),
-        elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Üst kısım - Grup bilgileri ve buton
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profil Fotoğrafı
+                  // Minimal profil ikonu
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      color: AppColorSchemes.lightBackground,
+                      borderRadius: BorderRadius.circular(24),
+                      color: Theme.of(context).colorScheme.primaryContainer,
                     ),
                     child: profilePictureUrl != null && profilePictureUrl.isNotEmpty
                         ? ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(24),
                             child: Image.network(
                               profilePictureUrl,
-                              width: 60,
-                              height: 60,
+                              width: 48,
+                              height: 48,
                               fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  ),
-                                );
-                              },
                               errorBuilder: (context, error, stackTrace) {
                                 return Icon(
                                   Icons.group,
-                                  size: 30,
-                                  color: AppColorSchemes.primaryColor,
+                                  size: 24,
+                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                                 );
                               },
                             ),
                           )
                         : Icon(
                             Icons.group,
-                            size: 30,
-                            color: AppColorSchemes.primaryColor,
+                            size: 24,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
                           ),
                   ),
                   const SizedBox(width: 12),
+                  // Grup bilgileri
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(groupName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 18)),
-                        const SizedBox(height: 4),
-                        Text(description,
-                            style: TextStyle(
-                                color: AppColorSchemes.textSecondary,
-                                fontSize: 14),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          groupName,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (description.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            description,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
                     ),
                   ),
+                  // Katıl butonu
                   if (!widget.isMyGroup)
-                    ElevatedButton(
-                      onPressed: _isJoining ? null : _joinGroup,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColorSchemes.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              ThemeConstants.borderRadiusMedium),
-                        ),
-                      ),
-                      child: _isJoining
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(_getButtonText()),
-                    ),
+                    _buildJoinButton(),
                 ],
               ),
               const SizedBox(height: 12),
+              // Alt kısım - Üye sayısı ve tarih
               Row(
                 children: [
-                  Icon(Icons.people,
-                      size: 16, color: Colors.grey.shade600),
+                  Icon(
+                    Icons.people_outline,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
-                  Text('$memberCount üye',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  Text(
+                    '$memberCount üye',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   const Spacer(),
                   if (createdDate.isNotEmpty)
-                    Text('Oluşturuldu: ${_formatDate(createdDate)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text(
+                      _formatDate(createdDate),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -263,11 +249,50 @@ class _GroupCardState extends State<GroupCard> {
     );
   }
 
+  Widget _buildJoinButton() {
+    final requiresApproval = widget.group['requires_approval'] as bool? ?? false;
+    
+    return Container(
+      height: 32,
+      child: ElevatedButton(
+        onPressed: _isJoining ? null : _joinGroup,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          minimumSize: const Size(0, 32),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: _isJoining
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              )
+            : Text(
+                _getButtonText(),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+      ),
+    );
+  }
+
   String _getButtonText() {
     final requiresApproval = widget.group['requires_approval'] as bool? ?? false;
     
     if (requiresApproval && _requestSent) {
-      return 'İsteğiniz Gönderildi';
+      return 'Gönderildi';
     } else {
       return 'Katıl';
     }
@@ -280,14 +305,16 @@ class _GroupCardState extends State<GroupCard> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Katılım İsteği'),
+          title: Text('Katılım İsteği', 
+            style: Theme.of(context).textTheme.headlineMedium),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Bu gruba katılmak için grup sahibinden onay gerekiyor.'),
+              Text('Bu gruba katılmak için grup sahibinden onay gerekiyor.',
+                style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),
               TextField(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Mesaj (isteğe bağlı)',
                   hintText: 'Katılmak istediğinizi belirten bir mesaj yazabilirsiniz...',
                 ),
@@ -299,11 +326,13 @@ class _GroupCardState extends State<GroupCard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('İptal'),
+              child: Text('İptal',
+                style: Theme.of(context).textTheme.labelLarge),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(message),
-              child: const Text('Gönder'),
+              child: Text('Gönder',
+                style: Theme.of(context).textTheme.labelLarge),
             ),
           ],
         );

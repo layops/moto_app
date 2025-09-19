@@ -128,6 +128,41 @@ class SupabaseStorageService:
                 'error': f'Dosya yükleme hatası: {str(e)}'
             }
 
+    def upload_event_picture(self, file, event_id: str) -> str:
+        """
+        Event kapak fotoğrafını Supabase Storage'a yükler
+        """
+        if not self.is_available:
+            raise Exception('Supabase Storage servisi kullanılamıyor')
+        
+        try:
+            # Dosya adını oluştur
+            file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
+            file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
+            
+            # Dosyayı yükle
+            result = self.client.storage.from_(self.cover_bucket).upload(
+                file_name,
+                file.read(),
+                file_options={
+                    "content-type": file.content_type,
+                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                }
+            )
+            
+            if result:
+                # Public URL'i al
+                public_url = self.client.storage.from_(self.cover_bucket).get_public_url(file_name)
+                
+                logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
+                return public_url
+            else:
+                raise Exception('Dosya yükleme başarısız')
+                
+        except Exception as e:
+            logger.error(f"Event kapak fotoğrafı yükleme hatası: {e}")
+            raise Exception(f'Dosya yükleme hatası: {str(e)}')
+
     def delete_file(self, bucket: str, file_name: str) -> bool:
         """
         Supabase Storage'dan dosya siler
