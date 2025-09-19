@@ -57,7 +57,7 @@ class _EventCardState extends State<EventCard> {
     final requiresApproval = _currentEvent['requires_approval'] as bool? ?? false;
     final requestStatus = _currentEvent['request_status'] as String?;
     final isFull = _currentEvent['is_full'] as bool? ?? false;
-    final coverImageUrl = _currentEvent['cover_image'] as String?;
+    final eventImageUrl = _currentEvent['event_image'] as String?;
     
     // Button durumunu belirle
     final buttonState = _getButtonState(isJoined, requiresApproval, requestStatus, isFull, organizerUsername);
@@ -87,14 +87,14 @@ class _EventCardState extends State<EventCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Kapak resmi
-            if (coverImageUrl != null && coverImageUrl.isNotEmpty)
+            // Event resmi
+            if (eventImageUrl != null && eventImageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(ThemeConstants.borderRadiusLarge),
                 ),
                 child: CachedNetworkImage(
-                  imageUrl: coverImageUrl,
+                  imageUrl: eventImageUrl,
                   height: 120,
                   width: double.infinity,
                   fit: BoxFit.cover,

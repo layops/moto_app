@@ -99,11 +99,11 @@ class EventViewSet(viewsets.ModelViewSet):
         
         try:
             data = request.data.copy()
-            cover_file = request.FILES.get('cover_image')
+            event_image_file = request.FILES.get('event_image')
             
-            # Cover image'ı data'dan çıkar çünkü Supabase'e yükleyeceğiz
-            if cover_file and 'cover_image' in data:
-                del data['cover_image']
+            # Event image'ı data'dan çıkar çünkü Supabase'e yükleyeceğiz
+            if event_image_file and 'event_image' in data:
+                del data['event_image']
             
             serializer = self.get_serializer(data=data)
             if not serializer.is_valid():
@@ -122,36 +122,36 @@ class EventViewSet(viewsets.ModelViewSet):
                 # Bu hata etkinlik oluşturmayı engellemez
                 pass
             
-            # Cover image upload to Supabase
-            if cover_file:
+            # Event image upload to Supabase
+            if event_image_file:
                 try:
                     from users.services.supabase_storage_service import SupabaseStorageService
                     storage_service = SupabaseStorageService()
                     
                     if storage_service.is_available:
-                        print(f"Resim yükleniyor: {cover_file.name}, boyut: {cover_file.size}")
-                        upload_result = storage_service.upload_event_picture(cover_file, str(event.id))
+                        print(f"Event resmi yükleniyor: {event_image_file.name}, boyut: {event_image_file.size}")
+                        upload_result = storage_service.upload_event_picture(event_image_file, str(event.id))
                         print(f"Upload sonucu: {upload_result}")
                         
                         if upload_result.get('success'):
-                            cover_url = upload_result.get('url')
-                            print(f"Resim URL'i alındı: {cover_url}")
-                            event.cover_image = cover_url
+                            event_image_url = upload_result.get('url')
+                            print(f"Event resmi URL'i alındı: {event_image_url}")
+                            event.event_image = event_image_url
                             event.save()
-                            print("Event cover_image güncellendi")
+                            print("Event event_image güncellendi")
                             serializer = self.get_serializer(event)
                         else:
-                            print(f"Resim yükleme başarısız: {upload_result.get('error')}")
+                            print(f"Event resmi yükleme başarısız: {upload_result.get('error')}")
                     else:
                         print("Supabase Storage servisi kullanılamıyor")
                 except Exception as e:
-                    print("Resim yükleme hatası:", str(e))
+                    print("Event resmi yükleme hatası:", str(e))
                     import traceback
                     traceback.print_exc()
                     # Resim yükleme hatası etkinlik oluşturmayı engellemez
                     pass
             else:
-                print("Cover file yok")
+                print("Event image file yok")
             
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

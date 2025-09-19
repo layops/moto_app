@@ -31,14 +31,14 @@ class EventSerializer(serializers.ModelSerializer):
     is_full = serializers.ReadOnlyField()
     is_joined = serializers.SerializerMethodField()
     request_status = serializers.SerializerMethodField()
-    cover_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    event_image = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = Event
         fields = [
             'id', 'group', 'group_id', 'organizer', 'title', 'description',
             'location', 'start_time', 'end_time', 'is_public', 'guest_limit',
-            'requires_approval', 'cover_image', 'current_participant_count', 'is_full', 'is_joined', 'request_status',
+            'requires_approval', 'event_image', 'current_participant_count', 'is_full', 'is_joined', 'request_status',
             'created_at', 'updated_at'
         ]
         read_only_fields = (

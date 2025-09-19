@@ -33,10 +33,10 @@ class Event(models.Model):
     guest_limit = models.PositiveIntegerField(null=True, blank=True, verbose_name="Katılımcı Sınırı")
     requires_approval = models.BooleanField(default=False, verbose_name="Onay Gerekli")
     
-    cover_image = models.URLField(
+    event_image = models.URLField(
         blank=True,
         null=True,
-        verbose_name="Kapak Resmi URL"
+        verbose_name="Event Resmi URL"
     )
 
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
