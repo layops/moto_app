@@ -16,6 +16,52 @@ import os
 
 User = get_user_model()
 
+def get_storage_service():
+    """Supabase Storage servisini güvenli şekilde al"""
+    try:
+        from .services.supabase_storage_service import SupabaseStorageService
+        storage_service = SupabaseStorageService()
+        
+        if not storage_service.is_available:
+            return None, {
+                'error': 'Dosya yükleme servisi kullanılamıyor',
+                'message': 'Supabase Storage servisi yapılandırılmamış',
+                'debug_info': 'SupabaseStorageService.is_available = False'
+            }
+        
+        return storage_service, None
+        
+    except ImportError as import_error:
+        return None, {
+            'error': 'Supabase modülü bulunamadı',
+            'message': 'Supabase Python paketi yüklü değil',
+            'debug_info': f'ImportError: {str(import_error)}',
+            'solution': 'pip install supabase'
+        }
+    except Exception as service_error:
+        return None, {
+            'error': 'Supabase Storage servisi başlatılamadı',
+            'message': 'Supabase konfigürasyon hatası',
+            'debug_info': f'ServiceError: {str(service_error)}'
+        }
+
+def validate_image_file(file, max_size_mb=5):
+    """Resim dosyasını validate et"""
+    # Dosya boyutu kontrolü
+    max_size_bytes = max_size_mb * 1024 * 1024
+    if file.size > max_size_bytes:
+        return False, f'Dosya boyutu çok büyük. Maksimum {max_size_mb}MB olmalı.'
+    
+    # Dosya formatı kontrolü
+    from .services.supabase_storage_service import get_safe_content_type
+    allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    content_type = get_safe_content_type(file)
+    
+    if content_type not in allowed_formats:
+        return False, 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'
+    
+    return True, None
+
 class UserRegisterView(APIView):
     permission_classes = [AllowAny]
     
@@ -671,44 +717,17 @@ class ProfileImageUploadView(APIView):
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # Dosya boyutu kontrolü (5MB limit)
             profile_picture = request.FILES['profile_picture']
-            if profile_picture.size > 5 * 1024 * 1024:  # 5MB
-                return Response({'error': 'Dosya boyutu çok büyük. Maksimum 5MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Dosya formatı kontrolü - güvenli content_type kontrolü
-            from .services.supabase_storage_service import get_safe_content_type
-            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-            content_type = get_safe_content_type(profile_picture)
+            # Dosya validasyonu
+            is_valid, error_msg = validate_image_file(profile_picture, max_size_mb=5)
+            if not is_valid:
+                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
-            if content_type not in allowed_formats:
-                return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Supabase Storage'a yükle
-            try:
-                from .services.supabase_storage_service import SupabaseStorageService
-                storage_service = SupabaseStorageService()
-                
-                if not storage_service.is_available:
-                    return Response({
-                        'error': 'Dosya yükleme servisi kullanılamıyor',
-                        'message': 'Supabase Storage servisi yapılandırılmamış',
-                        'debug_info': 'SupabaseStorageService.is_available = False'
-                    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-                    
-            except ImportError as import_error:
-                return Response({
-                    'error': 'Supabase modülü bulunamadı',
-                    'message': 'Supabase Python paketi yüklü değil',
-                    'debug_info': f'ImportError: {str(import_error)}',
-                    'solution': 'pip install supabase'
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            except Exception as service_error:
-                return Response({
-                    'error': 'Supabase Storage servisi başlatılamadı',
-                    'message': 'Supabase konfigürasyon hatası',
-                    'debug_info': f'ServiceError: {str(service_error)}'
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            # Storage servisini al
+            storage_service, error_response = get_storage_service()
+            if error_response:
+                return Response(error_response, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             # Dosyayı Supabase'e yükle
             upload_result = storage_service.upload_profile_picture(profile_picture, username)
@@ -757,44 +776,17 @@ class CoverImageUploadView(APIView):
             return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            # Dosya boyutu kontrolü (10MB limit - kapak fotoğrafı daha büyük olabilir)
             cover_picture = request.FILES['cover_picture']
-            if cover_picture.size > 10 * 1024 * 1024:  # 10MB
-                return Response({'error': 'Dosya boyutu çok büyük. Maksimum 10MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Dosya formatı kontrolü - güvenli content_type kontrolü
-            from .services.supabase_storage_service import get_safe_content_type
-            allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-            content_type = get_safe_content_type(cover_picture)
+            # Dosya validasyonu (kapak fotoğrafı için 10MB limit)
+            is_valid, error_msg = validate_image_file(cover_picture, max_size_mb=10)
+            if not is_valid:
+                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
-            if content_type not in allowed_formats:
-                return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Supabase Storage'a yükle
-            try:
-                from .services.supabase_storage_service import SupabaseStorageService
-                storage_service = SupabaseStorageService()
-                
-                if not storage_service.is_available:
-                    return Response({
-                        'error': 'Dosya yükleme servisi kullanılamıyor',
-                        'message': 'Supabase Storage servisi yapılandırılmamış',
-                        'debug_info': 'SupabaseStorageService.is_available = False'
-                    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-                    
-            except ImportError as import_error:
-                return Response({
-                    'error': 'Supabase modülü bulunamadı',
-                    'message': 'Supabase Python paketi yüklü değil',
-                    'debug_info': f'ImportError: {str(import_error)}',
-                    'solution': 'pip install supabase'
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            except Exception as service_error:
-                return Response({
-                    'error': 'Supabase Storage servisi başlatılamadı',
-                    'message': 'Supabase konfigürasyon hatası',
-                    'debug_info': f'ServiceError: {str(service_error)}'
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            # Storage servisini al
+            storage_service, error_response = get_storage_service()
+            if error_response:
+                return Response(error_response, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             # Dosyayı Supabase'e yükle
             upload_result = storage_service.upload_cover_picture(cover_picture, username)
@@ -837,14 +829,13 @@ class SupabaseStorageTestView(APIView):
     def get(self, request):
         """Supabase Storage bağlantısını test eder"""
         try:
-            from .services.supabase_storage_service import SupabaseStorageService
-            storage_service = SupabaseStorageService()
-            
-            if not storage_service.is_available:
+            # Storage servisini al
+            storage_service, error_response = get_storage_service()
+            if error_response:
                 return Response({
                     'success': False,
-                    'error': 'Supabase Storage servisi kullanılamıyor',
-                    'message': 'Supabase konfigürasyonu bulunamadı'
+                    'error': error_response['error'],
+                    'message': error_response['message']
                 }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             # Bucket test
