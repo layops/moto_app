@@ -134,9 +134,6 @@ if DATABASE_URL and dj_database_url:
         'keepalives_idle': 60,  # Keep-alive ayarları artırıldı
         'keepalives_interval': 10,
         'keepalives_count': 5,
-        'tcp_keepalives_idle': 60,  # TCP keep-alive ayarları
-        'tcp_keepalives_interval': 10,
-        'tcp_keepalives_count': 5,
         'target_session_attrs': 'any',  # Herhangi bir session kabul et
     }
     
