@@ -182,11 +182,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.profile_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True  # Aynı isimde dosya varsa üzerine yaz
                     }
                 )
@@ -271,11 +276,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True
                     }
                 )
@@ -330,11 +340,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.cover_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True
                     }
                 )
@@ -389,11 +404,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.groups_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True
                     }
                 )
@@ -448,11 +468,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.posts_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True
                     }
                 )
@@ -507,11 +532,16 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
+                # Content type'ı güvenli şekilde al
+                content_type = getattr(file, 'content_type', 'image/jpeg')
+                if not content_type or isinstance(content_type, bool):
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.bikes_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True
                     }
                 )
