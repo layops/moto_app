@@ -242,8 +242,37 @@ class SupabaseStorageService:
                 # File pointer'ı başa al (eğer mümkünse)
                 if hasattr(file, 'seek'):
                     file.seek(0)
+                
+                # Dosya içeriğini oku ve tipini kontrol et
                 file_content = file.read()
-                print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes")
+                
+                # Eğer file_content boolean ise, dosyayı tekrar oku
+                if isinstance(file_content, bool):
+                    print("⚠️ Dosya içeriği boolean olarak döndü, tekrar okunuyor...")
+                    if hasattr(file, 'seek'):
+                        file.seek(0)
+                    file_content = file.read()
+                
+                # Eğer hala boolean ise, bytes olarak oku
+                if isinstance(file_content, bool):
+                    print("⚠️ Dosya içeriği hala boolean, bytes olarak okunuyor...")
+                    if hasattr(file, 'read_bytes'):
+                        file_content = file.read_bytes()
+                    elif hasattr(file, 'file'):
+                        # Django InMemoryUploadedFile için
+                        file.file.seek(0)
+                        file_content = file.file.read()
+                
+                # Son kontrol - eğer hala boolean ise hata ver
+                if isinstance(file_content, bool):
+                    print(f"❌ Dosya içeriği boolean olarak döndü: {file_content}")
+                    return {
+                        'success': False,
+                        'error': 'Dosya içeriği okunamadı - boolean değer döndü'
+                    }
+                
+                print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes, tip: {type(file_content)}")
+                
             except Exception as read_error:
                 print(f"❌ Dosya okuma hatası: {str(read_error)}")
                 return {
@@ -254,11 +283,26 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 print(f"Supabase'e yükleme başlıyor...")
+                
+                # Dosya içeriğinin bytes olduğundan emin ol
+                if not isinstance(file_content, (bytes, bytearray)):
+                    print(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                    return {
+                        'success': False,
+                        'error': f'Dosya içeriği bytes formatında değil: {type(file_content)}'
+                    }
+                
+                # Content-type'ı kontrol et
+                content_type = file.content_type
+                if not content_type or not isinstance(content_type, str):
+                    print("⚠️ Content-type eksik veya geçersiz, varsayılan olarak image/jpeg kullanılıyor")
+                    content_type = 'image/jpeg'
+                
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
                     file_content,
                     file_options={
-                        "content-type": file.content_type,
+                        "content-type": content_type,
                         "upsert": True  # Aynı isimde dosya varsa üzerine yaz
                     }
                 )
