@@ -242,6 +242,17 @@ class SupabaseStorageService:
                 print(f"=== DOSYA OKUMA BAŞLADI ===")
                 print(f"File type: {type(file)}")
                 print(f"File attributes: {dir(file)}")
+                print(f"File name: {file.name}")
+                print(f"File size: {file.size}")
+                print(f"File content_type: {file.content_type}")
+                
+                # Dosya boyutunu kontrol et
+                if file.size == 0:
+                    print("❌ Dosya boyutu 0 - boş dosya!")
+                    return {
+                        'success': False,
+                        'error': 'Dosya boş - boyut 0 bytes'
+                    }
                 
                 # Dosya içeriğini okumak için farklı yöntemler dene
                 file_content = None
@@ -252,8 +263,20 @@ class SupabaseStorageService:
                         file.seek(0)
                     file_content = file.read()
                     print(f"Yöntem 1 (read): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                    
+                    # Boolean kontrolü
+                    if isinstance(file_content, bool):
+                        print(f"❌ Yöntem 1: file_content boolean: {file_content}")
+                        file_content = None
+                    elif file_content == b'':
+                        print(f"⚠️ Yöntem 1: file_content boş bytes")
+                        file_content = None
+                    else:
+                        print(f"✅ Yöntem 1 başarılı: {len(file_content)} bytes")
+                        
                 except Exception as e:
                     print(f"Yöntem 1 başarısız: {e}")
+                    file_content = None
                 
                 # Yöntem 2: Django InMemoryUploadedFile için
                 if (file_content is None or isinstance(file_content, bool)) and hasattr(file, 'file'):
@@ -282,8 +305,59 @@ class SupabaseStorageService:
                             chunks.append(chunk)
                         file_content = b''.join(chunks)
                         print(f"Yöntem 4 (chunks): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                        
+                        # Boolean kontrolü
+                        if isinstance(file_content, bool):
+                            print(f"❌ Yöntem 4: file_content boolean: {file_content}")
+                            file_content = None
+                        elif file_content == b'':
+                            print(f"⚠️ Yöntem 4: file_content boş bytes")
+                            file_content = None
+                        else:
+                            print(f"✅ Yöntem 4 başarılı: {len(file_content)} bytes")
+                            
                     except Exception as e:
                         print(f"Yöntem 4 başarısız: {e}")
+                        file_content = None
+                
+                # Yöntem 5: Geçici dosya olarak kaydet ve oku
+                if (file_content is None or isinstance(file_content, bool)):
+                    try:
+                        import tempfile
+                        print("Yöntem 5: Geçici dosya ile upload deneniyor...")
+                        
+                        # Geçici dosya oluştur
+                        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                            # Dosyayı geçici dosyaya yaz
+                            if hasattr(file, 'seek'):
+                                file.seek(0)
+                            for chunk in file.chunks():
+                                temp_file.write(chunk)
+                            temp_file.flush()
+                            
+                            # Geçici dosyayı oku
+                            with open(temp_file.name, 'rb') as f:
+                                file_content = f.read()
+                            
+                            # Geçici dosyayı sil
+                            import os
+                            os.unlink(temp_file.name)
+                            
+                        print(f"Yöntem 5 (temp file): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                        
+                        # Boolean kontrolü
+                        if isinstance(file_content, bool):
+                            print(f"❌ Yöntem 5: file_content boolean: {file_content}")
+                            file_content = None
+                        elif file_content == b'':
+                            print(f"⚠️ Yöntem 5: file_content boş bytes")
+                            file_content = None
+                        else:
+                            print(f"✅ Yöntem 5 başarılı: {len(file_content)} bytes")
+                            
+                    except Exception as e:
+                        print(f"Yöntem 5 başarısız: {e}")
+                        file_content = None
                 
                 # Son kontrol
                 if file_content is None or isinstance(file_content, bool):
