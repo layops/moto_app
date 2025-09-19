@@ -82,7 +82,11 @@ class SupabaseStorageService:
             
             # Dosya içeriğinin bytes olduğunu kontrol et
             if not isinstance(file_content, bytes):
-                raise ValueError(f"Dosya içeriği bytes değil: {type(file_content)}")
+                # Eğer string ise encode et
+                if isinstance(file_content, str):
+                    file_content = file_content.encode('utf-8')
+                else:
+                    raise ValueError(f"Dosya içeriği bytes değil: {type(file_content)}")
             
             logger.info(f"✅ Dosya başarıyla okundu: {len(file_content)} bytes")
             return file_content
