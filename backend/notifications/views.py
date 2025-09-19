@@ -4,9 +4,12 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import logging
 from .models import Notification, NotificationPreferences
 from .serializers import NotificationSerializer, NotificationPreferencesSerializer, FCMTokenSerializer
 from .utils import send_realtime_notification
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 

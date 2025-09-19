@@ -22,9 +22,14 @@ class SupabaseStorageService:
             supabase_url = os.getenv('SUPABASE_URL') or getattr(settings, 'SUPABASE_URL', None)
             supabase_key = os.getenv('SUPABASE_ANON_KEY') or getattr(settings, 'SUPABASE_ANON_KEY', None)
             
-            # Service role key'i de dene
+            # Service role key'i de dene (Storage işlemleri için gerekli)
             if not supabase_key:
                 supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or getattr(settings, 'SUPABASE_SERVICE_ROLE_KEY', None)
+            
+            # Storage işlemleri için SERVICE_ROLE_KEY kullan
+            if supabase_key == os.getenv('SUPABASE_ANON_KEY'):
+                supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or getattr(settings, 'SUPABASE_SERVICE_ROLE_KEY', None)
+                logger.info("🔄 Storage işlemleri için SERVICE_ROLE_KEY kullanılıyor")
             
             logger.info(f"Supabase URL: {supabase_url}")
             logger.info(f"Supabase Key: {'VAR' if supabase_key else 'YOK'}")
@@ -185,6 +190,28 @@ class SupabaseStorageService:
                         "upsert": True  # Aynı isimde dosya varsa üzerine yaz
                     }
                 )
+                
+                # Result'ı kontrol et
+                if result is None:
+                    logger.error("❌ Supabase upload result None döndü")
+                    return {
+                        'success': False,
+                        'error': 'Supabase upload result None döndü'
+                    }
+                
+                # Result'ın tipini kontrol et
+                if isinstance(result, bool):
+                    if result:
+                        logger.info("✅ Supabase upload başarılı (boolean True)")
+                    else:
+                        logger.error("❌ Supabase upload başarısız (boolean False)")
+                        return {
+                            'success': False,
+                            'error': 'Supabase upload başarısız (boolean False)'
+                        }
+                else:
+                    logger.info(f"✅ Supabase upload result: {type(result)}")
+                    
             except Exception as upload_error:
                 logger.error(f"❌ Supabase upload API hatası: {upload_error}")
                 return {
@@ -192,16 +219,24 @@ class SupabaseStorageService:
                     'error': f'Supabase upload hatası: {str(upload_error)}'
                 }
             
-            if result:
-                # Public URL'i al
-                public_url = self.client.storage.from_(self.profile_bucket).get_public_url(file_name)
-                
-                logger.info(f"✅ Profil fotoğrafı başarıyla yüklendi: {file_name}")
-                return {
-                    'success': True,
-                    'url': public_url,
-                    'file_name': file_name
-                }
+            # Result başarılı ise public URL'i al
+            if result or (isinstance(result, bool) and result):
+                try:
+                    # Public URL'i al
+                    public_url = self.client.storage.from_(self.profile_bucket).get_public_url(file_name)
+                    
+                    logger.info(f"✅ Profil fotoğrafı başarıyla yüklendi: {file_name}")
+                    return {
+                        'success': True,
+                        'url': public_url,
+                        'file_name': file_name
+                    }
+                except Exception as url_error:
+                    logger.error(f"❌ Public URL alma hatası: {url_error}")
+                    return {
+                        'success': False,
+                        'error': f'Public URL alma hatası: {str(url_error)}'
+                    }
             else:
                 logger.error("❌ Supabase upload result boş")
                 return {
