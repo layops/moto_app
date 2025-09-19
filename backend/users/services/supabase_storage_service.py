@@ -239,42 +239,74 @@ class SupabaseStorageService:
             
             # Dosya içeriğini güvenli şekilde oku
             try:
-                # File pointer'ı başa al (eğer mümkünse)
-                if hasattr(file, 'seek'):
-                    file.seek(0)
+                print(f"=== DOSYA OKUMA BAŞLADI ===")
+                print(f"File type: {type(file)}")
+                print(f"File attributes: {dir(file)}")
                 
-                # Dosya içeriğini oku ve tipini kontrol et
-                file_content = file.read()
+                # Dosya içeriğini okumak için farklı yöntemler dene
+                file_content = None
                 
-                # Eğer file_content boolean ise, dosyayı tekrar oku
-                if isinstance(file_content, bool):
-                    print("⚠️ Dosya içeriği boolean olarak döndü, tekrar okunuyor...")
+                # Yöntem 1: Normal read()
+                try:
                     if hasattr(file, 'seek'):
                         file.seek(0)
                     file_content = file.read()
+                    print(f"Yöntem 1 (read): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                except Exception as e:
+                    print(f"Yöntem 1 başarısız: {e}")
                 
-                # Eğer hala boolean ise, bytes olarak oku
-                if isinstance(file_content, bool):
-                    print("⚠️ Dosya içeriği hala boolean, bytes olarak okunuyor...")
-                    if hasattr(file, 'read_bytes'):
-                        file_content = file.read_bytes()
-                    elif hasattr(file, 'file'):
-                        # Django InMemoryUploadedFile için
+                # Yöntem 2: Django InMemoryUploadedFile için
+                if (file_content is None or isinstance(file_content, bool)) and hasattr(file, 'file'):
+                    try:
                         file.file.seek(0)
                         file_content = file.file.read()
+                        print(f"Yöntem 2 (file.file.read): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                    except Exception as e:
+                        print(f"Yöntem 2 başarısız: {e}")
                 
-                # Son kontrol - eğer hala boolean ise hata ver
-                if isinstance(file_content, bool):
-                    print(f"❌ Dosya içeriği boolean olarak döndü: {file_content}")
+                # Yöntem 3: read_bytes()
+                if (file_content is None or isinstance(file_content, bool)) and hasattr(file, 'read_bytes'):
+                    try:
+                        if hasattr(file, 'seek'):
+                            file.seek(0)
+                        file_content = file.read_bytes()
+                        print(f"Yöntem 3 (read_bytes): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                    except Exception as e:
+                        print(f"Yöntem 3 başarısız: {e}")
+                
+                # Yöntem 4: chunks() kullan
+                if (file_content is None or isinstance(file_content, bool)) and hasattr(file, 'chunks'):
+                    try:
+                        chunks = []
+                        for chunk in file.chunks():
+                            chunks.append(chunk)
+                        file_content = b''.join(chunks)
+                        print(f"Yöntem 4 (chunks): {type(file_content)}, boyut: {len(file_content) if hasattr(file_content, '__len__') else 'N/A'}")
+                    except Exception as e:
+                        print(f"Yöntem 4 başarısız: {e}")
+                
+                # Son kontrol
+                if file_content is None or isinstance(file_content, bool):
+                    print(f"❌ Tüm yöntemler başarısız, file_content: {file_content}")
                     return {
                         'success': False,
-                        'error': 'Dosya içeriği okunamadı - boolean değer döndü'
+                        'error': 'Dosya içeriği okunamadı - tüm okuma yöntemleri başarısız'
                     }
                 
-                print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes, tip: {type(file_content)}")
+                # Bytes kontrolü
+                if not isinstance(file_content, (bytes, bytearray)):
+                    print(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                    return {
+                        'success': False,
+                        'error': f'Dosya içeriği bytes formatında değil: {type(file_content)}'
+                    }
+                
+                print(f"✅ Dosya içeriği başarıyla okundu: {len(file_content)} bytes")
                 
             except Exception as read_error:
                 print(f"❌ Dosya okuma hatası: {str(read_error)}")
+                import traceback
+                traceback.print_exc()
                 return {
                     'success': False,
                     'error': f'Dosya okunamadı: {str(read_error)}'
@@ -282,7 +314,10 @@ class SupabaseStorageService:
             
             # Dosyayı yükle
             try:
-                print(f"Supabase'e yükleme başlıyor...")
+                print(f"=== SUPABASE UPLOAD BAŞLADI ===")
+                print(f"File name: {file_name}")
+                print(f"File content type: {type(file_content)}")
+                print(f"File content length: {len(file_content) if file_content else 'None'}")
                 
                 # Dosya içeriğinin bytes olduğundan emin ol
                 if not isinstance(file_content, (bytes, bytearray)):
@@ -293,11 +328,15 @@ class SupabaseStorageService:
                     }
                 
                 # Content-type'ı kontrol et
-                content_type = file.content_type
+                content_type = getattr(file, 'content_type', None)
                 if not content_type or not isinstance(content_type, str):
                     print("⚠️ Content-type eksik veya geçersiz, varsayılan olarak image/jpeg kullanılıyor")
                     content_type = 'image/jpeg'
                 
+                print(f"Content-type: {content_type}")
+                print(f"Upload options: content-type={content_type}, upsert=True")
+                
+                # Supabase upload'u dene
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
                     file_content,
@@ -318,11 +357,22 @@ class SupabaseStorageService:
             except Exception as upload_error:
                 print(f"❌ Upload işlemi sırasında hata: {str(upload_error)}")
                 print(f"❌ Upload error type: {type(upload_error)}")
+                print(f"❌ Upload error args: {upload_error.args}")
+                
+                # Özel hata mesajları
+                error_message = str(upload_error)
+                if "'bool' object has no attribute 'encode'" in error_message:
+                    error_message = "Dosya içeriği boolean değer olarak algılandı. Dosya formatı desteklenmiyor."
+                elif "Connection refused" in error_message:
+                    error_message = "Supabase sunucusuna bağlanılamıyor. Lütfen daha sonra tekrar deneyin."
+                elif "timeout" in error_message.lower():
+                    error_message = "Dosya yükleme zaman aşımına uğradı. Dosya çok büyük olabilir."
+                
                 import traceback
                 traceback.print_exc()
                 return {
                     'success': False,
-                    'error': f'Upload hatası: {str(upload_error)}'
+                    'error': f'Upload hatası: {error_message}'
                 }
             
             # Upload başarılı mı kontrol et
