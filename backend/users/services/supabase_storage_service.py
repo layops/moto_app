@@ -246,6 +246,13 @@ class SupabaseStorageService:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
                 
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
+                
                 result = self.client.storage.from_(self.profile_bucket).upload(
                     file_name,
                     file_content,
@@ -346,6 +353,13 @@ class SupabaseStorageService:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
                 
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Event upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
+                
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
                     file_content,
@@ -415,6 +429,13 @@ class SupabaseStorageService:
             try:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
+                
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Cover upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.cover_bucket).upload(
                     file_name,
@@ -486,6 +507,13 @@ class SupabaseStorageService:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
                 
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Group upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
+                
                 result = self.client.storage.from_(self.groups_bucket).upload(
                     file_name,
                     file_content,
@@ -556,6 +584,13 @@ class SupabaseStorageService:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
                 
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Post upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
+                
                 result = self.client.storage.from_(self.posts_bucket).upload(
                     file_name,
                     file_content,
@@ -625,6 +660,13 @@ class SupabaseStorageService:
             try:
                 # Content type'ı güvenli şekilde al
                 content_type = get_safe_content_type(file)
+                
+                # Content type'ın string olduğunu kontrol et
+                if not isinstance(content_type, str):
+                    logger.error(f"❌ Content type string değil: {type(content_type)} = {content_type}")
+                    content_type = 'image/jpeg'  # Varsayılan
+                
+                logger.info(f"📤 Bike upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.bikes_bucket).upload(
                     file_name,
