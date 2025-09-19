@@ -175,6 +175,11 @@ class SupabaseStorageService:
             if isinstance(file_content, bool):
                 logger.warning("file.read() boolean döndürdü, alternatif yöntem deneniyor")
                 
+                # Dosya pozisyonunu tekrar başa al
+                if hasattr(file, 'seek'):
+                    file.seek(0)
+                
+                # Alternatif okuma yöntemleri
                 if hasattr(file, 'file') and hasattr(file.file, 'read'):
                     file.file.seek(0)
                     file_content = file.file.read()
@@ -183,22 +188,31 @@ class SupabaseStorageService:
                     for chunk in file.chunks():
                         chunks.append(chunk)
                     file_content = b''.join(chunks)
+                elif hasattr(file, 'readlines'):
+                    # readlines() metodunu dene
+                    lines = file.readlines()
+                    file_content = b''.join(lines)
                 else:
-                    raise ValueError("Dosya okuma hatası: file.read() boolean döndürdü")
+                    raise ValueError("Dosya okuma hatası: file.read() boolean döndürdü ve alternatif yöntemler başarısız")
             
             # Dosya içeriğinin bytes olduğunu kontrol et
             if not isinstance(file_content, bytes):
-                # Eğer string ise encode et
-                if isinstance(file_content, str):
-                    file_content = file_content.encode('utf-8')
+                if isinstance(file_content, bool):
+                    raise ValueError("Dosya içeriği hala boolean: alternatif okuma yöntemleri başarısız")
                 else:
                     raise ValueError(f"Dosya içeriği bytes değil: {type(file_content)}")
+            
+            # Dosya içeriğinin boş olmadığını kontrol et
+            if len(file_content) == 0:
+                raise ValueError("Dosya içeriği boş")
             
             logger.info(f"✅ Dosya başarıyla okundu: {len(file_content)} bytes")
             return file_content
             
         except Exception as e:
             logger.error(f"❌ Dosya okuma hatası: {e}")
+            logger.error(f"❌ Dosya tipi: {type(file)}")
+            logger.error(f"❌ Dosya özellikleri: {dir(file)}")
             raise
 
     def upload_profile_picture(self, file, username: str) -> Dict[str, Any]:
@@ -218,6 +232,14 @@ class SupabaseStorageService:
             
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
+            
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
             
             # Dosyayı yükle
             try:
@@ -311,6 +333,14 @@ class SupabaseStorageService:
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
             
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
+            
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
@@ -372,6 +402,14 @@ class SupabaseStorageService:
             
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
+            
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
             
             # Dosyayı yükle
             try:
@@ -435,6 +473,14 @@ class SupabaseStorageService:
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
             
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
+            
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
@@ -497,6 +543,14 @@ class SupabaseStorageService:
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
             
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
+            
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
@@ -558,6 +612,14 @@ class SupabaseStorageService:
             
             # Dosyayı güvenli şekilde oku
             file_content = self._read_file_safely(file)
+            
+            # Dosya içeriğinin bytes olduğunu tekrar kontrol et
+            if not isinstance(file_content, bytes):
+                logger.error(f"❌ Dosya içeriği bytes değil: {type(file_content)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya içeriği geçersiz tip: {type(file_content)}'
+                }
             
             # Dosyayı yükle
             try:
