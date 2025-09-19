@@ -129,60 +129,11 @@ def send_bulk_notifications(recipients, message, notification_type='other', send
         raise
 
 
-def send_supabase_realtime_notification(recipient_user, title, body, data=None, notification_type='other'):
-    """
-    Supabase Real-time ile push notification gönderir.
-    
-    Args:
-        recipient_user: Bildirimi alacak kullanıcı
-        title: Bildirim başlığı
-        body: Bildirim içeriği
-        data: Ek veri (opsiyonel)
-        notification_type: Bildirim türü
-    """
-    try:
-        logger.info(f"🚀 Supabase realtime notification başlatılıyor: {recipient_user.username}")
-        
-        # Kullanıcının notification preferences'ını kontrol et
-        try:
-            preferences = NotificationPreferences.objects.get(user=recipient_user)
-            logger.info(f"📋 Preferences bulundu: push_enabled={preferences.push_enabled}")
-            if not preferences.push_enabled:
-                logger.info(f"🚫 Push notifications kapalı: {recipient_user.username}")
-                return False
-        except NotificationPreferences.DoesNotExist:
-            # Preferences yoksa varsayılan olarak gönder
-            logger.info(f"⚠️ Preferences bulunamadı, varsayılan olarak gönderiliyor: {recipient_user.username}")
-            pass
-        
-        # Supabase client ile bildirim gönder
-        notification_data = data or {}
-        notification_data['notification_type'] = notification_type
-        
-        logger.info(f"📤 Supabase'e gönderiliyor: user_id={recipient_user.id}, title={title}")
-        
-        success = send_realtime_notification_via_supabase(
-            user_id=recipient_user.id,
-            title=title,
-            body=body,
-            data=notification_data
-        )
-        
-        if success:
-            logger.info(f"✅ Supabase real-time bildirim gönderildi: {recipient_user.username}")
-            return True
-        else:
-            logger.error(f"❌ Supabase bildirim gönderme başarısız: {recipient_user.username}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"💥 Supabase bildirim gönderme hatası: {e}")
-        return False
 
 
 def send_notification_with_preferences(recipient_user, message, notification_type='other', sender_user=None, content_object=None, title=None):
     """
-    Kullanıcının tercihlerine göre bildirim gönderir (WebSocket + Supabase Real-time).
+    Kullanıcının tercihlerine göre bildirim gönderir (WebSocket + FCM Push).
     
     Args:
         recipient_user: Bildirimi alacak kullanıcı
@@ -239,8 +190,8 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
             content_object=content_object
         )
         
-        # Supabase Real-time notification gönder
-        logger.info(f"🔔 Supabase real-time notification kontrolü: {recipient_user.username} - push_enabled: {preferences.push_enabled}")
+        # FCM push notification gönder
+        logger.info(f"🔔 FCM push notification kontrolü: {recipient_user.username} - push_enabled: {preferences.push_enabled}")
         
         if preferences.push_enabled:
             try:
@@ -252,26 +203,26 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
                     'notification_type': notification_type,
                 }
                 
-                # Supabase Real-time notification gönder
-                logger.info(f"📱 Supabase real-time notification gönderiliyor: {recipient_user.username} - {push_title}")
+                # FCM push notification gönder
+                logger.info(f"📱 FCM push notification gönderiliyor: {recipient_user.username} - {push_title}")
                 
-                supabase_success = send_supabase_realtime_notification(
-                    recipient_user=recipient_user,
+                from .fcm_service import send_fcm_notification
+                fcm_success = send_fcm_notification(
+                    user=recipient_user,
                     title=push_title,
                     body=message,
-                    data=push_data,
-                    notification_type=notification_type
+                    data=push_data
                 )
                 
-                if supabase_success:
-                    logger.info(f"✅ Supabase real-time notification gönderildi: {recipient_user.username} - {push_title}")
+                if fcm_success:
+                    logger.info(f"✅ FCM push notification gönderildi: {recipient_user.username} - {push_title}")
                 else:
-                    logger.warning(f"❌ Supabase real-time notification gönderilemedi: {recipient_user.username}")
+                    logger.warning(f"❌ FCM push notification gönderilemedi: {recipient_user.username}")
                     
             except Exception as e:
-                logger.error(f"💥 Supabase real-time notification hatası: {e}")
+                logger.error(f"💥 FCM push notification hatası: {e}")
         else:
-            logger.info(f"🚫 Supabase real-time notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
+            logger.info(f"🚫 FCM push notification gönderilmedi - tercihler kapalı: {recipient_user.username}")
         
         return notification
         

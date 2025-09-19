@@ -75,11 +75,8 @@ class ServiceLocator {
     try {
       final instance = _instance;
 
-      // 0. Initialize Supabase
-      instance._supabaseClient = supabase_client.SupabaseClient(
-        SupabaseConfig.supabaseUrl,
-        SupabaseConfig.supabaseAnonKey,
-      );
+      // 0. Supabase client'ı ServiceLocator'dan al (main.dart'da zaten initialize edildi)
+      // Supabase.instance.client kullanılacak
 
       // 1. Initialize local storage (app)
       instance._localStorage = LocalStorage();
@@ -213,9 +210,12 @@ class ServiceLocator {
   static ConnectionManager get connection => _instance._connectionManager;
   static LocalStorage get storage => _instance._localStorage;
 
-  // Supabase helper
+  // Supabase helper - Supabase.instance.client kullan
   static supabase_client.SupabaseClient get supabaseClient =>
-      _instance._supabaseClient;
+      supabase_client.SupabaseClient(
+        SupabaseConfig.supabaseUrl,
+        SupabaseConfig.supabaseAnonKey,
+      );
 
   static String? get currentUserId => supabaseClient.auth.currentUser?.id;
   static String? get currentUserEmail => supabaseClient.auth.currentUser?.email;

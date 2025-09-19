@@ -13,8 +13,6 @@ import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
 import 'package:motoapp_frontend/widgets/navigations/navigation_items.dart';
 import 'package:motoapp_frontend/config/supabase_config.dart';
-import 'package:motoapp_frontend/services/notifications/supabase_notification_service.dart';
-import 'package:motoapp_frontend/services/notifications/supabase_push_service.dart';
 import 'package:motoapp_frontend/services/notifications/fcm_service.dart';
 
 import 'package:motoapp_frontend/views/home/home_page.dart';
@@ -39,11 +37,6 @@ void main() async {
     await ServiceLocator.init();
     await ServiceLocator.auth.initializeAuthState();
     
-    // Supabase Notification Service'i initialize et (geçici olarak devre dışı)
-    // await SupabaseNotificationService().initialize();
-    
-        // Supabase Push Service'i initialize et (geçici olarak devre dışı)
-        // await SupabasePushService().initialize();
         
         // Mevcut kullanıcıyı kontrol et ve FCM initialize et
         final currentUser = await ServiceLocator.auth.currentUser;
