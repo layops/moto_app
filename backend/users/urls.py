@@ -13,6 +13,7 @@ from .views import (
     GoogleAuthTestView,
     ProfileImageUploadView,
     CoverImageUploadView, # Yeni eklendi
+    SupabaseStorageTestView,  # Supabase test endpoint'i
     FollowToggleView,
     FollowersListView,
     FollowingListView,
@@ -45,6 +46,9 @@ urlpatterns = [
     # Profile Image Upload
     path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
     path('<str:username>/upload-cover/', CoverImageUploadView.as_view(), name='profile-upload-cover'), # Yeni URL
+    
+    # Supabase Storage Test
+    path('test-supabase-storage/', SupabaseStorageTestView.as_view(), name='test-supabase-storage'),
 
     # Follow / Followers / Following
     path('<str:username>/follow-toggle/', FollowToggleView.as_view(), name='follow-toggle-by-username'),

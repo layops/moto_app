@@ -696,7 +696,9 @@ class ProfileImageUploadView(APIView):
             
             if not upload_result['success']:
                 return Response({
-                    'error': upload_result['error']
+                    'error': upload_result['error'],
+                    'debug_info': 'Supabase profile picture upload failed',
+                    'upload_result': upload_result
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Eski profil fotoğrafını sil (Supabase'den)
@@ -761,7 +763,9 @@ class CoverImageUploadView(APIView):
             
             if not upload_result['success']:
                 return Response({
-                    'error': upload_result['error']
+                    'error': upload_result['error'],
+                    'debug_info': 'Supabase cover picture upload failed',
+                    'upload_result': upload_result
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Eski kapak fotoğrafını sil (Supabase'den)
@@ -787,6 +791,51 @@ class CoverImageUploadView(APIView):
         except Exception as e:
             return Response({
                 'error': f'Kapak fotoğrafı yükleme hatası: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SupabaseStorageTestView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Supabase Storage bağlantısını test eder"""
+        try:
+            from .services.supabase_storage_service import SupabaseStorageService
+            storage_service = SupabaseStorageService()
+            
+            if not storage_service.is_available:
+                return Response({
+                    'success': False,
+                    'error': 'Supabase Storage servisi kullanılamıyor',
+                    'message': 'Supabase konfigürasyonu bulunamadı'
+                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            # Bucket test
+            bucket_test = storage_service.test_connection()
+            
+            if bucket_test['success']:
+                return Response({
+                    'success': True,
+                    'message': 'Supabase Storage bağlantısı başarılı',
+                    'buckets': bucket_test['buckets'],
+                    'bucket_status': {
+                        'profile_bucket_exists': bucket_test['profile_bucket_exists'],
+                        'events_bucket_exists': bucket_test['events_bucket_exists'],
+                        'cover_bucket_exists': bucket_test['cover_bucket_exists'],
+                        'groups_bucket_exists': bucket_test['groups_bucket_exists'],
+                        'posts_bucket_exists': bucket_test['posts_bucket_exists'],
+                        'bikes_bucket_exists': bucket_test['bikes_bucket_exists']
+                    }
+                })
+            else:
+                return Response({
+                    'success': False,
+                    'error': bucket_test['error']
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': f'Supabase Storage test hatası: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FollowToggleView(APIView):
