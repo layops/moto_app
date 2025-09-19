@@ -9,8 +9,12 @@ logger = logging.getLogger(__name__)
 class SupabaseStorageService:
     def __init__(self):
         self.client: Optional[Client] = None
-        self.profile_bucket = "profile-pictures"
-        self.events_bucket = "event-pictures"
+        self.profile_bucket = "profile_pictures"           # ✅ Mevcut
+        self.events_bucket = "events_pictures"             # ✅ Mevcut
+        self.cover_bucket = "cover_pictures"               # ✅ Mevcut
+        self.groups_bucket = "groups_profile_pictures"     # ✅ Mevcut
+        self.posts_bucket = "group_posts_images"           # ✅ Mevcut
+        self.bikes_bucket = "bikes_images"                 # ✅ Mevcut
         self.is_available = False
         
         try:
@@ -47,10 +51,21 @@ class SupabaseStorageService:
             bucket_names = [bucket.name for bucket in buckets]
             logger.info(f"📁 Mevcut bucket'lar: {bucket_names}")
             
-            if self.profile_bucket not in bucket_names:
-                logger.warning(f"⚠️ {self.profile_bucket} bucket bulunamadı")
-            if self.events_bucket not in bucket_names:
-                logger.warning(f"⚠️ {self.events_bucket} bucket bulunamadı")
+            # Tüm bucket'ları kontrol et
+            all_buckets = [
+                self.profile_bucket,
+                self.events_bucket, 
+                self.cover_bucket,
+                self.groups_bucket,
+                self.posts_bucket,
+                self.bikes_bucket
+            ]
+            
+            for bucket_name in all_buckets:
+                if bucket_name not in bucket_names:
+                    logger.warning(f"⚠️ {bucket_name} bucket bulunamadı")
+                else:
+                    logger.info(f"✅ {bucket_name} bucket mevcut")
                 
         except Exception as e:
             logger.error(f"❌ Bucket kontrol hatası: {e}")
@@ -218,7 +233,7 @@ class SupabaseStorageService:
             file_content = self._read_file_safely(file)
             
             # Dosyayı yükle
-            result = self.client.storage.from_(self.profile_bucket).upload(
+            result = self.client.storage.from_(self.cover_bucket).upload(
                 file_name,
                 file_content,
                 file_options={
@@ -229,7 +244,7 @@ class SupabaseStorageService:
             
             if result:
                 # Public URL'i al
-                public_url = self.client.storage.from_(self.profile_bucket).get_public_url(file_name)
+                public_url = self.client.storage.from_(self.cover_bucket).get_public_url(file_name)
                 
                 logger.info(f"✅ Kapak fotoğrafı başarıyla yüklendi: {file_name}")
                 return {
@@ -285,7 +300,11 @@ class SupabaseStorageService:
                 'success': True,
                 'buckets': bucket_names,
                 'profile_bucket_exists': self.profile_bucket in bucket_names,
-                'events_bucket_exists': self.events_bucket in bucket_names
+                'events_bucket_exists': self.events_bucket in bucket_names,
+                'cover_bucket_exists': self.cover_bucket in bucket_names,
+                'groups_bucket_exists': self.groups_bucket in bucket_names,
+                'posts_bucket_exists': self.posts_bucket in bucket_names,
+                'bikes_bucket_exists': self.bikes_bucket in bucket_names
             }
         except Exception as e:
             logger.error(f"❌ Supabase bağlantı test hatası: {e}")
