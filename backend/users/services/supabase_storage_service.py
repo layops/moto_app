@@ -129,12 +129,15 @@ class SupabaseStorageService:
                 'error': f'Dosya yükleme hatası: {str(e)}'
             }
 
-    def upload_event_picture(self, file, event_id: str) -> str:
+    def upload_event_picture(self, file, event_id: str) -> Dict[str, Any]:
         """
         Event kapak fotoğrafını Supabase Storage'a yükler
         """
         if not self.is_available:
-            raise Exception('Supabase Storage servisi kullanılamıyor')
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
         
         try:
             # Dosya adını oluştur
@@ -156,13 +159,23 @@ class SupabaseStorageService:
                 public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
                 
                 logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
-                return public_url
+                return {
+                    'success': True,
+                    'url': public_url,
+                    'file_name': file_name
+                }
             else:
-                raise Exception('Dosya yükleme başarısız')
+                return {
+                    'success': False,
+                    'error': 'Dosya yükleme başarısız'
+                }
                 
         except Exception as e:
             logger.error(f"Event kapak fotoğrafı yükleme hatası: {e}")
-            raise Exception(f'Dosya yükleme hatası: {str(e)}')
+            return {
+                'success': False,
+                'error': f'Dosya yükleme hatası: {str(e)}'
+            }
 
     def delete_file(self, bucket: str, file_name: str) -> bool:
         """

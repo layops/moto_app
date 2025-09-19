@@ -130,12 +130,18 @@ class EventViewSet(viewsets.ModelViewSet):
                     
                     if storage_service.is_available:
                         print(f"Resim yükleniyor: {cover_file.name}, boyut: {cover_file.size}")
-                        cover_url = storage_service.upload_event_picture(cover_file, str(event.id))
-                        print(f"Resim URL'i alındı: {cover_url}")
-                        event.cover_image = cover_url
-                        event.save()
-                        print("Event cover_image güncellendi")
-                        serializer = self.get_serializer(event)
+                        upload_result = storage_service.upload_event_picture(cover_file, str(event.id))
+                        print(f"Upload sonucu: {upload_result}")
+                        
+                        if upload_result.get('success'):
+                            cover_url = upload_result.get('url')
+                            print(f"Resim URL'i alındı: {cover_url}")
+                            event.cover_image = cover_url
+                            event.save()
+                            print("Event cover_image güncellendi")
+                            serializer = self.get_serializer(event)
+                        else:
+                            print(f"Resim yükleme başarısız: {upload_result.get('error')}")
                     else:
                         print("Supabase Storage servisi kullanılamıyor")
                 except Exception as e:
