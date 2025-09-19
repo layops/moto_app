@@ -1,6 +1,6 @@
 """
 Supabase Storage Service
-Temiz ve güvenli dosya yükleme servisi
+Güvenli ve basit dosya yükleme servisi
 """
 import os
 import logging
@@ -61,15 +61,16 @@ class SupabaseStorageService:
         except Exception as e:
             logger.error(f"❌ Supabase başlatılamadı: {e}")
 
-    def _read_file_safely(self, file) -> bytes:
-        """Dosyayı güvenli şekilde oku ve bytes döndür"""
+    def _read_file_as_bytes(self, file) -> bytes:
+        """Dosyayı güvenli şekilde oku ve bytes olarak döndür"""
         try:
             if hasattr(file, 'seek'):
                 file.seek(0)
+
             if hasattr(file, 'chunks'):
                 content = b''.join(chunk for chunk in file.chunks() if isinstance(chunk, bytes))
                 if not content:
-                    raise ValueError("Dosya okunamadı (chunks boş)")
+                    raise ValueError("Dosya boş veya okunamadı (chunks)")
                 return content
             elif hasattr(file, 'read'):
                 content = file.read()
@@ -89,7 +90,7 @@ class SupabaseStorageService:
             return {'success': False, 'error': f'Geçersiz bucket tipi: {bucket_type}'}
 
         try:
-            file_content = self._read_file_safely(file)
+            file_content = self._read_file_as_bytes(file)
             content_type = content_type or get_safe_content_type(file)
             bucket_name = self.buckets[bucket_type]
 
