@@ -60,7 +60,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" 
-                      android:host="spiride.onrender.com" 
+                      android:host="moto-app-vvrs.onrender.com" 
                       android:pathPrefix="/api/users/auth/callback/" />
             </intent-filter>
         </activity>

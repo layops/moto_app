@@ -63,7 +63,7 @@
 		</dict>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>spiride.onrender.com</string>
+			<string>moto-app-vvrs.onrender.com</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>https</string>

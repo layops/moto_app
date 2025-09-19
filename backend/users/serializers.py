@@ -287,7 +287,7 @@ class FollowSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(settings.MEDIA_URL + str(obj.profile_picture))
-            base_url = getattr(settings, 'BASE_URL', 'https://spiride.onrender.com')
+            base_url = getattr(settings, 'BASE_URL', 'https://moto-app-vvrs.onrender.com')
             media_url = getattr(settings, 'MEDIA_URL', '/media/')
             return f"{base_url}{media_url}{obj.profile_picture}"
         return None

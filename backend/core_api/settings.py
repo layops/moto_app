@@ -6,7 +6,7 @@ except ImportError:
     dj_database_url = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_URL = 'https://spiride.onrender.com'
+BASE_URL = 'https://moto-app-vvrs.onrender.com'
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -44,7 +44,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', 'localhost,127.0.0.1,spiride.onrender.com'
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1,moto-app-vvrs.onrender.com'
 ).split(',')
 
 INSTALLED_APPS = [

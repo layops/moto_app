@@ -9,7 +9,7 @@ import json
 import sys
 
 # API Base URL
-BASE_URL = "https://spiride.onrender.com/api"
+BASE_URL = "https://moto-app-vvrs.onrender.com/api"
 
 def test_notification():
     """Test bildirimi gönder"""

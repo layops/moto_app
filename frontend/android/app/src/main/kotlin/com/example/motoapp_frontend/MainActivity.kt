@@ -51,7 +51,7 @@ class MainActivity : FlutterActivity() {
     private fun handleIntent(intent: Intent?) {
         intent?.data?.let { uri ->
             if (uri.scheme == "motoapp" || 
-                (uri.scheme == "https" && uri.host == "spiride.onrender.com" && uri.path?.startsWith("/api/users/auth/callback/") == true)) {
+                (uri.scheme == "https" && uri.host == "moto-app-vvrs.onrender.com" && uri.path?.startsWith("/api/users/auth/callback/") == true)) {
                 methodChannel?.invokeMethod("onDeepLink", uri.toString())
             }
         }
@@ -61,7 +61,7 @@ class MainActivity : FlutterActivity() {
         val intent = intent
         val uri = intent.data
         return if (uri != null && (uri.scheme == "motoapp" || 
-                (uri.scheme == "https" && uri.host == "spiride.onrender.com" && uri.path?.startsWith("/api/users/auth/callback/") == true))) {
+                (uri.scheme == "https" && uri.host == "moto-app-vvrs.onrender.com" && uri.path?.startsWith("/api/users/auth/callback/") == true))) {
             uri.toString()
         } else null
     }
