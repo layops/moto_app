@@ -217,6 +217,19 @@ class SupabaseStorageService:
             }
         
         try:
+            # Bucket'ın varlığını kontrol et
+            try:
+                buckets = self.client.storage.list_buckets()
+                bucket_names = [bucket.name for bucket in buckets]
+                if self.events_bucket not in bucket_names:
+                    print(f"❌ Bucket bulunamadı: {self.events_bucket}")
+                    return {
+                        'success': False,
+                        'error': f'Bucket bulunamadı: {self.events_bucket}'
+                    }
+            except Exception as bucket_error:
+                print(f"⚠️ Bucket kontrolü yapılamadı: {str(bucket_error)}")
+            
             # Dosya adını oluştur
             file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
             file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
@@ -224,15 +237,23 @@ class SupabaseStorageService:
             print(f"Dosya boyutu: {file.size} bytes")
             print(f"Content-Type: {file.content_type}")
             
-            # Dosyayı yükle - events_bucket kullan
-            print(f"Supabase'e yükleme başlıyor...")
-            
-            # File pointer'ı başa al
-            file.seek(0)
-            file_content = file.read()
-            print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes")
-            
+            # Dosya içeriğini güvenli şekilde oku
             try:
+                # File pointer'ı başa al (eğer mümkünse)
+                if hasattr(file, 'seek'):
+                    file.seek(0)
+                file_content = file.read()
+                print(f"Dosya içeriği okundu, boyut: {len(file_content)} bytes")
+            except Exception as read_error:
+                print(f"❌ Dosya okuma hatası: {str(read_error)}")
+                return {
+                    'success': False,
+                    'error': f'Dosya okunamadı: {str(read_error)}'
+                }
+            
+            # Dosyayı yükle
+            try:
+                print(f"Supabase'e yükleme başlıyor...")
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
                     file_content,
@@ -255,28 +276,59 @@ class SupabaseStorageService:
                 print(f"❌ Upload error type: {type(upload_error)}")
                 import traceback
                 traceback.print_exc()
-                raise upload_error
+                return {
+                    'success': False,
+                    'error': f'Upload hatası: {str(upload_error)}'
+                }
             
+            # Upload başarılı mı kontrol et
             if result:
-                try:
-                    # Public URL'i al - events_bucket kullan
-                    public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
-                    print(f"Public URL oluşturuldu: {public_url}")
-                    
-                    logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
+                # Supabase response'unu daha detaylı kontrol et
+                upload_success = True
+                if hasattr(result, 'data') and result.data:
+                    # data içinde hata var mı kontrol et
+                    if isinstance(result.data, dict) and result.data.get('error'):
+                        upload_success = False
+                        print(f"❌ Upload response'da hata: {result.data['error']}")
+                
+                if upload_success:
+                    try:
+                        # Public URL'i al
+                        public_url = self.client.storage.from_(self.events_bucket).get_public_url(file_name)
+                        print(f"Public URL oluşturuldu: {public_url}")
+                        
+                        # URL'in erişilebilir olduğunu test et
+                        try:
+                            import requests
+                            test_response = requests.head(public_url, timeout=5)
+                            if test_response.status_code == 200:
+                                print("✅ URL erişilebilir")
+                            else:
+                                print(f"⚠️ URL erişilemez: {test_response.status_code}")
+                        except ImportError:
+                            print("⚠️ requests kütüphanesi bulunamadı, URL test edilemedi")
+                        except Exception as test_error:
+                            print(f"⚠️ URL test edilemedi: {str(test_error)}")
+                        
+                        logger.info(f"Event kapak fotoğrafı başarıyla yüklendi: {file_name}")
+                        return {
+                            'success': True,
+                            'url': public_url,
+                            'file_name': file_name
+                        }
+                    except Exception as url_error:
+                        print(f"❌ Public URL oluşturma hatası: {str(url_error)}")
+                        return {
+                            'success': True,
+                            'url': None,
+                            'file_name': file_name,
+                            'warning': f'Dosya yüklendi ama URL oluşturulamadı: {str(url_error)}'
+                        }
+                else:
+                    print("❌ Upload başarısız")
                     return {
-                        'success': True,
-                        'url': public_url,
-                        'file_name': file_name
-                    }
-                except Exception as url_error:
-                    print(f"❌ Public URL oluşturma hatası: {str(url_error)}")
-                    # URL oluşturulamasa bile dosya yüklenmiş olabilir
-                    return {
-                        'success': True,
-                        'url': None,
-                        'file_name': file_name,
-                        'warning': f'Dosya yüklendi ama URL oluşturulamadı: {str(url_error)}'
+                        'success': False,
+                        'error': 'Upload başarısız'
                     }
             else:
                 print("❌ Upload result False döndü")

@@ -110,9 +110,22 @@ class _EventCardState extends State<EventCard> {
                   errorWidget: (context, url, error) => Container(
                     height: 120,
                     color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.image_not_supported,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Resim yüklenemedi',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

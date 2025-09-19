@@ -158,6 +158,15 @@ class EventService {
             'Failed to create event: ${response.statusCode} - ${response.data}');
       }
       
+      // Response'da warning varsa kullanıcıya göster
+      if (response.data is Map && response.data['warnings'] != null) {
+        final warnings = response.data['warnings'] as List;
+        if (warnings.isNotEmpty) {
+          // İlk uyarıyı göster
+          throw Exception('Etkinlik oluşturuldu ancak: ${warnings.first}');
+        }
+      }
+      
       // Event oluşturma sonrası cache'i temizle
       clearCache();
     } on DioException catch (e) {
