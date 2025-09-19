@@ -244,9 +244,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.profile_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True  # Aynı isimde dosya varsa üzerine yaz
                     }
@@ -351,9 +351,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Event upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.events_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True
                     }
@@ -428,9 +428,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Cover upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.cover_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True
                     }
@@ -505,9 +505,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Group upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.groups_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True
                     }
@@ -582,9 +582,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Post upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.posts_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True
                     }
@@ -659,9 +659,9 @@ class SupabaseStorageService:
                 logger.info(f"📤 Bike upload başlıyor: {file_name}, content_type: {content_type}, file_size: {len(file_content)} bytes")
                 
                 result = self.client.storage.from_(self.bikes_bucket).upload(
-                    path=file_name,
-                    file=file_content,
-                    file_options={
+                    file_name,
+                    file_content,
+                    {
                         "content-type": content_type,
                         "upsert": True
                     }
