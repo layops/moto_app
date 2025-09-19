@@ -79,7 +79,7 @@ class SupabaseStorageService:
     def upload_event_picture(self, file, event_id: str) -> Dict[str, Any]:
         """
         Event kapak fotoğrafını Supabase Storage'a yükler
-        Profil fotoğrafı yükleme sistemi ile aynı basit yaklaşım
+        Farklı yaklaşım: Dosyayı geçici olarak disk'e yazıp oradan oku
         """
         if not self.is_available:
             return {
@@ -92,13 +92,29 @@ class SupabaseStorageService:
             file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
             file_name = f"events/{event_id}/cover_{event_id}_{os.urandom(4).hex()}.{file_extension}"
             
-            # Dosyayı yükle (profil fotoğrafı gibi basit yaklaşım)
+            # Geçici dosya yaklaşımı - dosyayı disk'e yazıp oradan oku
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f'.{file_extension}') as temp_file:
+                # Dosyayı geçici dosyaya yaz
+                for chunk in file.chunks():
+                    temp_file.write(chunk)
+                temp_file.flush()
+                
+                # Geçici dosyayı oku
+                with open(temp_file.name, 'rb') as f:
+                    file_content = f.read()
+                
+                # Geçici dosyayı sil
+                os.unlink(temp_file.name)
+            
+            # Dosyayı Supabase'e yükle
             result = self.client.storage.from_(self.events_bucket).upload(
                 file_name,
-                file.read(),
+                file_content,
                 file_options={
                     "content-type": file.content_type,
-                    "upsert": True  # Aynı isimde dosya varsa üzerine yaz
+                    "upsert": True
                 }
             )
             
