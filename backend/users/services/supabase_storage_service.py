@@ -266,20 +266,385 @@ class SupabaseStorageService:
                 'error': f'Dosya yükleme hatası: {str(e)}'
             }
 
-    def delete_file(self, bucket: str, file_name: str) -> bool:
+    def upload_group_picture(self, file, group_id: str) -> Dict[str, Any]:
+        """
+        Grup profil fotoğrafını Supabase Storage'a yükler
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Dosya adını oluştur
+            file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
+            file_name = f"groups/{group_id}/profile_{group_id}_{os.urandom(4).hex()}.{file_extension}"
+            
+            # Dosyayı güvenli şekilde oku
+            file_content = self._read_file_safely(file)
+            
+            # Dosyayı yükle
+            result = self.client.storage.from_(self.groups_bucket).upload(
+                file_name,
+                file_content,
+                file_options={
+                    "content-type": file.content_type,
+                    "upsert": True
+                }
+            )
+            
+            if result:
+                # Public URL'i al
+                public_url = self.client.storage.from_(self.groups_bucket).get_public_url(file_name)
+                
+                logger.info(f"✅ Grup profil fotoğrafı başarıyla yüklendi: {file_name}")
+                return {
+                    'success': True,
+                    'url': public_url,
+                    'file_name': file_name
+                }
+            else:
+                logger.error("❌ Supabase upload result boş")
+                return {
+                    'success': False,
+                    'error': 'Dosya yükleme başarısız - result boş'
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Grup profil fotoğrafı yükleme hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Dosya yükleme hatası: {str(e)}'
+            }
+
+    def upload_post_image(self, file, post_id: str) -> Dict[str, Any]:
+        """
+        Grup post resmini Supabase Storage'a yükler
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Dosya adını oluştur
+            file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
+            file_name = f"posts/{post_id}/image_{post_id}_{os.urandom(4).hex()}.{file_extension}"
+            
+            # Dosyayı güvenli şekilde oku
+            file_content = self._read_file_safely(file)
+            
+            # Dosyayı yükle
+            result = self.client.storage.from_(self.posts_bucket).upload(
+                file_name,
+                file_content,
+                file_options={
+                    "content-type": file.content_type,
+                    "upsert": True
+                }
+            )
+            
+            if result:
+                # Public URL'i al
+                public_url = self.client.storage.from_(self.posts_bucket).get_public_url(file_name)
+                
+                logger.info(f"✅ Post resmi başarıyla yüklendi: {file_name}")
+                return {
+                    'success': True,
+                    'url': public_url,
+                    'file_name': file_name
+                }
+            else:
+                logger.error("❌ Supabase upload result boş")
+                return {
+                    'success': False,
+                    'error': 'Dosya yükleme başarısız - result boş'
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Post resmi yükleme hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Dosya yükleme hatası: {str(e)}'
+            }
+
+    def upload_bike_image(self, file, bike_id: str) -> Dict[str, Any]:
+        """
+        Motosiklet resmini Supabase Storage'a yükler
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Dosya adını oluştur
+            file_extension = file.name.split('.')[-1] if '.' in file.name else 'jpg'
+            file_name = f"bikes/{bike_id}/image_{bike_id}_{os.urandom(4).hex()}.{file_extension}"
+            
+            # Dosyayı güvenli şekilde oku
+            file_content = self._read_file_safely(file)
+            
+            # Dosyayı yükle
+            result = self.client.storage.from_(self.bikes_bucket).upload(
+                file_name,
+                file_content,
+                file_options={
+                    "content-type": file.content_type,
+                    "upsert": True
+                }
+            )
+            
+            if result:
+                # Public URL'i al
+                public_url = self.client.storage.from_(self.bikes_bucket).get_public_url(file_name)
+                
+                logger.info(f"✅ Motosiklet resmi başarıyla yüklendi: {file_name}")
+                return {
+                    'success': True,
+                    'url': public_url,
+                    'file_name': file_name
+                }
+            else:
+                logger.error("❌ Supabase upload result boş")
+                return {
+                    'success': False,
+                    'error': 'Dosya yükleme başarısız - result boş'
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Motosiklet resmi yükleme hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Dosya yükleme hatası: {str(e)}'
+            }
+
+    def delete_file(self, bucket: str, file_name: str) -> Dict[str, Any]:
         """
         Supabase Storage'dan dosya siler
         """
         if not self.is_available:
-            return False
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
         
         try:
             result = self.client.storage.from_(bucket).remove([file_name])
             logger.info(f"✅ Dosya silindi: {bucket}/{file_name}")
-            return True
+            return {
+                'success': True,
+                'message': f'Dosya başarıyla silindi: {file_name}'
+            }
         except Exception as e:
             logger.error(f"❌ Dosya silme hatası: {e}")
-            return False
+            return {
+                'success': False,
+                'error': f'Dosya silme hatası: {str(e)}'
+            }
+
+    def delete_multiple_files(self, bucket: str, file_names: list) -> Dict[str, Any]:
+        """
+        Supabase Storage'dan birden fazla dosya siler
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            result = self.client.storage.from_(bucket).remove(file_names)
+            logger.info(f"✅ {len(file_names)} dosya silindi: {bucket}")
+            return {
+                'success': True,
+                'message': f'{len(file_names)} dosya başarıyla silindi',
+                'deleted_files': file_names
+            }
+        except Exception as e:
+            logger.error(f"❌ Çoklu dosya silme hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Çoklu dosya silme hatası: {str(e)}'
+            }
+
+    def list_buckets(self) -> Dict[str, Any]:
+        """
+        Tüm bucket'ları listeler ve detaylarını döndürür
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            buckets = self.client.storage.list_buckets()
+            bucket_details = []
+            
+            for bucket in buckets:
+                bucket_info = {
+                    'name': bucket.name,
+                    'id': bucket.id,
+                    'created_at': bucket.created_at,
+                    'updated_at': bucket.updated_at,
+                    'public': bucket.public if hasattr(bucket, 'public') else False,
+                    'file_size_limit': bucket.file_size_limit if hasattr(bucket, 'file_size_limit') else None,
+                    'allowed_mime_types': bucket.allowed_mime_types if hasattr(bucket, 'allowed_mime_types') else None
+                }
+                bucket_details.append(bucket_info)
+            
+            logger.info(f"📁 {len(bucket_details)} bucket listelendi")
+            return {
+                'success': True,
+                'buckets': bucket_details,
+                'total_buckets': len(bucket_details)
+            }
+        except Exception as e:
+            logger.error(f"❌ Bucket listesi hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Bucket listesi hatası: {str(e)}'
+            }
+
+    def list_files_in_bucket(self, bucket_name: str, folder_path: str = None, limit: int = 100) -> Dict[str, Any]:
+        """
+        Belirtilen bucket'taki dosyaları listeler
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Dosyaları listele
+            files = self.client.storage.from_(bucket_name).list(
+                path=folder_path or '',
+                limit=limit
+            )
+            
+            file_details = []
+            for file_info in files:
+                file_detail = {
+                    'name': file_info.get('name'),
+                    'size': file_info.get('metadata', {}).get('size'),
+                    'last_modified': file_info.get('updated_at'),
+                    'content_type': file_info.get('metadata', {}).get('mimetype'),
+                    'is_folder': file_info.get('metadata', {}).get('eTag') is None,  # Folder kontrolü
+                    'path': file_info.get('name')
+                }
+                file_details.append(file_detail)
+            
+            logger.info(f"📄 {bucket_name} bucket'ında {len(file_details)} dosya listelendi")
+            return {
+                'success': True,
+                'bucket': bucket_name,
+                'folder': folder_path or 'root',
+                'files': file_details,
+                'total_files': len(file_details)
+            }
+        except Exception as e:
+            logger.error(f"❌ Dosya listesi hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Dosya listesi hatası: {str(e)}'
+            }
+
+    def get_file_info(self, bucket_name: str, file_name: str) -> Dict[str, Any]:
+        """
+        Belirtilen dosya hakkında bilgi döndürür
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            # Dosya bilgilerini al
+            file_info = self.client.storage.from_(bucket_name).list(
+                path=file_name,
+                limit=1
+            )
+            
+            if not file_info:
+                return {
+                    'success': False,
+                    'error': 'Dosya bulunamadı'
+                }
+            
+            file_data = file_info[0]
+            public_url = self.client.storage.from_(bucket_name).get_public_url(file_name)
+            
+            return {
+                'success': True,
+                'file_info': {
+                    'name': file_data.get('name'),
+                    'size': file_data.get('metadata', {}).get('size'),
+                    'last_modified': file_data.get('updated_at'),
+                    'content_type': file_data.get('metadata', {}).get('mimetype'),
+                    'public_url': public_url,
+                    'path': file_data.get('name')
+                }
+            }
+        except Exception as e:
+            logger.error(f"❌ Dosya bilgi hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Dosya bilgi hatası: {str(e)}'
+            }
+
+    def get_bucket_stats(self) -> Dict[str, Any]:
+        """
+        Tüm bucket'ların istatistiklerini döndürür
+        """
+        if not self.is_available:
+            return {
+                'success': False,
+                'error': 'Supabase Storage servisi kullanılamıyor'
+            }
+        
+        try:
+            bucket_stats = {}
+            all_buckets = [
+                self.profile_bucket,
+                self.events_bucket, 
+                self.cover_bucket,
+                self.groups_bucket,
+                self.posts_bucket,
+                self.bikes_bucket
+            ]
+            
+            for bucket_name in all_buckets:
+                try:
+                    files = self.client.storage.from_(bucket_name).list(limit=1000)
+                    bucket_stats[bucket_name] = {
+                        'total_files': len(files),
+                        'exists': True,
+                        'files': [f.get('name') for f in files[:10]]  # İlk 10 dosya
+                    }
+                except Exception as bucket_error:
+                    bucket_stats[bucket_name] = {
+                        'total_files': 0,
+                        'exists': False,
+                        'error': str(bucket_error)
+                    }
+            
+            return {
+                'success': True,
+                'bucket_stats': bucket_stats,
+                'total_buckets': len(all_buckets)
+            }
+        except Exception as e:
+            logger.error(f"❌ Bucket istatistik hatası: {e}")
+            return {
+                'success': False,
+                'error': f'Bucket istatistik hatası: {str(e)}'
+            }
 
     def test_connection(self) -> Dict[str, Any]:
         """
