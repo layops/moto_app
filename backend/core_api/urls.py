@@ -15,6 +15,7 @@ from rest_framework_simplejwt.views import (
 )
 from .views import api_root, get_csrf_token
 from .health_check import health_check, detailed_health_check, metrics, readiness_check, liveness_check, debug_database, create_test_data, test_database_connection, database_status, jwt_debug, cache_test
+from .database_health import database_health_check, database_status as db_status
 
 # Swagger / Redoc için
 schema_view = get_schema_view(
@@ -119,6 +120,8 @@ urlpatterns = [
     path('health/', health_check, name='health-check'),
     path('health/detailed/', detailed_health_check, name='detailed-health-check'),
     path('health/cache-test/', cache_test, name='cache-test'),
+    path('health/database/', database_health_check, name='database-health'),
+    path('health/database/status/', db_status, name='database-status'),
     path('metrics/', metrics, name='metrics'),
     path('ready/', readiness_check, name='readiness-check'),
     path('live/', liveness_check, name='liveness-check'),

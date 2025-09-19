@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from core_api.database_retry import retry_database_connection
 
 from .models import Event, EventRequest
 from .serializers import EventSerializer, EventRequestSerializer
@@ -62,6 +63,7 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @retry_database_connection(max_retries=3, delay=2, backoff=2)
     def get_queryset(self):
         user = self.request.user
         print(f"get_queryset çağrıldı, kullanıcı: {user.username}")
