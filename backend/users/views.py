@@ -676,9 +676,12 @@ class ProfileImageUploadView(APIView):
             if profile_picture.size > 5 * 1024 * 1024:  # 5MB
                 return Response({'error': 'Dosya boyutu çok büyük. Maksimum 5MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Dosya formatı kontrolü
+            # Dosya formatı kontrolü - güvenli content_type kontrolü
+            from .services.supabase_storage_service import get_safe_content_type
             allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-            if profile_picture.content_type not in allowed_formats:
+            content_type = get_safe_content_type(profile_picture)
+            
+            if content_type not in allowed_formats:
                 return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Supabase Storage'a yükle
@@ -759,9 +762,12 @@ class CoverImageUploadView(APIView):
             if cover_picture.size > 10 * 1024 * 1024:  # 10MB
                 return Response({'error': 'Dosya boyutu çok büyük. Maksimum 10MB olmalı.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Dosya formatı kontrolü
+            # Dosya formatı kontrolü - güvenli content_type kontrolü
+            from .services.supabase_storage_service import get_safe_content_type
             allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-            if cover_picture.content_type not in allowed_formats:
+            content_type = get_safe_content_type(cover_picture)
+            
+            if content_type not in allowed_formats:
                 return Response({'error': 'Geçersiz dosya formatı. JPEG, PNG, GIF veya WebP kullanın.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Supabase Storage'a yükle

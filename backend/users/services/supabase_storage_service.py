@@ -6,6 +6,45 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+def get_safe_content_type(file) -> str:
+    """
+    Django file object'inden güvenli content_type alır.
+    Django bazen content_type'ı boolean olarak döndürür, bu durumu handle eder.
+    """
+    # İlk olarak content_type'ı al
+    content_type = getattr(file, 'content_type', None)
+    
+    # Eğer boolean ise, dosya adından format çıkar
+    if isinstance(content_type, bool):
+        file_name = getattr(file, 'name', '')
+        if file_name.lower().endswith(('.jpg', '.jpeg')):
+            return 'image/jpeg'
+        elif file_name.lower().endswith('.png'):
+            return 'image/png'
+        elif file_name.lower().endswith('.gif'):
+            return 'image/gif'
+        elif file_name.lower().endswith('.webp'):
+            return 'image/webp'
+        else:
+            return 'image/jpeg'  # Varsayılan
+    
+    # Eğer None veya boş string ise
+    if not content_type:
+        file_name = getattr(file, 'name', '')
+        if file_name.lower().endswith(('.jpg', '.jpeg')):
+            return 'image/jpeg'
+        elif file_name.lower().endswith('.png'):
+            return 'image/png'
+        elif file_name.lower().endswith('.gif'):
+            return 'image/gif'
+        elif file_name.lower().endswith('.webp'):
+            return 'image/webp'
+        else:
+            return 'image/jpeg'  # Varsayılan
+    
+    # Normal string ise olduğu gibi döndür
+    return content_type
+
 class SupabaseStorageService:
     def __init__(self):
         self.client: Optional[Client] = None
@@ -183,9 +222,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.profile_bucket).upload(
                     file_name,
@@ -277,9 +314,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.events_bucket).upload(
                     file_name,
@@ -341,9 +376,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.cover_bucket).upload(
                     file_name,
@@ -405,9 +438,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.groups_bucket).upload(
                     file_name,
@@ -469,9 +500,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.posts_bucket).upload(
                     file_name,
@@ -533,9 +562,7 @@ class SupabaseStorageService:
             # Dosyayı yükle
             try:
                 # Content type'ı güvenli şekilde al
-                content_type = getattr(file, 'content_type', 'image/jpeg')
-                if not content_type or isinstance(content_type, bool):
-                    content_type = 'image/jpeg'
+                content_type = get_safe_content_type(file)
                 
                 result = self.client.storage.from_(self.bikes_bucket).upload(
                     file_name,
