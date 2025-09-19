@@ -120,15 +120,15 @@ if DATABASE_URL and dj_database_url:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=0,  # Bağlantıları hemen kapat
-            conn_health_checks=False,  # Health check'leri devre dışı bırak
+            conn_max_age=60,  # Bağlantıları 60 saniye tut
+            conn_health_checks=True,  # Health check'leri aktif et
             ssl_require=True,  # Supabase SSL gerektirir
         )
     }
     
     # Supabase için özel bağlantı ayarları
     DATABASES['default']['OPTIONS'] = {
-        'connect_timeout': 5,  # Kısa timeout
+        'connect_timeout': 30,  # Supabase için daha uzun timeout
         'application_name': 'moto_app_render',  # Uygulama adı
         'sslmode': 'require',  # SSL zorunlu
         'keepalives_idle': 30,  # Keep-alive ayarları
@@ -137,8 +137,8 @@ if DATABASE_URL and dj_database_url:
     }
     
     # Supabase connection pool ayarları
-    DATABASES['default']['CONN_MAX_AGE'] = 0
-    DATABASES['default']['CONN_HEALTH_CHECKS'] = False
+    DATABASES['default']['CONN_MAX_AGE'] = 60  # Bağlantıları 60 saniye tut
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True  # Health check'leri aktif et
     
     print("✅ Supabase PostgreSQL configured with connection optimizations")
 else:

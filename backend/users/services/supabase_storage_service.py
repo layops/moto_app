@@ -28,14 +28,22 @@ class SupabaseStorageService:
             print(f"events_bucket: {self.events_bucket}")
             
             if self.supabase_url and self.supabase_service_key:
-                self.client = create_client(self.supabase_url, self.supabase_service_key)
-                self.is_available = True
-                print("✅ Supabase Storage servisi başarıyla başlatıldı")
-                
-                # Bucket'ları kontrol et ve oluştur
-                self._ensure_buckets_exist()
-                
-                logger.info("Supabase Storage servisi başarıyla başlatıldı")
+                try:
+                    self.client = create_client(self.supabase_url, self.supabase_service_key)
+                    self.is_available = True
+                    print("✅ Supabase Storage servisi başarıyla başlatıldı")
+                    
+                    # Bağlantıyı test et
+                    self._test_connection()
+                    
+                    # Bucket'ları kontrol et ve oluştur
+                    self._ensure_buckets_exist()
+                    
+                    logger.info("Supabase Storage servisi başarıyla başlatıldı")
+                except Exception as client_error:
+                    print(f"❌ Supabase client oluşturma hatası: {str(client_error)}")
+                    self.is_available = False
+                    raise client_error
             else:
                 print("❌ Supabase Storage credentials eksik")
                 print(f"URL var mı: {bool(self.supabase_url)}")
@@ -46,6 +54,17 @@ class SupabaseStorageService:
             print(f"❌ Supabase Storage servisi başlatılamadı: {e}")
             logger.error(f"Supabase Storage servisi başlatılamadı: {e}")
             self.is_available = False
+
+    def _test_connection(self):
+        """Supabase bağlantısını test et"""
+        try:
+            print("🔍 Supabase bağlantısı test ediliyor...")
+            # Basit bir storage işlemi ile bağlantıyı test et
+            buckets = self.client.storage.list_buckets()
+            print(f"✅ Supabase bağlantısı başarılı, {len(buckets)} bucket bulundu")
+        except Exception as e:
+            print(f"❌ Supabase bağlantı testi başarısız: {str(e)}")
+            raise e
 
     def _ensure_buckets_exist(self):
         """Gerekli bucket'ların var olduğundan emin ol"""
