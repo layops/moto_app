@@ -19,6 +19,7 @@ import 'chat/group_chat_service.dart';
 import 'group/group_service.dart';
 import 'location/location_service.dart';
 import 'connection/connection_manager.dart';
+import 'storage/supabase_storage_service.dart';
 import '../config/supabase_config.dart';
 
 class ServiceLocator {
@@ -50,6 +51,7 @@ class ServiceLocator {
   late final GroupService _groupService;
   late final LocationService _locationService;
   late final ConnectionManager _connectionManager;
+  late final SupabaseStorageService _supabaseStorageService;
   late final supabase_client.SupabaseClient _supabaseClient;
 
   // Private constructor
@@ -150,6 +152,9 @@ class ServiceLocator {
       instance._connectionManager = ConnectionManager();
       await instance._connectionManager.initialize();
 
+      // 18. Initialize Supabase Storage service
+      instance._supabaseStorageService = SupabaseStorageService();
+
       _isInitialized = true;
     } catch (e, stackTrace) {
       _isInitialized = false;
@@ -208,6 +213,7 @@ class ServiceLocator {
   static GroupService get group => _instance._groupService;
   static LocationService get location => _instance._locationService;
   static ConnectionManager get connection => _instance._connectionManager;
+  static SupabaseStorageService get supabaseStorage => _instance._supabaseStorageService;
   static LocalStorage get storage => _instance._localStorage;
 
   // Supabase helper - Supabase.instance.client kullan

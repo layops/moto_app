@@ -28,13 +28,33 @@ class PostService {
 
     FormData formData = FormData.fromMap({'content': content});
     if (file != null) {
-      formData.files.add(MapEntry(
-        'image',
-        await MultipartFile.fromFile(
-          file.path,
-          filename: file.path.split('/').last,
-        ),
-      ));
+      try {
+        // Yeni güvenli Supabase upload sistemini kullan
+        final uploadResult = await ServiceLocator.supabaseStorage.uploadPostImage(file);
+        
+        if (uploadResult.success) {
+          // Upload başarılı, URL'i form data'ya ekle
+          formData.fields.add(MapEntry('image_url', uploadResult.url!));
+        } else {
+          // Fallback: Eski sistemi dene
+          formData.files.add(MapEntry(
+            'image',
+            await MultipartFile.fromFile(
+              file.path,
+              filename: file.path.split('/').last,
+            ),
+          ));
+        }
+      } catch (e) {
+        // Fallback: Eski sistemi dene
+        formData.files.add(MapEntry(
+          'image',
+          await MultipartFile.fromFile(
+            file.path,
+            filename: file.path.split('/').last,
+          ),
+        ));
+      }
     }
 
     final endpoint = groupPk != null ? 'groups/$groupPk/posts/' : 'posts/';

@@ -106,10 +106,18 @@ class EventViewSet(viewsets.ModelViewSet):
         try:
             data = request.data.copy()
             event_image_file = request.FILES.get('event_image')
+            event_image_url = data.get('event_image_url')  # Yeni güvenli sistemden gelen URL
             
             # Event image'ı data'dan çıkar çünkü Supabase'e yükleyeceğiz
             if event_image_file and 'event_image' in data:
                 del data['event_image']
+            
+            # Eğer URL gelmişse, direkt kullan
+            if event_image_url:
+                data['event_image'] = event_image_url
+                # URL field'ını data'dan çıkar
+                if 'event_image_url' in data:
+                    del data['event_image_url']
             
             serializer = self.get_serializer(data=data)
             if not serializer.is_valid():

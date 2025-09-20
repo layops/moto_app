@@ -39,11 +39,16 @@ class GeneralPostListCreateView(generics.ListCreateAPIView):
         
         # Resim dosyasını al
         image_file = self.request.FILES.get('image')
+        image_url = self.request.data.get('image_url')  # Yeni güvenli sistemden gelen URL
         
         # Post'u oluştur (resim olmadan)
         post_data = serializer.validated_data.copy()
         if 'image' in post_data:
             del post_data['image']  # Resmi local media'ya kaydetme
+        
+        # Eğer URL gelmişse, direkt kullan
+        if image_url:
+            post_data['image_url'] = image_url
         
         # Content validation
         content = post_data.get('content', '').strip()
@@ -112,11 +117,16 @@ class GroupPostListCreateView(generics.ListCreateAPIView):
         if self.request.user in group.members.all() or self.request.user == group.owner:
             # Resim dosyasını al
             image_file = self.request.FILES.get('image')
+            image_url = self.request.data.get('image_url')  # Yeni güvenli sistemden gelen URL
             
             # Post'u oluştur (resim olmadan)
             post_data = serializer.validated_data.copy()
             if 'image' in post_data:
                 del post_data['image']  # Resmi local media'ya kaydetme
+            
+            # Eğer URL gelmişse, direkt kullan
+            if image_url:
+                post_data['image_url'] = image_url
             
             # Content validation
             content = post_data.get('content', '').strip()

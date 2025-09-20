@@ -11,8 +11,8 @@ from .views import (
     GoogleCallbackView,
     VerifyTokenView,
     GoogleAuthTestView,
-    ProfileImageUploadView,
-    CoverImageUploadView, # Yeni eklendi
+    # ProfileImageUploadView,  # Kaldırıldı - Yeni güvenli sistem kullanılıyor
+    # CoverImageUploadView,    # Kaldırıldı - Yeni güvenli sistem kullanılıyor
     SupabaseStorageTestView,  # Supabase test endpoint'i
     UploadTestView,  # Upload test endpoint'i
     FollowToggleView,
@@ -24,7 +24,9 @@ from .views import (
     UserEventsView,
     UserLogoutView,
     ChangePasswordView,  # Yeni eklendi
-    create_test_users  # Geçici test endpoint'i
+    create_test_users,  # Geçici test endpoint'i
+    request_upload_permission,  # Upload permission endpoint'i
+    confirm_upload  # Upload confirmation endpoint'i
 )
 
 urlpatterns = [
@@ -44,9 +46,9 @@ urlpatterns = [
     path('verify-token/', VerifyTokenView.as_view(), name='verify-token'),
     path('auth/test/', GoogleAuthTestView.as_view(), name='google-auth-test'),
 
-    # Profile Image Upload
-    path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
-    path('<str:username>/upload-cover/', CoverImageUploadView.as_view(), name='profile-upload-cover'), # Yeni URL
+    # Eski Profile Image Upload URL'leri kaldırıldı - Yeni güvenli sistem kullanılıyor
+    # path('<str:username>/upload-photo/', ProfileImageUploadView.as_view(), name='profile-upload-photo'),
+    # path('<str:username>/upload-cover/', CoverImageUploadView.as_view(), name='profile-upload-cover'),
     
     # Supabase Storage Test
     path('test-supabase-storage/', SupabaseStorageTestView.as_view(), name='test-supabase-storage'),
@@ -78,4 +80,8 @@ urlpatterns = [
     
     # Geçici test endpoint'i
     path('create-test-users/', create_test_users, name='create-test-users'),
+    
+    # Upload Permission Endpoints
+    path('upload-permission/', request_upload_permission, name='request-upload-permission'),
+    path('confirm-upload/', confirm_upload, name='confirm-upload'),
 ]

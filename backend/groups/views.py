@@ -79,9 +79,14 @@ class GroupCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
         profile_file = request.FILES.get('profile_picture')
+        profile_picture_url = data.get('profile_picture_url')  # Yeni güvenli sistemden gelen URL
         
         if profile_file and 'profile_picture' in data:
             del data['profile_picture']
+        
+        # Eğer URL gelmişse, direkt kullan
+        if profile_picture_url:
+            data['profile_picture_url'] = profile_picture_url
         
         serializer = self.get_serializer(data=data)
         if not serializer.is_valid():

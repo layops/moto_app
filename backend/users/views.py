@@ -13,6 +13,8 @@ from .serializers import (
 from rest_framework_simplejwt.tokens import RefreshToken
 import json
 import os
+import uuid
+from datetime import datetime, timedelta
 
 User = get_user_model()
 
@@ -720,171 +722,9 @@ class GoogleAuthTestView(APIView):
                 'message': f'Test hatası: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class ProfileImageUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request, username):
-        try:
-            user = get_object_or_404(User, username=username)
-            if request.user != user:
-                return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
-            
-            if 'profile_picture' not in request.FILES:
-                return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            profile_picture = request.FILES['profile_picture']
-            
-            # Dosya validasyonu
-            is_valid, error_msg = validate_image_file(profile_picture, max_size_mb=5)
-            if not is_valid:
-                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Storage servisini al
-            storage_service, error_response = get_storage_service()
-            if error_response:
-                return Response({
-                    'error': error_response['error'],
-                    'message': error_response['message'],
-                    'debug_info': error_response.get('debug_info', {}),
-                    'solution': error_response.get('solution', '')
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            
-            # Dosyayı Supabase'e yükle
-            upload_result = storage_service.upload_profile_picture(profile_picture, username)
-            
-            if not upload_result['success']:
-                return Response({
-                    'error': upload_result['error'],
-                    'message': 'Dosya yükleme başarısız',
-                    'debug_info': {
-                        'upload_result': upload_result,
-                        'storage_available': storage_service.is_available
-                    }
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            # Eski profil fotoğrafını sil (Supabase'den)
-            if user.profile_picture and 'supabase.co' in user.profile_picture:
-                try:
-                    # URL'den dosya adını çıkar
-                    old_file_name = user.profile_picture.split('/')[-1]
-                    storage_service.delete_file(storage_service.profile_bucket, f"{username}/{old_file_name}")
-                except Exception as delete_error:
-                    # Silinemezse sadece logla, devam et
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(f"Eski profil fotoğrafı silinemedi: {delete_error}")
-            
-            # Yeni profil fotoğrafı URL'ini kaydet
-            user.profile_picture = upload_result['url']
-            user.save()
-            
-            # Kullanıcı bilgilerini döndür
-            serializer = UserSerializer(user, context={'request': request})
-            return Response({
-                'user': serializer.data,
-                'message': 'Profil fotoğrafı başarıyla güncellendi',
-                'upload_info': {
-                    'file_name': upload_result.get('file_name'),
-                    'url': upload_result.get('url')
-                }
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"ProfileImageUploadView hatası: {str(e)}", exc_info=True)
-            
-            return Response({
-                'error': f'Profil fotoğrafı yükleme hatası: {str(e)}',
-                'message': 'Sunucu hatası oluştu',
-                'debug_info': {
-                    'exception_type': type(e).__name__,
-                    'exception_message': str(e)
-                }
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# Eski ProfileImageUploadView kaldırıldı - Yeni güvenli upload sistemi kullanılıyor
 
-class CoverImageUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request, username):
-        try:
-            user = get_object_or_404(User, username=username)
-            if request.user != user:
-                return Response({'error': 'Bu işlem için yetkiniz yok'}, status=status.HTTP_403_FORBIDDEN)
-            
-            if 'cover_picture' not in request.FILES:
-                return Response({'error': 'Dosya bulunamadı'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            cover_picture = request.FILES['cover_picture']
-            
-            # Dosya validasyonu (kapak fotoğrafı için 10MB limit)
-            is_valid, error_msg = validate_image_file(cover_picture, max_size_mb=10)
-            if not is_valid:
-                return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Storage servisini al
-            storage_service, error_response = get_storage_service()
-            if error_response:
-                return Response({
-                    'error': error_response['error'],
-                    'message': error_response['message'],
-                    'debug_info': error_response.get('debug_info', {}),
-                    'solution': error_response.get('solution', '')
-                }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-            
-            # Dosyayı Supabase'e yükle
-            upload_result = storage_service.upload_cover_picture(cover_picture, username)
-            
-            if not upload_result['success']:
-                return Response({
-                    'error': upload_result['error'],
-                    'message': 'Dosya yükleme başarısız',
-                    'debug_info': {
-                        'upload_result': upload_result,
-                        'storage_available': storage_service.is_available
-                    }
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            # Eski kapak fotoğrafını sil (Supabase'den)
-            if user.cover_picture and 'supabase.co' in user.cover_picture:
-                try:
-                    # URL'den dosya adını çıkar
-                    old_file_name = user.cover_picture.split('/')[-1]
-                    storage_service.delete_file(storage_service.cover_bucket, f"{username}/{old_file_name}")
-                except Exception as delete_error:
-                    # Silinemezse sadece logla, devam et
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(f"Eski kapak fotoğrafı silinemedi: {delete_error}")
-            
-            # Yeni kapak fotoğrafı URL'ini kaydet
-            user.cover_picture = upload_result['url']
-            user.save()
-            
-            # Kullanıcı bilgilerini döndür
-            serializer = UserSerializer(user, context={'request': request})
-            return Response({
-                'user': serializer.data,
-                'message': 'Kapak fotoğrafı başarıyla güncellendi',
-                'upload_info': {
-                    'file_name': upload_result.get('file_name'),
-                    'url': upload_result.get('url')
-                }
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"CoverImageUploadView hatası: {str(e)}", exc_info=True)
-            
-            return Response({
-                'error': f'Kapak fotoğrafı yükleme hatası: {str(e)}',
-                'message': 'Sunucu hatası oluştu',
-                'debug_info': {
-                    'exception_type': type(e).__name__,
-                    'exception_message': str(e)
-                }
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# Eski CoverImageUploadView kaldırıldı - Yeni güvenli upload sistemi kullanılıyor
 
 class SupabaseStorageTestView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1165,3 +1005,171 @@ def create_test_users(request):
         'message': f'{len(created_users)} test kullanıcısı oluşturuldu',
         'created_users': created_users
     }, status=status.HTTP_201_CREATED)
+
+# Upload Permission Endpoints
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_upload_permission(request):
+    """Frontend'den güvenli dosya yükleme izni almak için endpoint"""
+    try:
+        user = request.user
+        file_type = request.data.get('file_type')  # 'profile', 'cover', 'post', 'event', 'group', 'bike'
+        file_size = request.data.get('file_size', 0)  # bytes
+        
+        # Dosya tipi kontrolü
+        allowed_types = ['profile', 'cover', 'post', 'event', 'group', 'bike']
+        if file_type not in allowed_types:
+            return Response({
+                'error': 'Geçersiz dosya tipi',
+                'allowed_types': allowed_types
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Dosya boyutu kontrolü (5MB limit)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if file_size > max_size:
+            return Response({
+                'error': 'Dosya çok büyük',
+                'max_size_mb': 5,
+                'current_size_mb': round(file_size / (1024 * 1024), 2)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Supabase Storage servisini al
+        storage_service, error = get_storage_service()
+        if error:
+            return Response(error, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Güvenli dosya yolu oluştur
+        file_extension = request.data.get('file_extension', 'jpg')
+        upload_id = str(uuid.uuid4())
+        timestamp = int(datetime.now().timestamp() * 1000)
+        
+        if file_type == 'profile':
+            file_path = f"{user.username}/profile_{user.username}_{timestamp}.{file_extension}"
+            bucket = storage_service.profile_bucket
+        elif file_type == 'cover':
+            file_path = f"{user.username}/cover_{user.username}_{timestamp}.{file_extension}"
+            bucket = storage_service.cover_bucket
+        elif file_type == 'post':
+            post_id = request.data.get('post_id', upload_id)
+            file_path = f"posts/{post_id}/image_{post_id}_{timestamp}.{file_extension}"
+            bucket = storage_service.posts_bucket
+        elif file_type == 'event':
+            event_id = request.data.get('event_id', upload_id)
+            file_path = f"events/{event_id}/cover_{event_id}_{timestamp}.{file_extension}"
+            bucket = storage_service.events_bucket
+        elif file_type == 'group':
+            group_id = request.data.get('group_id', upload_id)
+            file_path = f"groups/{group_id}/profile_{group_id}_{timestamp}.{file_extension}"
+            bucket = storage_service.groups_bucket
+        elif file_type == 'bike':
+            bike_id = request.data.get('bike_id', upload_id)
+            file_path = f"bikes/{bike_id}/image_{bike_id}_{timestamp}.{file_extension}"
+            bucket = storage_service.bikes_bucket
+        
+        # Supabase'den signed URL al (10 dakika geçerli)
+        try:
+            signed_url_response = storage_service.client.storage.from_(bucket).create_signed_upload_url(
+                file_path,
+                expires_in=600  # 10 dakika
+            )
+            
+            if signed_url_response.get('error'):
+                return Response({
+                    'error': 'Signed URL oluşturulamadı',
+                    'detail': signed_url_response['error']
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            signed_url = signed_url_response.get('signedURL')
+            if not signed_url:
+                return Response({
+                    'error': 'Signed URL alınamadı'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            # Upload permission'ı döndür
+            return Response({
+                'success': True,
+                'upload_permission': {
+                    'upload_id': upload_id,
+                    'upload_url': signed_url,
+                    'file_path': file_path,
+                    'bucket': bucket,
+                    'expires_at': (datetime.now() + timedelta(minutes=10)).isoformat(),
+                    'file_type': file_type,
+                    'user_id': user.id,
+                    'username': user.username
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Supabase bağlantı hatası',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        return Response({
+            'error': 'Upload permission alınamadı',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_upload(request):
+    """Frontend'den yükleme tamamlandığında çağrılır"""
+    try:
+        upload_id = request.data.get('upload_id')
+        file_path = request.data.get('file_path')
+        bucket = request.data.get('bucket')
+        file_type = request.data.get('file_type')
+        
+        if not all([upload_id, file_path, bucket, file_type]):
+            return Response({
+                'error': 'Eksik parametreler',
+                'required': ['upload_id', 'file_path', 'bucket', 'file_type']
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        
+        # Dosyanın gerçekten yüklendiğini kontrol et
+        storage_service, error = get_storage_service()
+        if error:
+            return Response(error, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        try:
+            # Dosyanın varlığını kontrol et
+            file_info = storage_service.client.storage.from_(bucket).get_public_url(file_path)
+            if not file_info:
+                return Response({
+                    'error': 'Dosya bulunamadı'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Public URL'i al
+            public_url = file_info.get('public_url')
+            
+            # Kullanıcı profilini güncelle (sadece profile ve cover için)
+            if file_type in ['profile', 'cover']:
+                if file_type == 'profile':
+                    user.profile_picture = public_url
+                elif file_type == 'cover':
+                    user.cover_picture = public_url
+                user.save()
+            
+            return Response({
+                'success': True,
+                'message': 'Upload başarıyla tamamlandı',
+                'file_url': public_url,
+                'file_path': file_path,
+                'upload_id': upload_id
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': 'Dosya doğrulama hatası',
+                'detail': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    except Exception as e:
+        return Response({
+            'error': 'Upload confirmation hatası',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'dart:io';
 import '../auth/auth_service.dart';
+import '../service_locator.dart';
 import '../../config.dart';
 
 class GroupService {
@@ -71,15 +72,35 @@ class GroupService {
       'description': description,
     });
     
-    // Profil fotoğrafı varsa ekle
+    // Profil fotoğrafı varsa yeni güvenli sistemle yükle
     if (profilePicture != null) {
-      formData.files.add(MapEntry(
-        'profile_picture',
-        await MultipartFile.fromFile(
-          profilePicture.path,
-          filename: profilePicture.path.split('/').last,
-        ),
-      ));
+      try {
+        // Yeni güvenli Supabase upload sistemini kullan
+        final uploadResult = await ServiceLocator.supabaseStorage.uploadGroupPicture(profilePicture);
+        
+        if (uploadResult.success) {
+          // Upload başarılı, URL'i form data'ya ekle
+          formData.fields.add(MapEntry('profile_picture_url', uploadResult.url!));
+        } else {
+          // Fallback: Eski sistemi dene
+          formData.files.add(MapEntry(
+            'profile_picture',
+            await MultipartFile.fromFile(
+              profilePicture.path,
+              filename: profilePicture.path.split('/').last,
+            ),
+          ));
+        }
+      } catch (e) {
+        // Fallback: Eski sistemi dene
+        formData.files.add(MapEntry(
+          'profile_picture',
+          await MultipartFile.fromFile(
+            profilePicture.path,
+            filename: profilePicture.path.split('/').last,
+          ),
+        ));
+      }
     }
     
     // Grup oluştur

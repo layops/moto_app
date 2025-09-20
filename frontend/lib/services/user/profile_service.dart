@@ -11,8 +11,45 @@ class ProfileService {
 
   ProfileService(this._apiClient, this._tokenService);
 
-  /// Profil fotoğrafı yükleme
+  /// Profil fotoğrafı yükleme (Yeni güvenli sistem)
   Future<Response> uploadProfileImage(File imageFile) async {
+    try {
+      // Yeni güvenli Supabase upload sistemini kullan
+      final result = await ServiceLocator.supabaseStorage.uploadProfilePicture(imageFile);
+      
+      if (result.success) {
+        // Başarılı yükleme sonrası cache'leri temizle
+        final username = await ServiceLocator.user.getCurrentUsername();
+        if (username != null) {
+          await _clearProfileCache(username);
+        }
+        
+        // Mock response oluştur (eski sistemle uyumluluk için)
+        return Response(
+          data: {
+            'user': {
+              'profile_picture': result.url,
+              'profile_photo': result.url,
+            }
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        );
+      } else {
+        throw Exception(result.error ?? 'Upload başarısız');
+      }
+    } catch (e) {
+      // Fallback: Eski sistemi dene
+      try {
+        return await _uploadProfileImageLegacy(imageFile);
+      } catch (fallbackError) {
+        throw Exception('Upload başarısız: $e');
+      }
+    }
+  }
+
+  /// Eski profil fotoğrafı yükleme (fallback)
+  Future<Response> _uploadProfileImageLegacy(File imageFile) async {
     try {
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
@@ -48,13 +85,49 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      // print('Profil fotoğrafı yükleme hatası: $e');
       rethrow;
     }
   }
 
-  /// Kapak fotoğrafı yükleme
+  /// Kapak fotoğrafı yükleme (Yeni güvenli sistem)
   Future<Response> uploadCoverImage(File imageFile) async {
+    try {
+      // Yeni güvenli Supabase upload sistemini kullan
+      final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
+      
+      if (result.success) {
+        // Başarılı yükleme sonrası cache'leri temizle
+        final username = await ServiceLocator.user.getCurrentUsername();
+        if (username != null) {
+          await _clearProfileCache(username);
+        }
+        
+        // Mock response oluştur (eski sistemle uyumluluk için)
+        return Response(
+          data: {
+            'user': {
+              'cover_picture': result.url,
+              'cover_photo': result.url,
+            }
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        );
+      } else {
+        throw Exception(result.error ?? 'Upload başarısız');
+      }
+    } catch (e) {
+      // Fallback: Eski sistemi dene
+      try {
+        return await _uploadCoverImageLegacy(imageFile);
+      } catch (fallbackError) {
+        throw Exception('Upload başarısız: $e');
+      }
+    }
+  }
+
+  /// Eski kapak fotoğrafı yükleme (fallback)
+  Future<Response> _uploadCoverImageLegacy(File imageFile) async {
     try {
       final username = await ServiceLocator.user.getCurrentUsername();
       if (username == null) {
@@ -90,7 +163,6 @@ class ProfileService {
 
       return response;
     } catch (e) {
-      // print('Kapak fotoğrafı yükleme hatası: $e');
       rethrow;
     }
   }

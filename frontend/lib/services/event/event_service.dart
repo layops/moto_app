@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import '../auth/auth_service.dart';
+import '../service_locator.dart';
 import '../../config.dart';
 
 class EventService {
@@ -128,18 +129,41 @@ class EventService {
         if (groupId != null) 'group_id': groupId.toString(),
       });
 
-      // Eğer resim dosyası varsa ekle
+      // Eğer resim dosyası varsa yeni güvenli sistemle yükle
       if (coverImageFile != null) {
-        final mimeType = lookupMimeType(coverImageFile.path);
-        final fileExtension = mimeType?.split('/')[1] ?? 'jpg';
+        try {
+          // Yeni güvenli Supabase upload sistemini kullan
+          final uploadResult = await ServiceLocator.supabaseStorage.uploadEventPicture(coverImageFile);
+          
+          if (uploadResult.success) {
+            // Upload başarılı, URL'i form data'ya ekle
+            formData.fields.add(MapEntry('event_image_url', uploadResult.url!));
+          } else {
+            // Fallback: Eski sistemi dene
+            final mimeType = lookupMimeType(coverImageFile.path);
+            final fileExtension = mimeType?.split('/')[1] ?? 'jpg';
 
-        formData.files.add(MapEntry(
-          'event_image',
-          await MultipartFile.fromFile(
-            coverImageFile.path,
-            contentType: MediaType('image', fileExtension),
-          ),
-        ));
+            formData.files.add(MapEntry(
+              'event_image',
+              await MultipartFile.fromFile(
+                coverImageFile.path,
+                contentType: MediaType('image', fileExtension),
+              ),
+            ));
+          }
+        } catch (e) {
+          // Fallback: Eski sistemi dene
+          final mimeType = lookupMimeType(coverImageFile.path);
+          final fileExtension = mimeType?.split('/')[1] ?? 'jpg';
+
+          formData.files.add(MapEntry(
+            'event_image',
+            await MultipartFile.fromFile(
+              coverImageFile.path,
+              contentType: MediaType('image', fileExtension),
+            ),
+          ));
+        }
       }
 
       final response = await _dio.post(
