@@ -1132,7 +1132,12 @@ def request_upload_permission(request):
 @permission_classes([IsAuthenticated])
 def confirm_upload(request):
     """Frontend'den yükleme tamamlandığında çağrılır"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"Confirm upload isteği - User: {request.user.username}, Data: {request.data}")
+        
         upload_id = request.data.get('upload_id')
         file_path = request.data.get('file_path')
         bucket = request.data.get('bucket')
@@ -1152,8 +1157,10 @@ def confirm_upload(request):
             return Response(error, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         try:
+            logger.info(f"Dosya varlığı kontrol ediliyor - Bucket: {bucket}, Path: {file_path}")
             # Dosyanın varlığını kontrol et
             file_info = storage_service.client.storage.from_(bucket).get_public_url(file_path)
+            logger.info(f"Public URL alındı: {file_info}")
             if not file_info:
                 return Response({
                     'error': 'Dosya bulunamadı'
@@ -1179,12 +1186,14 @@ def confirm_upload(request):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
+            logger.error(f"Dosya doğrulama hatası: {str(e)}")
             return Response({
                 'error': 'Dosya doğrulama hatası',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
     except Exception as e:
+        logger.error(f"Upload confirmation genel hatası: {str(e)}")
         return Response({
             'error': 'Upload confirmation hatası',
             'detail': str(e)
