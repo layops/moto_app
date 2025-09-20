@@ -89,10 +89,10 @@ class ProfileService {
     }
   }
 
-  /// Kapak fotoğrafı yükleme (Yeni güvenli sistem)
+  /// Kapak fotoğrafı yükleme (Sadece Supabase Storage)
   Future<Response> uploadCoverImage(File imageFile) async {
     try {
-      // Yeni güvenli Supabase upload sistemini kullan
+      // Sadece Supabase storage kullan
       final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
       
       if (result.success) {
@@ -102,7 +102,6 @@ class ProfileService {
           await _clearProfileCache(username);
         }
         
-        // Mock response oluştur (eski sistemle uyumluluk için)
         return Response(
           data: {
             'user': {
@@ -117,12 +116,7 @@ class ProfileService {
         throw Exception(result.error ?? 'Upload başarısız');
       }
     } catch (e) {
-      // Fallback: Eski sistemi dene
-      try {
-        return await _uploadCoverImageLegacy(imageFile);
-      } catch (fallbackError) {
-        throw Exception('Upload başarısız: $e');
-      }
+      throw Exception('Upload başarısız: $e');
     }
   }
 

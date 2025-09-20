@@ -155,6 +155,7 @@ class ServiceLocator {
       // 18. Initialize Supabase Storage service
       instance._supabaseStorageService = SupabaseStorageService();
 
+
       _isInitialized = true;
     } catch (e, stackTrace) {
       _isInitialized = false;
