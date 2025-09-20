@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/services/chat/chat_service.dart';
@@ -292,12 +293,14 @@ class _ProfilePageState extends State<ProfilePage> {
             await _clearProfileCache();
             
             if (mounted) {
+              // ProfileService response'unda profile_picture kullanılıyor, profile_photo_url değil
+              final photoUrl = updatedUser['profile_picture'] ?? updatedUser['profile_photo_url'];
               setState(() {
-                _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'];
-                _profileData?['profile_picture'] = updatedUser['profile_photo_url'];
+                _profileData?['profile_photo_url'] = photoUrl;
+                _profileData?['profile_picture'] = photoUrl;
                 _avatarFile = null;
               });
-              print('🔥 PROFILE PAGE - State updated with new photo URL: ${updatedUser['profile_photo_url']}');
+              print('🔥 PROFILE PAGE - State updated with new photo URL: $photoUrl');
               print('🔥 PROFILE PAGE - _profileData after update: ${_profileData?['profile_photo_url']}');
             }
             
@@ -336,18 +339,25 @@ class _ProfilePageState extends State<ProfilePage> {
           networkImageUrl: _profileData?['cover_photo_url'] ?? _profileData?['cover_picture'],
           onImageSelected: (File image) => setState(() => _coverFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) async {
+            print('🔥 COVER PAGE - onUploadSuccess called with: $updatedUser');
+            
             // Cache'leri temizle
             await _clearProfileCache();
             
             if (mounted) {
+              // Kapak fotoğrafı response'unda profile_picture field'ı kullanılıyor (yanlış field adı)
+              final coverUrl = updatedUser['profile_picture'] ?? updatedUser['cover_picture'] ?? updatedUser['cover_photo_url'];
               setState(() {
-                _profileData?['cover_photo_url'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
-                _profileData?['cover_picture'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
+                _profileData?['cover_photo_url'] = coverUrl;
+                _profileData?['cover_picture'] = coverUrl;
                 _coverFile = null;
               });
+              print('🔥 COVER PAGE - State updated with new cover URL: $coverUrl');
+              print('🔥 COVER PAGE - _profileData after update: ${_profileData?['cover_photo_url']}');
             }
             
             // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
+            print('🔥 COVER PAGE - Loading fresh profile data');
             await _loadProfileFresh();
             
             // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
@@ -424,7 +434,18 @@ class _ProfilePageState extends State<ProfilePage> {
         // Memory cache'leri de temizle
         await ServiceLocator.storage.clearMemoryCache();
         
-        // print('✅ ProfilePage - Tüm cache\'ler temizlendi: $_currentUsername');
+        // SharedPreferences'ten de temizle (hot restart için)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('profile_data');
+        await prefs.remove('user_profile');
+        await prefs.remove('profile_photo_url');
+        await prefs.remove('cover_photo_url');
+        await prefs.remove('cached_profile_${_currentUsername}');
+        
+        // Memory'den de temizle
+        _profileData = null;
+        
+        print('🔥 Cache cleared successfully (local + supabase + prefs + memory)');
       }
     } catch (e) {
       // print('❌ ProfilePage - Cache temizleme hatası: $e');
@@ -573,6 +594,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Container(
                   margin: const EdgeInsets.only(top: 100), // AppBar için boşluk
                   child: ProfileHeader(
+                    key: ValueKey('${_profileData?['profile_photo_url'] ?? 'no_avatar'}_${_profileData?['cover_photo_url'] ?? 'no_cover'}'),
                     avatarFile: _avatarFile,
                     avatarUrl: _profileData?['profile_photo_url'],
                     coverFile: _coverFile,

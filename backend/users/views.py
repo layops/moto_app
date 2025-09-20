@@ -1155,6 +1155,16 @@ def confirm_upload(request):
                 elif file_type == 'cover':
                     user.cover_picture = public_url
                 user.save()
+                
+                # Cache temizleme (hot restart için)
+                try:
+                    from django.core.cache import cache
+                    cache.delete(f'user_profile_{user.username}')
+                    cache.delete(f'profile_data_{user.username}')
+                    cache.delete(f'user_{user.id}')
+                    logger.info(f"Cache temizlendi: {user.username}")
+                except Exception as cache_error:
+                    logger.warning(f"Cache temizleme hatası: {cache_error}")
             
             return Response({
                 'success': True,

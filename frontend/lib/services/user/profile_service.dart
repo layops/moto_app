@@ -106,7 +106,9 @@ class ProfileService {
             await _clearProfileCache(username);
           }
           
-          // Cache temizleme (geçici olarak kaldırıldı)
+          // Cache temizleme - hard refresh için timestamp ekle
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        print('🔥 Cover upload completed at: $timestamp');
           
           return Response(
             data: {
