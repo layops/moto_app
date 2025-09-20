@@ -49,7 +49,12 @@ class ProfileHeader extends StatelessWidget {
 
   ImageProvider<Object>? _getImage(File? file, String? url) {
     if (file != null) return FileImage(file);
-    if (url != null && url.isNotEmpty) return NetworkImage(url);
+    if (url != null && url.isNotEmpty) {
+      // Cache bypass için timestamp ekle
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final urlWithTimestamp = '$url?t=$timestamp';
+      return NetworkImage(urlWithTimestamp);
+    }
     return null;
   }
 

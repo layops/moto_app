@@ -87,11 +87,16 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
+        print('🔥 UPLOAD SUCCESS - Response data: $responseData');
         if (responseData is Map<String, dynamic> &&
             responseData.containsKey('user')) {
           final userData = responseData['user'];
+          print('🔥 UPLOAD SUCCESS - User data: $userData');
           await ServiceLocator.storage.saveProfileData(userData);
+          print('🔥 UPLOAD SUCCESS - Calling onUploadSuccess callback');
           widget.onUploadSuccess?.call(userData);
+        } else {
+          print('🔥 UPLOAD SUCCESS - No user data in response');
         }
 
         _showMessage(

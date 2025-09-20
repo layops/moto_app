@@ -286,6 +286,8 @@ class _ProfilePageState extends State<ProfilePage> {
           networkImageUrl: _profileData?['profile_photo_url'],
           onImageSelected: (File image) => setState(() => _avatarFile = image),
           onUploadSuccess: (Map<String, dynamic> updatedUser) async {
+            print('🔥 PROFILE PAGE - onUploadSuccess called with: $updatedUser');
+            
             // Cache'leri temizle
             await _clearProfileCache();
             
@@ -295,9 +297,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 _profileData?['profile_picture'] = updatedUser['profile_photo_url'];
                 _avatarFile = null;
               });
+              print('🔥 PROFILE PAGE - State updated with new photo URL');
             }
             
             // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
+            print('🔥 PROFILE PAGE - Loading fresh profile data');
             await _loadProfileFresh();
             
             // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
