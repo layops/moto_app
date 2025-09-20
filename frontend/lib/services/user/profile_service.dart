@@ -89,135 +89,37 @@ class ProfileService {
     }
   }
 
-  /// Kapak fotoğrafı yükleme (Yeni güvenli sistem)
+  /// Kapak fotoğrafı yükleme (Sadece Supabase Storage)
   Future<Response> uploadCoverImage(File imageFile) async {
     try {
-      // Önce yeni güvenli sistemi dene
-      final result = await _uploadCoverImageSecure(imageFile);
-      return result;
-    } catch (e) {
-      // Fallback: Eski Supabase sistemini dene
-      try {
-        final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
-        
-        if (result.success) {
-          // Başarılı yükleme sonrası cache'leri temizle
-          final username = await ServiceLocator.user.getCurrentUsername();
-          if (username != null) {
-            await _clearProfileCache(username);
-          }
-          
-          return Response(
-            data: {
-              'user': {
-                'cover_picture': result.url,
-                'cover_photo': result.url,
-              }
-            },
-            statusCode: 200,
-            requestOptions: RequestOptions(path: ''),
-          );
-        } else {
-          throw Exception(result.error ?? 'Upload başarısız');
+      // Doğrudan Supabase Storage kullan
+      final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
+      
+      if (result.success) {
+        // Başarılı yükleme sonrası cache'leri temizle
+        final username = await ServiceLocator.user.getCurrentUsername();
+        if (username != null) {
+          await _clearProfileCache(username);
         }
-      } catch (fallbackError) {
-        throw Exception('Upload başarısız: $e');
+        
+        return Response(
+          data: {
+            'user': {
+              'cover_picture': result.url,
+              'cover_photo': result.url,
+            }
+          },
+          statusCode: 200,
+          requestOptions: RequestOptions(path: ''),
+        );
+      } else {
+        throw Exception(result.error ?? 'Upload başarısız');
       }
-    }
-  }
-
-  /// Yeni güvenli upload sistemi (Backend ile uyumlu)
-  Future<Response> _uploadCoverImageSecure(File imageFile) async {
-    try {
-      final token = await _tokenService.getToken();
-      if (token == null) {
-        throw Exception('Oturum süresi doldu');
-      }
-
-      final username = await ServiceLocator.user.getCurrentUsername();
-      if (username == null) {
-        throw Exception('Kullanıcı adı bulunamadı');
-      }
-
-      // 1. Upload permission al
-      final permissionResponse = await _apiClient.post(
-        'users/upload-permission/',
-        {
-          'file_type': 'cover',
-          'file_size': await imageFile.length(),
-          'file_extension': imageFile.path.split('.').last,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-
-      if (permissionResponse.statusCode != 200) {
-        throw Exception('Upload permission alınamadı: ${permissionResponse.statusCode}');
-      }
-
-      final permissionData = permissionResponse.data;
-      final uploadUrl = permissionData['upload_permission']['upload_url'];
-      final filePath = permissionData['upload_permission']['file_path'];
-      final bucket = permissionData['upload_permission']['bucket'];
-      final uploadId = permissionData['upload_permission']['upload_id'];
-
-      // 2. Dosyayı Supabase'e yükle
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(imageFile.path),
-      });
-
-      final uploadResponse = await _apiClient.post(
-        uploadUrl,
-        formData,
-        options: Options(
-          headers: {'Content-Type': 'multipart/form-data'},
-        ),
-      );
-
-      if (uploadResponse.statusCode != 200) {
-        throw Exception('Dosya yükleme başarısız: ${uploadResponse.statusCode}');
-      }
-
-      // 3. Upload'ı onayla
-      final confirmResponse = await _apiClient.post(
-        'users/confirm-upload/',
-        {
-          'upload_id': uploadId,
-          'file_path': filePath,
-          'bucket': bucket,
-          'file_type': 'cover',
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-
-      if (confirmResponse.statusCode != 200) {
-        throw Exception('Upload onayı başarısız: ${confirmResponse.statusCode}');
-      }
-
-      final confirmData = confirmResponse.data;
-      final fileUrl = confirmData['file_url'];
-
-      // Cache'leri temizle
-      await _clearProfileCache(username);
-
-      return Response(
-        data: {
-          'user': {
-            'cover_picture': fileUrl,
-            'cover_photo': fileUrl,
-          }
-        },
-        statusCode: 200,
-        requestOptions: RequestOptions(path: ''),
-      );
-
     } catch (e) {
-      throw Exception('Güvenli upload başarısız: $e');
+      throw Exception('Upload başarısız: $e');
     }
   }
+
 
   /// Eski kapak fotoğrafı yükleme (fallback)
   Future<Response> _uploadCoverImageLegacy(File imageFile) async {

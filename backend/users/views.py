@@ -1075,36 +1075,15 @@ def request_upload_permission(request):
             file_path = f"bikes/{bike_id}/image_{bike_id}_{timestamp}.{file_extension}"
             bucket = storage_service.bikes_bucket
         
-        # Supabase'den signed URL al (10 dakika geçerli)
+        # Doğrudan Supabase'e upload yap (signed URL yerine)
         try:
-            logger.info(f"Signed URL oluşturuluyor - Bucket: {bucket}, Path: {file_path}")
+            logger.info(f"Supabase'e upload yapılıyor - Bucket: {bucket}, Path: {file_path}")
             
-            # Supabase'den signed upload URL al
-            storage_bucket = storage_service.client.storage.from_(bucket)
-            signed_url_response = storage_bucket.create_signed_upload_url(file_path)
-            logger.info(f"Signed URL response: {signed_url_response}")
-            
-            if signed_url_response.get('error'):
-                return Response({
-                    'error': 'Signed URL oluşturulamadı',
-                    'detail': signed_url_response['error']
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            # Supabase response formatını kontrol et
-            signed_url = signed_url_response.get('signed_url') or signed_url_response.get('signedURL')
-            if not signed_url:
-                logger.error(f"Signed URL bulunamadı. Response keys: {list(signed_url_response.keys())}")
-                return Response({
-                    'error': 'Signed URL alınamadı',
-                    'response_keys': list(signed_url_response.keys())
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            # Upload permission'ı döndür
+            # Dosya yolu ve bucket bilgisini döndür (frontend doğrudan Supabase'e upload yapacak)
             return Response({
                 'success': True,
                 'upload_permission': {
                     'upload_id': upload_id,
-                    'upload_url': signed_url,
                     'file_path': file_path,
                     'bucket': bucket,
                     'expires_at': (datetime.now() + timedelta(minutes=10)).isoformat(),
