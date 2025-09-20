@@ -92,6 +92,21 @@ class SupabaseStorageService {
   }
 
 
+  /// Supabase bağlantısını test et
+  Future<void> testSupabaseConnection() async {
+    try {
+      print('🔥 TESTING SUPABASE CONNECTION...');
+      print('🔥 Supabase URL: ${Supabase.instance.client.supabaseUrl}');
+      print('🔥 Supabase Key: ${Supabase.instance.client.supabaseKey.substring(0, 20)}...');
+      
+      // Basit bir test yap
+      final response = await Supabase.instance.client.from('users').select('count').limit(1);
+      print('🔥 Database connection test: SUCCESS');
+    } catch (e) {
+      print('🔥 Database connection test: FAILED - $e');
+    }
+  }
+
   /// Kapak fotoğrafı yükleme
   Future<UploadResult> uploadCoverPicture(File imageFile) async {
     try {
@@ -99,6 +114,9 @@ class SupabaseStorageService {
       print('🔥 Bucket: $_coverBucket');
       print('🔥 File path: ${imageFile.path}');
       print('🔥 File size: ${await imageFile.length()} bytes');
+      
+      // Supabase bağlantısını test et
+      await testSupabaseConnection();
       
       // Bucket'ın var olup olmadığını kontrol et
       String bucketToUse = _coverBucket;
@@ -110,22 +128,39 @@ class SupabaseStorageService {
         if (!coverBucketExists) {
           print('🔥 WARNING: Cover bucket $_coverBucket does not exist!');
           
-          // Alternatif bucket'ları dene
-          final alternatives = ['moto-app-storage', 'profile_pictures', 'images', 'storage'];
-          for (final altBucket in alternatives) {
-            if (buckets.any((bucket) => bucket.name == altBucket)) {
-              bucketToUse = altBucket;
-              print('🔥 Using alternative bucket: $bucketToUse');
-              break;
-            }
-          }
-          
-          // Hiç bucket yoksa hata döndür
-          if (!buckets.any((bucket) => bucket.name == bucketToUse)) {
-            return UploadResult(
-              success: false,
-              error: 'Hiçbir storage bucket bulunamadı. Lütfen yönetici ile iletişime geçin.',
+          // Bucket oluşturmayı dene
+          try {
+            print('🔥 Attempting to create bucket: $_coverBucket');
+            await Supabase.instance.client.storage.createBucket(
+              _coverBucket,
+              BucketOptions(
+                public: true,
+                allowedMimeTypes: ['image/*'],
+                fileSizeLimit: 5 * 1024 * 1024, // 5MB
+              ),
             );
+            print('🔥 Bucket created successfully: $_coverBucket');
+            bucketToUse = _coverBucket;
+          } catch (createError) {
+            print('🔥 Failed to create bucket: $createError');
+            
+            // Alternatif bucket'ları dene
+            final alternatives = ['moto-app-storage', 'profile_pictures', 'images', 'storage'];
+            for (final altBucket in alternatives) {
+              if (buckets.any((bucket) => bucket.name == altBucket)) {
+                bucketToUse = altBucket;
+                print('🔥 Using alternative bucket: $bucketToUse');
+                break;
+              }
+            }
+            
+            // Hiç bucket yoksa hata döndür
+            if (!buckets.any((bucket) => bucket.name == bucketToUse)) {
+              return UploadResult(
+                success: false,
+                error: 'Hiçbir storage bucket bulunamadı. Lütfen yönetici ile iletişime geçin.',
+              );
+            }
           }
         }
       } catch (bucketError) {
