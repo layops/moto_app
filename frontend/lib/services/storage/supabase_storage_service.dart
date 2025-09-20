@@ -96,14 +96,27 @@ class SupabaseStorageService {
   Future<void> testSupabaseConnection() async {
     try {
       print('🔥 TESTING SUPABASE CONNECTION...');
-      print('🔥 Supabase URL: ${Supabase.instance.client.supabaseUrl}');
-      print('🔥 Supabase Key: ${Supabase.instance.client.supabaseKey.substring(0, 20)}...');
+      print('🔥 Supabase URL: ${SupabaseConfig.supabaseUrl}');
+      print('🔥 Supabase Key: ${SupabaseConfig.supabaseAnonKey.substring(0, 20)}...');
       
-      // Basit bir test yap
-      final response = await Supabase.instance.client.from('users').select('count').limit(1);
-      print('🔥 Database connection test: SUCCESS');
+      // Storage bucket'larını test et
+      try {
+        final buckets = await Supabase.instance.client.storage.listBuckets();
+        print('🔥 Storage buckets test: SUCCESS');
+        print('🔥 Available buckets: ${buckets.map((b) => b.name).toList()}');
+      } catch (storageError) {
+        print('🔥 Storage buckets test: FAILED - $storageError');
+      }
+      
+      // Basit bir test yap (users tablosu yerine auth test)
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        print('🔥 Auth test: SUCCESS - User: ${user?.email ?? "Anonymous"}');
+      } catch (authError) {
+        print('🔥 Auth test: FAILED - $authError');
+      }
     } catch (e) {
-      print('🔥 Database connection test: FAILED - $e');
+      print('🔥 General connection test: FAILED - $e');
     }
   }
 
@@ -118,60 +131,17 @@ class SupabaseStorageService {
       // Supabase bağlantısını test et
       await testSupabaseConnection();
       
-      // Bucket'ın var olup olmadığını kontrol et
-      String bucketToUse = _coverBucket;
-      try {
-        final buckets = await Supabase.instance.client.storage.listBuckets();
-        print('🔥 Available buckets: ${buckets.map((b) => b.name).toList()}');
-        
-        final coverBucketExists = buckets.any((bucket) => bucket.name == _coverBucket);
-        if (!coverBucketExists) {
-          print('🔥 WARNING: Cover bucket $_coverBucket does not exist!');
-          
-          // Bucket oluşturmayı dene
-          try {
-            print('🔥 Attempting to create bucket: $_coverBucket');
-            await Supabase.instance.client.storage.createBucket(
-              _coverBucket,
-              BucketOptions(
-                public: true,
-                allowedMimeTypes: ['image/*'],
-                fileSizeLimit: 5 * 1024 * 1024, // 5MB
-              ),
-            );
-            print('🔥 Bucket created successfully: $_coverBucket');
-            bucketToUse = _coverBucket;
-          } catch (createError) {
-            print('🔥 Failed to create bucket: $createError');
-            
-            // Alternatif bucket'ları dene
-            final alternatives = ['moto-app-storage', 'profile_pictures', 'images', 'storage'];
-            for (final altBucket in alternatives) {
-              if (buckets.any((bucket) => bucket.name == altBucket)) {
-                bucketToUse = altBucket;
-                print('🔥 Using alternative bucket: $bucketToUse');
-                break;
-              }
-            }
-            
-            // Hiç bucket yoksa hata döndür
-            if (!buckets.any((bucket) => bucket.name == bucketToUse)) {
-              return UploadResult(
-                success: false,
-                error: 'Hiçbir storage bucket bulunamadı. Lütfen yönetici ile iletişime geçin.',
-              );
-            }
-          }
-        }
-      } catch (bucketError) {
-        print('🔥 Bucket check error: $bucketError');
-      }
+      // Hardcoded bucket kullan (RLS sorunu nedeniyle)
+      String bucketToUse = 'cover_pictures'; // Supabase'de mevcut bucket
+      print('🔥 Using hardcoded bucket: $bucketToUse');
       
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'cover_${timestamp}.$extension';
       
       print('🔥 File name: $fileName');
+      
+      print('🔥 Attempting upload to bucket: $bucketToUse');
       
       final response = await Supabase.instance.client.storage
           .from(bucketToUse)
