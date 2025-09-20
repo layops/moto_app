@@ -15,6 +15,7 @@ def get_safe_content_type(file) -> str:
     """Django file object'inden güvenli content_type alır"""
     content_type = getattr(file, 'content_type', None)
 
+    # Boolean değer kontrolü ekle
     if not content_type or isinstance(content_type, bool):
         file_name = getattr(file, 'name', '')
         ext = file_name.lower().split('.')[-1] if '.' in file_name else ''
@@ -26,6 +27,12 @@ def get_safe_content_type(file) -> str:
             'webp': 'image/webp'
         }
         return mapping.get(ext, 'application/octet-stream')
+    
+    # Content type'ın string olduğundan emin ol
+    if not isinstance(content_type, str):
+        logger.warning(f"Content type beklenmeyen tip: {type(content_type)}, varsayılan kullanılıyor")
+        return 'application/octet-stream'
+        
     return content_type
 
 class SupabaseStorageService:
@@ -64,24 +71,28 @@ class SupabaseStorageService:
 
     def _read_file_as_bytes(self, file) -> bytes:
         """Dosyayı güvenli şekilde oku ve bytes olarak döndür"""
-        try:
-            if hasattr(file, 'seek'):
-                file.seek(0)
-
-            if hasattr(file, 'chunks'):
-                content = b''.join(chunk for chunk in file.chunks() if isinstance(chunk, bytes))
-                if not content:
-                    raise ValueError("Dosya boş veya okunamadı (chunks)")
+        if not file:
+            raise ValueError("Dosya None veya boş geldi")
+        
+        if hasattr(file, 'chunks'):
+            content = b''.join(chunk for chunk in file.chunks() if isinstance(chunk, bytes))
+            if content:
                 return content
-            elif hasattr(file, 'read'):
-                content = file.read()
-                if isinstance(content, bytes):
-                    return content
-                raise ValueError("Dosya içeriği bytes değil")
-            raise ValueError("Dosya okunamıyor")
-        except Exception as e:
-            logger.error(f"❌ Dosya okuma hatası: {e}")
-            raise
+        
+        if hasattr(file, 'read'):
+            file.seek(0)
+            content = file.read()
+            
+            if isinstance(content, bool) or content is None:
+                raise ValueError(f"Dosya okuma hatası: içerik boolean veya None döndü ({content})")
+            
+            if isinstance(content, str):
+                return content.encode('utf-8')
+            
+            if isinstance(content, bytes):
+                return content
+        
+        raise ValueError(f"Dosya okunamadı, tip: {type(file)}")
 
     def upload_file(self, file, bucket_type: str, file_path: str, content_type: str = None, max_retries: int = 3) -> Dict[str, Any]:
         """Generic dosya yükleme fonksiyonu - retry mekanizması ile"""
@@ -95,6 +106,9 @@ class SupabaseStorageService:
         for attempt in range(max_retries):
             try:
                 file_content = self._read_file_as_bytes(file)
+                if not isinstance(file_content, (bytes, bytearray)):
+                    raise ValueError(f"Dosya içeriği geçersiz tip: {type(file_content)}")
+                
                 content_type = content_type or get_safe_content_type(file)
                 bucket_name = self.buckets[bucket_type]
 
