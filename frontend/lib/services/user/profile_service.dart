@@ -24,6 +24,8 @@ class ProfileService {
           await _clearProfileCache(username);
         }
         
+        // Cache temizleme (geçici olarak kaldırıldı)
+        
         // Mock response oluştur (eski sistemle uyumluluk için)
         return Response(
           data: {
@@ -95,26 +97,28 @@ class ProfileService {
       // Doğrudan Supabase Storage kullan
       final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
       
-      if (result.success) {
-        // Başarılı yükleme sonrası cache'leri temizle
-        final username = await ServiceLocator.user.getCurrentUsername();
-        if (username != null) {
-          await _clearProfileCache(username);
+        if (result.success) {
+          // Başarılı yükleme sonrası cache'leri temizle
+          final username = await ServiceLocator.user.getCurrentUsername();
+          if (username != null) {
+            await _clearProfileCache(username);
+          }
+          
+          // Cache temizleme (geçici olarak kaldırıldı)
+          
+          return Response(
+            data: {
+              'user': {
+                'profile_picture': result.url,
+                'profile_photo': result.url,
+              }
+            },
+            statusCode: 200,
+            requestOptions: RequestOptions(path: ''),
+          );
+        } else {
+          throw Exception(result.error ?? 'Upload başarısız');
         }
-        
-        return Response(
-          data: {
-            'user': {
-              'cover_picture': result.url,
-              'cover_photo': result.url,
-            }
-          },
-          statusCode: 200,
-          requestOptions: RequestOptions(path: ''),
-        );
-      } else {
-        throw Exception(result.error ?? 'Upload başarısız');
-      }
     } catch (e) {
       throw Exception('Upload başarısız: $e');
     }
