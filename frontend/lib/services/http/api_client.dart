@@ -384,3 +384,8 @@ class CacheEntry {
     return DateTime.now().difference(timestamp) > duration;
   }
 }
+
+// ApiClient sınıfına baseUrl getter'ı ekle
+extension ApiClientExtension on ApiClient {
+  String get baseUrl => _dio.options.baseUrl;
+}

@@ -1011,7 +1011,12 @@ def create_test_users(request):
 @permission_classes([IsAuthenticated])
 def request_upload_permission(request):
     """Frontend'den güvenli dosya yükleme izni almak için endpoint"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"Upload permission isteği - User: {request.user.username}, Data: {request.data}")
+        
         user = request.user
         file_type = request.data.get('file_type')  # 'profile', 'cover', 'post', 'event', 'group', 'bike'
         file_size = request.data.get('file_size', 0)  # bytes
@@ -1034,9 +1039,13 @@ def request_upload_permission(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Supabase Storage servisini al
+        logger.info("Supabase Storage servisi alınıyor...")
         storage_service, error = get_storage_service()
         if error:
+            logger.error(f"Storage servisi hatası: {error}")
             return Response(error, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        logger.info(f"Storage servisi başarıyla alındı - Available: {storage_service.is_available}")
         
         # Güvenli dosya yolu oluştur
         file_extension = request.data.get('file_extension', 'jpg')
@@ -1068,10 +1077,12 @@ def request_upload_permission(request):
         
         # Supabase'den signed URL al (10 dakika geçerli)
         try:
+            logger.info(f"Signed URL oluşturuluyor - Bucket: {bucket}, Path: {file_path}")
             signed_url_response = storage_service.client.storage.from_(bucket).create_signed_upload_url(
                 file_path,
                 expires_in=600  # 10 dakika
             )
+            logger.info(f"Signed URL response: {signed_url_response}")
             
             if signed_url_response.get('error'):
                 return Response({
@@ -1101,12 +1112,14 @@ def request_upload_permission(request):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
+            logger.error(f"Supabase signed URL hatası: {str(e)}")
             return Response({
                 'error': 'Supabase bağlantı hatası',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
     except Exception as e:
+        logger.error(f"Upload permission genel hatası: {str(e)}")
         return Response({
             'error': 'Upload permission alınamadı',
             'detail': str(e)
