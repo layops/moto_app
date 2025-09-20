@@ -168,23 +168,25 @@ class ProfileService {
   }
 
   /// Mevcut profil bilgilerini getirme
-  Future<Map<String, dynamic>> getProfile(String username) async {
+  Future<Map<String, dynamic>> getProfile(String username, {bool useCache = true}) async {
     try {
       final token = await _tokenService.getToken();
       if (token == null) {
         throw Exception('Oturum süresi doldu');
       }
 
-      final response = await _apiClient.get('users/$username/profile/');
+      final response = await _apiClient.get('users/$username/profile/', useCache: useCache);
       final data = response.data as Map<String, dynamic>;
 
       if (data.containsKey('profile_picture') &&
           data['profile_picture'] != null) {
         data['profile_photo'] = data['profile_picture'];
+        data['profile_photo_url'] = data['profile_picture'];
       }
 
       if (data.containsKey('cover_picture') && data['cover_picture'] != null) {
         data['cover_photo'] = data['cover_picture'];
+        data['cover_photo_url'] = data['cover_picture'];
       }
 
       return data;
@@ -234,21 +236,30 @@ class ProfileService {
     }
   }
 
-  /// Profil cache'ini temizle
-  Future<void> _clearProfileCache(String username) async {
+  /// Profil cache'ini temizle (public method)
+  Future<void> clearProfileCache(String username) async {
     try {
       // UserService cache'ini temizle
       ServiceLocator.user.clearUserCache(username);
       
-      // API Client cache'ini temizle
+      // API Client cache'ini temizle - daha kapsamlı
       ServiceLocator.api.clearCacheForPath('users/$username/profile/');
+      ServiceLocator.api.clearCacheForPath('users/$username/');
       
       // LocalStorage'daki profil verilerini temizle
       await ServiceLocator.storage.clearProfileData();
+      
+      // Memory cache'leri de temizle
+      await ServiceLocator.storage.clearMemoryCache();
       
       // print('✅ ProfileService - Cache temizlendi: $username');
     } catch (e) {
       // print('❌ ProfileService - Cache temizleme hatası: $e');
     }
+  }
+
+  /// Profil cache'ini temizle (private method - backward compatibility)
+  Future<void> _clearProfileCache(String username) async {
+    await clearProfileCache(username);
   }
 }

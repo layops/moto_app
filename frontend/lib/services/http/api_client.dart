@@ -212,6 +212,24 @@ class ApiClient {
     _cache.remove(path);
   }
   
+  /// Belirli bir pattern'e uyan tüm cache'leri temizle
+  void clearCacheForPattern(String pattern) {
+    final keysToRemove = <String>[];
+    for (final key in _cache.keys) {
+      if (key.contains(pattern)) {
+        keysToRemove.add(key);
+      }
+    }
+    for (final key in keysToRemove) {
+      _cache.remove(key);
+    }
+  }
+  
+  /// Kullanıcı ile ilgili tüm cache'leri temizle
+  void clearUserCache(String username) {
+    clearCacheForPattern('users/$username');
+  }
+  
   // Arama cache'ini temizle
   void clearSearchCache() {
     final keysToRemove = <String>[];

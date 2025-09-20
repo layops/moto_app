@@ -83,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final isCurrentUser = _currentUsername == currentUsername;
 
       // Önce profil verilerini yükle
-      final profileData = await _loadProfileData();
+      final profileData = await _loadProfileData(useCache: true);
       
       if (!mounted) return;
       
@@ -119,9 +119,31 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<Map<String, dynamic>?> _loadProfileData() async {
+  /// Cache temizlendikten sonra fresh profil verilerini yükle
+  Future<void> _loadProfileFresh() async {
+    if (_currentUsername == null) return;
+
     try {
-      return await ServiceLocator.profile.getProfile(_currentUsername!);
+      // Fresh data al (cache bypass)
+      final profileData = await _loadProfileData(useCache: false);
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _profileData = profileData;
+        _followerCount = profileData?['followers_count'] ?? 0;
+        _isFollowing = profileData?['is_following'] ?? false;
+      });
+    } catch (e) {
+      // Hata durumunda normal yükleme yap
+      await _loadProfile();
+    }
+  }
+
+  Future<Map<String, dynamic>?> _loadProfileData({bool useCache = true}) async {
+    try {
+      // Cache temizlendikten sonra fresh data almak için useCache=false
+      return await ServiceLocator.profile.getProfile(_currentUsername!, useCache: useCache);
     } catch (e) {
       // debugPrint('Profil verisi yüklenirken hata: $e');
       return null;
@@ -267,14 +289,25 @@ class _ProfilePageState extends State<ProfilePage> {
             // Cache'leri temizle
             await _clearProfileCache();
             
-            setState(() {
-              _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'];
-              _avatarFile = null;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Profil fotoğrafı başarıyla güncellendi!')),
-            );
+            if (mounted) {
+              setState(() {
+                _profileData?['profile_photo_url'] = updatedUser['profile_photo_url'];
+                _profileData?['profile_picture'] = updatedUser['profile_photo_url'];
+                _avatarFile = null;
+              });
+            }
+            
+            // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
+            await _loadProfileFresh();
+            
+            // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Profil fotoğrafı başarıyla güncellendi!')),
+              );
+            }
           },
         ),
         actions: [
@@ -297,15 +330,29 @@ class _ProfilePageState extends State<ProfilePage> {
           type: PhotoType.cover, // <-- type eklendi
           networkImageUrl: _profileData?['cover_photo_url'] ?? _profileData?['cover_picture'],
           onImageSelected: (File image) => setState(() => _coverFile = image),
-          onUploadSuccess: (Map<String, dynamic> updatedUser) {
-            setState(() {
-              _profileData?['cover_photo_url'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
-              _coverFile = null;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Kapak fotoğrafı başarıyla güncellendi!')),
-            );
+          onUploadSuccess: (Map<String, dynamic> updatedUser) async {
+            // Cache'leri temizle
+            await _clearProfileCache();
+            
+            if (mounted) {
+              setState(() {
+                _profileData?['cover_photo_url'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
+                _profileData?['cover_picture'] = updatedUser['cover_photo_url'] ?? updatedUser['cover_picture'];
+                _coverFile = null;
+              });
+            }
+            
+            // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
+            await _loadProfileFresh();
+            
+            // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Kapak fotoğrafı başarıyla güncellendi!')),
+              );
+            }
           },
         ),
         actions: [
@@ -357,18 +404,25 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _clearProfileCache() async {
     try {
       if (_currentUsername != null) {
+        // ProfileService cache'ini temizle (en kapsamlı)
+        await ServiceLocator.profile.clearProfileCache(_currentUsername!);
+        
         // UserService cache'ini temizle
         ServiceLocator.user.clearUserCache(_currentUsername!);
         
-        // API Client cache'ini temizle
-        ServiceLocator.api.clearCacheForPath('users/$_currentUsername/profile/');
+        // API Client cache'ini temizle - kullanıcı ile ilgili tüm cache'ler
+        ServiceLocator.api.clearUserCache(_currentUsername!);
         
         // LocalStorage'daki profil verilerini temizle
         await ServiceLocator.storage.clearProfileData();
         
+        // Memory cache'leri de temizle
+        await ServiceLocator.storage.clearMemoryCache();
+        
+        // print('✅ ProfilePage - Tüm cache\'ler temizlendi: $_currentUsername');
       }
     } catch (e) {
-      // Hata durumunda sessizce devam et
+      // print('❌ ProfilePage - Cache temizleme hatası: $e');
     }
   }
 
