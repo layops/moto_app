@@ -1078,10 +1078,26 @@ def request_upload_permission(request):
         # Supabase'den signed URL al (10 dakika geçerli)
         try:
             logger.info(f"Signed URL oluşturuluyor - Bucket: {bucket}, Path: {file_path}")
-            # Supabase Python client'ında parametresiz deneme
-            signed_url_response = storage_service.client.storage.from_(bucket).create_signed_upload_url(
-                file_path
-            )
+            
+            # Mevcut metodları kontrol et
+            storage_bucket = storage_service.client.storage.from_(bucket)
+            available_methods = [method for method in dir(storage_bucket) if not method.startswith('_')]
+            logger.info(f"Mevcut storage metodları: {available_methods}")
+            
+            # Farklı metod adları dene
+            try:
+                # Parametresiz deneme
+                signed_url_response = storage_bucket.create_signed_upload_url(file_path)
+                logger.info(f"create_signed_upload_url başarılı: {signed_url_response}")
+            except Exception as e:
+                logger.error(f"create_signed_upload_url hatası: {e}")
+                try:
+                    # Alternatif metod adı deneme
+                    signed_url_response = storage_bucket.create_signed_url(file_path, expires_in=600, action='upload')
+                    logger.info(f"create_signed_url başarılı: {signed_url_response}")
+                except Exception as e2:
+                    logger.error(f"create_signed_url hatası: {e2}")
+                    raise e2
             logger.info(f"Signed URL response: {signed_url_response}")
             
             if signed_url_response.get('error'):
