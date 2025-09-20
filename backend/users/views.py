@@ -1079,25 +1079,9 @@ def request_upload_permission(request):
         try:
             logger.info(f"Signed URL oluşturuluyor - Bucket: {bucket}, Path: {file_path}")
             
-            # Mevcut metodları kontrol et
+            # Supabase'den signed upload URL al
             storage_bucket = storage_service.client.storage.from_(bucket)
-            available_methods = [method for method in dir(storage_bucket) if not method.startswith('_')]
-            logger.info(f"Mevcut storage metodları: {available_methods}")
-            
-            # Farklı metod adları dene
-            try:
-                # Parametresiz deneme
-                signed_url_response = storage_bucket.create_signed_upload_url(file_path)
-                logger.info(f"create_signed_upload_url başarılı: {signed_url_response}")
-            except Exception as e:
-                logger.error(f"create_signed_upload_url hatası: {e}")
-                try:
-                    # Alternatif metod adı deneme
-                    signed_url_response = storage_bucket.create_signed_url(file_path, expires_in=600, action='upload')
-                    logger.info(f"create_signed_url başarılı: {signed_url_response}")
-                except Exception as e2:
-                    logger.error(f"create_signed_url hatası: {e2}")
-                    raise e2
+            signed_url_response = storage_bucket.create_signed_upload_url(file_path)
             logger.info(f"Signed URL response: {signed_url_response}")
             
             if signed_url_response.get('error'):
@@ -1106,10 +1090,13 @@ def request_upload_permission(request):
                     'detail': signed_url_response['error']
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            signed_url = signed_url_response.get('signedURL')
+            # Supabase response formatını kontrol et
+            signed_url = signed_url_response.get('signed_url') or signed_url_response.get('signedURL')
             if not signed_url:
+                logger.error(f"Signed URL bulunamadı. Response keys: {list(signed_url_response.keys())}")
                 return Response({
-                    'error': 'Signed URL alınamadı'
+                    'error': 'Signed URL alınamadı',
+                    'response_keys': list(signed_url_response.keys())
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # Upload permission'ı döndür
