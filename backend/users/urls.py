@@ -26,7 +26,8 @@ from .views import (
     ChangePasswordView,  # Yeni eklendi
     create_test_users,  # Geçici test endpoint'i
     request_upload_permission,  # Upload permission endpoint'i
-    confirm_upload  # Upload confirmation endpoint'i
+    confirm_upload,  # Upload confirmation endpoint'i
+    fix_double_bucket_urls  # URL düzeltme endpoint'i
 )
 
 urlpatterns = [
@@ -84,4 +85,5 @@ urlpatterns = [
     # Upload Permission Endpoints
     path('upload-permission/', request_upload_permission, name='request-upload-permission'),
     path('confirm-upload/', confirm_upload, name='confirm-upload'),
+    path('fix-double-bucket-urls/', fix_double_bucket_urls, name='fix-double-bucket-urls'),
 ]

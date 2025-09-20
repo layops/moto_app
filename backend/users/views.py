@@ -1109,6 +1109,47 @@ def request_upload_permission(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def fix_double_bucket_urls(request):
+    """Çift bucket adı sorununu düzelt"""
+    try:
+        user = request.user
+        fixed_count = 0
+        
+        # Profil fotoğrafı düzeltme
+        if user.profile_picture and 'profile_pictures/profile_pictures/' in user.profile_picture:
+            old_url = user.profile_picture
+            user.profile_picture = user.profile_picture.replace('profile_pictures/profile_pictures/', 'profile_pictures/')
+            user.save()
+            logger.info(f"Profil fotoğrafı düzeltildi - User: {user.username}")
+            logger.info(f"  Eski: {old_url}")
+            logger.info(f"  Yeni: {user.profile_picture}")
+            fixed_count += 1
+        
+        # Kapak fotoğrafı düzeltme
+        if user.cover_picture and 'cover_pictures/cover_pictures/' in user.cover_picture:
+            old_url = user.cover_picture
+            user.cover_picture = user.cover_picture.replace('cover_pictures/cover_pictures/', 'cover_pictures/')
+            user.save()
+            logger.info(f"Kapak fotoğrafı düzeltildi - User: {user.username}")
+            logger.info(f"  Eski: {old_url}")
+            logger.info(f"  Yeni: {user.cover_picture}")
+            fixed_count += 1
+        
+        return Response({
+            'success': True,
+            'message': f'{fixed_count} URL düzeltildi',
+            'fixed_count': fixed_count
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"URL düzeltme hatası: {str(e)}")
+        return Response({
+            'error': 'URL düzeltme hatası',
+            'detail': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def confirm_upload(request):
     """Frontend'den yükleme tamamlandığında çağrılır"""
     import logging

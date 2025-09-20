@@ -51,6 +51,13 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfile() async {
     print('🔥 _loadProfile - Starting profile load for: $_currentUsername');
     
+    // Önce çift bucket adı sorununu düzelt
+    try {
+      await ServiceLocator.profile.fixDoubleBucketUrls();
+    } catch (e) {
+      print('🔥 Fix double bucket URLs hatası: $e');
+    }
+    
     if (_currentUsername == null) {
       try {
         final currentUser = await ServiceLocator.user.getCurrentUsername();
@@ -93,6 +100,11 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       
       print('🔥 _loadProfile - Setting profile data: ${profileData != null ? 'SUCCESS' : 'NULL'}');
+      if (profileData != null) {
+        print('🔥 _loadProfile - Profile data keys: ${profileData.keys.toList()}');
+        print('🔥 _loadProfile - Profile photo URL: ${profileData['profile_photo_url']}');
+        print('🔥 _loadProfile - Cover photo URL: ${profileData['cover_photo_url']}');
+      }
       setState(() {
         _profileData = profileData;
         _isCurrentUser = isCurrentUser;
@@ -100,6 +112,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _isFollowing = profileData?['is_following'] ?? false;
         _isLoading = false;
       });
+      print('🔥 _loadProfile - setState completed, _profileData: ${_profileData != null ? 'SET' : 'NULL'}');
 
       // Sonra diğer verileri paralel olarak yükle
       final results = await Future.wait([
@@ -514,6 +527,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
+    print('🔥 BUILD - _profileData: ${_profileData != null ? 'SET' : 'NULL'}');
+    if (_profileData != null) {
+      print('🔥 BUILD - Profile photo URL: ${_profileData!['profile_photo_url']}');
+      print('🔥 BUILD - Cover photo URL: ${_profileData!['cover_photo_url']}');
+    }
 
     if (_isLoading) return _buildLoading();
     if (_errorMessage != null) return Scaffold(body: _buildError());

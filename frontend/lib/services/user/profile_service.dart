@@ -308,6 +308,28 @@ class ProfileService {
     }
   }
 
+  /// Çift bucket adı sorununu düzelt
+  Future<void> fixDoubleBucketUrls() async {
+    try {
+      final token = await _tokenService.getToken();
+      if (token == null) throw Exception('Token bulunamadı');
+
+      final response = await _apiClient.post(
+        'users/fix-double-bucket-urls/',
+        {},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        print('🔥 Double bucket URLs fixed: ${response.data}');
+      }
+    } catch (e) {
+      print('🔥 Fix double bucket URLs hatası: $e');
+    }
+  }
+
   /// Profil cache'ini temizle (private method - backward compatibility)
   Future<void> _clearProfileCache(String username) async {
     await clearProfileCache(username);

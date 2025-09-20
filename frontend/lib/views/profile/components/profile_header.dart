@@ -63,8 +63,10 @@ class ProfileHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    print('🔥 PROFILE_HEADER BUILD - avatarUrl: $avatarUrl, coverUrl: $coverUrl');
     final avatarImage = _getImage(avatarFile, avatarUrl);
     final coverImage = _getImage(coverFile, coverUrl);
+    print('🔥 PROFILE_HEADER BUILD - avatarImage: ${avatarImage != null ? 'SET' : 'NULL'}, coverImage: ${coverImage != null ? 'SET' : 'NULL'}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
