@@ -113,17 +113,29 @@ class _ProfilePhotoUploaderState extends State<ProfilePhotoUploader> {
         );
       }
     } catch (e) {
-      String errorMessage = 'Bilinmeyen bir hata oluştu';
+      // Gerçek hata mesajını göster
+      String errorMessage = e.toString();
       
-      if (e.toString().contains('Oturum süresi doldu')) {
-        errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
-      } else if (e.toString().contains('Dosya boyutu')) {
-        errorMessage = 'Dosya boyutu çok büyük. Lütfen daha küçük bir resim seçin.';
-      } else if (e.toString().contains('Geçersiz dosya formatı')) {
-        errorMessage = 'Desteklenmeyen dosya formatı. JPEG, PNG, GIF veya WebP kullanın.';
-      } else if (e.toString().contains('network')) {
-        errorMessage = 'İnternet bağlantınızı kontrol edin.';
+      // Hata mesajını temizle
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
       }
+      
+      // Kullanıcı dostu mesajlar
+      if (errorMessage.contains('Oturum süresi doldu')) {
+        errorMessage = 'Oturumunuz sona ermiş. Lütfen tekrar giriş yapın.';
+      } else if (errorMessage.contains('Dosya boyutu')) {
+        errorMessage = 'Dosya boyutu çok büyük. Lütfen daha küçük bir resim seçin.';
+      } else if (errorMessage.contains('Geçersiz dosya formatı')) {
+        errorMessage = 'Desteklenmeyen dosya formatı. JPEG, PNG, GIF veya WebP kullanın.';
+      } else if (errorMessage.contains('network') || errorMessage.contains('connection')) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin.';
+      } else if (errorMessage.contains('Supabase')) {
+        errorMessage = 'Dosya yükleme servisi geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
+      }
+      
+      // Debug için gerçek hata mesajını logla
+      print('🔥 COVER UPLOAD ERROR: $e');
       
       _showMessage(
         widget.type == PhotoType.profile
