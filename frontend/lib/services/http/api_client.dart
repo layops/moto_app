@@ -25,9 +25,9 @@ class ApiClient {
       : _tokenService = TokenService(_storage),
         _dio = _sharedDio {
     _dio.options.baseUrl = '$kBaseUrl/api/';
-    _dio.options.connectTimeout = const Duration(seconds: 30);
-    _dio.options.receiveTimeout = const Duration(seconds: 30);
-    _dio.options.sendTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(seconds: 60);
+    _dio.options.receiveTimeout = const Duration(seconds: 60);
+    _dio.options.sendTimeout = const Duration(seconds: 60);
     
     // Connection pooling ayarları
     _dio.options.persistentConnection = true;
