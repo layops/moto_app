@@ -24,7 +24,9 @@ class ProfileService {
           await _clearProfileCache(username);
         }
         
-        // Cache temizleme (geçici olarak kaldırıldı)
+        // Cache temizleme - hard refresh için timestamp ekle
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        print('🔥 Profile upload completed at: $timestamp');
         
         // Mock response oluştur (eski sistemle uyumluluk için)
         return Response(
