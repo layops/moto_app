@@ -18,6 +18,14 @@ class ProfileService {
       final result = await ServiceLocator.supabaseStorage.uploadProfilePicture(imageFile);
       
       if (result.success) {
+        // Backend'e confirm_upload çağrısı yap
+        await _confirmUpload(
+          uploadId: 'profile_${DateTime.now().millisecondsSinceEpoch}',
+          filePath: result.url?.split('/').sublist(7).join('/') ?? 'profile_image', // Tam yolu al
+          bucket: 'profile_pictures',
+          fileType: 'profile',
+        );
+        
         // Başarılı yükleme sonrası cache'leri temizle
         final username = await ServiceLocator.user.getCurrentUsername();
         if (username != null) {
@@ -103,7 +111,7 @@ class ProfileService {
           // Backend'e confirm_upload çağrısı yap
           await _confirmUpload(
             uploadId: 'cover_${DateTime.now().millisecondsSinceEpoch}',
-            filePath: result.url?.split('/').last ?? 'cover_image',
+            filePath: result.url?.split('/').sublist(7).join('/') ?? 'cover_image', // Tam yolu al
             bucket: 'cover_pictures',
             fileType: 'cover',
           );

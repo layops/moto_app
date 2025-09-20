@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase_config.dart';
+import '../service_locator.dart';
 
 class UploadResult {
   final bool success;
@@ -60,21 +61,32 @@ class SupabaseStorageService {
         print('🔥 Profile bucket check error: $bucketError');
       }
       
+      // Kullanıcı ID'sini al
+      final userId = await _getCurrentUserId();
+      if (userId == null) {
+        throw Exception('Kullanıcı ID bulunamadı');
+      }
+      
+      // Eski profil fotoğrafını sil
+      await _deleteOldProfilePicture(userId, bucketToUse);
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'profile_${timestamp}.$extension';
+      final filePath = 'users/$userId/$fileName';
       
-      print('🔥 Profile file name: $fileName');
+      print('🔥 Profile file path: $filePath');
+      print('🔥 User ID: $userId');
       
       final response = await Supabase.instance.client.storage
           .from(bucketToUse)
-          .upload(fileName, imageFile);
+          .upload(filePath, imageFile);
 
       print('🔥 Profile upload response: $response');
 
       final publicUrl = Supabase.instance.client.storage
           .from(bucketToUse)
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
       print('🔥 Profile public URL: $publicUrl');
 
@@ -135,23 +147,34 @@ class SupabaseStorageService {
       String bucketToUse = 'cover_pictures'; // Supabase'de mevcut bucket
       print('🔥 Using hardcoded bucket: $bucketToUse');
       
+      // Kullanıcı ID'sini al
+      final userId = await _getCurrentUserId();
+      if (userId == null) {
+        throw Exception('Kullanıcı ID bulunamadı');
+      }
+      
+      // Eski kapak fotoğrafını sil
+      await _deleteOldCoverPicture(userId, bucketToUse);
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'cover_${timestamp}.$extension';
+      final filePath = 'users/$userId/$fileName';
       
-      print('🔥 File name: $fileName');
+      print('🔥 File path: $filePath');
+      print('🔥 User ID: $userId');
       
       print('🔥 Attempting upload to bucket: $bucketToUse');
       
       final response = await Supabase.instance.client.storage
           .from(bucketToUse)
-          .upload(fileName, imageFile);
+          .upload(filePath, imageFile);
 
       print('🔥 Upload response: $response');
 
       final publicUrl = Supabase.instance.client.storage
           .from(bucketToUse)
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
       print('🔥 Public URL: $publicUrl');
 
@@ -314,5 +337,84 @@ class SupabaseStorageService {
     return Supabase.instance.client.storage
         .from(bucketName)
         .getPublicUrl(fileName);
+  }
+
+  /// Mevcut kullanıcı ID'sini al
+  Future<String?> _getCurrentUserId() async {
+    try {
+      // Önce Supabase auth'dan al
+      final supabaseUser = Supabase.instance.client.auth.currentUser;
+      if (supabaseUser?.id != null) {
+        return supabaseUser!.id;
+      }
+      
+      // Supabase'den alamazsak backend'den al
+      final username = await ServiceLocator.user.getCurrentUsername();
+      if (username != null) {
+        // Backend'den kullanıcı ID'sini al
+        final response = await ServiceLocator.api.get('users/$username/profile/');
+        if (response.statusCode == 200 && response.data != null) {
+          final userData = response.data;
+          return userData['id']?.toString();
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('🔥 User ID alma hatası: $e');
+      return null;
+    }
+  }
+
+  /// Eski profil fotoğrafını sil
+  Future<void> _deleteOldProfilePicture(String userId, String bucket) async {
+    try {
+      // Kullanıcının profil fotoğrafı klasöründeki tüm dosyaları listele
+      final files = await Supabase.instance.client.storage
+          .from(bucket)
+          .list(path: 'users/$userId/');
+      
+      // Profil fotoğraflarını bul ve sil
+      for (final file in files) {
+        if (file.name.startsWith('profile_')) {
+          try {
+            await Supabase.instance.client.storage
+                .from(bucket)
+                .remove(['users/$userId/${file.name}']);
+            print('🔥 Eski profil fotoğrafı silindi: ${file.name}');
+          } catch (e) {
+            print('🔥 Profil fotoğrafı silme hatası: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('🔥 Eski profil fotoğrafı listeleme hatası: $e');
+    }
+  }
+
+  /// Eski kapak fotoğrafını sil
+  Future<void> _deleteOldCoverPicture(String userId, String bucket) async {
+    try {
+      // Kullanıcının kapak fotoğrafı klasöründeki tüm dosyaları listele
+      final files = await Supabase.instance.client.storage
+          .from(bucket)
+          .list(path: 'users/$userId/');
+      
+      // Kapak fotoğraflarını bul ve sil
+      for (final file in files) {
+        if (file.name.startsWith('cover_')) {
+          try {
+            await Supabase.instance.client.storage
+                .from(bucket)
+                .remove(['users/$userId/${file.name}']);
+            print('🔥 Eski kapak fotoğrafı silindi: ${file.name}');
+          } catch (e) {
+            print('🔥 Kapak fotoğrafı silme hatası: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('🔥 Eski kapak fotoğrafı listeleme hatası: $e');
+    }
   }
 }

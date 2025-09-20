@@ -1137,8 +1137,17 @@ def confirm_upload(request):
         
         try:
             logger.info(f"Dosya varlığı kontrol ediliyor - Bucket: {bucket}, Path: {file_path}")
+            
+            # file_path'den bucket adını çıkar (çift bucket adı sorunu için)
+            if file_path.startswith(f"{bucket}/"):
+                actual_file_path = file_path[len(bucket)+1:]  # bucket/ kısmını çıkar
+            else:
+                actual_file_path = file_path
+                
+            logger.info(f"Actual file path: {actual_file_path}")
+            
             # Dosyanın varlığını kontrol et
-            file_info = storage_service.client.storage.from_(bucket).get_public_url(file_path)
+            file_info = storage_service.client.storage.from_(bucket).get_public_url(actual_file_path)
             logger.info(f"Public URL alındı: {file_info}")
             if not file_info:
                 return Response({

@@ -49,12 +49,16 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
+    print('🔥 _loadProfile - Starting profile load for: $_currentUsername');
+    
     if (_currentUsername == null) {
       try {
         final currentUser = await ServiceLocator.user.getCurrentUsername();
         if (!mounted) return;
         setState(() => _currentUsername = currentUser);
+        print('🔥 _loadProfile - Current user set to: $_currentUsername');
       } catch (e) {
+        print('🔥 _loadProfile - ERROR getting current user: $e');
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -88,6 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
       
       if (!mounted) return;
       
+      print('🔥 _loadProfile - Setting profile data: ${profileData != null ? 'SUCCESS' : 'NULL'}');
       setState(() {
         _profileData = profileData;
         _isCurrentUser = isCurrentUser;
@@ -143,10 +148,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<Map<String, dynamic>?> _loadProfileData({bool useCache = true}) async {
     try {
+      print('🔥 _loadProfileData - useCache: $useCache, username: $_currentUsername');
       // Cache temizlendikten sonra fresh data almak için useCache=false
-      return await ServiceLocator.profile.getProfile(_currentUsername!, useCache: useCache);
+      final profileData = await ServiceLocator.profile.getProfile(_currentUsername!, useCache: useCache);
+      print('🔥 _loadProfileData - Profile data received: ${profileData != null ? 'SUCCESS' : 'NULL'}');
+      if (profileData != null) {
+        print('🔥 _loadProfileData - Profile photo URL: ${profileData['profile_photo_url']}');
+        print('🔥 _loadProfileData - Cover photo URL: ${profileData['cover_photo_url']}');
+      }
+      return profileData;
     } catch (e) {
-      // debugPrint('Profil verisi yüklenirken hata: $e');
+      print('🔥 _loadProfileData - ERROR: $e');
+      // Hata durumunda da null döndür ama log'la
       return null;
     }
   }
@@ -301,6 +314,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 _profileData = {};
               }
               
+              // Force widget rebuild için timestamp ekle
+              final timestamp = DateTime.now().millisecondsSinceEpoch;
+              
               setState(() {
                 _profileData!['profile_photo_url'] = photoUrl;
                 _profileData!['profile_picture'] = photoUrl;
@@ -308,11 +324,11 @@ class _ProfilePageState extends State<ProfilePage> {
               });
               print('🔥 PROFILE PAGE - State updated with new photo URL: $photoUrl');
               print('🔥 PROFILE PAGE - _profileData after update: ${_profileData?['profile_photo_url']}');
+              print('🔥 PROFILE PAGE - Force rebuild timestamp: $timestamp');
             }
             
-            // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
-            print('🔥 PROFILE PAGE - Loading fresh profile data');
-            await _loadProfileFresh();
+            // Profil verilerini yeniden yükleme kaldırıldı - UI güncellemesini bozuyordu
+            print('🔥 PROFILE PAGE - Skipping fresh profile data load to preserve UI update');
             
             // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
             if (mounted && Navigator.of(context).canPop()) {
@@ -359,6 +375,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 _profileData = {};
               }
               
+              // Force widget rebuild için timestamp ekle
+              final timestamp = DateTime.now().millisecondsSinceEpoch;
+              
               setState(() {
                 _profileData!['cover_photo_url'] = coverUrl;
                 _profileData!['cover_picture'] = coverUrl;
@@ -366,11 +385,11 @@ class _ProfilePageState extends State<ProfilePage> {
               });
               print('🔥 COVER PAGE - State updated with new cover URL: $coverUrl');
               print('🔥 COVER PAGE - _profileData after update: ${_profileData?['cover_photo_url']}');
+              print('🔥 COVER PAGE - Force rebuild timestamp: $timestamp');
             }
             
-            // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
-            print('🔥 COVER PAGE - Loading fresh profile data');
-            await _loadProfileFresh();
+            // Profil verilerini yeniden yükleme kaldırıldı - UI güncellemesini bozuyordu
+            print('🔥 COVER PAGE - Skipping fresh profile data load to preserve UI update');
             
             // Dialog'u kapat - mounted kontrolü ile güvenli hale getir
             if (mounted && Navigator.of(context).canPop()) {
@@ -431,33 +450,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _clearProfileCache() async {
     try {
       if (_currentUsername != null) {
-        // ProfileService cache'ini temizle (en kapsamlı)
+        // Sadece gerekli cache'leri temizle (hot restart için çok agresif değil)
         await ServiceLocator.profile.clearProfileCache(_currentUsername!);
-        
-        // UserService cache'ini temizle
-        ServiceLocator.user.clearUserCache(_currentUsername!);
-        
-        // API Client cache'ini temizle - kullanıcı ile ilgili tüm cache'ler
-        ServiceLocator.api.clearUserCache(_currentUsername!);
-        
-        // LocalStorage'daki profil verilerini temizle
         await ServiceLocator.storage.clearProfileData();
-        
-        // Memory cache'leri de temizle
-        await ServiceLocator.storage.clearMemoryCache();
-        
-        // SharedPreferences'ten de temizle (hot restart için)
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('profile_data');
-        await prefs.remove('user_profile');
-        await prefs.remove('profile_photo_url');
-        await prefs.remove('cover_photo_url');
-        await prefs.remove('cached_profile_${_currentUsername}');
-        
-        // Memory'den de temizle
-        _profileData = null;
-        
-        print('🔥 Cache cleared successfully (local + supabase + prefs + memory)');
+        print('🔥 Cache cleared successfully (minimal clear)');
       }
     } catch (e) {
       // print('❌ ProfilePage - Cache temizleme hatası: $e');
