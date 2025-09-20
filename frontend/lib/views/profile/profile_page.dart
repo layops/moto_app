@@ -295,9 +295,15 @@ class _ProfilePageState extends State<ProfilePage> {
             if (mounted) {
               // ProfileService response'unda profile_picture kullanılıyor, profile_photo_url değil
               final photoUrl = updatedUser['profile_picture'] ?? updatedUser['profile_photo_url'];
+              
+              // _profileData null ise boş map oluştur
+              if (_profileData == null) {
+                _profileData = {};
+              }
+              
               setState(() {
-                _profileData?['profile_photo_url'] = photoUrl;
-                _profileData?['profile_picture'] = photoUrl;
+                _profileData!['profile_photo_url'] = photoUrl;
+                _profileData!['profile_picture'] = photoUrl;
                 _avatarFile = null;
               });
               print('🔥 PROFILE PAGE - State updated with new photo URL: $photoUrl');
@@ -347,9 +353,15 @@ class _ProfilePageState extends State<ProfilePage> {
             if (mounted) {
               // Kapak fotoğrafı response'unda profile_picture field'ı kullanılıyor (yanlış field adı)
               final coverUrl = updatedUser['profile_picture'] ?? updatedUser['cover_picture'] ?? updatedUser['cover_photo_url'];
+              
+              // _profileData null ise boş map oluştur
+              if (_profileData == null) {
+                _profileData = {};
+              }
+              
               setState(() {
-                _profileData?['cover_photo_url'] = coverUrl;
-                _profileData?['cover_picture'] = coverUrl;
+                _profileData!['cover_photo_url'] = coverUrl;
+                _profileData!['cover_picture'] = coverUrl;
                 _coverFile = null;
               });
               print('🔥 COVER PAGE - State updated with new cover URL: $coverUrl');

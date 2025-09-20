@@ -100,6 +100,14 @@ class ProfileService {
       final result = await ServiceLocator.supabaseStorage.uploadCoverPicture(imageFile);
       
         if (result.success) {
+          // Backend'e confirm_upload çağrısı yap
+          await _confirmUpload(
+            uploadId: 'cover_${DateTime.now().millisecondsSinceEpoch}',
+            filePath: result.url?.split('/').last ?? 'cover_image',
+            bucket: 'cover_pictures',
+            fileType: 'cover',
+          );
+          
           // Başarılı yükleme sonrası cache'leri temizle
           final username = await ServiceLocator.user.getCurrentUsername();
           if (username != null) {
@@ -258,6 +266,37 @@ class ProfileService {
       // print('✅ ProfileService - Cache temizlendi: $username');
     } catch (e) {
       // print('❌ ProfileService - Cache temizleme hatası: $e');
+    }
+  }
+
+  /// Backend'e confirm_upload çağrısı
+  Future<void> _confirmUpload({
+    required String uploadId,
+    required String filePath,
+    required String bucket,
+    required String fileType,
+  }) async {
+    try {
+      final token = await _tokenService.getToken();
+      if (token == null) throw Exception('Token bulunamadı');
+
+      await _apiClient.post(
+        'users/confirm-upload/',
+        {
+          'upload_id': uploadId,
+          'file_path': filePath,
+          'bucket': bucket,
+          'file_type': fileType,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      
+      print('🔥 Confirm upload başarılı: $fileType');
+    } catch (e) {
+      print('🔥 Confirm upload hatası: $e');
+      // Hata olsa da devam et
     }
   }
 
