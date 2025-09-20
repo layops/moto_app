@@ -1166,8 +1166,8 @@ def confirm_upload(request):
                     'error': 'Dosya bulunamadı'
                 }, status=status.HTTP_404_NOT_FOUND)
             
-            # Public URL'i al
-            public_url = file_info.get('public_url')
+            # Public URL'i al (get_public_url zaten string döndürüyor)
+            public_url = file_info
             
             # Kullanıcı profilini güncelle (sadece profile ve cover için)
             if file_type in ['profile', 'cover']:
