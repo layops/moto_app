@@ -297,7 +297,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 _profileData?['profile_picture'] = updatedUser['profile_photo_url'];
                 _avatarFile = null;
               });
-              print('🔥 PROFILE PAGE - State updated with new photo URL');
+              print('🔥 PROFILE PAGE - State updated with new photo URL: ${updatedUser['profile_photo_url']}');
+              print('🔥 PROFILE PAGE - _profileData after update: ${_profileData?['profile_photo_url']}');
             }
             
             // Profil verilerini yeniden yükle (cache temizlendikten sonra fresh data)
