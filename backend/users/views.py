@@ -1078,9 +1078,9 @@ def request_upload_permission(request):
         # Supabase'den signed URL al (10 dakika geçerli)
         try:
             logger.info(f"Signed URL oluşturuluyor - Bucket: {bucket}, Path: {file_path}")
+            # Supabase Python client'ında parametresiz deneme
             signed_url_response = storage_service.client.storage.from_(bucket).create_signed_upload_url(
-                file_path,
-                expires_in=600  # 10 dakika
+                file_path
             )
             logger.info(f"Signed URL response: {signed_url_response}")
             

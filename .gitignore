@@ -149,3 +149,8 @@ media/
 
 # Cache
 .cache/
+frontend/android/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+frontend/android/.gradle/8.7/fileHashes/fileHashes.lock
+frontend/android/.gradle/8.7/fileHashes/fileHashes.bin
+frontend/android/.gradle/8.7/executionHistory/executionHistory.lock
+frontend/android/.gradle/8.7/executionHistory/executionHistory.bin
