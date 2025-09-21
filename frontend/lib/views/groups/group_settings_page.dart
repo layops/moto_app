@@ -8,12 +8,14 @@ class GroupSettingsPage extends StatefulWidget {
   final int groupId;
   final Map<String, dynamic> groupData;
   final AuthService authService;
+  final VoidCallback? onGroupUpdated;
 
   const GroupSettingsPage({
     super.key,
     required this.groupId,
     required this.groupData,
     required this.authService,
+    this.onGroupUpdated,
   });
 
   @override
@@ -82,6 +84,11 @@ class _GroupSettingsPageState extends State<GroupSettingsPage> {
           const SnackBar(content: Text('Grup ayarları başarıyla güncellendi!')),
         );
         Navigator.pop(context, true); // Başarılı güncelleme sinyali
+        
+        // Grup sayfasına callback gönder
+        if (widget.onGroupUpdated != null) {
+          widget.onGroupUpdated!();
+        }
       }
     } catch (e) {
       if (mounted) {

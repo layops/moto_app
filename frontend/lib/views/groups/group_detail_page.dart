@@ -181,6 +181,11 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           groupId: widget.groupId,
           groupData: widget.groupData,
           authService: widget.authService,
+          onGroupUpdated: () {
+            print('🔥 Grup ayarları güncellendi, sayfa yenileniyor...');
+            // Sayfayı yenile
+            setState(() {});
+          },
         ),
       ),
     );

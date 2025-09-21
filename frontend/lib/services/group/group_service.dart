@@ -126,6 +126,54 @@ class GroupService {
 
   /// Grup profil fotoğrafını güncelle
   Future<void> updateGroupProfilePicture(int groupId, File newProfilePicture) async {
+    print('🔥 Grup profil fotoğrafı güncelleme başlıyor...');
+    
+    try {
+      // Yeni güvenli Supabase upload sistemini kullan
+      final uploadResult = await ServiceLocator.supabaseStorage.uploadGroupPicture(newProfilePicture);
+      
+      if (uploadResult.success) {
+        print('🔥 Supabase upload başarılı: ${uploadResult.url}');
+        
+        // Backend'e URL'i FormData ile gönder
+        final token = await _authService.getToken();
+        final formData = FormData.fromMap({
+          'profile_picture_url': uploadResult.url,
+        });
+        
+        final response = await _dio.patch(
+          'groups/$groupId/',
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'multipart/form-data',
+            },
+          ),
+        );
+        
+        if (response.statusCode != 200) {
+          throw Exception('Profil fotoğrafı güncellenemedi: ${response.statusCode}');
+        }
+        
+        print('🔥 Grup profil fotoğrafı başarıyla güncellendi');
+        
+        // Cache'i temizle
+        clearCache();
+      } else {
+        // Fallback: Eski sistemi dene
+        print('🔥 Supabase upload başarısız, fallback sistemi deneniyor...');
+        await _updateGroupProfilePictureLegacy(groupId, newProfilePicture);
+      }
+    } catch (e) {
+      // Fallback: Eski sistemi dene
+      print('🔥 Grup profil fotoğrafı güncelleme hatası: $e');
+      await _updateGroupProfilePictureLegacy(groupId, newProfilePicture);
+    }
+  }
+
+  /// Eski grup profil fotoğrafı güncelleme (fallback)
+  Future<void> _updateGroupProfilePictureLegacy(int groupId, File newProfilePicture) async {
     final token = await _authService.getToken();
     
     // FormData oluştur
@@ -151,6 +199,9 @@ class GroupService {
     if (response.statusCode != 200) {
       throw Exception('Profil fotoğrafı güncellenemedi: ${response.statusCode}');
     }
+    
+    // Cache'i temizle
+    clearCache();
   }
 
   // --- GRUP KATILIM TALEPLERİ ---

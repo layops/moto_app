@@ -53,9 +53,19 @@ class _GroupsPageState extends State<GroupsPage> {
       print('🔥 MyGroups URL: ${dio.options.baseUrl}groups/my_groups/');
       print('🔥 DiscoverGroups URL: ${dio.options.baseUrl}groups/discover/');
       
+      // Cache bypass için timestamp ekle
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      print('🔥 Cache bypass timestamp: $timestamp');
+      
       final [myGroupsResponse, discoverGroupsResponse] = await Future.wait([
-        dio.get('groups/my_groups/', options: Options(headers: headers)),
-        dio.get('groups/discover/', options: Options(headers: headers)),
+        dio.get('groups/my_groups/?_t=$timestamp', options: Options(
+          headers: headers,
+          extra: {'disableCache': true},
+        )),
+        dio.get('groups/discover/?_t=$timestamp', options: Options(
+          headers: headers,
+          extra: {'disableCache': true},
+        )),
       ]);
 
       print('🔥 MyGroups Response Status: ${myGroupsResponse.statusCode}');
