@@ -89,8 +89,16 @@ class _GroupsPageState extends State<GroupsPage> {
       _authService.apiClient.clearCache();
     }
     
+    // State'i temizle
+    setState(() {
+      _myGroups = [];
+      _discoverGroups = [];
+      _loading = true;
+      _error = null;
+    });
+    
     // Daha uzun bekleme ekleyerek API'nin güncellenmesini sağla
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 1500));
     
     // Grupları yeniden yükle
     await _loadGroups();
@@ -103,6 +111,32 @@ class _GroupsPageState extends State<GroupsPage> {
     // Kısa bir bekleme ekleyerek API'nin güncellenmesini sağla
     await Future.delayed(const Duration(milliseconds: 500));
     await _loadGroups();
+  }
+
+  // Güçlü yenileme fonksiyonu (manuel refresh için)
+  Future<void> _forceRefreshGroups() async {
+    print('🔥 Manuel yenileme başlıyor...');
+    
+    // Cache'i temizle
+    if (_authService.apiClient != null) {
+      _authService.apiClient.clearCache();
+    }
+    
+    // State'i temizle
+    setState(() {
+      _myGroups = [];
+      _discoverGroups = [];
+      _loading = true;
+      _error = null;
+    });
+    
+    // Kısa bekleme
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Grupları yeniden yükle
+    await _loadGroups();
+    
+    print('🔥 Manuel yenileme tamamlandı');
   }
 
   // Gruba katıldıktan sonra optimistik güncelleme
@@ -469,7 +503,7 @@ class _GroupsPageState extends State<GroupsPage> {
                 Icons.refresh_rounded,
                 color: colorScheme.primary,
               ),
-              onPressed: _loadGroups,
+              onPressed: _forceRefreshGroups,
               tooltip: 'Yenile',
             ),
           ),

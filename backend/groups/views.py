@@ -109,6 +109,10 @@ class GroupCreateView(generics.ListCreateAPIView):
         print(f"🔥 Grup sahibi: {request.user.username} (ID: {request.user.id})")
         print(f"🔥 Grup üyeleri: {[member.username for member in group.members.all()]}")
         
+        # Grup üyelik durumunu tekrar kontrol et
+        group.refresh_from_db()
+        print(f"🔥 Grup refresh sonrası üyeleri: {[member.username for member in group.members.all()]}")
+        
         # Profile picture upload temporarily disabled - Supabase removed
         # if profile_file:
         #     try:
@@ -121,8 +125,12 @@ class GroupCreateView(generics.ListCreateAPIView):
         #         # Profil resmi yüklenemezse grup oluşturulmaya devam eder
         #         serializer = self.get_serializer(group)
         
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        # Final serializer response
+        final_serializer = self.get_serializer(group)
+        print(f"🔥 Final response data: {final_serializer.data}")
+        
+        headers = self.get_success_headers(final_serializer.data)
+        return Response(final_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class DiscoverGroupsView(generics.ListAPIView):
