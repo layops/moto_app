@@ -121,6 +121,7 @@ class GroupService {
     
     // Grup oluşturma sonrası cache'i temizle
     clearCache();
+    print('🔥 Grup oluşturuldu ve cache temizlendi');
   }
 
   /// Grup profil fotoğrafını güncelle

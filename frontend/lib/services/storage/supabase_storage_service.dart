@@ -221,23 +221,38 @@ class SupabaseStorageService {
   /// Etkinlik resmi yükleme
   Future<UploadResult> uploadEventPicture(File imageFile) async {
     try {
+      print('🔥 SUPABASE EVENT UPLOAD START');
+      
+      // Mevcut event klasörlerini kontrol et ve yeni numaralı klasör oluştur
+      final nextFolderNumber = await _getNextEventFolderNumber();
+      print('🔥 Next event folder number: $nextFolderNumber');
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'event_${timestamp}.$extension';
       
+      // Dosya yolu: events/{folder_number}/{file_name}
+      final filePath = 'events/$nextFolderNumber/$fileName';
+      print('🔥 Event file path: $filePath');
+      
       final response = await Supabase.instance.client.storage
           .from(_eventsBucket)
-          .upload(fileName, imageFile);
+          .upload(filePath, imageFile);
+
+      print('🔥 Event upload response: $response');
 
       final publicUrl = Supabase.instance.client.storage
           .from(_eventsBucket)
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
+
+      print('🔥 Event public URL: $publicUrl');
 
       return UploadResult(
         success: true,
         url: publicUrl,
       );
     } catch (e) {
+      print('🔥 SUPABASE EVENT UPLOAD ERROR: $e');
       return UploadResult(
         success: false,
         error: e.toString(),
@@ -248,23 +263,38 @@ class SupabaseStorageService {
   /// Grup resmi yükleme
   Future<UploadResult> uploadGroupPicture(File imageFile) async {
     try {
+      print('🔥 SUPABASE GROUP UPLOAD START');
+      
+      // Mevcut grup klasörlerini kontrol et ve yeni numaralı klasör oluştur
+      final nextFolderNumber = await _getNextGroupFolderNumber();
+      print('🔥 Next group folder number: $nextFolderNumber');
+      
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = imageFile.path.split('.').last;
       final fileName = 'group_${timestamp}.$extension';
       
+      // Dosya yolu: groups/{folder_number}/{file_name}
+      final filePath = 'groups/$nextFolderNumber/$fileName';
+      print('🔥 Group file path: $filePath');
+      
       final response = await Supabase.instance.client.storage
           .from(_groupsBucket)
-          .upload(fileName, imageFile);
+          .upload(filePath, imageFile);
+
+      print('🔥 Group upload response: $response');
 
       final publicUrl = Supabase.instance.client.storage
           .from(_groupsBucket)
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
+
+      print('🔥 Group public URL: $publicUrl');
 
       return UploadResult(
         success: true,
         url: publicUrl,
       );
     } catch (e) {
+      print('🔥 SUPABASE GROUP UPLOAD ERROR: $e');
       return UploadResult(
         success: false,
         error: e.toString(),
@@ -415,6 +445,78 @@ class SupabaseStorageService {
       }
     } catch (e) {
       print('🔥 Eski kapak fotoğrafı listeleme hatası: $e');
+    }
+  }
+
+  /// Bir sonraki event klasör numarasını al
+  Future<int> _getNextEventFolderNumber() async {
+    try {
+      // events klasöründeki tüm alt klasörleri listele
+      final files = await Supabase.instance.client.storage
+          .from(_eventsBucket)
+          .list(path: 'events/');
+      
+      print('🔥 Events klasöründeki dosyalar: ${files.map((f) => f.name).toList()}');
+      
+      // Sadece klasörleri filtrele (numaralı olanlar)
+      final folders = files.where((file) => 
+        file.name != null && 
+        RegExp(r'^\d+$').hasMatch(file.name)
+      ).toList();
+      
+      print('🔥 Numaralı klasörler: ${folders.map((f) => f.name).toList()}');
+      
+      if (folders.isEmpty) {
+        // İlk klasör: 5 (3 ve 4 zaten mevcut olduğu için)
+        return 5;
+      }
+      
+      // Mevcut klasör numaralarını al ve en büyüğünü bul
+      final numbers = folders.map((folder) => int.tryParse(folder.name ?? '0') ?? 0).toList();
+      final maxNumber = numbers.isEmpty ? 0 : numbers.reduce((a, b) => a > b ? a : b);
+      
+      // Bir sonraki numara
+      return maxNumber + 1;
+    } catch (e) {
+      print('🔥 Event klasör numarası alma hatası: $e');
+      // Hata durumunda 5'ten başla
+      return 5;
+    }
+  }
+
+  /// Bir sonraki grup klasör numarasını al
+  Future<int> _getNextGroupFolderNumber() async {
+    try {
+      // groups klasöründeki tüm alt klasörleri listele
+      final files = await Supabase.instance.client.storage
+          .from(_groupsBucket)
+          .list(path: 'groups/');
+      
+      print('🔥 Groups klasöründeki dosyalar: ${files.map((f) => f.name).toList()}');
+      
+      // Sadece klasörleri filtrele (numaralı olanlar)
+      final folders = files.where((file) => 
+        file.name != null && 
+        RegExp(r'^\d+$').hasMatch(file.name)
+      ).toList();
+      
+      print('🔥 Numaralı grup klasörleri: ${folders.map((f) => f.name).toList()}');
+      
+      if (folders.isEmpty) {
+        // İlk klasör: 1
+        return 1;
+      }
+      
+      // Mevcut klasör numaralarını al ve en büyüğünü bul
+      final numbers = folders.map((folder) => int.tryParse(folder.name ?? '0') ?? 0).toList();
+      final maxNumber = numbers.isEmpty ? 0 : numbers.reduce((a, b) => a > b ? a : b);
+      
+      // Bir sonraki numara
+      return maxNumber + 1;
+    } catch (e) {
+      print('🔥 Group klasör numarası alma hatası: $e');
+      // Hata durumunda 1'den başla
+      return 1;
     }
   }
 }

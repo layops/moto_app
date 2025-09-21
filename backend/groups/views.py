@@ -57,9 +57,17 @@ class MyGroupsListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Group.objects.filter(
+        groups = Group.objects.filter(
             Q(owner=user) | Q(members=user)
         ).distinct()
+        
+        # Debug log'u ekle
+        print(f"🔥 MyGroupsListView - Kullanıcı: {user.username} (ID: {user.id})")
+        print(f"🔥 MyGroupsListView - Bulunan gruplar: {[group.name for group in groups]}")
+        for group in groups:
+            print(f"🔥 - {group.name}: Owner={group.owner.username}, Members={[m.username for m in group.members.all()]}")
+        
+        return groups
 
 
 class GroupCreateView(generics.ListCreateAPIView):
@@ -95,6 +103,11 @@ class GroupCreateView(generics.ListCreateAPIView):
         group = serializer.save(owner=request.user)
         # Grup sahibi aynı zamanda grup üyesi olarak eklenir
         group.members.add(request.user)
+        
+        # Debug log'u ekle
+        print(f"🔥 Grup oluşturuldu: {group.name} (ID: {group.id})")
+        print(f"🔥 Grup sahibi: {request.user.username} (ID: {request.user.id})")
+        print(f"🔥 Grup üyeleri: {[member.username for member in group.members.all()]}")
         
         # Profile picture upload temporarily disabled - Supabase removed
         # if profile_file:

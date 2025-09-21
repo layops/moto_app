@@ -82,9 +82,20 @@ class _GroupsPageState extends State<GroupsPage> {
 
   // Grup oluşturma sonrası özel yenileme fonksiyonu
   Future<void> _refreshAfterGroupCreation() async {
-    // Kısa bir bekleme ekleyerek API'nin güncellenmesini sağla
-    await Future.delayed(const Duration(milliseconds: 500));
+    print('🔥 Grup oluşturma sonrası yenileme başlıyor...');
+    
+    // Cache'i temizle
+    if (_authService.apiClient != null) {
+      _authService.apiClient.clearCache();
+    }
+    
+    // Daha uzun bekleme ekleyerek API'nin güncellenmesini sağla
+    await Future.delayed(const Duration(milliseconds: 1000));
+    
+    // Grupları yeniden yükle
     await _loadGroups();
+    
+    print('🔥 Grup oluşturma sonrası yenileme tamamlandı');
   }
 
   // Gruba katıldıktan sonra özel yenileme fonksiyonu
