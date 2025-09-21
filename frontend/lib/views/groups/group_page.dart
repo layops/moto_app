@@ -54,15 +54,26 @@ class _GroupsPageState extends State<GroupsPage> {
         dio.get('groups/discover/', options: Options(headers: headers)),
       ]);
 
+      print('🔥 MyGroups Response Status: ${myGroupsResponse.statusCode}');
+      print('🔥 MyGroups Response Data: ${myGroupsResponse.data}');
+      print('🔥 DiscoverGroups Response Status: ${discoverGroupsResponse.statusCode}');
+      print('🔥 DiscoverGroups Response Data: ${discoverGroupsResponse.data}');
+
       if (myGroupsResponse.statusCode == 200 &&
           discoverGroupsResponse.statusCode == 200) {
         if (!mounted) return;
+        
+        final myGroupsData = myGroupsResponse.data is List ? myGroupsResponse.data : [];
+        final discoverGroupsData = discoverGroupsResponse.data is List ? discoverGroupsResponse.data : [];
+        
+        print('🔥 Processed MyGroups Data: ${myGroupsData.length} groups');
+        for (final group in myGroupsData) {
+          print('🔥 - ${group['name']} (ID: ${group['id']})');
+        }
+        
         setState(() {
-          _myGroups =
-              myGroupsResponse.data is List ? myGroupsResponse.data : [];
-          _discoverGroups = discoverGroupsResponse.data is List
-              ? discoverGroupsResponse.data
-              : [];
+          _myGroups = myGroupsData;
+          _discoverGroups = discoverGroupsData;
         });
       } else {
         throw Exception(

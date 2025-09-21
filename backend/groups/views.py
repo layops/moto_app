@@ -57,17 +57,30 @@ class MyGroupsListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        print(f"🔥🔥🔥 MyGroupsListView çağrıldı - Kullanıcı: {user.username} (ID: {user.id})")
+        
+        # Tüm grupları listele
+        all_groups = Group.objects.all()
+        print(f"🔥 Tüm gruplar: {[(g.id, g.name, g.owner.username) for g in all_groups]}")
+        
+        # Kullanıcının gruplarını filtrele
         groups = Group.objects.filter(
             Q(owner=user) | Q(members=user)
         ).distinct()
         
-        # Debug log'u ekle
-        print(f"🔥 MyGroupsListView - Kullanıcı: {user.username} (ID: {user.id})")
-        print(f"🔥 MyGroupsListView - Bulunan gruplar: {[group.name for group in groups]}")
+        print(f"🔥 MyGroupsListView - Bulunan gruplar: {[(g.id, g.name, g.owner.username) for g in groups]}")
         for group in groups:
-            print(f"🔥 - {group.name}: Owner={group.owner.username}, Members={[m.username for m in group.members.all()]}")
+            members = [m.username for m in group.members.all()]
+            print(f"🔥 - {group.name} (ID: {group.id}): Owner={group.owner.username}, Members={members}")
         
         return groups
+
+    def list(self, request, *args, **kwargs):
+        print(f"🔥🔥🔥 MyGroupsListView.list() çağrıldı")
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print(f"🔥 Serializer data: {serializer.data}")
+        return Response(serializer.data)
 
 
 class GroupCreateView(generics.ListCreateAPIView):
