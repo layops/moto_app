@@ -55,9 +55,15 @@ class MyGroupsListView(generics.ListAPIView):
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def dispatch(self, request, *args, **kwargs):
+        print(f"🔥🔥🔥🔥 MyGroupsListView.dispatch() çağrıldı - Method: {request.method}")
+        print(f"🔥🔥🔥🔥 Request path: {request.path}")
+        print(f"🔥🔥🔥🔥 Request user: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         user = self.request.user
-        print(f"🔥🔥🔥 MyGroupsListView çağrıldı - Kullanıcı: {user.username} (ID: {user.id})")
+        print(f"🔥🔥🔥 MyGroupsListView.get_queryset() çağrıldı - Kullanıcı: {user.username} (ID: {user.id})")
         
         # Tüm grupları listele
         all_groups = Group.objects.all()
@@ -79,7 +85,9 @@ class MyGroupsListView(generics.ListAPIView):
         print(f"🔥🔥🔥 MyGroupsListView.list() çağrıldı")
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        print(f"🔥 Serializer data: {serializer.data}")
+        print(f"🔥 Serializer data length: {len(serializer.data)}")
+        for i, group_data in enumerate(serializer.data):
+            print(f"🔥 Group {i+1}: {group_data.get('name')} (ID: {group_data.get('id')})")
         return Response(serializer.data)
 
 
