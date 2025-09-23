@@ -71,9 +71,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   void _handleWebSocketMessage(Map<String, dynamic> message) {
     if (!mounted) return;
 
+    // Mesaj ID'sini al (message_id öncelikli, yoksa id kullan)
+    final messageId = message['message_id'] ?? message['id'] ?? DateTime.now().millisecondsSinceEpoch;
+    
+    // Aynı mesajın zaten listede olup olmadığını kontrol et
+    if (_messages.any((m) => m.id == messageId)) {
+      print('⚠️ Aynı mesaj zaten listede, eklenmedi: $messageId');
+      return;
+    }
+
     // Yeni mesajı listeye ekle
     final newMessage = PrivateMessage(
-      id: message['id'] ?? DateTime.now().millisecondsSinceEpoch,
+      id: messageId,
       sender: User.fromJson(message['sender'] ?? {}),
       receiver: User.fromJson(message['receiver'] ?? {}),
       message: message['message'] ?? '',

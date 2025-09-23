@@ -203,7 +203,8 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 'sender_id': sender_user.id,
                 'receiver_username': receiver_user.username,
                 'receiver_id': receiver_id, # receiver_id'yi doğru şekilde geçir
-                'timestamp': str(PrivateMessage.objects.latest('timestamp').timestamp) # Kaydedilen mesajın zaman damgası
+                'message_id': message_obj.id, # Yeni mesajın ID'si
+                'timestamp': str(message_obj.timestamp) # Yeni oluşturulan mesajın zaman damgası
             }
         )
 
