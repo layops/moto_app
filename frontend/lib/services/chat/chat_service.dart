@@ -10,7 +10,7 @@ class ChatService {
   final Map<String, List<PrivateMessage>> _messagesCache = {};
   final Map<String, List<Conversation>> _conversationsCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
-  static const Duration _cacheDuration = Duration(seconds: 30); // Cache süresini kısalt
+  static const Duration _cacheDuration = Duration(minutes: 2); // Cache süresini artır
 
   Future<String?> _getToken() async {
     return await ServiceLocator.token.getToken();

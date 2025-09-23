@@ -18,6 +18,7 @@ class _MessagesPageState extends State<MessagesPage> {
   List<Conversation> _conversations = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _hasLoadedOnce = false; // İlk yükleme kontrolü
 
   @override
   void initState() {
@@ -29,19 +30,28 @@ class _MessagesPageState extends State<MessagesPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Sadece ilk kez açıldığında conversations listesini yenile
-    // Sürekli yenileme yapmayalım
+    if (!_hasLoadedOnce) {
+      _loadConversations();
+      _hasLoadedOnce = true;
+    }
   }
 
   @override
   void didUpdateWidget(MessagesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Widget güncellendiğinde conversations listesini yenile
-    // Sadece gerekli olduğunda yenile
+    // Sadece gerekli olduğunda yenile - şimdilik yenileme yapmıyoruz
   }
 
   Future<void> _loadConversations() async {
     try {
       if (!mounted) return;
+      
+      // Eğer zaten yüklenmişse ve cache geçerliyse yeniden yükleme
+      if (_conversations.isNotEmpty && !_isLoading) {
+        return;
+      }
+      
       setState(() {
         _isLoading = true;
         _errorMessage = null;
