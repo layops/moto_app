@@ -240,19 +240,20 @@ class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
         user = request.user
         
         # Kullanıcının katıldığı konuşmaları getir
-        # TODO: HiddenConversation modeli migration sonrası aktif edilecek
-        conversations = PrivateMessage.objects.filter(
+        # Önce tüm mesajları al, sonra unique kullanıcı çiftlerini bul
+        all_messages = PrivateMessage.objects.filter(
             Q(sender=user) | Q(receiver=user)
-        ).values('sender', 'receiver').distinct()
+        ).select_related('sender', 'receiver')
+        
+        # Unique kullanıcı çiftlerini bul
+        unique_users = set()
+        for message in all_messages:
+            other_user_id = message.receiver.id if message.sender.id == user.id else message.sender.id
+            unique_users.add(other_user_id)
         
         conversation_list = []
         
-        for conv in conversations:
-            sender_id = conv['sender']
-            receiver_id = conv['receiver']
-            
-            # Diğer kullanıcıyı belirle
-            other_user_id = receiver_id if sender_id == user.id else sender_id
+        for other_user_id in unique_users:
             other_user = get_object_or_404(User, id=other_user_id)
             
             # Son mesajı getir
