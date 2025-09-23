@@ -226,6 +226,10 @@ class ChatWebSocketService {
           _messageController.add(data);
           break;
           
+        case 'private_chat_message':
+          _messageController.add(data);
+          break;
+          
         case 'typing':
           _typingController.add(data['username'] ?? 'Birisi');
           break;

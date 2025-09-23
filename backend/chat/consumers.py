@@ -218,5 +218,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
             'sender_id': event['sender_id'],
             'receiver_username': event['receiver_username'],
             'receiver_id': event['receiver_id'],
+            'message_id': event['message_id'], # Mesaj ID'sini ekle
             'timestamp': event['timestamp']
         }))

@@ -76,15 +76,27 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     
     // Aynı mesajın zaten listede olup olmadığını kontrol et
     if (_messages.any((m) => m.id == messageId)) {
-      print('⚠️ Aynı mesaj zaten listede, eklenmedi: $messageId');
+      // Mesaj zaten listede, tekrar ekleme
       return;
     }
 
     // Yeni mesajı listeye ekle
     final newMessage = PrivateMessage(
       id: messageId,
-      sender: User.fromJson(message['sender'] ?? {}),
-      receiver: User.fromJson(message['receiver'] ?? {}),
+      sender: User(
+        id: message['sender_id'] ?? message['sender']?['id'] ?? 0,
+        username: message['sender_username'] ?? message['sender']?['username'] ?? 'Bilinmeyen',
+        firstName: message['sender']?['first_name'],
+        lastName: message['sender']?['last_name'],
+        profilePicture: message['sender']?['profile_picture'],
+      ),
+      receiver: User(
+        id: message['receiver_id'] ?? message['receiver']?['id'] ?? 0,
+        username: message['receiver_username'] ?? message['receiver']?['username'] ?? 'Bilinmeyen',
+        firstName: message['receiver']?['first_name'],
+        lastName: message['receiver']?['last_name'],
+        profilePicture: message['receiver']?['profile_picture'],
+      ),
       message: message['message'] ?? '',
       timestamp: DateTime.tryParse(message['timestamp'] ?? '') ?? DateTime.now(),
       isRead: message['is_read'] ?? false,
@@ -290,28 +302,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       if (_isConnected) {
         await _webSocketService.sendPrivateMessage(messageText, widget.otherUser.id);
         
-        // Optimistic update - mesajı hemen UI'a ekle
-        final optimisticMessage = PrivateMessage(
-          id: DateTime.now().millisecondsSinceEpoch,
-          sender: User(
-            id: _currentUserId!,
-            username: 'Sen', // TODO: Gerçek kullanıcı adını al
-            firstName: null,
-            lastName: null,
-            profilePicture: null,
-          ),
-          receiver: widget.otherUser,
-          message: messageText,
-          timestamp: DateTime.now(),
-          isRead: false,
-        );
-
+        // Optimistic update kaldırıldı - WebSocket'ten gelen response'u bekleyelim
         setState(() {
-          _messages.add(optimisticMessage);
           _messageController.clear();
           _isSending = false;
         });
-        _scrollToBottom();
       } else {
         // WebSocket yoksa HTTP API ile gönder (room messages endpoint'i kullan)
         final newMessage = await _chatService.sendRoomMessage(
