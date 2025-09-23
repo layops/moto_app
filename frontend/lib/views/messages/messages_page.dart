@@ -43,13 +43,17 @@ class _MessagesPageState extends State<MessagesPage> {
     // Sadece gerekli olduğunda yenile - şimdilik yenileme yapmıyoruz
   }
 
-  Future<void> _loadConversations() async {
+  Future<void> _loadConversations({bool forceRefresh = false}) async {
     try {
       if (!mounted) return;
       
-      // Eğer zaten yüklenmişse ve cache geçerliyse yeniden yükleme
-      if (_conversations.isNotEmpty && !_isLoading) {
+      // Eğer zaten yüklenmişse ve cache geçerliyse yeniden yükleme (forceRefresh false ise)
+      if (_conversations.isNotEmpty && !_isLoading && !forceRefresh) {
         return;
+      }
+      
+      if (forceRefresh) {
+        print('🔄 Conversations listesi zorla yenileniyor...');
       }
       
       setState(() {
@@ -336,13 +340,13 @@ class _MessagesPageState extends State<MessagesPage> {
           onMessageSent: () {
             // Mesaj gönderildiğinde conversations listesini yenile
             if (mounted) {
-              _loadConversations();
+              _loadConversations(forceRefresh: true);
             }
           },
           onMessagesRead: () {
             // Mesajlar okunduğunda conversations listesini yenile
             if (mounted) {
-              _loadConversations();
+              _loadConversations(forceRefresh: true);
             }
           },
         ),
@@ -351,7 +355,7 @@ class _MessagesPageState extends State<MessagesPage> {
       // ChatDetailPage'den geri döndüğünde conversations listesini yenile
       // Bu sayede okunmamış mesaj sayıları güncellenir
       if (mounted) {
-        _loadConversations();
+        _loadConversations(forceRefresh: true);
       }
     });
   }
@@ -376,17 +380,17 @@ class _MessagesPageState extends State<MessagesPage> {
           otherUser: user,
           onMessageSent: () {
             // Mesaj gönderildiğinde conversations listesini yenile
-            _loadConversations();
+            _loadConversations(forceRefresh: true);
           },
           onMessagesRead: () {
             // Mesajlar okunduğunda conversations listesini yenile
-            _loadConversations();
+            _loadConversations(forceRefresh: true);
           },
         ),
       ),
     ).then((_) {
       // ChatDetailPage'den geri döndüğünde conversations listesini yenile
-      _loadConversations();
+      _loadConversations(forceRefresh: true);
     });
   }
 

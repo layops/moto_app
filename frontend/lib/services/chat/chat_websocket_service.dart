@@ -31,6 +31,8 @@ class ChatWebSocketService {
   bool _isConnected = false;
   String? _currentRoomId;
   String? _currentUserId;
+  int? _lastMessageId; // Son mesaj ID'sini takip et
+  Timer? _pollingTimer; // HTTP polling timer'ını takip et
   
   // Constructor
   ChatWebSocketService() {
@@ -51,6 +53,8 @@ class ChatWebSocketService {
       _isConnected = false;
       _connectionStatusController.add(false);
       _currentRoomId = roomId;
+      
+      print('🔗 HTTP modu için room ID set edildi: $_currentRoomId');
       
       // HTTP modunda polling ile mesajları kontrol et
       _startPollingForMessages();
@@ -155,6 +159,7 @@ class ChatWebSocketService {
   /// Özel mesaj gönder
   Future<void> sendPrivateMessage(String message, int receiverId) async {
     if (!_isConnected || _channel == null) {
+      print('❌ WebSocket bağlantısı yok, HTTP API kullanılmalı');
       throw Exception('WebSocket bağlantısı yok');
     }
 
@@ -169,6 +174,9 @@ class ChatWebSocketService {
       print('📤 ChatWebSocketService: Özel mesaj gönderildi - Alıcı: $receiverId');
     } catch (e) {
       print('❌ ChatWebSocketService: Özel mesaj gönderme hatası: $e');
+      // Bağlantı durumunu güncelle
+      _isConnected = false;
+      _connectionStatusController.add(false);
       throw Exception('Özel mesaj gönderilemedi: $e');
     }
   }
@@ -194,10 +202,12 @@ class ChatWebSocketService {
     try {
       await _subscription?.cancel();
       await _channel?.sink.close(status.goingAway);
+      _pollingTimer?.cancel(); // HTTP polling timer'ını da iptal et
       
       _isConnected = false;
       _currentRoomId = null;
       _currentUserId = null;
+      _lastMessageId = null; // Son mesaj ID'sini sıfırla
       
       _connectionStatusController.add(false);
       
@@ -266,6 +276,12 @@ class ChatWebSocketService {
     _connectionStatusController.add(false);
     _connectionManager.updateConnectionStatus(false);
     
+    // HTTP moduna geç ve polling başlat
+    if (_currentRoomId != null) {
+      print('🔄 HTTP moduna geçiş yapılıyor - Room: $_currentRoomId');
+      _startPollingForMessages();
+    }
+    
     // Bağlantı kesilirse akıllı retry başlat
     if (_currentRoomId != null) {
       _smartRetry?.startRetry(() => connectToRoom(_currentRoomId!));
@@ -276,14 +292,27 @@ class ChatWebSocketService {
   void _startPollingForMessages() {
     print('📡 HTTP polling başlatıldı');
     
-    // Her 5 saniyede bir mesajları kontrol et
-    Timer.periodic(Duration(seconds: 5), (timer) async {
-      if (_currentRoomId != null) {
+    // Önceki timer'ı iptal et
+    _pollingTimer?.cancel();
+    
+    // İlk polling'i hemen yap
+    if (_currentRoomId != null && !_isConnected) {
+      print('🚀 İlk HTTP polling hemen yapılıyor...');
+      _fetchLatestMessages();
+    }
+    
+    // Her 5 saniyede bir mesajları kontrol et (daha az sıklıkta)
+    _pollingTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+      if (_currentRoomId != null && !_isConnected) {
         try {
           await _fetchLatestMessages();
         } catch (e) {
           print('❌ HTTP polling hatası: $e');
         }
+      } else if (_isConnected) {
+        // WebSocket bağlantısı varsa polling'i durdur
+        timer.cancel();
+        print('🔌 WebSocket bağlantısı aktif, HTTP polling durduruldu');
       } else {
         timer.cancel();
       }
@@ -297,22 +326,58 @@ class ChatWebSocketService {
     final token = await ServiceLocator.token.getToken();
     if (token == null) return;
     
-    // HTTP ile mesajları getir
-    final dio = Dio();
-    final response = await dio.get(
-      '$_baseUrl/api/chat/rooms/$_currentRoomId/messages/',
-      options: Options(
-        headers: {'Authorization': 'Bearer $token'},
-      ),
-    );
-    
-    if (response.statusCode == 200) {
-      final data = response.data;
-      if (data is List && data.isNotEmpty) {
-        // Son mesajı işle
-        final lastMessage = data.last;
-        _messageController.add(lastMessage);
+    try {
+      // HTTP ile mesajları getir
+      final dio = Dio();
+      final response = await dio.get(
+        '$_baseUrl/api/chat/rooms/$_currentRoomId/messages/',
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is List && data.isNotEmpty) {
+          // Son mesajı işle - sadece yeni mesajları kontrol et
+          final lastMessage = data.last;
+          final messageId = lastMessage['id'];
+          
+          // Eğer bu mesaj daha önce işlenmişse, tekrar işleme
+          if (_lastMessageId == null || messageId > _lastMessageId!) {
+            _lastMessageId = messageId;
+            
+            // Mesajı WebSocket formatında gönder
+            final messageData = {
+              'type': 'private_chat_message',
+              'message': lastMessage['message'],
+              'sender_id': lastMessage['sender']['id'],
+              'sender_username': lastMessage['sender']['username'],
+              'receiver_id': lastMessage['receiver']['id'],
+              'receiver_username': lastMessage['receiver']['username'],
+              'message_id': lastMessage['id'],
+              'timestamp': lastMessage['timestamp'],
+              'is_read': lastMessage['is_read'],
+            };
+            
+            _messageController.add(messageData);
+            print('📥 HTTP polling: Yeni mesaj alındı - ${lastMessage['message']} (ID: $messageId)');
+          }
+          // Gereksiz log mesajını kaldırdık - sadece yeni mesajlar için log
+        }
       }
+    } catch (e) {
+      print('❌ HTTP polling mesaj alma hatası: $e');
+    }
+  }
+
+  /// HTTP polling'i manuel olarak tetikle
+  void triggerPolling() {
+    if (_currentRoomId != null) {
+      print('🔄 HTTP polling manuel olarak tetiklendi - Room: $_currentRoomId');
+      _fetchLatestMessages();
+    } else {
+      print('❌ HTTP polling tetiklenemedi - _currentRoomId null');
     }
   }
 

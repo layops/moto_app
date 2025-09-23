@@ -104,6 +104,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     setState(() {
       _messages.add(newMessage);
+      
+      // Eğer bu mesajı kullanıcının kendisi göndermişse _isSending'i false yap
+      if (newMessage.sender.id == _currentUserId && _isSending) {
+        _isSending = false;
+        print('✅ Kendi gönderdiğimiz mesaj geldi, _isSending = false yapıldı');
+        
+        // Eğer input field'da aynı mesaj varsa temizle
+        if (_messageController.text.trim() == newMessage.message) {
+          _messageController.clear();
+          print('✅ Input field temizlendi (kendi mesajımız geldi)');
+        }
+      }
     });
     _scrollToBottom();
 
@@ -120,12 +132,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
 
     if (isConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Real-time mesajlaşma aktif'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      print('✅ WebSocket bağlantısı aktif');
+    } else {
+      print('❌ WebSocket bağlantısı kesildi, HTTP modu kullanılacak');
     }
   }
 
@@ -300,13 +309,35 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     try {
       // WebSocket bağlantısı varsa önce WebSocket ile gönder
       if (_isConnected) {
-        await _webSocketService.sendPrivateMessage(messageText, widget.otherUser.id);
-        
-        // Optimistic update kaldırıldı - WebSocket'ten gelen response'u bekleyelim
-        setState(() {
-          _messageController.clear();
-          _isSending = false;
-        });
+        try {
+          await _webSocketService.sendPrivateMessage(messageText, widget.otherUser.id);
+          
+          // WebSocket başarılı, mesajı temizle
+          setState(() {
+            _messageController.clear();
+            _isSending = false;
+          });
+          print('✅ WebSocket ile mesaj gönderildi, _isSending = false yapıldı, input temizlendi');
+        } catch (e) {
+          // WebSocket başarısız, HTTP API'ye fallback
+          print('WebSocket başarısız, HTTP API kullanılıyor: $e');
+          final newMessage = await _chatService.sendRoomMessage(
+            user1Id: _currentUserId!,
+            user2Id: widget.otherUser.id,
+            message: messageText,
+          );
+          
+          setState(() {
+            _messages.add(newMessage);
+            _messageController.clear();
+            _isSending = false;
+          });
+          print('✅ WebSocket fallback: HTTP API ile mesaj gönderildi, _isSending = false yapıldı, input temizlendi');
+          _scrollToBottom();
+          
+          // HTTP polling'i tetikle
+          _webSocketService.triggerPolling();
+        }
       } else {
         // WebSocket yoksa HTTP API ile gönder (room messages endpoint'i kullan)
         final newMessage = await _chatService.sendRoomMessage(
@@ -320,7 +351,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           _messageController.clear();
           _isSending = false;
         });
+        print('✅ HTTP API ile mesaj gönderildi, _isSending = false yapıldı, input temizlendi');
         _scrollToBottom();
+        
+        // HTTP polling'i tetikle
+        _webSocketService.triggerPolling();
       }
       
       // MessagesPage'e mesaj gönderildiğini bildir
@@ -329,6 +364,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSending = false);
+        print('❌ Mesaj gönderme hatası, _isSending = false yapıldı: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Mesaj gönderilemedi: $e'),
