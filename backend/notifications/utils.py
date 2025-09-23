@@ -1,20 +1,127 @@
-import logging
-import requests
-import json
-from django.conf import settings
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth import get_user_model
-from .models import Notification, NotificationPreferences
-from .serializers import NotificationSerializer
+import logging
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('message', 'Yeni Mesaj'),
+        ('group_invite', 'Grup Daveti'),
+        ('group_join_request', 'Grup Katılım İsteği'),
+        ('group_join_approved', 'Grup Katılım Onaylandı'),
+        ('group_join_rejected', 'Grup Katılım Reddedildi'),
+        ('event_join_request', 'Etkinlik Katılım İsteği'),
+        ('event_join_approved', 'Etkinlik Katılım Onaylandı'),
+        ('event_join_rejected', 'Etkinlik Katılım Reddedildi'),
+        ('ride_request', 'Yolculuk Katılım İsteği'),
+        ('ride_update', 'Yolculuk Güncellemesi'),
+        ('group_update', 'Grup Güncellemesi'),
+        ('friend_request', 'Arkadaşlık İsteği'),
+        ('follow', 'Takip Bildirimi'),
+        ('like', 'Beğeni Bildirimi'),
+        ('comment', 'Yorum Bildirimi'),
+        ('test', 'Test Bildirimi'),
+        ('other', 'Diğer'),
+    )
+
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name='Alıcı'
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_notifications',
+        verbose_name='Gönderici'
+    )
+    message = models.TextField(verbose_name='Mesaj')
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NOTIFICATION_TYPES,
+        default='other',
+        verbose_name='Bildirim Türü'
+    )
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='İçerik Türü'
+    )
+    object_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Nesne ID'
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+    is_read = models.BooleanField(default=False, verbose_name='Okundu mu?')
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Zaman Damgası')
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Bildirim'
+        verbose_name_plural = 'Bildirimler'
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.message[:50]}..."
+
+class NotificationPreferences(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notification_preferences',
+        verbose_name='Kullanıcı'
+    )
+    
+    # Direct messages
+    direct_messages = models.BooleanField(default=True, verbose_name='Özel Mesajlar')
+    group_messages = models.BooleanField(default=True, verbose_name='Grup Mesajları')
+    
+    # Social
+    likes_comments = models.BooleanField(default=True, verbose_name='Beğeni ve Yorumlar')
+    follows = models.BooleanField(default=True, verbose_name='Takip Bildirimleri')
+    
+    # Activities
+    ride_reminders = models.BooleanField(default=True, verbose_name='Sürüş Hatırlatmaları')
+    event_updates = models.BooleanField(default=True, verbose_name='Etkinlik Güncellemeleri')
+    group_activity = models.BooleanField(default=True, verbose_name='Grup Aktivitesi')
+    new_members = models.BooleanField(default=True, verbose_name='Yeni Üyeler')
+    
+    # Gamification
+    challenges_rewards = models.BooleanField(default=True, verbose_name='Meydan Okumalar ve Ödüller')
+    leaderboard_updates = models.BooleanField(default=True, verbose_name='Liderlik Tablosu Güncellemeleri')
+    
+    # Sound & Vibration
+    sound_enabled = models.BooleanField(default=True, verbose_name='Ses Açık')
+    vibration_enabled = models.BooleanField(default=True, verbose_name='Titreşim Açık')
+    
+    # Push notification settings
+    push_enabled = models.BooleanField(default=True, verbose_name='Push Bildirimleri Açık')
+    fcm_token = models.TextField(blank=True, null=True, verbose_name='FCM Token')
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Oluşturulma Tarihi')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Güncellenme Tarihi')
+
+    class Meta:
+        verbose_name = 'Bildirim Tercihi'
+        verbose_name_plural = 'Bildirim Tercihleri'
+
+    def __str__(self):
+        return f"{self.user.username} - Bildirim Tercihleri"
+
 def send_realtime_notification(recipient_user, message, notification_type='other', sender_user=None, content_object=None):
     """
-    Gerçek zamanlı bildirim gönderir ve veritabanına kaydeder.
+    Gerçek zamanlı bildirim gönderir (WebSocket + Database).
     
     Args:
         recipient_user: Bildirimi alacak kullanıcı
@@ -24,39 +131,14 @@ def send_realtime_notification(recipient_user, message, notification_type='other
         content_object: İlgili nesne (opsiyonel)
     """
     try:
-        logger.info(f"🔔 Bildirim gönderiliyor: {recipient_user.username} - {notification_type} - {message[:50]}...")
-        
-        # Çift bildirim kontrolü - son 5 dakika içinde aynı bildirim var mı?
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        recent_time = timezone.now() - timedelta(minutes=5)
-        
-        # Aynı gönderici, alıcı, mesaj ve türde son 5 dakika içinde bildirim var mı?
-        existing_notification = Notification.objects.filter(
-            recipient=recipient_user,
-            sender=sender_user,
-            message=message,
-            notification_type=notification_type,
-            timestamp__gte=recent_time
-        ).first()
-        
-        if existing_notification:
-            logger.info(f"⚠️ Çift bildirim engellendi: {recipient_user.username} - {notification_type}")
-            return existing_notification
-        
         # Bildirimi veritabanına kaydet
         notification = Notification.objects.create(
             recipient=recipient_user,
             sender=sender_user,
             message=message,
             notification_type=notification_type,
-            content_type=ContentType.objects.get_for_model(content_object) if content_object else None,
-            object_id=content_object.pk if content_object else None,
-            is_read=False
+            content_object=content_object
         )
-        
-        logger.info(f"✅ Bildirim veritabanına kaydedildi: ID {notification.id}")
 
         # WebSocket üzerinden gerçek zamanlı bildirim gönder
         try:
@@ -92,43 +174,17 @@ def send_bulk_notifications(recipients, message, notification_type='other', send
         sender_user: Bildirimi gönderen kullanıcı (opsiyonel)
         content_object: İlgili nesne (opsiyonel)
     """
-    try:
-        notifications = []
-        for recipient in recipients:
-            notification = Notification(
-                recipient=recipient,
-                sender=sender_user,
+    for recipient in recipients:
+        try:
+            send_realtime_notification(
+                recipient_user=recipient,
                 message=message,
                 notification_type=notification_type,
-                content_type=ContentType.objects.get_for_model(content_object) if content_object else None,
-                object_id=content_object.pk if content_object else None,
-                is_read=False
+                sender_user=sender_user,
+                content_object=content_object
             )
-            notifications.append(notification)
-        
-        # Toplu kaydet
-        created_notifications = Notification.objects.bulk_create(notifications)
-        
-        # Her kullanıcı için WebSocket bildirimi gönder
-        channel_layer = get_channel_layer()
-        for notification in created_notifications:
-            # bulk_create sonrası ID'ler otomatik atanır
-            serialized_notification = NotificationSerializer(notification).data
-            group_name = f'user_notifications_{notification.recipient.id}'
-            
-            async_to_sync(channel_layer.group_send)(group_name, {
-                'type': 'send_notification',
-                'notification': serialized_notification,
-            })
-        
-        logger.info(f"Toplu bildirim gönderildi: {len(recipients)} kullanıcı - {notification_type}")
-        
-    except Exception as e:
-        logger.error(f"Toplu bildirim gönderme hatası: {e}")
-        raise
-
-
-
+        except Exception as e:
+            logger.error(f"Toplu bildirim hatası - {recipient.username}: {e}")
 
 def send_notification_with_preferences(recipient_user, message, notification_type='other', sender_user=None, content_object=None, title=None):
     """
@@ -149,6 +205,24 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         except NotificationPreferences.DoesNotExist:
             # Preferences yoksa varsayılan tercihlerle oluştur
             preferences = NotificationPreferences.objects.create(user=recipient_user)
+        except Exception as e:
+            # FCM token alanı eksikse geçici olarak varsayılan tercihler kullan
+            logger.warning(f"NotificationPreferences alınamadı (FCM token alanı eksik olabilir): {e}")
+            # Geçici olarak varsayılan değerlerle devam et
+            class TempPreferences:
+                def __init__(self):
+                    self.direct_messages = True
+                    self.group_messages = True
+                    self.likes_comments = True
+                    self.follows = True
+                    self.ride_reminders = True
+                    self.event_updates = True
+                    self.group_activity = True
+                    self.new_members = True
+                    self.challenges_rewards = True
+                    self.leaderboard_updates = True
+                    self.push_enabled = False  # FCM token yoksa push notification'ı kapat
+            preferences = TempPreferences()
         
         # Notification type'a göre tercih kontrolü
         should_send = False
@@ -227,104 +301,119 @@ def send_notification_with_preferences(recipient_user, message, notification_typ
         
     except Exception as e:
         logger.error(f"Tercihli bildirim gönderme hatası: {e}")
-
-
-def send_follow_notification(follower_user, followed_user):
-    """
-    Takip bildirimi gönderir - hem WebSocket hem de push notification
-    
-    Args:
-        follower_user: Takip eden kullanıcı
-        followed_user: Takip edilen kullanıcı
-    """
-    try:
-        message = f"{follower_user.username} sizi takip etmeye başladı!"
-        notification_type = 'follow'
-        
-        # Takip bildirimi gönder (WebSocket + Push notification)
-        notification = send_notification_with_preferences(
-            recipient_user=followed_user,
-            message=message,
-            notification_type=notification_type,
-            sender_user=follower_user,
-            title="Yeni Takipçi!"
-        )
-        
-        if notification:
-            logger.info(f"Takip bildirimi gönderildi: {follower_user.username} -> {followed_user.username}")
-            return notification
-        else:
-            logger.warning(f"Takip bildirimi gönderilemedi: {follower_user.username} -> {followed_user.username}")
+        # Hata olsa bile WebSocket bildirimini göndermeye çalış
+        try:
+            return send_realtime_notification(
+                recipient_user=recipient_user,
+                message=message,
+                notification_type=notification_type,
+                sender_user=sender_user,
+                content_object=content_object
+            )
+        except Exception as fallback_error:
+            logger.error(f"Fallback bildirim hatası: {fallback_error}")
             return None
-            
+
+def send_group_invite_notification(recipient_user, group_name, sender_user):
+    """Grup daveti bildirimi gönderir."""
+    try:
+        message = f"{sender_user.get_full_name() or sender_user.username} sizi '{group_name}' grubuna davet etti"
+        notification = send_notification_with_preferences(
+            recipient_user=recipient_user,
+            message=message,
+            notification_type='group_invite',
+            sender_user=sender_user,
+            title=f"Grup Daveti - {group_name}"
+        )
+        logger.info(f"Grup daveti bildirimi gönderildi: {recipient_user.username} - {group_name}")
+        return notification
+    except Exception as e:
+        logger.error(f"Grup daveti bildirimi hatası: {e}")
+        return None
+
+def send_ride_request_notification(recipient_user, ride_title, sender_user):
+    """Yolculuk katılım isteği bildirimi gönderir."""
+    try:
+        message = f"{sender_user.get_full_name() or sender_user.username} '{ride_title}' yolculuğuna katılmak istiyor"
+        notification = send_notification_with_preferences(
+            recipient_user=recipient_user,
+            message=message,
+            notification_type='ride_request',
+            sender_user=sender_user,
+            title=f"Yolculuk Katılım İsteği - {ride_title}"
+        )
+        logger.info(f"Yolculuk isteği bildirimi gönderildi: {recipient_user.username} - {ride_title}")
+        return notification
+    except Exception as e:
+        logger.error(f"Yolculuk isteği bildirimi hatası: {e}")
+        return None
+
+def send_event_join_request_notification(recipient_user, event_title, sender_user):
+    """Etkinlik katılım isteği bildirimi gönderir."""
+    try:
+        message = f"{sender_user.get_full_name() or sender_user.username} '{event_title}' etkinliğine katılmak istiyor"
+        notification = send_notification_with_preferences(
+            recipient_user=recipient_user,
+            message=message,
+            notification_type='event_join_request',
+            sender_user=sender_user,
+            title=f"Etkinlik Katılım İsteği - {event_title}"
+        )
+        logger.info(f"Etkinlik isteği bildirimi gönderildi: {recipient_user.username} - {event_title}")
+        return notification
+    except Exception as e:
+        logger.error(f"Etkinlik isteği bildirimi hatası: {e}")
+        return None
+
+def send_follow_notification(recipient_user, sender_user):
+    """Takip bildirimi gönderir."""
+    try:
+        message = f"{sender_user.get_full_name() or sender_user.username} sizi takip etmeye başladı"
+        notification = send_notification_with_preferences(
+            recipient_user=recipient_user,
+            message=message,
+            notification_type='follow',
+            sender_user=sender_user,
+            title="Yeni Takipçi"
+        )
+        logger.info(f"Takip bildirimi gönderildi: {recipient_user.username} - {sender_user.username}")
+        return notification
     except Exception as e:
         logger.error(f"Takip bildirimi hatası: {e}")
         return None
 
-
-def send_like_notification(liker_user, post_owner, post_title=None):
-    """
-    Beğeni bildirimi gönderir
-    
-    Args:
-        liker_user: Beğenen kullanıcı
-        post_owner: Post sahibi
-        post_title: Post başlığı (opsiyonel)
-    """
+def send_like_notification(recipient_user, content_type, sender_user):
+    """Beğeni bildirimi gönderir."""
     try:
-        post_info = f" '{post_title}'" if post_title else ""
-        message = f"{liker_user.username} gönderinizi{post_info} beğendi!"
-        notification_type = 'like'
-        
+        content_name = "içeriği" if content_type == "post" else "yorumu"
+        message = f"{sender_user.get_full_name() or sender_user.username} {content_name} beğendi"
         notification = send_notification_with_preferences(
-            recipient_user=post_owner,
+            recipient_user=recipient_user,
             message=message,
-            notification_type=notification_type,
-            sender_user=liker_user,
-            title="Gönderiniz Beğenildi!"
+            notification_type='like',
+            sender_user=sender_user,
+            title="Yeni Beğeni"
         )
-        
-        if notification:
-            logger.info(f"Beğeni bildirimi gönderildi: {liker_user.username} -> {post_owner.username}")
-            return notification
-        else:
-            logger.warning(f"Beğeni bildirimi gönderilemedi: {liker_user.username} -> {post_owner.username}")
-            return None
-            
+        logger.info(f"Beğeni bildirimi gönderildi: {recipient_user.username} - {sender_user.username}")
+        return notification
     except Exception as e:
         logger.error(f"Beğeni bildirimi hatası: {e}")
         return None
 
-
-def send_comment_notification(commenter_user, post_owner, post_title=None):
-    """
-    Yorum bildirimi gönderir
-    
-    Args:
-        commenter_user: Yorum yapan kullanıcı
-        post_owner: Post sahibi
-        post_title: Post başlığı (opsiyonel)
-    """
+def send_comment_notification(recipient_user, content_type, sender_user):
+    """Yorum bildirimi gönderir."""
     try:
-        post_info = f" '{post_title}'" if post_title else ""
-        message = f"{commenter_user.username} gönderinize{post_info} yorum yaptı!"
-        notification_type = 'comment'
-        
+        content_name = "içeriğinize" if content_type == "post" else "yorumunuza"
+        message = f"{sender_user.get_full_name() or sender_user.username} {content_name} yorum yaptı"
         notification = send_notification_with_preferences(
-            recipient_user=post_owner,
+            recipient_user=recipient_user,
             message=message,
-            notification_type=notification_type,
-            sender_user=commenter_user,
-            title="Gönderinize Yorum Yapıldı!"
+            notification_type='comment',
+            sender_user=sender_user,
+            title="Yeni Yorum"
         )
-        
-        if notification:
-            logger.info(f"Yorum bildirimi gönderildi: {commenter_user.username} -> {post_owner.username}")
-            return notification
-        else:
-            logger.warning(f"Yorum bildirimi gönderilemedi: {commenter_user.username} -> {post_owner.username}")
-            return None
-            
+        logger.info(f"Yorum bildirimi gönderildi: {recipient_user.username} - {sender_user.username}")
+        return notification
     except Exception as e:
         logger.error(f"Yorum bildirimi hatası: {e}")
         return None
