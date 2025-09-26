@@ -5,6 +5,7 @@ import 'package:motoapp_frontend/services/service_locator.dart';
 import 'package:motoapp_frontend/views/auth/login_page.dart';
 import 'package:motoapp_frontend/services/chat/chat_service.dart';
 import 'package:motoapp_frontend/views/messages/chat_detail_page.dart';
+import 'package:motoapp_frontend/widgets/navigations/main_wrapper_new.dart';
 import 'components/photo_uploader.dart';
 import 'components/profile_drawer.dart';
 import 'components/profile_header.dart';
@@ -735,6 +736,34 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
+      ),
+      // Alttaki bar'ı sadece başka kullanıcıların profilleri için göster
+      bottomNavigationBar: _isCurrentUser ? null : BottomNavigationBar(
+        currentIndex: 5, // Profile tab index
+        onTap: (index) {
+          if (index == 5) return; // Zaten profil sayfasındayız
+          
+          // Ana sayfaya dön ve ilgili tab'a geç
+          Navigator.pop(context);
+          
+          // ServiceLocator üzerinden tab değişikliği sinyali gönder
+          if (ServiceLocator.onTabChange != null) {
+            ServiceLocator.onTabChange!(index);
+          }
+        },
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Messages'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: colorScheme.surface,
+        showUnselectedLabels: true,
       ),
     );
   }

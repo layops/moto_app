@@ -31,8 +31,21 @@ class MainWrapperNewState extends State<MainWrapperNew> {
     _chatService = ServiceLocator.chat;
     _loadUnreadMessageCount();
     
-    // Debug için navigation yapısını göster (sadece debug modda)
-    // Navigation initialized
+    // Tab değişikliği callback'ini ayarla
+    ServiceLocator.onTabChange = navigateToTab;
+    
+    // Initial tab parametresini kontrol et
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args.containsKey('initialTab')) {
+        final initialTab = args['initialTab'] as int;
+        if (initialTab >= 0 && initialTab < widget.pages.length) {
+          setState(() {
+            _currentIndex = initialTab;
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -44,9 +57,25 @@ class MainWrapperNewState extends State<MainWrapperNew> {
     }
   }
 
+  @override
+  void dispose() {
+    // Callback'i temizle
+    ServiceLocator.onTabChange = null;
+    super.dispose();
+  }
+
   // Public metod - dışarıdan çağrılabilir
   void refreshUnreadCount() {
     _loadUnreadMessageCount();
+  }
+
+  // Tab değişikliği için public metod
+  void navigateToTab(int index) {
+    if (index >= 0 && index < widget.pages.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   Future<void> _loadUnreadMessageCount() async {

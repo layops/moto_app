@@ -127,11 +127,10 @@ class _PostItemState extends State<PostItem> {
           InkWell(
             onTap: () {
               if (username.isNotEmpty && username != 'Bilinmeyen') {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfilePage(username: username),
-                  ),
+                  '/profile',
+                  arguments: username,
                 );
               }
             },
@@ -161,11 +160,10 @@ class _PostItemState extends State<PostItem> {
                 InkWell(
                   onTap: () {
                     if (username.isNotEmpty && username != 'Bilinmeyen') {
-                      Navigator.push(
+                      Navigator.pushNamed(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => ProfilePage(username: username),
-                        ),
+                        '/profile',
+                        arguments: username,
                       );
                     }
                   },

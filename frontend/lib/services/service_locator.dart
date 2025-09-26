@@ -30,6 +30,9 @@ class ServiceLocator {
       GlobalKey<NavigatorState>();
   static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
+  
+  // Tab navigation callback
+  static Function(int)? onTabChange;
 
   // Services
   late final LocalStorage _localStorage;
